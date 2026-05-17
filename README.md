@@ -73,11 +73,6 @@ Located in `scripts/` folder:
 - Import 26 services from Excel
 - Integration with mentions/alerts/incidents
 
-## 🔐 Admin Credentials
-
-- Email: `admin@sociallistening.com`
-- Password: `Admin@123456`
-
 ## 📞 Support
 
 Check documentation in `docs/` folder for detailed guides.
