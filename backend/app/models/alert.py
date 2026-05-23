@@ -16,6 +16,7 @@ class AlertStatus(str, Enum):
     ACKNOWLEDGED = "acknowledged"
     ASSIGNED = "assigned"
     RESOLVED = "resolved"
+    IGNORED = "ignored"
 
 
 class Alert(Base):

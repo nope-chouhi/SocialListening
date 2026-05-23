@@ -1,4 +1,4 @@
-﻿from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import select, func
 from typing import List, Optional
@@ -312,6 +312,30 @@ def create_incident_from_mention(
         "title": incident.title,
         "status": incident.status.value,
         "created_at": incident.created_at.isoformat() if incident.created_at else None
+    }
+
+
+@router.post("/{mention_id}/mark-reviewed")
+def mark_mention_reviewed(
+    mention_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Mark a mention as reviewed"""
+    mention = db.execute(
+        select(Mention).where(Mention.id == mention_id)
+    ).scalar_one_or_none()
+
+    if not mention:
+        raise HTTPException(status_code=404, detail="Mention not found")
+
+    mention.is_reviewed = True
+    db.commit()
+    db.refresh(mention)
+
+    return {
+        "id": mention.id,
+        "is_reviewed": mention.is_reviewed
     }
 
 

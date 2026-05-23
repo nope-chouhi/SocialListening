@@ -5,6 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { auth } from '@/lib/api';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import { SidebarBadge } from '@/components/dashboard/Badges';
 import { canAccessAdmin, type User } from '@/lib/permissions';
 import { 
   LayoutDashboard, 
@@ -30,6 +31,11 @@ export default function DashboardLayout({
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [badges, setBadges] = useState<{ new_alerts: number, open_incidents: number, unreviewed_mentions: number }>({
+    new_alerts: 0,
+    open_incidents: 0,
+    unreviewed_mentions: 0
+  });
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -56,6 +62,25 @@ export default function DashboardLayout({
 
     checkAuth();
   }, [router]);
+
+  useEffect(() => {
+    if (user) {
+      const fetchBadges = async () => {
+        try {
+          const { dashboard } = await import('@/lib/api');
+          const data = await dashboard.sidebarBadges();
+          setBadges(data);
+        } catch (error) {
+          console.error('Failed to fetch sidebar badges', error);
+        }
+      };
+      fetchBadges();
+      
+      // Refresh badges every minute
+      const interval = setInterval(fetchBadges, 60000);
+      return () => clearInterval(interval);
+    }
+  }, [user]);
 
   // Load theme from localStorage
   useEffect(() => {
@@ -86,9 +111,9 @@ export default function DashboardLayout({
     { name: 'Scan Center', href: '/dashboard/scan', icon: FileText },
     { name: 'Từ khóa', href: '/dashboard/keywords', icon: Key },
     { name: 'Nguồn', href: '/dashboard/sources', icon: Globe },
-    { name: 'Mentions', href: '/dashboard/mentions', icon: FileText },
-    { name: 'Cảnh báo', href: '/dashboard/alerts', icon: Bell },
-    { name: 'Sự cố', href: '/dashboard/incidents', icon: AlertTriangle },
+    { name: 'Mentions', href: '/dashboard/mentions', icon: FileText, badge: badges.unreviewed_mentions },
+    { name: 'Cảnh báo', href: '/dashboard/alerts', icon: Bell, badge: badges.new_alerts },
+    { name: 'Sự cố', href: '/dashboard/incidents', icon: AlertTriangle, badge: badges.open_incidents },
     { name: 'Dịch vụ', href: '/dashboard/services', icon: Briefcase },
     { name: 'Cài đặt', href: '/dashboard/settings', icon: Settings }, // Available to all users
   ];
@@ -143,9 +168,11 @@ export default function DashboardLayout({
                 >
                   <item.icon className={`w-5 h-5 mr-3 transition-transform duration-200 ${isActive ? 'scale-110' : 'group-hover:scale-110'}`} />
                   {item.name}
-                  {isActive && (
+                  {(item as any).badge ? (
+                    <SidebarBadge count={(item as any).badge} />
+                  ) : isActive ? (
                     <div className="ml-auto w-2 h-2 bg-white rounded-full animate-pulse"></div>
-                  )}
+                  ) : null}
                 </Link>
               );
             })}

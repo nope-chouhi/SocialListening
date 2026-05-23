@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, Text, Float, Enum as SQLEnum, JSON, Index
+from sqlalchemy import Column, Integer, String, DateTime, Text, Float, Enum as SQLEnum, JSON, Index, Boolean
 from sqlalchemy.sql import func
 from enum import Enum
 from app.core.database import Base
@@ -35,6 +35,7 @@ class Mention(Base):
     # Metadata
     platform_post_id = Column(String(255), index=True)  # Facebook post ID, YouTube comment ID, etc.
     meta_data = Column(JSON)  # Likes, shares, comments count, etc. (renamed from metadata)
+    is_reviewed = Column(Boolean, default=False)
     
     
     __table_args__ = (

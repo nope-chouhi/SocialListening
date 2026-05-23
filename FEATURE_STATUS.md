@@ -17,7 +17,7 @@
 
 | Page | Status | Features | Notes |
 |------|--------|----------|-------|
-| **Dashboard** | ✅ DONE | Metrics, latest mentions, latest alerts | Real data from database |
+| **Dashboard** | ✅ DONE | Real data charts, KPI cards, Mention/Alert cards, Quick Actions | Refactored with real backend data |
 | **Keywords** | ✅ DONE | Groups, keywords, CRUD, toggle active | Fully functional |
 | **Sources** | ✅ DONE | Groups, sources, CRUD, schedules, test connection | Schedule arrays persist |
 | **Scan Center** | ✅ DONE | Manual scan, keyword selection, source selection, scan history | Basic crawling (BeautifulSoup + RSS) |
@@ -305,6 +305,13 @@ alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT
 ---
 
 ## 11. CHANGELOG
+
+### May 23, 2026
+- ✅ Completely redesigned Dashboard with KPI cards, Trend charts, and Sentiment charts
+- ✅ Replaced plain text lists with rich Mention Cards and Alert Cards
+- ✅ Implemented Quick Actions directly on Dashboard (Acknowledge, Ignore, Create Incident, AI Analysis) with RBAC support
+- ✅ Added real-time Sidebar Badges for alerts, incidents, and unreviewed mentions
+- ✅ No fake data is used in Dashboard; all widgets pull real analytics via API
 
 ### May 13, 2026
 - ✅ Fixed change-password endpoint (JSON body instead of query params)

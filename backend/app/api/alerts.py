@@ -1,4 +1,4 @@
-﻿from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import select, func
 from datetime import datetime
@@ -10,6 +10,7 @@ from app.core.database import get_db
 from app.core.security import get_current_active_user
 from app.models.user import User
 from app.models.alert import Alert, AlertStatus, AlertSeverity
+from app.models.incident import Incident, IncidentStatus, IncidentLog
 from app.services.notification_service import notify_alert_created
 
 router = APIRouter()
@@ -197,6 +198,86 @@ def resolve_alert(
         "id": alert.id,
         "status": alert.status.value if hasattr(alert.status, 'value') else alert.status,
         "resolved_at": alert.resolved_at.isoformat()
+    }
+
+
+@router.post("/{alert_id}/ignore")
+def ignore_alert(
+    alert_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Ignore an alert"""
+    alert = db.execute(
+        select(Alert).where(Alert.id == alert_id)
+    ).scalar_one_or_none()
+
+    if not alert:
+        raise HTTPException(status_code=404, detail="Alert not found")
+
+    alert.status = AlertStatus.IGNORED
+    alert.resolved_by = current_user.id
+    alert.resolved_at = datetime.utcnow()
+
+    db.commit()
+    db.refresh(alert)
+
+    return {
+        "id": alert.id,
+        "status": alert.status.value if hasattr(alert.status, 'value') else alert.status,
+        "resolved_at": alert.resolved_at.isoformat()
+    }
+
+
+@router.post("/{alert_id}/create-incident", status_code=201)
+def create_incident_from_alert(
+    alert_id: int,
+    title: Optional[str] = None,
+    description: Optional[str] = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Create an incident from an alert"""
+    alert = db.execute(
+        select(Alert).where(Alert.id == alert_id)
+    ).scalar_one_or_none()
+
+    if not alert:
+        raise HTTPException(status_code=404, detail="Alert not found")
+
+    incident_title = title or f"Sự cố từ cảnh báo: {alert.title}"
+    incident = Incident(
+        mention_id=alert.mention_id,
+        owner_id=current_user.id,
+        title=incident_title,
+        description=description or f"Sự cố được tạo từ cảnh báo #{alert.id}: {alert.title}",
+        status=IncidentStatus.NEW
+    )
+    db.add(incident)
+    db.commit()
+    db.refresh(incident)
+
+    log = IncidentLog(
+        incident_id=incident.id,
+        user_id=current_user.id,
+        action="created",
+        new_status=incident.status.value,
+        notes=f"Sự cố được tạo từ cảnh báo #{alert_id}"
+    )
+    db.add(log)
+    db.commit()
+
+    # Automatically resolve/assign the alert since an incident was created? 
+    # Or just leave it as is. We'll set it to ASSIGNED.
+    alert.status = AlertStatus.ASSIGNED
+    db.commit()
+
+    return {
+        "id": incident.id,
+        "mention_id": incident.mention_id,
+        "title": incident.title,
+        "status": incident.status.value,
+        "created_at": incident.created_at.isoformat() if incident.created_at else None
     }
 
 

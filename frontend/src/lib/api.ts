@@ -93,8 +93,24 @@ export const auth = {
 
 // ─── Dashboard ────────────────────────────────────────────────────────────────
 export const dashboard = {
-  get: async () => {
-    const response = await api.get('/api/dashboard');
+  summary: async () => {
+    const response = await api.get('/api/dashboard/summary');
+    return response.data;
+  },
+  trends: async (range: string = '7d') => {
+    const response = await api.get('/api/dashboard/trends', { params: { range } });
+    return response.data;
+  },
+  sentimentSummary: async (range: string = '7d') => {
+    const response = await api.get('/api/dashboard/sentiment-summary', { params: { range } });
+    return response.data;
+  },
+  hotKeywords: async (range: string = '7d') => {
+    const response = await api.get('/api/dashboard/hot-keywords', { params: { range } });
+    return response.data;
+  },
+  sidebarBadges: async () => {
+    const response = await api.get('/api/dashboard/sidebar-badges');
     return response.data;
   },
 };
@@ -235,6 +251,10 @@ export const mentions = {
     const response = await api.post(`/api/mentions/${id}/create-incident`, null, { params: data });
     return response.data;
   },
+  markReviewed: async (id: number) => {
+    const response = await api.post(`/api/mentions/${id}/mark-reviewed`);
+    return response.data;
+  },
 };
 
 // ─── Alerts ───────────────────────────────────────────────────────────────────
@@ -262,6 +282,14 @@ export const alerts = {
   },
   delete: async (id: number) => {
     const response = await api.delete(`/api/alerts/${id}`);
+    return response.data;
+  },
+  ignore: async (id: number) => {
+    const response = await api.post(`/api/alerts/${id}/ignore`);
+    return response.data;
+  },
+  createIncident: async (id: number, data?: { title?: string; description?: string }) => {
+    const response = await api.post(`/api/alerts/${id}/create-incident`, null, { params: data });
     return response.data;
   },
 };
