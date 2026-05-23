@@ -95,12 +95,12 @@ export default function DashboardPage() {
   }
 
   const stats = [
-    { name: 'Tổng Mentions', value: metrics?.metrics?.total_mentions || 0, icon: Database, colorClass: 'bg-blue-500' },
-    { name: 'Mentions Hôm Nay', value: metrics?.metrics?.mentions_today || 0, icon: TrendingUp, colorClass: 'bg-green-500' },
-    { name: 'Mentions Tiêu Cực', value: metrics?.metrics?.negative_mentions || 0, icon: TrendingDown, colorClass: 'bg-red-500' },
-    { name: 'Cảnh Báo', value: metrics?.metrics?.total_alerts || 0, icon: AlertTriangle, colorClass: 'bg-yellow-500' },
-    { name: 'Sự Cố', value: metrics?.metrics?.total_incidents || 0, icon: FileText, colorClass: 'bg-purple-500' },
-    { name: 'Nguồn Hoạt Động', value: metrics?.metrics?.total_sources || 0, icon: BarChart3, colorClass: 'bg-indigo-500' }
+    { name: 'Tổng Mentions', value: metrics?.total_mentions || 0, icon: Database, colorClass: 'bg-blue-500' },
+    { name: 'Mentions Hôm Nay', value: metrics?.mentions_today || 0, icon: TrendingUp, colorClass: 'bg-green-500' },
+    { name: 'Mentions Tiêu Cực', value: metrics?.negative_mentions || 0, icon: TrendingDown, colorClass: 'bg-red-500' },
+    { name: 'Cảnh Báo', value: metrics?.alerts_count || 0, icon: AlertTriangle, colorClass: 'bg-yellow-500' },
+    { name: 'Sự Cố', value: metrics?.incidents_count || 0, icon: FileText, colorClass: 'bg-purple-500' },
+    { name: 'Nguồn Hoạt Động', value: metrics?.active_sources || 0, icon: BarChart3, colorClass: 'bg-indigo-500' }
   ];
 
   return (

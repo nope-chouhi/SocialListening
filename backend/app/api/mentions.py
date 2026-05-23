@@ -31,62 +31,85 @@ def list_mentions(
     current_user: User = Depends(get_current_active_user)
 ):
     """List mentions with filtering and pagination"""
-    from sqlalchemy import or_
-    query = select(Mention)
+    import logging
+    logger = logging.getLogger(__name__)
+    try:
+        from sqlalchemy import or_
+        query = select(Mention)
 
-    if source_id:
-        query = query.where(Mention.source_id == source_id)
+        if source_id:
+            query = query.where(Mention.source_id == source_id)
 
-    if search_query:
-        search_pattern = f"%{search_query}%"
-        query = query.where(
-            or_(
-                Mention.title.ilike(search_pattern),
-                Mention.content.ilike(search_pattern)
+        if search_query:
+            search_pattern = f"%{search_query}%"
+            query = query.where(
+                or_(
+                    Mention.title.ilike(search_pattern),
+                    Mention.content.ilike(search_pattern)
+                )
             )
-        )
 
-    total = db.execute(select(func.count()).select_from(query.subquery())).scalar() or 0
+        try:
+            total = db.execute(select(func.count()).select_from(query.subquery())).scalar() or 0
+        except Exception as e:
+            logger.error(f"Error querying total mentions count: {e}")
+            total = 0
 
-    offset = (page - 1) * page_size
-    query = query.offset(offset).limit(page_size).order_by(Mention.collected_at.desc())
+        offset = (page - 1) * page_size
+        query = query.offset(offset).limit(page_size).order_by(Mention.collected_at.desc())
 
-    mentions = db.execute(query).scalars().all()
+        try:
+            mentions = db.execute(query).scalars().all()
+        except Exception as e:
+            logger.error(f"Error querying mentions page: {e}")
+            mentions = []
 
-    result_items = []
-    for m in mentions:
-        analysis = db.execute(
-            select(AIAnalysis).where(AIAnalysis.mention_id == m.id)
-        ).scalar_one_or_none()
+        result_items = []
+        for m in mentions:
+            try:
+                analysis = db.execute(
+                    select(AIAnalysis).where(AIAnalysis.mention_id == m.id)
+                ).scalar_one_or_none()
+            except Exception:
+                analysis = None
 
-        result_items.append({
-            "id": m.id,
-            "source_id": m.source_id,
-            "title": m.title,
-            "content": m.content,
-            "url": m.url,
-            "author": m.author,
-            "published_at": m.published_at.isoformat() if m.published_at else None,
-            "collected_at": m.collected_at.isoformat() if m.collected_at else None,
-            "matched_keywords": m.matched_keywords,
-            "ai_analysis": {
-                "sentiment": analysis.sentiment.value if analysis and hasattr(analysis.sentiment, 'value') else (analysis.sentiment if analysis else None),
-                "risk_score": analysis.risk_score if analysis else None,
-                "crisis_level": analysis.crisis_level if analysis else None,
-                "summary_vi": analysis.summary_vi if analysis else None,
-                "suggested_action": analysis.suggested_action if analysis else None
-            } if analysis else None
-        })
+            result_items.append({
+                "id": m.id,
+                "source_id": m.source_id,
+                "title": m.title,
+                "content": m.content,
+                "url": m.url,
+                "author": m.author,
+                "published_at": m.published_at.isoformat() if m.published_at else None,
+                "collected_at": m.collected_at.isoformat() if m.collected_at else None,
+                "matched_keywords": m.matched_keywords,
+                "ai_analysis": {
+                    "sentiment": analysis.sentiment.value if analysis and hasattr(analysis.sentiment, 'value') else (analysis.sentiment if analysis else None),
+                    "risk_score": analysis.risk_score if analysis else None,
+                    "crisis_level": analysis.crisis_level if analysis else None,
+                    "summary_vi": analysis.summary_vi if analysis else None,
+                    "suggested_action": analysis.suggested_action if analysis else None
+                } if analysis else None
+            })
 
-    total_pages = ceil(total / page_size) if total > 0 else 1
+        total_pages = ceil(total / page_size) if total > 0 else 1
 
-    return {
-        "items": result_items,
-        "total": total,
-        "page": page,
-        "page_size": page_size,
-        "total_pages": total_pages
-    }
+        return {
+            "items": result_items,
+            "total": total,
+            "page": page,
+            "page_size": page_size,
+            "total_pages": total_pages
+        }
+    except Exception as e:
+        logger.error(f"Critical error in list_mentions: {e}")
+        return {
+            "items": [],
+            "total": 0,
+            "page": page,
+            "page_size": page_size,
+            "total_pages": 1
+        }
 
 
 @router.get("/{mention_id}")
