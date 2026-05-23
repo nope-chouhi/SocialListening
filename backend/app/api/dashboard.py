@@ -34,11 +34,12 @@ def get_dashboard_summary(
     
     # Negative mentions (last 30 days)
     month_start = now - timedelta(days=30)
+    from app.models.mention import SentimentScore
     negative_mentions = db.execute(
         select(func.count(AIAnalysis.id))
         .where(
             and_(
-                AIAnalysis.sentiment.in_(['negative_low', 'negative_medium', 'negative_high']),
+                AIAnalysis.sentiment.in_([SentimentScore.NEGATIVE_LOW, SentimentScore.NEGATIVE_MEDIUM, SentimentScore.NEGATIVE_HIGH]),
                 AIAnalysis.analyzed_at >= month_start
             )
         )
@@ -159,13 +160,13 @@ def get_dashboard_trends(
             )
         ).scalar() or 0
         
-        # Negative mentions for this day
+        from app.models.mention import SentimentScore
         negative_mentions = db.execute(
             select(func.count(AIAnalysis.id)).where(
                 and_(
                     AIAnalysis.analyzed_at >= day_start,
                     AIAnalysis.analyzed_at < day_end,
-                    AIAnalysis.sentiment.in_(['negative_low', 'negative_medium', 'negative_high'])
+                    AIAnalysis.sentiment.in_([SentimentScore.NEGATIVE_LOW, SentimentScore.NEGATIVE_MEDIUM, SentimentScore.NEGATIVE_HIGH])
                 )
             )
         ).scalar() or 0
@@ -220,11 +221,12 @@ def get_sentiment_summary(
     else:
         start_date = now - timedelta(days=30)
     
+    from app.models.mention import SentimentScore
     positive = db.execute(
         select(func.count(AIAnalysis.id)).where(
             and_(
                 AIAnalysis.analyzed_at >= start_date,
-                AIAnalysis.sentiment == 'positive'
+                AIAnalysis.sentiment == SentimentScore.POSITIVE
             )
         )
     ).scalar() or 0
@@ -233,7 +235,7 @@ def get_sentiment_summary(
         select(func.count(AIAnalysis.id)).where(
             and_(
                 AIAnalysis.analyzed_at >= start_date,
-                AIAnalysis.sentiment == 'neutral'
+                AIAnalysis.sentiment == SentimentScore.NEUTRAL
             )
         )
     ).scalar() or 0
@@ -242,7 +244,7 @@ def get_sentiment_summary(
         select(func.count(AIAnalysis.id)).where(
             and_(
                 AIAnalysis.analyzed_at >= start_date,
-                AIAnalysis.sentiment.in_(['negative_low', 'negative_medium', 'negative_high'])
+                AIAnalysis.sentiment.in_([SentimentScore.NEGATIVE_LOW, SentimentScore.NEGATIVE_MEDIUM, SentimentScore.NEGATIVE_HIGH])
             )
         )
     ).scalar() or 0
