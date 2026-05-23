@@ -18,6 +18,7 @@ class SourceType(str, Enum):
 
 
 class CrawlFrequency(str, Enum):
+    HOURLY = "hourly"
     DAILY = "daily"
     WEEKLY = "weekly"
     MONTHLY = "monthly"

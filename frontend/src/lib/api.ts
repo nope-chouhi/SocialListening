@@ -223,6 +223,26 @@ export const crawl = {
     const response = await api.get('/api/crawl/scan-history', { params: { page, page_size } });
     return response.data;
   },
+  getJobs: async (page: number = 1, page_size: number = 20, status?: string) => {
+    const response = await api.get('/api/crawl/jobs', { params: { page, page_size, status } });
+    return response.data;
+  },
+  retryJob: async (jobId: number) => {
+    const response = await api.post(`/api/crawl/jobs/${jobId}/retry`);
+    return response.data;
+  },
+  getWorkerStatus: async () => {
+    const response = await api.get('/api/crawl/worker-status');
+    return response.data;
+  },
+  getSchedulerStatus: async () => {
+    const response = await api.get('/api/crawl/scheduler/status');
+    return response.data;
+  },
+  testFeed: async (url: string) => {
+    const response = await api.post('/api/crawl/test-feed', null, { params: { url } });
+    return response.data;
+  },
 };
 
 // ─── Mentions ─────────────────────────────────────────────────────────────────

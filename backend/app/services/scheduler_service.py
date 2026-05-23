@@ -1,252 +1,327 @@
 """
 Background Scheduler Service for Automated Scanning
-Uses APScheduler to run scheduled scans based on source configurations
+Uses APScheduler to run scheduled scans based on source configurations.
+Supports standalone worker mode and heartbeat tracking.
 """
 import os
+import logging
 from datetime import datetime, timedelta
-from typing import List
+from typing import List, Optional
 from apscheduler.schedulers.background import BackgroundScheduler
-from apscheduler.triggers.cron import CronTrigger
+from apscheduler.triggers.interval import IntervalTrigger
 from sqlalchemy.orm import Session
-from sqlalchemy import select
+from sqlalchemy import select, and_
 
 from app.core.database import SessionLocal
-from app.models.source import Source
+from app.models.source import Source, CrawlFrequency
 from app.models.crawl import CrawlJob, CrawlJobStatus
 
+logger = logging.getLogger(__name__)
 
 # Global scheduler instance
 scheduler = BackgroundScheduler()
 scheduler_started = False
 
+# Worker heartbeat tracking (in-memory, also persisted to DB)
+_last_heartbeat: Optional[datetime] = None
+_last_error: Optional[str] = None
 
-def get_db():
+
+def get_db() -> Session:
     """Get database session"""
-    db = SessionLocal()
+    return SessionLocal()
+
+
+def get_frequency_interval(frequency: str) -> timedelta:
+    """Convert crawl frequency to timedelta interval"""
+    intervals = {
+        'hourly': timedelta(hours=1),
+        'daily': timedelta(days=1),
+        'weekly': timedelta(weeks=1),
+        'monthly': timedelta(days=30),
+        'yearly': timedelta(days=365),
+    }
+    return intervals.get(frequency, timedelta(hours=1))
+
+
+def calculate_next_crawl_time(source: Source) -> Optional[datetime]:
+    """
+    Calculate next crawl time for a source based on its schedule.
+    Returns None if source is manual or inactive.
+    """
+    if not source.is_active:
+        return None
+
+    freq = source.crawl_frequency
+    if hasattr(freq, 'value'):
+        freq = freq.value
+
+    if freq == 'manual':
+        return None
+
+    now = datetime.utcnow()
+    interval = get_frequency_interval(freq)
+
+    # If never crawled, next time is now
+    if not source.last_crawled_at:
+        return now
+
+    # Calculate next time based on last crawl + interval
+    next_time = source.last_crawled_at + interval
+
+    # If next time is in the past, return now (overdue)
+    if next_time < now:
+        return now
+
+    return next_time
+
+
+def get_due_sources(db: Session) -> List[Source]:
+    """
+    Find all active sources that are due for scanning.
+    A source is due if:
+    - is_active == True
+    - crawl_frequency != manual
+    - next_crawl_at <= now OR next_crawl_at is NULL and never crawled
+    """
+    now = datetime.utcnow()
+    sources = db.execute(
+        select(Source).where(Source.is_active == True)
+    ).scalars().all()
+
+    due = []
+    for source in sources:
+        freq = source.crawl_frequency
+        if hasattr(freq, 'value'):
+            freq = freq.value
+
+        if freq == 'manual':
+            continue
+
+        # Check if overdue
+        if source.next_crawl_at and source.next_crawl_at <= now:
+            due.append(source)
+        elif not source.last_crawled_at and not source.next_crawl_at:
+            # Never crawled and no next_crawl_at set
+            due.append(source)
+        elif not source.next_crawl_at and source.last_crawled_at:
+            # Has been crawled but next_crawl_at not set - calculate
+            next_time = calculate_next_crawl_time(source)
+            if next_time and next_time <= now:
+                due.append(source)
+
+    return due
+
+
+def has_active_job(db: Session, source_id: int) -> bool:
+    """Check if there's already a running or pending job for this source"""
     try:
-        return db
-    finally:
-        pass  # Don't close here, will close after use
+        # CrawlJob.source_ids is a JSON array, check if source_id is in any active job
+        active_jobs = db.execute(
+            select(CrawlJob).where(
+                CrawlJob.status.in_([CrawlJobStatus.PENDING, CrawlJobStatus.RUNNING])
+            )
+        ).scalars().all()
+
+        for job in active_jobs:
+            if job.source_ids and source_id in job.source_ids:
+                return True
+
+        return False
+    except Exception:
+        return False
 
 
 def execute_scheduled_scan(source_id: int):
     """
-    Execute a scheduled scan for a specific source
-    
-    Args:
-        source_id: ID of the source to scan
+    Execute a scheduled scan for a specific source.
+    Creates a CrawlJob, runs the crawl, updates source stats.
     """
     db = get_db()
     try:
-        # Get source
         source = db.execute(
             select(Source).where(Source.id == source_id)
         ).scalar_one_or_none()
-        
+
         if not source or not source.is_active:
-            print(f"[Scheduler] Source {source_id} not found or inactive, skipping")
+            logger.info(f"Source {source_id} not found or inactive, skipping")
             return
-        
-        print(f"[Scheduler] Starting scheduled scan for source: {source.name} (ID: {source_id})")
-        
+
+        # Check for active job
+        if has_active_job(db, source_id):
+            logger.info(f"Source {source_id} already has an active job, skipping")
+            return
+
+        logger.info(f"Starting scheduled scan for source: {source.name} (ID: {source_id})")
+
         # Create crawl job
         job = CrawlJob(
             source_ids=[source_id],
             job_type='scheduled',
             status=CrawlJobStatus.PENDING,
-            created_at=datetime.utcnow()
+            total_sources=1,
+            processed_sources=0,
+            mentions_found=0,
         )
         db.add(job)
         db.commit()
         db.refresh(job)
-        
+
         # Update job status to running
         job.status = CrawlJobStatus.RUNNING
         job.started_at = datetime.utcnow()
         db.commit()
-        
+
         # Import here to avoid circular dependency
         from app.services.crawl_service import crawl_source
-        
-        # Execute crawl
+
         try:
             result = crawl_source(db, source_id, job_id=job.id)
-            
+
             # Update job status
             job.status = CrawlJobStatus.COMPLETED
             job.completed_at = datetime.utcnow()
             job.mentions_found = result.get('mentions_found', 0)
+            job.processed_sources = 1
             job.error_message = None
-            
+
             # Update source statistics
             source.last_crawled_at = datetime.utcnow()
             source.last_success_at = datetime.utcnow()
-            source.total_mentions = (source.total_mentions or 0) + result.get('mentions_new', 0)
+            source.crawl_count = (source.crawl_count or 0) + 1
             source.error_count = 0
-            
+            source.last_error = None
+
+            # Calculate and set next crawl time
+            source.next_crawl_at = calculate_next_crawl_time(source)
+
             db.commit()
-            
-            print(f"[Scheduler] ✅ Scan completed: {result.get('mentions_new', 0)} new mentions")
-            
+
+            logger.info(f"✅ Scan completed for {source.name}: "
+                       f"{result.get('mentions_new', 0)} new, "
+                       f"{result.get('mentions_duplicate', 0)} duplicate")
+
         except Exception as e:
             # Update job status to failed
             job.status = CrawlJobStatus.FAILED
             job.completed_at = datetime.utcnow()
-            job.error_message = str(e)
-            
+            job.error_message = str(e)[:2000]
+            job.processed_sources = 1
+
             # Update source error count
             source.last_crawled_at = datetime.utcnow()
             source.error_count = (source.error_count or 0) + 1
-            
+            source.last_error = str(e)[:2000]
+
+            # Still calculate next crawl time so we retry later
+            source.next_crawl_at = calculate_next_crawl_time(source)
+
             db.commit()
-            
-            print(f"[Scheduler] ❌ Scan failed: {e}")
-            
+            logger.error(f"❌ Scan failed for {source.name}: {e}")
+
     except Exception as e:
-        print(f"[Scheduler] ❌ Error executing scheduled scan: {e}")
+        logger.error(f"❌ Error executing scheduled scan for source {source_id}: {e}")
     finally:
         db.close()
 
 
-def should_run_now(source: Source) -> bool:
+def scan_all_due_sources():
     """
-    Check if a source should run now based on its schedule
-    
-    Args:
-        source: Source object with schedule configuration
-        
-    Returns:
-        True if should run now, False otherwise
+    Main scheduler loop function.
+    Finds all due sources and triggers scans.
+    Called every 10 minutes by the scheduler.
     """
-    if not source.is_active:
-        return False
-    
-    now = datetime.utcnow()
-    
-    # Check if enough time has passed since last crawl
-    if source.last_crawled_at:
-        if source.crawl_frequency == 'hourly':
-            min_interval = timedelta(hours=1)
-        elif source.crawl_frequency == 'daily':
-            min_interval = timedelta(days=1)
-        elif source.crawl_frequency == 'weekly':
-            min_interval = timedelta(weeks=1)
-        else:
-            min_interval = timedelta(hours=1)
-        
-        if now - source.last_crawled_at < min_interval:
-            return False
-    
-    # Check schedule_hours (if specified)
-    if source.schedule_hours:
-        current_hour = now.hour
-        if current_hour not in source.schedule_hours:
-            return False
-    
-    # Check schedule_days_of_week (if specified)
-    if source.schedule_days_of_week:
-        current_day = now.weekday()  # 0 = Monday, 6 = Sunday
-        if current_day not in source.schedule_days_of_week:
-            return False
-    
-    return True
+    global _last_heartbeat, _last_error
 
-
-def scan_all_scheduled_sources():
-    """
-    Check all active sources and run scans for those that should run now
-    This function is called every hour by the scheduler
-    """
     db = get_db()
     try:
-        print(f"[Scheduler] Checking scheduled sources at {datetime.utcnow()}")
-        
-        # Get all active sources
-        sources = db.execute(
-            select(Source).where(Source.is_active == True)
-        ).scalars().all()
-        
+        _last_heartbeat = datetime.utcnow()
+        logger.info(f"[Worker] Checking due sources at {_last_heartbeat.isoformat()}")
+
+        due_sources = get_due_sources(db)
+
+        if not due_sources:
+            logger.info("[Worker] No sources due for scanning")
+            _last_error = None
+            return
+
+        logger.info(f"[Worker] Found {len(due_sources)} due sources")
+
         scans_triggered = 0
-        for source in sources:
-            if should_run_now(source):
-                print(f"[Scheduler] Triggering scan for: {source.name}")
+        for source in due_sources:
+            try:
                 execute_scheduled_scan(source.id)
                 scans_triggered += 1
-        
-        print(f"[Scheduler] Triggered {scans_triggered} scans")
-        
+            except Exception as e:
+                logger.error(f"[Worker] Error scanning source {source.id}: {e}")
+
+        logger.info(f"[Worker] Triggered {scans_triggered} scans")
+        _last_error = None
+
     except Exception as e:
-        print(f"[Scheduler] ❌ Error in scan_all_scheduled_sources: {e}")
+        _last_error = str(e)
+        logger.error(f"[Worker] ❌ Error in scan_all_due_sources: {e}")
     finally:
         db.close()
 
 
-def start_scheduler():
+def start_scheduler(interval_minutes: int = 10):
     """
-    Start the background scheduler
-    Should be called once when the application starts
+    Start the background scheduler.
+    Should be called once when the application starts.
     """
     global scheduler_started
-    
+
     if scheduler_started:
-        print("[Scheduler] Already started, skipping")
+        logger.info("Scheduler already started, skipping")
         return
-    
-    # Check if scheduler is enabled
+
     scheduler_enabled = os.getenv("SCHEDULER_ENABLED", "true").lower() == "true"
-    
+
     if not scheduler_enabled:
-        print("[Scheduler] Disabled by environment variable")
+        logger.info("Scheduler disabled by environment variable SCHEDULER_ENABLED=false")
         return
-    
+
     try:
-        # Add job to check sources every hour
         scheduler.add_job(
-            scan_all_scheduled_sources,
-            CronTrigger(minute=0),  # Run at the start of every hour
-            id='scan_scheduled_sources',
-            name='Scan Scheduled Sources',
-            replace_existing=True
+            scan_all_due_sources,
+            IntervalTrigger(minutes=interval_minutes),
+            id='scan_due_sources',
+            name='Scan Due Sources',
+            replace_existing=True,
+            next_run_time=datetime.utcnow() + timedelta(seconds=30)  # First run 30s after start
         )
-        
-        # Start scheduler
+
         scheduler.start()
         scheduler_started = True
-        
-        print("[Scheduler] ✅ Background scheduler started")
-        print("[Scheduler] Will check for scheduled scans every hour")
-        
+
+        logger.info(f"✅ Background scheduler started (interval: {interval_minutes} min)")
+
     except Exception as e:
-        print(f"[Scheduler] ❌ Failed to start scheduler: {e}")
+        logger.error(f"❌ Failed to start scheduler: {e}")
 
 
 def stop_scheduler():
-    """
-    Stop the background scheduler
-    Should be called when the application shuts down
-    """
+    """Stop the background scheduler"""
     global scheduler_started
-    
+
     if not scheduler_started:
         return
-    
+
     try:
         scheduler.shutdown(wait=False)
         scheduler_started = False
-        print("[Scheduler] ✅ Background scheduler stopped")
+        logger.info("✅ Background scheduler stopped")
     except Exception as e:
-        print(f"[Scheduler] ❌ Error stopping scheduler: {e}")
+        logger.error(f"❌ Error stopping scheduler: {e}")
 
 
-def get_scheduler_status():
-    """
-    Get the current status of the scheduler
-    
-    Returns:
-        dict with scheduler status information
-    """
+def get_scheduler_status() -> dict:
+    """Get the current status of the scheduler and worker"""
     return {
         "running": scheduler_started,
+        "last_heartbeat": _last_heartbeat.isoformat() if _last_heartbeat else None,
+        "last_error": _last_error,
         "jobs": [
             {
                 "id": job.id,
@@ -258,42 +333,53 @@ def get_scheduler_status():
     }
 
 
-def calculate_next_crawl_time(source):
+def get_worker_status(db: Session) -> dict:
     """
-    Calculate next crawl time for a source based on its schedule
-    
-    Args:
-        source: Source object with schedule configuration
-        
-    Returns:
-        datetime of next crawl or None
+    Get comprehensive worker status for the API.
+    Returns info about scheduler, active sources, due sources, running jobs.
     """
-    from datetime import datetime, timedelta
-    
-    if not source.is_active:
-        return None
-    
-    now = datetime.utcnow()
-    
-    # Calculate interval based on frequency
-    if source.crawl_frequency == 'hourly':
-        interval = timedelta(hours=1)
-    elif source.crawl_frequency == 'daily':
-        interval = timedelta(days=1)
-    elif source.crawl_frequency == 'weekly':
-        interval = timedelta(weeks=1)
-    else:
-        interval = timedelta(hours=1)
-    
-    # If never crawled, next time is now
-    if not source.last_crawled_at:
-        return now
-    
-    # Calculate next time
-    next_time = source.last_crawled_at + interval
-    
-    # If next time is in the past, return now
-    if next_time < now:
-        return now
-    
-    return next_time
+    try:
+        # Count active non-manual sources
+        all_sources = db.execute(
+            select(Source).where(Source.is_active == True)
+        ).scalars().all()
+
+        active_sources = 0
+        for s in all_sources:
+            freq = s.crawl_frequency
+            if hasattr(freq, 'value'):
+                freq = freq.value
+            if freq != 'manual':
+                active_sources += 1
+
+        due_sources = len(get_due_sources(db))
+
+        # Count running jobs
+        running_jobs = db.execute(
+            select(CrawlJob).where(
+                CrawlJob.status.in_([CrawlJobStatus.PENDING, CrawlJobStatus.RUNNING])
+            )
+        ).scalars().all()
+
+        return {
+            "scheduler_running": scheduler_started,
+            "scheduler_enabled": os.getenv("SCHEDULER_ENABLED", "true").lower() == "true",
+            "last_heartbeat": _last_heartbeat.isoformat() if _last_heartbeat else None,
+            "last_error": _last_error,
+            "active_sources": active_sources,
+            "due_sources": due_sources,
+            "running_jobs": len(list(running_jobs)),
+            "warning": None if scheduler_started else "Worker is not running. Background RSS scanning is disabled."
+        }
+    except Exception as e:
+        logger.error(f"Error getting worker status: {e}")
+        return {
+            "scheduler_running": scheduler_started,
+            "scheduler_enabled": False,
+            "last_heartbeat": None,
+            "last_error": str(e),
+            "active_sources": 0,
+            "due_sources": 0,
+            "running_jobs": 0,
+            "warning": f"Error checking status: {e}"
+        }

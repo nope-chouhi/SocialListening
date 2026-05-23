@@ -1,9 +1,35 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Play, Link as LinkIcon, History } from 'lucide-react';
+import { Play, Link as LinkIcon, History, AlertTriangle, CheckCircle, XCircle, Clock, RefreshCw, Loader2, Activity } from 'lucide-react';
 import { crawl, keywords as keywordsApi, sources as sourcesApi } from '@/lib/api';
 import toast, { Toaster } from 'react-hot-toast';
+
+interface WorkerStatus {
+  scheduler_running: boolean;
+  scheduler_enabled: boolean;
+  last_heartbeat: string | null;
+  last_error: string | null;
+  active_sources: number;
+  due_sources: number;
+  running_jobs: number;
+  warning: string | null;
+}
+
+interface CrawlJob {
+  id: number;
+  job_type: string;
+  source_ids: number[] | null;
+  status: string;
+  total_sources: number;
+  processed_sources: number;
+  mentions_found: number;
+  error_message: string | null;
+  retry_count: number;
+  created_at: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+}
 
 export default function ScanPage() {
   const [keywordGroups, setKeywordGroups] = useState<any[]>([]);
@@ -12,11 +38,14 @@ export default function ScanPage() {
   const [selectedSources, setSelectedSources] = useState<number[]>([]);
   const [customUrl, setCustomUrl] = useState('');
   const [scanning, setScanning] = useState(false);
-  const [scanHistory, setScanHistory] = useState<any[]>([]);
+  const [workerStatus, setWorkerStatus] = useState<WorkerStatus | null>(null);
+  const [crawlJobs, setCrawlJobs] = useState<CrawlJob[]>([]);
+  const [retryingJobId, setRetryingJobId] = useState<number | null>(null);
 
   useEffect(() => {
     fetchData();
-    fetchScanHistory();
+    fetchWorkerStatus();
+    fetchCrawlJobs();
   }, []);
 
   const fetchData = async () => {
@@ -32,12 +61,21 @@ export default function ScanPage() {
     }
   };
 
-  const fetchScanHistory = async () => {
+  const fetchWorkerStatus = async () => {
     try {
-      const data = await crawl.getScanHistory(1, 10);
-      setScanHistory(data.items);
+      const data = await crawl.getWorkerStatus();
+      setWorkerStatus(data);
     } catch (error) {
-      console.error('Error fetching scan history:', error);
+      console.error('Error fetching worker status:', error);
+    }
+  };
+
+  const fetchCrawlJobs = async () => {
+    try {
+      const data = await crawl.getJobs(1, 20);
+      setCrawlJobs(data.items || []);
+    } catch (error) {
+      console.error('Error fetching crawl jobs:', error);
     }
   };
 
@@ -70,8 +108,9 @@ export default function ScanPage() {
       setSelectedSources([]);
       setCustomUrl('');
       
-      // Refresh history
-      fetchScanHistory();
+      // Refresh data
+      fetchCrawlJobs();
+      fetchWorkerStatus();
     } catch (error: any) {
       console.error('Error scanning:', error);
       toast.error('Lỗi khi scan: ' + (error.response?.data?.detail || error.message));
@@ -80,17 +119,152 @@ export default function ScanPage() {
     }
   };
 
+  const handleRetry = async (jobId: number) => {
+    try {
+      setRetryingJobId(jobId);
+      const result = await crawl.retryJob(jobId);
+      toast.success(`Retry thành công! Tìm thấy ${result.mentions_found} mentions`);
+      fetchCrawlJobs();
+      fetchWorkerStatus();
+    } catch (error: any) {
+      toast.error('Retry thất bại: ' + (error.response?.data?.detail || error.message));
+    } finally {
+      setRetryingJobId(null);
+    }
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+            <CheckCircle className="w-3 h-3 mr-1" />
+            Hoàn thành
+          </span>
+        );
+      case 'running':
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+            <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+            Đang chạy
+          </span>
+        );
+      case 'failed':
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+            <XCircle className="w-3 h-3 mr-1" />
+            Thất bại
+          </span>
+        );
+      case 'pending':
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+            <Clock className="w-3 h-3 mr-1" />
+            Đang chờ
+          </span>
+        );
+      case 'cancelled':
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+            <XCircle className="w-3 h-3 mr-1" />
+            Đã hủy
+          </span>
+        );
+      default:
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+            {status}
+          </span>
+        );
+    }
+  };
+
+  const getJobTypeBadge = (jobType: string) => {
+    const styles: Record<string, string> = {
+      manual: 'bg-indigo-100 text-indigo-800',
+      scheduled: 'bg-purple-100 text-purple-800',
+      retry: 'bg-orange-100 text-orange-800',
+    };
+    const labels: Record<string, string> = {
+      manual: 'Thủ công',
+      scheduled: 'Tự động',
+      retry: 'Retry',
+    };
+    return (
+      <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${styles[jobType] || 'bg-gray-100 text-gray-800'}`}>
+        {labels[jobType] || jobType}
+      </span>
+    );
+  };
+
   return (
     <div className="space-y-6">
       <Toaster position="top-right" />
       
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Scan Center</h1>
-        <p className="text-sm text-gray-500 mt-1">
-          Quét nguồn dữ liệu để thu thập mentions
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Scan Center</h1>
+          <p className="text-sm text-gray-500 mt-1">
+            Quét nguồn dữ liệu để thu thập mentions
+          </p>
+        </div>
+        <button
+          onClick={() => { fetchWorkerStatus(); fetchCrawlJobs(); }}
+          className="flex items-center px-3 py-2 text-sm text-gray-600 bg-white border rounded-lg hover:bg-gray-50"
+        >
+          <RefreshCw className="w-4 h-4 mr-1" />
+          Làm mới
+        </button>
       </div>
+
+      {/* Worker Status Banner */}
+      {workerStatus && (
+        <div className={`rounded-lg p-4 border ${
+          workerStatus.scheduler_running 
+            ? 'bg-green-50 border-green-200' 
+            : 'bg-yellow-50 border-yellow-200'
+        }`}>
+          <div className="flex items-start">
+            {workerStatus.scheduler_running ? (
+              <Activity className="w-5 h-5 text-green-600 mt-0.5 mr-3 flex-shrink-0" />
+            ) : (
+              <AlertTriangle className="w-5 h-5 text-yellow-600 mt-0.5 mr-3 flex-shrink-0" />
+            )}
+            <div className="flex-1">
+              <h3 className={`text-sm font-semibold ${
+                workerStatus.scheduler_running ? 'text-green-800' : 'text-yellow-800'
+              }`}>
+                {workerStatus.scheduler_running 
+                  ? 'Worker đang hoạt động' 
+                  : 'Worker không hoạt động'}
+              </h3>
+              {workerStatus.warning && (
+                <p className="text-sm text-yellow-700 mt-1">{workerStatus.warning}</p>
+              )}
+              <div className="flex flex-wrap gap-4 mt-2 text-xs">
+                <span className={workerStatus.scheduler_running ? 'text-green-700' : 'text-yellow-700'}>
+                  Nguồn tự động: <strong>{workerStatus.active_sources}</strong>
+                </span>
+                <span className={workerStatus.scheduler_running ? 'text-green-700' : 'text-yellow-700'}>
+                  Đang chờ scan: <strong>{workerStatus.due_sources}</strong>
+                </span>
+                <span className={workerStatus.scheduler_running ? 'text-green-700' : 'text-yellow-700'}>
+                  Job đang chạy: <strong>{workerStatus.running_jobs}</strong>
+                </span>
+                {workerStatus.last_heartbeat && (
+                  <span className={workerStatus.scheduler_running ? 'text-green-700' : 'text-yellow-700'}>
+                    Heartbeat: <strong>{new Date(workerStatus.last_heartbeat).toLocaleString('vi-VN')}</strong>
+                  </span>
+                )}
+              </div>
+              {workerStatus.last_error && (
+                <p className="text-xs text-red-600 mt-1">Lỗi gần nhất: {workerStatus.last_error}</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Scan Form */}
       <div className="bg-white rounded-lg shadow p-6 space-y-6">
@@ -134,7 +308,7 @@ export default function ScanPage() {
             Chọn Nguồn
           </label>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
-            {sources.map((source) => (
+            {sources.map((source: any) => (
               <label key={source.id} className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
                 <input
                   type="checkbox"
@@ -197,41 +371,83 @@ export default function ScanPage() {
           disabled={scanning}
           className="w-full flex items-center justify-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <Play className="w-5 h-5 mr-2" />
+          {scanning ? (
+            <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+          ) : (
+            <Play className="w-5 h-5 mr-2" />
+          )}
           {scanning ? 'Đang Scan...' : 'Bắt Đầu Scan'}
         </button>
       </div>
 
-      {/* Scan History */}
+      {/* Crawl Jobs History */}
       <div className="bg-white rounded-lg shadow">
-        <div className="p-6 border-b flex items-center">
-          <History className="w-5 h-5 mr-2 text-gray-600" />
-          <h2 className="text-lg font-semibold">Lịch Sử Scan</h2>
+        <div className="p-6 border-b flex items-center justify-between">
+          <div className="flex items-center">
+            <History className="w-5 h-5 mr-2 text-gray-600" />
+            <h2 className="text-lg font-semibold">Lịch Sử Crawl Jobs</h2>
+          </div>
+          <span className="text-sm text-gray-500">{crawlJobs.length} jobs</span>
         </div>
-        <div className="p-6">
-          {scanHistory.length === 0 ? (
+        <div className="divide-y">
+          {crawlJobs.length === 0 ? (
             <p className="text-gray-500 text-center py-8">Chưa có lịch sử scan</p>
           ) : (
-            <div className="space-y-3">
-              {scanHistory.map((item) => (
-                <div key={item.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                  <div>
-                    <div className="font-medium">{item.title || 'Scan'}</div>
-                    <div className="text-sm text-gray-600">{item.url}</div>
-                    <div className="text-xs text-gray-500 mt-1">
-                      {new Date(item.collected_at).toLocaleString('vi-VN')}
-                    </div>
+            crawlJobs.map((job) => (
+              <div key={job.id} className="p-4 hover:bg-gray-50">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    {getJobTypeBadge(job.job_type)}
+                    {getStatusBadge(job.status)}
+                    <span className="text-sm text-gray-600">
+                      #{job.id}
+                    </span>
                   </div>
-                  {item.matched_keywords && item.matched_keywords.length > 0 && (
-                    <div className="text-sm">
-                      <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded">
-                        {item.matched_keywords.length} keywords
-                      </span>
-                    </div>
+                  <div className="flex items-center space-x-3">
+                    <span className="text-sm text-gray-500">
+                      {job.mentions_found} mentions
+                    </span>
+                    {(job.status === 'failed' || job.status === 'cancelled') && (
+                      <button
+                        onClick={() => handleRetry(job.id)}
+                        disabled={retryingJobId === job.id}
+                        className="flex items-center px-2 py-1 text-xs text-orange-700 bg-orange-50 border border-orange-200 rounded hover:bg-orange-100 disabled:opacity-50"
+                      >
+                        {retryingJobId === job.id ? (
+                          <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                        ) : (
+                          <RefreshCw className="w-3 h-3 mr-1" />
+                        )}
+                        Retry
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <div className="mt-2 flex flex-wrap gap-4 text-xs text-gray-500">
+                  <span>
+                    Nguồn: {job.processed_sources}/{job.total_sources}
+                  </span>
+                  {job.created_at && (
+                    <span>
+                      Tạo: {new Date(job.created_at).toLocaleString('vi-VN')}
+                    </span>
+                  )}
+                  {job.completed_at && (
+                    <span>
+                      Xong: {new Date(job.completed_at).toLocaleString('vi-VN')}
+                    </span>
+                  )}
+                  {job.retry_count > 0 && (
+                    <span className="text-orange-600">Retry #{job.retry_count}</span>
                   )}
                 </div>
-              ))}
-            </div>
+                {job.error_message && (
+                  <p className="mt-1 text-xs text-red-600 truncate" title={job.error_message}>
+                    ❌ {job.error_message}
+                  </p>
+                )}
+              </div>
+            ))
           )}
         </div>
       </div>

@@ -1,4 +1,4 @@
-﻿from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import select, func
 from typing import List, Optional
@@ -16,6 +16,7 @@ from app.models.source import Source
 from app.models.keyword import Keyword, KeywordGroup
 from app.models.mention import Mention, AIAnalysis, SentimentScore
 from app.models.alert import Alert, AlertSeverity, AlertStatus
+from app.models.crawl import CrawlJob, CrawlJobStatus
 from app.services.ai_service import analyze_mention_with_dummy_ai
 
 router = APIRouter()
@@ -45,7 +46,7 @@ def manual_scan(
     ).scalars().all()
 
     if not keyword_groups:
-        raise HTTPException(status_code=404, detail="KhÃ´ng tÃ¬m tháº¥y nhÃ³m tá»« khÃ³a")
+        raise HTTPException(status_code=404, detail="Không tìm thấy nhóm từ khóa")
 
     # Get all keywords from these groups
     all_keywords = []
@@ -56,7 +57,7 @@ def manual_scan(
         all_keywords.extend(keywords)
 
     if not all_keywords:
-        raise HTTPException(status_code=400, detail="KhÃ´ng cÃ³ tá»« khÃ³a hoáº¡t Ä‘á»™ng trong nhÃ³m Ä‘Ã£ chá»n")
+        raise HTTPException(status_code=400, detail="Không có từ khóa hoạt động trong nhóm đã chọn")
 
     keyword_texts = [kw.keyword.lower() for kw in all_keywords]
 
@@ -79,11 +80,26 @@ def manual_scan(
             select(Source).where(Source.id.in_(body.source_ids), Source.is_active == True)
         ).scalars().all()
     else:
-        raise HTTPException(status_code=400, detail="Pháº£i cung cáº¥p source_ids hoáº·c url")
+        raise HTTPException(status_code=400, detail="Phải cung cấp source_ids hoặc url")
 
     if not sources_to_scan:
-        raise HTTPException(status_code=404, detail="KhÃ´ng tÃ¬m tháº¥y nguá»“n hoáº¡t Ä‘á»™ng")
+        raise HTTPException(status_code=404, detail="Không tìm thấy nguồn hoạt động")
     
+    # Create crawl job for tracking
+    job = CrawlJob(
+        source_ids=[s.id for s in sources_to_scan],
+        keyword_group_ids=body.keyword_group_ids,
+        job_type='manual',
+        status=CrawlJobStatus.RUNNING,
+        total_sources=len(sources_to_scan),
+        processed_sources=0,
+        mentions_found=0,
+        started_at=datetime.utcnow()
+    )
+    db.add(job)
+    db.commit()
+    db.refresh(job)
+
     # Scan each source
     total_mentions = 0
     new_mentions = []
@@ -159,20 +175,29 @@ def manual_scan(
             source.last_crawled_at = datetime.utcnow()
             source.last_success_at = datetime.utcnow()
             source.crawl_count = (source.crawl_count or 0) + 1
+            job.processed_sources = (job.processed_sources or 0) + 1
             db.commit()
             
         except Exception as e:
             # Update source with error
             source.last_error = str(e)
             source.error_count = (source.error_count or 0) + 1
+            job.processed_sources = (job.processed_sources or 0) + 1
             db.commit()
             continue
     
+    # Finalize job
+    job.status = CrawlJobStatus.COMPLETED
+    job.completed_at = datetime.utcnow()
+    job.mentions_found = total_mentions
+    db.commit()
+
     return {
         "success": True,
         "total_mentions_found": total_mentions,
         "new_mention_ids": new_mentions,
         "sources_scanned": len(sources_to_scan),
+        "job_id": job.id,
         "message": f"Scan completed. Found {total_mentions} new mentions."
     }
 
@@ -206,7 +231,7 @@ def crawl_source(source: Source, keyword_texts: List[str], keywords: List[Keywor
                         'content': content[:5000],  # Limit content length
                         'url': entry.get('link', source.url),
                         'author': entry.get('author'),
-                        'published_at': datetime(*entry.published_parsed[:6]) if hasattr(entry, 'published_parsed') else None,
+                        'published_at': datetime(*entry.published_parsed[:6]) if hasattr(entry, 'published_parsed') and entry.published_parsed else None,
                         'matched_keywords': matched
                     })
         
@@ -272,7 +297,7 @@ def get_scan_history(
     """Get scan history (recent mentions)"""
     from math import ceil
     
-    total = db.execute(select(func.count(Mention.id))).scalar()
+    total = db.execute(select(func.count(Mention.id))).scalar() or 0
     
     offset = (page - 1) * page_size
     mentions = db.execute(
@@ -302,7 +327,7 @@ def get_scan_history(
 
 
 @router.get("/scheduler/status")
-def get_scheduler_status(
+def get_scheduler_status_endpoint(
     current_user: User = Depends(get_current_active_user)
 ):
     """Get background scheduler status"""
@@ -310,23 +335,28 @@ def get_scheduler_status(
     return get_scheduler_status()
 
 
+@router.get("/worker-status")
+def get_worker_status(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Get comprehensive worker status for the frontend"""
+    from app.services.scheduler_service import get_worker_status
+    return get_worker_status(db)
+
+
 @router.get("/jobs")
 def get_crawl_jobs(
     page: int = 1,
     page_size: int = 20,
-    source_id: Optional[int] = None,
     status: Optional[str] = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
     """Get crawl job history"""
-    from app.models.crawl import CrawlJob
     from math import ceil
     
     query = select(CrawlJob)
-    
-    if source_id:
-        query = query.where(CrawlJob.source_id == source_id)
     
     if status:
         query = query.where(CrawlJob.status == status)
@@ -335,7 +365,7 @@ def get_crawl_jobs(
     
     offset = (page - 1) * page_size
     jobs = db.execute(
-        query.order_by(CrawlJob.scheduled_at.desc())
+        query.order_by(CrawlJob.created_at.desc())
         .offset(offset)
         .limit(page_size)
     ).scalars().all()
@@ -344,15 +374,18 @@ def get_crawl_jobs(
         "items": [
             {
                 "id": j.id,
-                "source_id": j.source_id,
+                "job_type": j.job_type,
+                "source_ids": j.source_ids,
+                "keyword_group_ids": j.keyword_group_ids,
                 "status": j.status.value if hasattr(j.status, 'value') else j.status,
-                "is_manual": j.is_manual,
-                "scheduled_at": j.scheduled_at.isoformat() if j.scheduled_at else None,
+                "total_sources": j.total_sources or 0,
+                "processed_sources": j.processed_sources or 0,
+                "mentions_found": j.mentions_found or 0,
+                "error_message": j.error_message,
+                "retry_count": j.retry_count or 0,
+                "created_at": j.created_at.isoformat() if j.created_at else None,
                 "started_at": j.started_at.isoformat() if j.started_at else None,
                 "completed_at": j.completed_at.isoformat() if j.completed_at else None,
-                "mentions_found": j.mentions_found,
-                "mentions_new": j.mentions_new,
-                "error_message": j.error_message
             }
             for j in jobs
         ],
@@ -361,3 +394,81 @@ def get_crawl_jobs(
         "page_size": page_size,
         "total_pages": ceil(total / page_size) if total > 0 else 1
     }
+
+
+@router.post("/jobs/{job_id}/retry")
+def retry_crawl_job(
+    job_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Retry a failed crawl job"""
+    job = db.execute(
+        select(CrawlJob).where(CrawlJob.id == job_id)
+    ).scalar_one_or_none()
+
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    if job.status not in (CrawlJobStatus.FAILED, CrawlJobStatus.CANCELLED):
+        raise HTTPException(status_code=400, detail="Chỉ có thể retry job đã thất bại hoặc bị hủy")
+
+    # Create a new job based on the old one
+    new_job = CrawlJob(
+        source_ids=job.source_ids,
+        keyword_group_ids=job.keyword_group_ids,
+        job_type='retry',
+        status=CrawlJobStatus.PENDING,
+        total_sources=job.total_sources,
+        processed_sources=0,
+        mentions_found=0,
+        retry_count=(job.retry_count or 0) + 1,
+    )
+    db.add(new_job)
+    db.commit()
+    db.refresh(new_job)
+
+    # Run the scan for each source
+    if new_job.source_ids:
+        new_job.status = CrawlJobStatus.RUNNING
+        new_job.started_at = datetime.utcnow()
+        db.commit()
+
+        from app.services.crawl_service import crawl_source as service_crawl_source
+        total_new = 0
+        errors = []
+
+        for source_id in new_job.source_ids:
+            try:
+                result = service_crawl_source(db, source_id, job_id=new_job.id)
+                total_new += result.get('mentions_new', 0)
+                new_job.processed_sources = (new_job.processed_sources or 0) + 1
+            except Exception as e:
+                errors.append(f"Source {source_id}: {str(e)}")
+                new_job.processed_sources = (new_job.processed_sources or 0) + 1
+
+        new_job.mentions_found = total_new
+        new_job.completed_at = datetime.utcnow()
+        if errors:
+            new_job.status = CrawlJobStatus.FAILED
+            new_job.error_message = "; ".join(errors)[:2000]
+        else:
+            new_job.status = CrawlJobStatus.COMPLETED
+        db.commit()
+
+    return {
+        "success": True,
+        "new_job_id": new_job.id,
+        "status": new_job.status.value if hasattr(new_job.status, 'value') else new_job.status,
+        "mentions_found": new_job.mentions_found or 0
+    }
+
+
+@router.post("/test-feed")
+def test_rss_feed(
+    url: str,
+    current_user: User = Depends(get_current_active_user)
+):
+    """Test an RSS feed URL without saving anything"""
+    from app.services.crawl_service import test_rss_feed as test_feed
+    return test_feed(url)
