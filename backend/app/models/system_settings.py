@@ -64,3 +64,18 @@ class SystemNotificationSettings(Base):
     # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+
+class WorkerStatus(Base):
+    """Single row table for tracking worker status and heartbeat"""
+    __tablename__ = "worker_status"
+    
+    id = Column(Integer, primary_key=True)  # Always 1
+    last_heartbeat = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+    running_jobs = Column(Integer, default=0)
+    last_error = Column(Text, nullable=True)
+    
+    # Timestamps
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+

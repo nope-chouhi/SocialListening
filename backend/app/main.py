@@ -10,7 +10,7 @@ from app.core.database import engine, Base, SessionLocal
 from app.api import (
     auth, keywords, sources, mentions, alerts,
     incidents, reports, dashboard, crawl, takedown, services, admin, users, settings as settings_api,
-    roles, api_keys, branding, audit, monitor
+    roles, api_keys, branding, audit, monitor, system
 )
 from app.api import service_requests
 
@@ -112,10 +112,11 @@ def health_check():
         db_status = "connected"
     except Exception as e:
         db_status = f"error: {str(e)}"
+    import os
     return {
         "status": "ok" if db_status == "connected" else "degraded",
         "database": db_status,
-        "environment": settings.ENVIRONMENT,
+        "environment": os.environ.get("ENVIRONMENT", settings.ENVIRONMENT),
         "version": "1.0.0",
     }
 
@@ -158,6 +159,7 @@ app.include_router(audit.router,            prefix="/api/admin/audit",      tags
 # Separate prefix to avoid path conflict with /api/services/{service_id}
 app.include_router(service_requests.router, prefix="/api/service-requests", tags=["Service Requests"])
 app.include_router(monitor.router,          prefix="/api/monitor",           tags=["Monitor"])
+app.include_router(system.router,           prefix="/api/system",            tags=["System"])
 
 
 @app.get("/")

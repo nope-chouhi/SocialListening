@@ -67,6 +67,24 @@ def ensure_tables():
         sys.exit(1)
 
 
+def update_heartbeat():
+    """Update worker heartbeat in database"""
+    try:
+        from app.models.system_settings import WorkerStatus
+        from sqlalchemy.sql import func
+        db = SessionLocal()
+        status = db.query(WorkerStatus).first()
+        if not status:
+            status = WorkerStatus(id=1, running_jobs=0)
+            db.add(status)
+        else:
+            status.last_heartbeat = func.now()
+        db.commit()
+        db.close()
+    except Exception as e:
+        logger.error(f"Failed to update heartbeat: {e}")
+
+
 def run_once():
     """Run a single scan cycle and exit"""
     logger.info("=" * 60)
@@ -106,9 +124,14 @@ def run_loop(interval_minutes: int):
 
     logger.info("Worker is running. Press Ctrl+C to stop.")
 
-    # Keep the main thread alive
+    # Keep the main thread alive and update heartbeat
+    last_heartbeat_time = 0
     try:
         while not _shutdown_requested:
+            current_time = time.time()
+            if current_time - last_heartbeat_time > 30:
+                update_heartbeat()
+                last_heartbeat_time = current_time
             time.sleep(1)
     except KeyboardInterrupt:
         pass
