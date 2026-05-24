@@ -139,6 +139,17 @@
   animation: fadeIn 0.3s ease-out;
 }
 
+@keyframes fadeSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* Scrollbar hide */
 .scrollbar-hide::-webkit-scrollbar {
   display: none;

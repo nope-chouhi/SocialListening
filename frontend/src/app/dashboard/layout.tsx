@@ -18,7 +18,8 @@ import {
   Menu,
   X,
   Settings,
-  Briefcase
+  Briefcase,
+  Radar
 } from 'lucide-react';
 
 export default function DashboardLayout({
@@ -108,6 +109,7 @@ export default function DashboardLayout({
 
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+    { name: 'Monitor', href: '/dashboard/monitor', icon: Radar },
     { name: 'Scan Center', href: '/dashboard/scan', icon: FileText },
     { name: 'Từ khóa', href: '/dashboard/keywords', icon: Key },
     { name: 'Nguồn', href: '/dashboard/sources', icon: Globe },

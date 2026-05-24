@@ -331,6 +331,154 @@ Trả về JSON thuần túy, không có markdown:
 
 
 # ============================================================================
+# PHOBERT PROVIDER (Vietnamese NLP)
+# ============================================================================
+
+class PhoBERTProvider(AIProvider):
+    """
+    PhoBERT-based Vietnamese sentiment analysis provider.
+    Uses HuggingFace transformers pipeline with wonrax/phobert-base-vietnamese-sentiment.
+    
+    Mô hình PhoBERT được pre-train trên dữ liệu tiếng Việt, cho kết quả chính xác hơn
+    so với các mô hình đa ngôn ngữ khi phân tích cảm xúc tiếng Việt.
+    
+    Requirements:
+        pip install transformers torch
+        (Lưu ý: ~2GB dependencies, chỉ cài khi cần dùng PhoBERT)
+    """
+    
+    def __init__(self):
+        try:
+            from transformers import pipeline
+            # wonrax/phobert-base-vietnamese-sentiment phân loại 3 nhãn:
+            # NEG (Negative), POS (Positive), NEU (Neutral)
+            self.classifier = pipeline(
+                "sentiment-analysis",
+                model="wonrax/phobert-base-vietnamese-sentiment",
+                tokenizer="wonrax/phobert-base-vietnamese-sentiment",
+                max_length=256,
+                truncation=True
+            )
+            self._available = True
+        except ImportError:
+            print("WARNING: transformers/torch not installed. PhoBERT unavailable.")
+            print("Install with: pip install transformers torch")
+            self._available = False
+        except Exception as e:
+            print(f"WARNING: Failed to load PhoBERT model: {e}")
+            self._available = False
+    
+    def analyze_mention(self, content: str, title: Optional[str] = None) -> Dict:
+        start_time = time.time()
+        
+        # Fallback nếu PhoBERT không khả dụng
+        if not self._available:
+            dummy = DummyAIProvider()
+            result = dummy.analyze_mention(content, title)
+            result["ai_provider"] = "dummy_fallback"
+            return result
+        
+        full_text = f"{title} {content}" if title else content
+        # Truncate cho PhoBERT (max 256 tokens)
+        full_text = full_text[:512]
+        
+        try:
+            # Chạy sentiment classification
+            results = self.classifier(full_text)
+            # results = [{'label': 'POS'/'NEG'/'NEU', 'score': 0.95}]
+            
+            label = results[0]["label"].upper()
+            score = results[0]["score"]
+            
+            # Map PhoBERT labels → SentimentScore enum values
+            if label == "POS":
+                sentiment = "positive"
+                risk_score = max(0, 30 - (score * 25))
+                crisis_level = 1
+            elif label == "NEU":
+                sentiment = "neutral"
+                risk_score = 30 + (1 - score) * 10
+                crisis_level = 1
+            else:  # NEG
+                # Phân loại mức độ tiêu cực dựa trên confidence score
+                if score >= 0.9:
+                    sentiment = "negative_high"
+                    risk_score = 80 + (score - 0.9) * 200  # 80-100
+                    crisis_level = 4
+                elif score >= 0.7:
+                    sentiment = "negative_medium"
+                    risk_score = 55 + (score - 0.7) * 125  # 55-80
+                    crisis_level = 3
+                else:
+                    sentiment = "negative_low"
+                    risk_score = 35 + (score - 0.5) * 100  # 35-55
+                    crisis_level = 2
+            
+            risk_score = min(max(risk_score, 0), 100)
+            
+            # Kiểm tra thêm crisis keywords để tăng chính xác
+            # (bổ sung cho PhoBERT vì model có thể miss context nguy hiểm)
+            content_lower = full_text.lower()
+            crisis_keywords = [
+                'chết', 'tử vong', 'nguy hiểm', 'cấp cứu', 'kiện',
+                'tòa án', 'bê bối', 'rò rỉ', 'hack', 'cháy', 'tai nạn',
+                'độc hại', 'nhiễm độc'
+            ]
+            crisis_found = sum(1 for kw in crisis_keywords if kw in content_lower)
+            if crisis_found > 0:
+                risk_score = min(risk_score + crisis_found * 15, 100)
+                crisis_level = max(crisis_level, 4)
+                if sentiment.startswith("negative"):
+                    sentiment = "negative_high"
+            
+            # Tạo summary tiếng Việt
+            sentiment_labels = {
+                "positive": "Nội dung tích cực, phản hồi tốt từ người dùng.",
+                "neutral": "Nội dung trung lập, không có ý kiến rõ ràng.",
+                "negative_low": "Nội dung có một số ý kiến tiêu cực nhẹ.",
+                "negative_medium": "Nội dung có xu hướng tiêu cực. Nên theo dõi và phản hồi.",
+                "negative_high": "Phát hiện nội dung tiêu cực nghiêm trọng. Cần xem xét và xử lý ngay.",
+            }
+            summary_vi = sentiment_labels.get(sentiment, "Đang phân tích...")
+            
+            # Suggested action
+            if crisis_level >= 4:
+                suggested_action = "legal_review"
+                responsible_department = "legal"
+            elif crisis_level >= 3:
+                suggested_action = "escalate"
+                responsible_department = "executive"
+            elif risk_score >= 50:
+                suggested_action = "respond"
+                responsible_department = "PR"
+            else:
+                suggested_action = "monitor"
+                responsible_department = "customer_service"
+            
+            processing_time_ms = int((time.time() - start_time) * 1000)
+            
+            return {
+                "sentiment": sentiment,
+                "risk_score": round(risk_score, 1),
+                "crisis_level": crisis_level,
+                "summary_vi": summary_vi,
+                "suggested_action": suggested_action,
+                "responsible_department": responsible_department,
+                "confidence_score": round(score * 100, 2),
+                "processing_time_ms": processing_time_ms,
+                "ai_provider": "phobert",
+            }
+            
+        except Exception as e:
+            print(f"PhoBERT analysis failed: {e}")
+            dummy = DummyAIProvider()
+            result = dummy.analyze_mention(content, title)
+            result["ai_provider"] = "dummy_fallback"
+            return result
+
+
+
+# ============================================================================
 # AI SERVICE FACTORY
 # ============================================================================
 
@@ -361,6 +509,15 @@ def get_ai_provider() -> AIProvider:
             print("WARNING: GEMINI_API_KEY not set, falling back to dummy AI")
             return DummyAIProvider()
         return GeminiProvider(api_key)
+    
+    elif provider_name == "phobert":
+        # PhoBERT: Vietnamese-specific sentiment analysis via HuggingFace
+        # Requires: pip install transformers torch
+        provider = PhoBERTProvider()
+        if provider._available:
+            return provider
+        print("WARNING: PhoBERT unavailable, falling back to dummy AI")
+        return DummyAIProvider()
     
     else:
         # Default to dummy provider

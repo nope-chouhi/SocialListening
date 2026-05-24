@@ -1,4 +1,4 @@
-﻿from app.api import (
+from app.api import (
     auth,
     keywords,
     sources,
@@ -6,7 +6,8 @@
     alerts,
     incidents,
     reports,
-    dashboard
+    dashboard,
+    monitor
 )
 
 __all__ = [
@@ -17,6 +18,7 @@ __all__ = [
     "alerts",
     "incidents",
     "reports",
-    "dashboard"
+    "dashboard",
+    "monitor"
 ]
 

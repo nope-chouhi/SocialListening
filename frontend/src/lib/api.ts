@@ -502,3 +502,33 @@ export const serviceRequests = {
     return response.data;
   },
 };
+
+// ─── Monitor (Giám sát từ khóa thời gian thực) ───────────────────────────────
+export const monitor = {
+  /**
+   * Bắt đầu theo dõi từ khóa: tạo mock data + sentiment analysis
+   * POST /api/monitor/start
+   */
+  startTracking: async (keyword: string) => {
+    const response = await api.post('/api/monitor/start', { keyword });
+    return response.data;
+  },
+
+  /**
+   * Lấy dashboard tổng hợp cho từ khóa
+   * GET /api/monitor/dashboard?keyword={keyword}
+   */
+  getDashboard: async (keyword: string) => {
+    const response = await api.get('/api/monitor/dashboard', { params: { keyword } });
+    return response.data;
+  },
+
+  /**
+   * Phân tích AI cảnh báo khủng hoảng cho từ khóa
+   * GET /api/monitor/ai-analysis?keyword={keyword}
+   */
+  getAiAnalysis: async (keyword: string) => {
+    const response = await api.get('/api/monitor/ai-analysis', { params: { keyword } });
+    return response.data;
+  },
+};

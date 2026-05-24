@@ -10,7 +10,7 @@ from app.core.database import engine, Base, SessionLocal
 from app.api import (
     auth, keywords, sources, mentions, alerts,
     incidents, reports, dashboard, crawl, takedown, services, admin, users, settings as settings_api,
-    roles, api_keys, branding, audit
+    roles, api_keys, branding, audit, monitor
 )
 from app.api import service_requests
 
@@ -157,6 +157,7 @@ app.include_router(branding.router,         prefix="/api/branding",         tags
 app.include_router(audit.router,            prefix="/api/admin/audit",      tags=["Audit Logs"])
 # Separate prefix to avoid path conflict with /api/services/{service_id}
 app.include_router(service_requests.router, prefix="/api/service-requests", tags=["Service Requests"])
+app.include_router(monitor.router,          prefix="/api/monitor",           tags=["Monitor"])
 
 
 @app.get("/")
