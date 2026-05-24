@@ -11,8 +11,7 @@ router = APIRouter()
 
 @router.get("/worker-status")
 def get_worker_status(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    db: Session = Depends(get_db)
 ):
     """Get the real-time status of the background worker."""
     status_record = db.query(WorkerStatus).first()
@@ -45,6 +44,11 @@ def get_worker_status(
     except:
         due_sources = 0
 
+    # Sanitize last_error for public exposure
+    safe_last_error = None
+    if status_record and status_record.last_error:
+        safe_last_error = "Worker encountered an error."
+
     return {
         "scheduler_enabled": True,
         "worker_running": worker_running,
@@ -52,5 +56,5 @@ def get_worker_status(
         "active_sources": active_sources,
         "due_sources": due_sources,
         "running_jobs": status_record.running_jobs if status_record else 0,
-        "last_error": status_record.last_error if status_record else None
+        "last_error": safe_last_error
     }
