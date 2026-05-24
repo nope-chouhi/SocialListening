@@ -503,10 +503,10 @@ export const serviceRequests = {
   },
 };
 
-// ─── Monitor (Giám sát từ khóa thời gian thực) ───────────────────────────────
+// ─── Monitor (Giám sát từ khóa — quét nguồn thật) ─────────────────────────────
 export const monitor = {
   /**
-   * Bắt đầu theo dõi từ khóa: tạo mock data + sentiment analysis
+   * Bắt đầu theo dõi từ khóa: lưu keyword + quét nguồn thật
    * POST /api/monitor/start
    */
   startTracking: async (keyword: string) => {

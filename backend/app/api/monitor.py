@@ -1,11 +1,11 @@
 """
-Monitor API Endpoints
-======================
+Monitor API Endpoints — REAL DATA ONLY
+=======================================
 Các endpoint chính cho chức năng giám sát mạng xã hội theo từ khóa.
-Bao gồm: bắt đầu theo dõi, dashboard tổng hợp, phân tích AI khủng hoảng.
+Không sử dụng mock data / fake mentions / giả lập.
 
 Endpoints:
-    POST /api/monitor/start          - Bắt đầu theo dõi từ khóa
+    POST /api/monitor/start          - Lưu keyword + quét nguồn thật
     GET  /api/monitor/dashboard      - Dashboard tổng hợp theo từ khóa
     GET  /api/monitor/ai-analysis    - Phân tích AI cảnh báo khủng hoảng
 """
@@ -27,11 +27,9 @@ from app.models.user import User
 from app.models.mention import Mention, AIAnalysis, SentimentScore
 from app.models.alert import Alert, AlertSeverity, AlertStatus
 from app.models.source import Source
-from app.services.mock_scraper import (
-    generate_mock_vietnamese_mentions,
-    extract_buzzwords,
-)
-from app.services.ai_service import get_ai_provider
+from app.models.keyword import Keyword, KeywordGroup, KeywordType
+from app.models.crawl import CrawlJob, CrawlJobStatus
+from app.services.crawl_service import crawl_source
 
 logger = logging.getLogger(__name__)
 
@@ -43,22 +41,23 @@ router = APIRouter()
 # ============================================================================
 
 class MonitorStartRequest(BaseModel):
-    """Schema cho yêu cầu bắt đầu theo dõi từ khóa."""
     keyword: str
 
 
 class MonitorStartResponse(BaseModel):
-    """Schema cho phản hồi sau khi bắt đầu theo dõi."""
-    success: bool
     keyword: str
+    keyword_created: bool
+    sources_scanned: int
+    crawl_jobs_created: int
     mentions_created: int
     alerts_created: int
-    summary: str
+    message: str
+    worker_status: Optional[str] = None
 
 
 # ============================================================================
 # POST /api/monitor/start
-# Bắt đầu theo dõi từ khóa: mock scraping + sentiment tagging + lưu database
+# Lưu keyword thật + quét nguồn thật — KHÔNG giả lập
 # ============================================================================
 
 @router.post("/start", response_model=MonitorStartResponse)
@@ -69,174 +68,176 @@ def start_monitoring(
 ):
     """
     Bắt đầu theo dõi một từ khóa.
-    
-    Quy trình:
-    1. Tạo mock data: 20-30 bài đăng/bình luận tiếng Việt giả lập
-    2. Phân tích sentiment cho từng mention bằng AI provider đã cấu hình
-    3. Lưu vào database (Mention + AIAnalysis)
-    4. Tạo Alert cho các mention có rủi ro cao
-    
-    Edge Cases:
-    - Empty keyword → HTTP 400
-    - Duplicate content → bỏ qua (dedup bằng content_hash)
-    - AI analysis failure → vẫn lưu mention, bỏ qua analysis
+
+    Quy trình thật:
+    1. Validate keyword
+    2. Tạo/cập nhật keyword + keyword group trong database
+    3. Kiểm tra nguồn (sources) đang hoạt động
+    4. Nếu không có nguồn → trả về cảnh báo, KHÔNG tạo fake data
+    5. Nếu có nguồn → quét thật qua crawl_service
+    6. Tạo crawl_job, mention, alert thật
     """
-    keyword = body.keyword.strip()
-    
-    if not keyword:
+    keyword_text = body.keyword.strip()
+
+    if not keyword_text:
         raise HTTPException(
             status_code=400,
             detail="Vui lòng nhập từ khóa cần theo dõi."
         )
-    
-    if len(keyword) > 200:
+
+    if len(keyword_text) > 200:
         raise HTTPException(
             status_code=400,
             detail="Từ khóa quá dài. Vui lòng nhập tối đa 200 ký tự."
         )
-    
-    logger.info(f"[Monitor] User {current_user.email} bắt đầu theo dõi: '{keyword}'")
-    
-    # ── Step 1: Tạo mock Vietnamese mentions ──────────────────────────────
-    mock_mentions = generate_mock_vietnamese_mentions(keyword, count=25)
-    
-    if not mock_mentions:
-        raise HTTPException(
-            status_code=500,
-            detail="Không thể tạo dữ liệu giả lập. Vui lòng thử lại."
+
+    logger.info(f"[Monitor] User {current_user.email} bắt đầu theo dõi: '{keyword_text}'")
+
+    # ── Step 1: Tạo/cập nhật keyword trong database ──────────────────
+    keyword_created = False
+    try:
+        keyword_created = _ensure_keyword_exists(db, keyword_text)
+    except Exception as e:
+        logger.error(f"[Monitor] Error creating keyword: {e}")
+        # Continue even if keyword creation fails — we can still scan
+
+    # ── Step 2: Kiểm tra nguồn hoạt động ─────────────────────────────
+    active_sources = db.execute(
+        select(Source).where(Source.is_active == True)
+    ).scalars().all()
+
+    active_sources = [s for s in active_sources if s.is_active]
+
+    if not active_sources:
+        return MonitorStartResponse(
+            keyword=keyword_text,
+            keyword_created=keyword_created,
+            sources_scanned=0,
+            crawl_jobs_created=0,
+            mentions_created=0,
+            alerts_created=0,
+            message="Chưa có nguồn quét. Hãy thêm nguồn RSS/Web trước."
         )
-    
-    # ── Step 2: Lấy hoặc tạo Source cho mock data ────────────────────────
-    mock_source = _get_or_create_mock_source(db)
-    
-    # ── Step 3: AI provider ──────────────────────────────────────────────
-    ai_provider = get_ai_provider()
-    
+
+    # ── Step 3: Kiểm tra worker status ───────────────────────────────
+    worker_status = None
+    try:
+        from app.services.scheduler_service import scheduler_started
+        if not scheduler_started:
+            worker_status = "not_running"
+    except Exception:
+        worker_status = "unknown"
+
+    # ── Step 4: Quét thật từng nguồn ─────────────────────────────────
+    sources_scanned = 0
     mentions_created = 0
     alerts_created = 0
-    
-    for mock in mock_mentions:
+    crawl_jobs_created = 0
+    errors = []
+
+    for source in active_sources:
         try:
-            # Dedup: kiểm tra content_hash trước khi lưu
-            content_hash = hashlib.sha256(
-                mock["content"].strip().encode("utf-8")
-            ).hexdigest()
-            
-            existing = db.execute(
-                select(Mention).where(Mention.content_hash == content_hash)
-            ).scalar_one_or_none()
-            
-            if existing:
-                continue  # Bỏ qua bài trùng lặp
-            
-            # ── Tạo Mention ──────────────────────────────────────────
-            mention = Mention(
-                source_id=mock_source.id,
-                title=None,  # Bình luận MXH thường không có title
-                content=mock["content"],
-                content_hash=content_hash,
-                url=mock["url"],
-                author=mock.get("author"),
-                published_at=mock.get("published_at"),
-                collected_at=datetime.utcnow(),
-                matched_keywords=[{"keyword": keyword}],
-                meta_data={
-                    "platform": mock["platform"],
-                    "reach": mock.get("reach", 0),
-                    "monitor_keyword": keyword,
-                },
-                is_reviewed=False,
+            # Tạo crawl_job thật
+            job = CrawlJob(
+                source_ids=[source.id],
+                job_type='monitor',
+                status=CrawlJobStatus.RUNNING,
+                total_sources=1,
+                processed_sources=0,
+                mentions_found=0,
+                started_at=datetime.utcnow(),
+                meta_data={"monitor_keyword": keyword_text},
             )
-            db.add(mention)
-            db.flush()  # Lấy mention.id mà không commit
-            
-            # ── Phân tích Sentiment bằng AI ──────────────────────────
-            try:
-                analysis_result = ai_provider.analyze_mention(
-                    mock["content"], None
-                )
-                
-                ai_analysis = AIAnalysis(
-                    mention_id=mention.id,
-                    sentiment=analysis_result["sentiment"],
-                    risk_score=analysis_result["risk_score"],
-                    crisis_level=analysis_result["crisis_level"],
-                    summary_vi=analysis_result.get("summary_vi", ""),
-                    suggested_action=analysis_result.get(
-                        "suggested_action", "monitor"
-                    ),
-                    responsible_department=analysis_result.get(
-                        "responsible_department", "customer_service"
-                    ),
-                    confidence_score=analysis_result.get(
-                        "confidence_score", 65.0
-                    ),
-                    ai_provider=analysis_result.get("ai_provider", "dummy"),
-                    model_version="monitor-1.0",
-                    processing_time_ms=analysis_result.get(
-                        "processing_time_ms", 0
-                    ),
-                )
-                db.add(ai_analysis)
-                
-                # ── Tạo Alert nếu rủi ro cao ────────────────────────
-                if analysis_result["risk_score"] >= 70:
-                    severity = (
-                        AlertSeverity.CRITICAL
-                        if analysis_result["risk_score"] >= 85
-                        else AlertSeverity.HIGH
-                    )
-                    alert = Alert(
-                        mention_id=mention.id,
-                        severity=severity,
-                        status=AlertStatus.NEW,
-                        title=(
-                            f"Phát hiện đề cập rủi ro cao về '{keyword}'"
-                        ),
-                        message=(
-                            f"Nền tảng: {mock['platform']}, "
-                            f"Rủi ro: {analysis_result['risk_score']:.0f}, "
-                            f"Khủng hoảng: cấp {analysis_result['crisis_level']}"
-                        ),
-                    )
-                    db.add(alert)
-                    alerts_created += 1
-                    
-            except Exception as e:
-                logger.warning(
-                    f"[Monitor] AI analysis failed for mention {mention.id}: {e}"
-                )
-                # Mention vẫn được lưu, chỉ bỏ qua analysis
-            
-            mentions_created += 1
-            
+            db.add(job)
+            db.flush()
+            crawl_jobs_created += 1
+
+            # Quét thật bằng crawl_service
+            result = crawl_source(db, source.id, job_id=job.id)
+
+            # Cập nhật job
+            job.status = CrawlJobStatus.COMPLETED
+            job.completed_at = datetime.utcnow()
+            job.mentions_found = result.get('mentions_new', 0)
+            job.processed_sources = 1
+
+            # Cập nhật source stats
+            source.last_crawled_at = datetime.utcnow()
+            source.last_success_at = datetime.utcnow()
+            source.crawl_count = (source.crawl_count or 0) + 1
+
+            sources_scanned += 1
+            mentions_created += result.get('mentions_new', 0)
+
+            db.commit()
+
         except Exception as e:
-            logger.error(f"[Monitor] Error processing mock mention: {e}")
+            logger.error(f"[Monitor] Error scanning source {source.id} ({source.name}): {e}")
+            errors.append(f"{source.name}: {str(e)[:100]}")
+
+            # Mark job as failed
+            try:
+                job.status = CrawlJobStatus.FAILED
+                job.completed_at = datetime.utcnow()
+                job.error_message = str(e)[:2000]
+                job.processed_sources = 1
+                source.error_count = (source.error_count or 0) + 1
+                source.last_error = str(e)[:2000]
+                db.commit()
+            except Exception:
+                db.rollback()
+
+            sources_scanned += 1
             continue
-    
-    # Commit tất cả
+
+    # ── Đếm alerts được tạo ──────────────────────────────────────────
+    try:
+        recent_alerts = db.execute(
+            select(func.count(Alert.id)).where(
+                Alert.created_at >= datetime.utcnow() - timedelta(minutes=5)
+            )
+        ).scalar() or 0
+        alerts_created = recent_alerts
+    except Exception:
+        pass
+
+    # ── Tạo message ──────────────────────────────────────────────────
     if mentions_created > 0:
-        db.commit()
-    
-    summary = (
-        f"Đã tạo {mentions_created} đề cập giả lập cho từ khóa '{keyword}'. "
-        f"Phát hiện {alerts_created} cảnh báo rủi ro cao."
-    )
-    
-    logger.info(f"[Monitor] Hoàn tất: {summary}")
-    
+        message = (
+            f"Đã quét {sources_scanned} nguồn thật. "
+            f"Tìm thấy {mentions_created} đề cập mới."
+        )
+    elif sources_scanned > 0 and mentions_created == 0:
+        message = (
+            f"Đã quét {sources_scanned} nguồn. "
+            "Không tìm thấy đề cập nào phù hợp với từ khóa."
+        )
+    else:
+        message = "Lỗi khi quét nguồn. Vui lòng kiểm tra cấu hình nguồn."
+
+    if errors:
+        message += f" ({len(errors)} lỗi)"
+
+    if worker_status == "not_running":
+        message += " Worker chưa chạy. RSS sẽ không tự quét 24/7."
+
+    logger.info(f"[Monitor] Hoàn tất: {message}")
+
     return MonitorStartResponse(
-        success=True,
-        keyword=keyword,
+        keyword=keyword_text,
+        keyword_created=keyword_created,
+        sources_scanned=sources_scanned,
+        crawl_jobs_created=crawl_jobs_created,
         mentions_created=mentions_created,
         alerts_created=alerts_created,
-        summary=summary,
+        message=message,
+        worker_status=worker_status,
     )
 
 
 # ============================================================================
 # GET /api/monitor/dashboard?keyword={keyword}
-# Dashboard tổng hợp: metrics, sentiment breakdown, buzzwords, mentions list
+# Dashboard tổng hợp — chỉ dữ liệu thật từ database
 # ============================================================================
 
 @router.get("/dashboard")
@@ -247,27 +248,14 @@ def get_monitor_dashboard(
 ):
     """
     Lấy dữ liệu dashboard tổng hợp cho một từ khóa.
-    
-    Trả về:
-    - total_mentions: Tổng số đề cập
-    - sentiment_breakdown: Phân bổ sentiment (positive/negative/neutral)
-    - dangerous_negative_count: Số đề cập tiêu cực nghiêm trọng
-    - alert_risk_status: Mức cảnh báo tổng thể (Low/Medium/High)
-    - top_buzzwords: Từ khóa nổi bật
-    - mentions: Danh sách đề cập gần nhất
-    - volatility_data: Dữ liệu cho biểu đồ biến động
-    
-    Edge Cases:
-    - Keyword không tồn tại → trả về dữ liệu rỗng với total_mentions = 0
-    - Không có negative mentions → alert_risk_status = "Low"
+    Chỉ trả về dữ liệu thật từ database.
     """
     keyword = keyword.strip()
-    
+
     try:
         # ── Tìm tất cả mentions chứa keyword ────────────────────────
-        # Sử dụng JSONB search trong matched_keywords hoặc tìm trong content
         keyword_pattern = f"%{keyword}%"
-        
+
         mentions_query = (
             select(Mention)
             .where(
@@ -278,10 +266,10 @@ def get_monitor_dashboard(
             )
             .order_by(Mention.collected_at.desc())
         )
-        
+
         all_mentions = db.execute(mentions_query).scalars().all()
         total_mentions = len(all_mentions)
-        
+
         # ── Edge case: không có kết quả ──────────────────────────────
         if total_mentions == 0:
             return {
@@ -300,18 +288,17 @@ def get_monitor_dashboard(
                 "top_buzzwords": [],
                 "mentions": [],
                 "volatility_data": [],
-                "message": f"Không tìm thấy đề cập nào cho từ khóa '{keyword}'. "
-                           "Hãy thử 'Bắt Đầu Theo Dõi' trước.",
+                "message": f"Không tìm thấy đề cập nào cho từ khóa '{keyword}'.",
             }
-        
+
         # ── Sentiment Breakdown ──────────────────────────────────────
         positive_count = 0
         negative_count = 0
         neutral_count = 0
         dangerous_negative_count = 0
-        
+
         mention_ids = [m.id for m in all_mentions]
-        
+
         # Batch query all AI analyses for these mentions
         analyses_map: Dict[int, AIAnalysis] = {}
         if mention_ids:
@@ -321,19 +308,19 @@ def get_monitor_dashboard(
                 )
             ).scalars().all()
             analyses_map = {a.mention_id: a for a in analyses}
-        
+
         for m_id in mention_ids:
             analysis = analyses_map.get(m_id)
             if not analysis:
                 neutral_count += 1
                 continue
-            
+
             sentiment_val = (
                 analysis.sentiment.value
                 if hasattr(analysis.sentiment, "value")
                 else analysis.sentiment
             )
-            
+
             if sentiment_val == "positive":
                 positive_count += 1
             elif sentiment_val in (
@@ -346,7 +333,7 @@ def get_monitor_dashboard(
                     dangerous_negative_count += 1
             else:
                 neutral_count += 1
-        
+
         # Tính phần trăm
         total_analyzed = positive_count + negative_count + neutral_count
         positive_pct = round(
@@ -356,7 +343,7 @@ def get_monitor_dashboard(
             (negative_count / total_analyzed * 100) if total_analyzed > 0 else 0, 1
         )
         neutral_pct = round(100 - positive_pct - negative_pct, 1)
-        
+
         # ── Alert Risk Status ────────────────────────────────────────
         negative_ratio = (
             negative_count / total_analyzed if total_analyzed > 0 else 0
@@ -367,25 +354,36 @@ def get_monitor_dashboard(
             alert_risk_status = "Medium"
         else:
             alert_risk_status = "Low"
-        
-        # ── Top Buzzwords ────────────────────────────────────────────
-        mentions_for_buzz = [
-            {"content": m.content or ""} for m in all_mentions
-        ]
-        top_buzzwords = extract_buzzwords(mentions_for_buzz, top_n=10)
-        
+
+        # ── Top Buzzwords — từ nội dung thật ─────────────────────────
+        top_buzzwords = _extract_buzzwords_from_mentions(all_mentions, top_n=10)
+
         # ── Mentions List (top 50, enriched with analysis) ───────────
         mentions_list = []
         for m in all_mentions[:50]:
             analysis = analyses_map.get(m.id)
-            
+
             # Trích xuất platform từ meta_data
             platform = "Unknown"
             reach = 0
             if m.meta_data and isinstance(m.meta_data, dict):
                 platform = m.meta_data.get("platform", "Unknown")
                 reach = m.meta_data.get("reach", 0)
-            
+
+            # Get source info for platform
+            if platform == "Unknown":
+                try:
+                    source = db.execute(
+                        select(Source).where(Source.id == m.source_id)
+                    ).scalar_one_or_none()
+                    if source:
+                        stype = source.source_type
+                        if hasattr(stype, 'value'):
+                            stype = stype.value
+                        platform = stype.replace('_', ' ').title()
+                except Exception:
+                    pass
+
             sentiment_val = None
             sentiment_score = None
             risk_score = None
@@ -397,7 +395,7 @@ def get_monitor_dashboard(
                 )
                 sentiment_score = analysis.confidence_score
                 risk_score = analysis.risk_score
-            
+
             mentions_list.append({
                 "id": m.id,
                 "platform": platform,
@@ -414,10 +412,10 @@ def get_monitor_dashboard(
                     else None
                 ),
             })
-        
+
         # ── Volatility Data (dữ liệu biến động theo ngày) ───────────
         volatility_data = _compute_volatility(all_mentions, analyses_map)
-        
+
         return {
             "keyword": keyword,
             "total_mentions": total_mentions,
@@ -435,7 +433,7 @@ def get_monitor_dashboard(
             "mentions": mentions_list,
             "volatility_data": volatility_data,
         }
-        
+
     except Exception as e:
         logger.error(f"[Monitor] Dashboard error for '{keyword}': {e}")
         raise HTTPException(
@@ -457,16 +455,10 @@ def get_ai_analysis(
 ):
     """
     Phân tích AI cho các đề cập tiêu cực liên quan đến từ khóa.
-    
-    Trả về:
-    - crisis_summary: Tóm tắt tình hình khủng hoảng (tiếng Việt)
-    - risk_level: Mức độ rủi ro tổng thể (Low/Medium/High)
-    - action_items: 3 bước hành động cụ thể
-    - negative_mentions_count: Số đề cập tiêu cực
-    - top_negative_themes: Chủ đề tiêu cực phổ biến
+    Dữ liệu từ database thật.
     """
     keyword = keyword.strip()
-    
+
     try:
         # Tìm mentions chứa keyword
         keyword_pattern = f"%{keyword}%"
@@ -481,7 +473,7 @@ def get_ai_analysis(
             .order_by(Mention.collected_at.desc())
             .limit(200)
         ).scalars().all()
-        
+
         if not mentions:
             return {
                 "keyword": keyword,
@@ -490,8 +482,9 @@ def get_ai_analysis(
                 "action_items": [],
                 "negative_mentions_count": 0,
                 "top_negative_themes": [],
+                "total_mentions": 0,
             }
-        
+
         # Lấy AI analyses cho các mentions
         mention_ids = [m.id for m in mentions]
         analyses = db.execute(
@@ -500,7 +493,7 @@ def get_ai_analysis(
             )
         ).scalars().all()
         analyses_map = {a.mention_id: a for a in analyses}
-        
+
         # Lọc negative mentions
         negative_mentions = []
         for m in mentions:
@@ -528,10 +521,10 @@ def get_ai_analysis(
                         else "Unknown"
                     ),
                 })
-        
+
         neg_count = len(negative_mentions)
         total_count = len(mentions)
-        
+
         # ── Tính risk level tổng thể ────────────────────────────────
         if neg_count == 0:
             risk_level = "Low"
@@ -541,27 +534,27 @@ def get_ai_analysis(
                 1 for n in negative_mentions
                 if n["crisis_level"] >= 4
             )
-            
+
             if neg_ratio >= 0.4 or high_crisis >= 3:
                 risk_level = "High"
             elif neg_ratio >= 0.2 or high_crisis >= 1:
                 risk_level = "Medium"
             else:
                 risk_level = "Low"
-        
-        # ── Tạo Crisis Summary (mô phỏng LLM output) ────────────────
+
+        # ── Tạo Crisis Summary ────────────────────────────────────────
         crisis_summary = _generate_crisis_summary(
             keyword, negative_mentions, total_count, risk_level
         )
-        
-        # ── Tạo Action Items ────────────────────────────────────────
+
+        # ── Tạo Action Items ─────────────────────────────────────────
         action_items = _generate_action_items(
             keyword, risk_level, negative_mentions
         )
-        
-        # ── Top Negative Themes ─────────────────────────────────────
+
+        # ── Top Negative Themes ──────────────────────────────────────
         top_negative_themes = _extract_negative_themes(negative_mentions)
-        
+
         return {
             "keyword": keyword,
             "crisis_summary": crisis_summary,
@@ -571,7 +564,7 @@ def get_ai_analysis(
             "top_negative_themes": top_negative_themes,
             "total_mentions": total_count,
         }
-        
+
     except Exception as e:
         logger.error(f"[Monitor] AI Analysis error for '{keyword}': {e}")
         raise HTTPException(
@@ -584,28 +577,86 @@ def get_ai_analysis(
 # HELPER FUNCTIONS
 # ============================================================================
 
-def _get_or_create_mock_source(db: Session) -> Source:
+def _ensure_keyword_exists(db: Session, keyword_text: str) -> bool:
     """
-    Lấy hoặc tạo Source đặc biệt cho mock data.
-    Tránh tạo nhiều source trùng lặp.
+    Đảm bảo keyword tồn tại trong database.
+    Tạo keyword group "Monitor" nếu chưa có, sau đó tạo keyword.
+    Returns True if keyword was newly created.
     """
-    mock_source = db.execute(
-        select(Source).where(Source.name == "Mock Social Media Scanner")
-    ).scalar_one_or_none()
-    
-    if not mock_source:
-        from app.models.source import SourceType
-        mock_source = Source(
-            name="Mock Social Media Scanner",
-            url="https://mock.social-listening.vn",
-            source_type=SourceType.WEBSITE,
-            is_active=True,
-            meta_data={"type": "mock_scanner", "version": "1.0"},
+    # Kiểm tra keyword đã tồn tại chưa
+    existing = db.execute(
+        select(Keyword).where(
+            Keyword.keyword == keyword_text,
+            Keyword.is_active == True
         )
-        db.add(mock_source)
+    ).scalar_one_or_none()
+
+    if existing:
+        return False
+
+    # Tìm hoặc tạo keyword group "Monitor"
+    monitor_group = db.execute(
+        select(KeywordGroup).where(KeywordGroup.name == "Monitor")
+    ).scalar_one_or_none()
+
+    if not monitor_group:
+        monitor_group = KeywordGroup(
+            name="Monitor",
+            description="Từ khóa được thêm từ trang Monitor",
+            priority=3,
+            is_active=True,
+        )
+        db.add(monitor_group)
         db.flush()
-    
-    return mock_source
+
+    # Tạo keyword mới
+    new_keyword = Keyword(
+        group_id=monitor_group.id,
+        keyword=keyword_text,
+        keyword_type=KeywordType.GENERAL,
+        is_active=True,
+        is_excluded=False,
+    )
+    db.add(new_keyword)
+    db.commit()
+
+    logger.info(f"[Monitor] Created keyword: '{keyword_text}' in group 'Monitor'")
+    return True
+
+
+def _extract_buzzwords_from_mentions(
+    mentions: List[Mention],
+    top_n: int = 10,
+) -> List[Dict]:
+    """
+    Trích xuất buzzwords từ nội dung mentions thật.
+    """
+    # Vietnamese stopwords
+    stopwords = {
+        'của', 'và', 'là', 'các', 'có', 'được', 'cho', 'một', 'trong',
+        'này', 'đã', 'với', 'những', 'không', 'thì', 'để', 'từ', 'theo',
+        'như', 'cũng', 'đến', 'khi', 'hay', 'bị', 'về', 'còn', 'tại',
+        'nên', 'rất', 'lại', 'đó', 'sẽ', 'mà', 'bằng', 'vì', 'nhiều',
+        'the', 'is', 'and', 'to', 'of', 'in', 'for', 'a', 'an', 'on',
+        'at', 'by', 'or', 'it', 'be', 'as', 'that', 'this', 'are',
+    }
+
+    word_counts: Dict[str, int] = {}
+
+    for m in mentions:
+        text = (m.content or "").lower()
+        words = text.split()
+        for word in words:
+            clean = word.strip('.,!?;:()[]{}"\'-…')
+            if len(clean) < 2 or clean in stopwords:
+                continue
+            if clean.isdigit():
+                continue
+            word_counts[clean] = word_counts.get(clean, 0) + 1
+
+    # Sort by count, take top N
+    sorted_words = sorted(word_counts.items(), key=lambda x: x[1], reverse=True)
+    return [{"word": w, "count": c} for w, c in sorted_words[:top_n]]
 
 
 def _compute_volatility(
@@ -615,11 +666,10 @@ def _compute_volatility(
 ) -> List[Dict]:
     """
     Tính toán dữ liệu biến động (volatility) theo ngày.
-    Dùng cho biểu đồ Line Chart trên frontend.
     """
     now = datetime.utcnow()
     daily_data = {}
-    
+
     for i in range(days):
         day = now - timedelta(days=i)
         date_str = day.strftime("%Y-%m-%d")
@@ -630,16 +680,16 @@ def _compute_volatility(
             "negative": 0,
             "neutral": 0,
         }
-    
+
     for m in mentions:
         if not m.collected_at:
             continue
         date_str = m.collected_at.strftime("%Y-%m-%d")
         if date_str not in daily_data:
             continue
-        
+
         daily_data[date_str]["total"] += 1
-        
+
         analysis = analyses_map.get(m.id)
         if analysis:
             sentiment_val = (
@@ -659,8 +709,7 @@ def _compute_volatility(
                 daily_data[date_str]["neutral"] += 1
         else:
             daily_data[date_str]["neutral"] += 1
-    
-    # Trả về sắp xếp theo ngày tăng dần
+
     sorted_data = sorted(daily_data.values(), key=lambda x: x["date"])
     return sorted_data
 
@@ -673,31 +722,25 @@ def _generate_crisis_summary(
 ) -> str:
     """
     Tạo bản tóm tắt khủng hoảng bằng tiếng Việt.
-    
-    Trong production, function này sẽ gọi OpenAI/Gemini API để tạo summary
-    thông minh hơn. Hiện tại sử dụng template-based approach.
-    
-    TODO: Tích hợp LLM API cho crisis summarization nâng cao.
+    Dựa trên dữ liệu thật từ database.
     """
     neg_count = len(negative_mentions)
-    
+
     if neg_count == 0:
         return (
             f"Tình hình theo dõi '{keyword}' ổn định. "
             f"Tổng cộng {total_count} đề cập được phân tích, "
             "không phát hiện xu hướng tiêu cực đáng lo ngại."
         )
-    
-    # Đếm platform distribution
+
     platform_counts = Counter(n["platform"] for n in negative_mentions)
     top_platform = platform_counts.most_common(1)[0] if platform_counts else ("Unknown", 0)
-    
-    # Đếm crisis levels
+
     high_crisis = sum(1 for n in negative_mentions if n["crisis_level"] >= 4)
-    
+
     if risk_level == "High":
         return (
-            f"⚠️ CẢNH BÁO KHỦNG HOẢNG: Phát hiện {neg_count}/{total_count} đề cập tiêu cực "
+            f"CẢNH BÁO KHỦNG HOẢNG: Phát hiện {neg_count}/{total_count} đề cập tiêu cực "
             f"liên quan đến '{keyword}'. "
             f"Trong đó có {high_crisis} đề cập ở mức khủng hoảng nghiêm trọng. "
             f"Nền tảng tập trung nhiều nhất: {top_platform[0]} ({top_platform[1]} đề cập). "
@@ -705,7 +748,7 @@ def _generate_crisis_summary(
         )
     elif risk_level == "Medium":
         return (
-            f"⚡ CẢNH BÁO: Phát hiện {neg_count} đề cập tiêu cực trong tổng số {total_count} "
+            f"CẢNH BÁO: Phát hiện {neg_count} đề cập tiêu cực trong tổng số {total_count} "
             f"đề cập về '{keyword}'. "
             f"Nền tảng chính: {top_platform[0]}. "
             "Xu hướng tiêu cực đang gia tăng, cần theo dõi sát và chuẩn bị phương án phản hồi."
@@ -725,9 +768,6 @@ def _generate_action_items(
 ) -> List[Dict]:
     """
     Tạo danh sách hành động đề xuất dựa trên mức độ rủi ro.
-    
-    Trả về 3 action items với cấu trúc:
-    {"step": int, "title": str, "description": str, "priority": str}
     """
     if risk_level == "High":
         return [
@@ -800,89 +840,54 @@ def _generate_action_items(
                 "step": 1,
                 "title": "Duy trì giám sát định kỳ",
                 "description": (
-                    f"Tiếp tục theo dõi các đề cập về '{keyword}' "
-                    "theo lịch trình thông thường. "
-                    "Tình hình hiện tại ổn định."
+                    f"Tiếp tục theo dõi '{keyword}' theo lịch trình. "
+                    "Cập nhật danh sách từ khóa nếu cần thiết."
                 ),
                 "priority": "low",
             },
             {
                 "step": 2,
-                "title": "Tương tác tích cực với cộng đồng",
+                "title": "Phân tích xu hướng dài hạn",
                 "description": (
-                    "Tận dụng các phản hồi tích cực để xây dựng thương hiệu. "
-                    "Chia sẻ nội dung hữu ích và tương tác với khách hàng."
+                    "Xem xét xu hướng sentiment trong 30 ngày qua. "
+                    "So sánh với giai đoạn trước để phát hiện thay đổi."
                 ),
                 "priority": "low",
             },
             {
                 "step": 3,
-                "title": "Cập nhật báo cáo tuần",
+                "title": "Cập nhật báo cáo",
                 "description": (
-                    "Tổng hợp dữ liệu vào báo cáo tuần "
-                    "cho ban quản lý và đội Marketing."
+                    "Tổng hợp và báo cáo kết quả giám sát cho ban lãnh đạo. "
+                    "Đề xuất điều chỉnh chiến lược nếu cần."
                 ),
                 "priority": "low",
             },
         ]
 
 
-def _extract_negative_themes(
-    negative_mentions: List[Dict],
-    top_n: int = 5,
-) -> List[Dict]:
+def _extract_negative_themes(negative_mentions: List[Dict]) -> List[Dict]:
     """
-    Trích xuất chủ đề tiêu cực phổ biến từ các đề cập.
-    
-    Sử dụng keyword matching đơn giản. Trong production,
-    có thể thay bằng topic modeling (LDA, BERTopic).
+    Trích xuất chủ đề tiêu cực phổ biến từ nội dung thật.
     """
     theme_keywords = {
-        "Chất lượng sản phẩm": [
-            "chất lượng", "tệ", "kém", "dở", "lỗi", "hỏng",
-            "broken", "quality",
-        ],
-        "Dịch vụ khách hàng": [
-            "dịch vụ", "phản hồi", "chậm", "thái độ", "nhân viên",
-            "service", "support",
-        ],
-        "Giá cả": [
-            "giá", "đắt", "mắc", "tăng giá", "chi phí",
-            "price", "expensive",
-        ],
-        "Giao hàng": [
-            "giao hàng", "ship", "chậm trễ", "delay", "đóng gói",
-            "vận chuyển",
-        ],
-        "An toàn / Sức khỏe": [
-            "nguy hiểm", "dị ứng", "độc", "sức khỏe", "cấp cứu",
-            "an toàn", "health", "safety",
-        ],
-        "Lừa đảo / Gian lận": [
-            "lừa đảo", "scam", "fake", "giả mạo", "gian lận",
-            "fraud",
-        ],
-        "Bảo mật / Dữ liệu": [
-            "rò rỉ", "hack", "thông tin", "bảo mật", "dữ liệu",
-            "privacy", "data",
-        ],
+        "Chất lượng sản phẩm": ["chất lượng", "kém", "tệ", "hỏng", "lỗi", "broken"],
+        "Dịch vụ khách hàng": ["dịch vụ", "hỗ trợ", "phản hồi", "service", "support"],
+        "Giá cả": ["giá", "đắt", "price", "cost", "phí"],
+        "Giao hàng": ["giao hàng", "shipping", "trễ", "delay", "chậm"],
+        "Lừa đảo / Gian lận": ["lừa đảo", "scam", "fake", "giả", "fraud"],
+        "An toàn": ["nguy hiểm", "danger", "unsafe", "độc hại", "toxic"],
     }
-    
+
     theme_counts: Dict[str, int] = {}
-    
+
     for mention in negative_mentions:
-        content_lower = mention.get("content", "").lower()
+        content_lower = (mention.get("content") or "").lower()
         for theme, keywords in theme_keywords.items():
             for kw in keywords:
                 if kw in content_lower:
                     theme_counts[theme] = theme_counts.get(theme, 0) + 1
-                    break  # Chỉ đếm 1 lần per theme per mention
-    
-    sorted_themes = sorted(
-        theme_counts.items(), key=lambda x: x[1], reverse=True
-    )
-    
-    return [
-        {"theme": theme, "count": count}
-        for theme, count in sorted_themes[:top_n]
-    ]
+                    break
+
+    sorted_themes = sorted(theme_counts.items(), key=lambda x: x[1], reverse=True)
+    return [{"theme": t, "count": c} for t, c in sorted_themes if c > 0]

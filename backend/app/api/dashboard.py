@@ -260,7 +260,7 @@ def get_latest_alerts(
 
 @router.get("/trends")
 def get_dashboard_trends(
-    range: str = Query("7d", regex="^(today|7d|30d)$"),
+    time_range: str = Query("7d", alias="range", pattern="^(today|7d|30d)$"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
@@ -270,10 +270,10 @@ def get_dashboard_trends(
     try:
         now = datetime.utcnow()
         
-        if range == "today":
+        if time_range == "today":
             start_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
             days = 1
-        elif range == "7d":
+        elif time_range == "7d":
             start_date = now - timedelta(days=7)
             days = 7
         else:
@@ -283,7 +283,7 @@ def get_dashboard_trends(
         items = []
         
         for i in range(days if days <= 30 else 30):
-            if range == "today":
+            if time_range == "today":
                 day_start = start_date
                 day_end = now
             else:
@@ -362,20 +362,20 @@ def get_dashboard_trends(
             items = []
             
         return {
-            "range": range,
+            "range": time_range,
             "items": items
         }
     except Exception as e:
         logger.error(f"Error in get_dashboard_trends: {e}")
         return {
-            "range": range,
+            "range": time_range,
             "items": []
         }
 
 
 @router.get("/sentiment-summary")
 def get_sentiment_summary(
-    range: str = Query("7d", regex="^(today|7d|30d)$"),
+    time_range: str = Query("7d", alias="range", pattern="^(today|7d|30d)$"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
@@ -385,9 +385,9 @@ def get_sentiment_summary(
     try:
         now = datetime.utcnow()
         
-        if range == "today":
+        if time_range == "today":
             start_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
-        elif range == "7d":
+        elif time_range == "7d":
             start_date = now - timedelta(days=7)
         else:
             start_date = now - timedelta(days=30)
@@ -448,7 +448,7 @@ def get_sentiment_summary(
 
 @router.get("/hot-keywords")
 def get_hot_keywords(
-    range: str = Query("7d", regex="^(today|7d|30d)$"),
+    time_range: str = Query("7d", alias="range", pattern="^(today|7d|30d)$"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
@@ -458,9 +458,9 @@ def get_hot_keywords(
     try:
         now = datetime.utcnow()
         
-        if range == "today":
+        if time_range == "today":
             start_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
-        elif range == "7d":
+        elif time_range == "7d":
             start_date = now - timedelta(days=7)
         else:
             start_date = now - timedelta(days=30)

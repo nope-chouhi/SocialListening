@@ -14,8 +14,12 @@ import {
   TrendingUp,
   Sparkles,
   Clock,
+  AlertCircle,
+  Link as LinkIcon,
+  ServerOff,
 } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
+import Link from 'next/link';
 
 // Components
 import MonitorMetricCard from '@/components/dashboard/MonitorMetricCard';
@@ -96,8 +100,19 @@ interface AiAnalysisData {
   top_negative_themes?: { theme: string; count: number }[];
 }
 
+interface StartResult {
+  keyword: string;
+  keyword_created: boolean;
+  sources_scanned: number;
+  crawl_jobs_created: number;
+  mentions_created: number;
+  alerts_created: number;
+  message: string;
+  worker_status?: string | null;
+}
+
 // ============================================================================
-// MONITOR DASHBOARD PAGE
+// MONITOR DASHBOARD PAGE — REAL DATA ONLY
 // ============================================================================
 
 export default function MonitorDashboardPage() {
@@ -107,6 +122,7 @@ export default function MonitorDashboardPage() {
 
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [aiAnalysis, setAiAnalysis] = useState<AiAnalysisData | null>(null);
+  const [startResult, setStartResult] = useState<StartResult | null>(null);
 
   const [isTracking, setIsTracking] = useState(false);
   const [isLoadingDashboard, setIsLoadingDashboard] = useState(false);
@@ -116,12 +132,6 @@ export default function MonitorDashboardPage() {
 
   // ── Handlers ──────────────────────────────────────────────────────────
 
-  /**
-   * Bắt đầu theo dõi từ khóa:
-   * 1. Gọi POST /api/monitor/start → tạo mock data + sentiment
-   * 2. Gọi GET /api/monitor/dashboard → tải dashboard data
-   * 3. Gọi GET /api/monitor/ai-analysis → tải AI crisis analysis
-   */
   const handleStartTracking = useCallback(async () => {
     const trimmed = keyword.trim();
     if (!trimmed) {
@@ -133,18 +143,30 @@ export default function MonitorDashboardPage() {
     setActiveKeyword(trimmed);
     setDashboardData(null);
     setAiAnalysis(null);
+    setStartResult(null);
 
     try {
-      // Step 1: Start tracking (mock scrape + sentiment)
-      const result = await monitor.startTracking(trimmed);
-      toast.success(result.summary || `Đã tạo ${result.mentions_created} đề cập`);
+      // Step 1: POST /api/monitor/start — quét nguồn thật
+      const result: StartResult = await monitor.startTracking(trimmed);
+      setStartResult(result);
       setLastScanTime(new Date().toLocaleTimeString('vi-VN'));
 
-      // Step 2 & 3: Load dashboard + AI analysis in parallel
-      await Promise.all([
-        fetchDashboardData(trimmed),
-        fetchAiAnalysis(trimmed),
-      ]);
+      // Show real message from backend
+      if (result.sources_scanned === 0) {
+        toast.error(result.message, { duration: 6000 });
+      } else if (result.mentions_created > 0) {
+        toast.success(result.message, { duration: 4000 });
+      } else {
+        toast(result.message, { icon: '📭', duration: 5000 });
+      }
+
+      // Step 2 & 3: Load dashboard + AI analysis if we have mentions
+      if (result.sources_scanned > 0) {
+        await Promise.all([
+          fetchDashboardData(trimmed),
+          fetchAiAnalysis(trimmed),
+        ]);
+      }
     } catch (error: any) {
       console.error('[Monitor] Start tracking error:', error);
       const msg = error?.response?.data?.detail || 'Lỗi khi bắt đầu theo dõi';
@@ -161,7 +183,6 @@ export default function MonitorDashboardPage() {
       setDashboardData(data);
     } catch (error: any) {
       console.error('[Monitor] Dashboard error:', error);
-      toast.error('Lỗi khi tải dữ liệu dashboard');
     } finally {
       setIsLoadingDashboard(false);
     }
@@ -174,7 +195,6 @@ export default function MonitorDashboardPage() {
       setAiAnalysis(data);
     } catch (error: any) {
       console.error('[Monitor] AI analysis error:', error);
-      // Không show toast cho AI analysis failure — panel sẽ ko hiện
     } finally {
       setIsLoadingAi(false);
     }
@@ -224,6 +244,11 @@ export default function MonitorDashboardPage() {
     }
   };
 
+  // ── Determine if we should show "no sources" warning ──────────────────
+  const showNoSourcesWarning = startResult && startResult.sources_scanned === 0;
+  const showWorkerWarning = startResult?.worker_status === 'not_running';
+  const showNoMentionsInfo = startResult && startResult.sources_scanned > 0 && startResult.mentions_created === 0;
+
   // ── RENDER ────────────────────────────────────────────────────────────
   return (
     <div className="space-y-6">
@@ -241,7 +266,7 @@ export default function MonitorDashboardPage() {
                 Monitor
               </h1>
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                Giám sát từ khóa thời gian thực — Phân tích cảm xúc AI
+                Giám sát từ khóa — Quét nguồn thật — Phân tích cảm xúc AI
               </p>
             </div>
           </div>
@@ -278,7 +303,6 @@ export default function MonitorDashboardPage() {
         "
         id="monitor-search-bar"
       >
-        {/* Decorative background */}
         <div className="absolute top-0 right-0 w-72 h-72 bg-gradient-to-bl from-indigo-500/10 to-transparent rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
 
         <div className="relative flex flex-col sm:flex-row gap-4">
@@ -289,7 +313,7 @@ export default function MonitorDashboardPage() {
               value={keyword}
               onChange={(e) => setKeyword(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Nhập từ khóa theo dõi (ví dụ: Vinamilk, VinFast, Shopee...)"
+              placeholder="Nhập từ khóa theo dõi (ví dụ: Vinamilk, VinFast, TTH...)"
               className="
                 w-full pl-12 pr-4 py-4
                 bg-white dark:bg-gray-800
@@ -327,7 +351,7 @@ export default function MonitorDashboardPage() {
             {isTracking ? (
               <>
                 <Loader2 className="w-5 h-5 animate-spin" />
-                Đang quét...
+                Đang quét nguồn...
               </>
             ) : (
               <>
@@ -339,8 +363,84 @@ export default function MonitorDashboardPage() {
         </div>
       </div>
 
+      {/* ─── NO SOURCES WARNING ──────────────────────────────────────── */}
+      {showNoSourcesWarning && (
+        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/50 rounded-2xl p-6">
+          <div className="flex items-start gap-4">
+            <div className="p-2 bg-amber-100 dark:bg-amber-800/40 rounded-xl">
+              <AlertCircle className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-base font-semibold text-amber-900 dark:text-amber-200 mb-1">
+                Chưa có nguồn quét
+              </h3>
+              <p className="text-sm text-amber-700 dark:text-amber-300 mb-3">
+                {startResult.message}
+                {' '}Hệ thống cần ít nhất một nguồn RSS hoặc Website để quét dữ liệu thật.
+              </p>
+              <div className="flex flex-wrap gap-3">
+                <Link
+                  href="/dashboard/sources"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium rounded-lg transition-colors"
+                >
+                  <LinkIcon className="w-4 h-4" />
+                  Thêm nguồn RSS/Web
+                </Link>
+                <Link
+                  href="/dashboard/scan"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border border-amber-300 dark:border-amber-600 text-amber-700 dark:text-amber-300 text-sm font-medium rounded-lg hover:bg-amber-50 dark:hover:bg-amber-900/30 transition-colors"
+                >
+                  Scan Center
+                </Link>
+              </div>
+              {startResult.keyword_created && (
+                <p className="text-xs text-amber-600 dark:text-amber-400 mt-3">
+                  Từ khóa &quot;{startResult.keyword}&quot; đã được lưu vào hệ thống.
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── WORKER NOT RUNNING WARNING ──────────────────────────────── */}
+      {showWorkerWarning && !showNoSourcesWarning && (
+        <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-700/50 rounded-2xl p-4">
+          <div className="flex items-center gap-3">
+            <ServerOff className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+            <div className="flex-1">
+              <p className="text-sm text-orange-700 dark:text-orange-300">
+                <span className="font-semibold">Worker chưa chạy.</span>{' '}
+                RSS sẽ không tự quét 24/7. Bạn có thể quét thủ công tại{' '}
+                <Link href="/dashboard/scan" className="underline font-medium">Scan Center</Link>.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── NO MENTIONS FOUND ───────────────────────────────────────── */}
+      {showNoMentionsInfo && !dashboardData && (
+        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700/50 rounded-2xl p-6 text-center">
+          <MessageCircle className="w-10 h-10 text-blue-400 mx-auto mb-3 opacity-60" />
+          <h3 className="text-base font-semibold text-blue-900 dark:text-blue-200 mb-1">
+            Không tìm thấy đề cập nào phù hợp
+          </h3>
+          <p className="text-sm text-blue-700 dark:text-blue-300 max-w-md mx-auto">
+            Đã quét {startResult.sources_scanned} nguồn nhưng không tìm thấy nội dung
+            nào khớp với từ khóa &quot;{startResult.keyword}&quot;.
+            Thử thêm nguồn hoặc chọn từ khóa khác.
+          </p>
+          {startResult.keyword_created && (
+            <p className="text-xs text-blue-500 mt-2">
+              Từ khóa đã được lưu — hệ thống sẽ tự quét khi worker chạy.
+            </p>
+          )}
+        </div>
+      )}
+
       {/* ─── EMPTY STATE ─────────────────────────────────────────────── */}
-      {!dashboardData && !isLoadingDashboard && !isTracking && (
+      {!dashboardData && !isLoadingDashboard && !isTracking && !startResult && (
         <div className="text-center py-20">
           <div className="inline-flex p-4 bg-indigo-500/10 rounded-2xl mb-4">
             <Radar className="w-12 h-12 text-indigo-500 opacity-60" />
@@ -350,8 +450,33 @@ export default function MonitorDashboardPage() {
           </h3>
           <p className="text-sm text-gray-500 dark:text-gray-400 max-w-md mx-auto">
             Nhập từ khóa cần theo dõi và nhấn &quot;Bắt Đầu Theo Dõi&quot; để quét
-            mạng xã hội và phân tích cảm xúc bằng AI.
+            các nguồn RSS/Web đã cấu hình và phân tích cảm xúc bằng AI.
           </p>
+        </div>
+      )}
+
+      {/* ─── SCAN RESULT SUMMARY ─────────────────────────────────────── */}
+      {startResult && startResult.sources_scanned > 0 && (
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4">
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
+            <span className="text-gray-500 dark:text-gray-400">
+              Nguồn đã quét: <strong className="text-gray-900 dark:text-white">{startResult.sources_scanned}</strong>
+            </span>
+            <span className="text-gray-500 dark:text-gray-400">
+              Crawl jobs: <strong className="text-gray-900 dark:text-white">{startResult.crawl_jobs_created}</strong>
+            </span>
+            <span className="text-gray-500 dark:text-gray-400">
+              Đề cập mới: <strong className="text-gray-900 dark:text-white">{startResult.mentions_created}</strong>
+            </span>
+            <span className="text-gray-500 dark:text-gray-400">
+              Cảnh báo: <strong className="text-gray-900 dark:text-white">{startResult.alerts_created}</strong>
+            </span>
+            {startResult.keyword_created && (
+              <span className="text-emerald-600 dark:text-emerald-400 text-xs font-medium">
+                + Keyword đã lưu
+              </span>
+            )}
+          </div>
         </div>
       )}
 
@@ -463,7 +588,7 @@ export default function MonitorDashboardPage() {
         </div>
       )}
 
-      {/* ─── REAL-TIME MENTIONS FEED ─────────────────────────────────── */}
+      {/* ─── REAL MENTIONS FEED ──────────────────────────────────────── */}
       {dashboardData && dashboardData.mentions.length > 0 && (
         <div
           className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700"
@@ -472,7 +597,7 @@ export default function MonitorDashboardPage() {
           <div className="p-5 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gray-50/50 dark:bg-gray-800/50 rounded-t-2xl">
             <h2 className="text-base font-semibold text-gray-900 dark:text-white flex items-center gap-2">
               <MessageCircle className="w-5 h-5 text-blue-500" />
-              Luồng Đề Cập Mới Nhất
+              Đề Cập Từ Nguồn Thật
             </h2>
             <span className="text-xs font-medium bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-400 px-2.5 py-1 rounded-full">
               {dashboardData.mentions.length} đề cập
@@ -484,7 +609,7 @@ export default function MonitorDashboardPage() {
               <thead>
                 <tr className="border-b border-gray-100 dark:border-gray-700 bg-gray-50/30 dark:bg-gray-800/30">
                   <th className="text-left px-5 py-3 font-medium text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wide">
-                    Nền tảng
+                    Nguồn
                   </th>
                   <th className="text-left px-5 py-3 font-medium text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wide">
                     Nội dung
@@ -494,9 +619,6 @@ export default function MonitorDashboardPage() {
                   </th>
                   <th className="text-left px-5 py-3 font-medium text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wide">
                     Sắc thái
-                  </th>
-                  <th className="text-right px-5 py-3 font-medium text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wide">
-                    Reach
                   </th>
                   <th className="text-left px-5 py-3 font-medium text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wide">
                     Thời gian
@@ -526,11 +648,6 @@ export default function MonitorDashboardPage() {
                     <td className="px-5 py-3.5">
                       <SentimentTag sentiment={mention.sentiment} />
                     </td>
-                    <td className="px-5 py-3.5 text-right">
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300 tabular-nums">
-                        {(mention.reach || 0).toLocaleString('vi-VN')}
-                      </span>
-                    </td>
                     <td className="px-5 py-3.5">
                       <span className="text-xs text-gray-400 whitespace-nowrap">
                         {formatTimeAgo(mention.created_at)}
@@ -542,7 +659,7 @@ export default function MonitorDashboardPage() {
                         target="_blank"
                         rel="noopener noreferrer"
                         className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-gray-400 hover:text-indigo-500"
-                        title="Xem nguồn"
+                        title="Xem nguồn gốc"
                       >
                         <ExternalLink className="w-4 h-4" />
                       </a>
@@ -555,7 +672,7 @@ export default function MonitorDashboardPage() {
         </div>
       )}
 
-      {/* ─── NEGATIVE THEMES (bonus) ─────────────────────────────────── */}
+      {/* ─── NEGATIVE THEMES ─────────────────────────────────────────── */}
       {aiAnalysis?.top_negative_themes && aiAnalysis.top_negative_themes.length > 0 && (
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-5">
           <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
