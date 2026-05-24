@@ -121,6 +121,7 @@ def get_dashboard_summary(
                     "sentiment": (analysis.sentiment.value if hasattr(analysis.sentiment, 'value') else analysis.sentiment) if analysis else None,
                     "risk_score": analysis.risk_score if analysis else None,
                     "crisis_level": analysis.crisis_level if analysis else None,
+                    "ai_provider": analysis.ai_provider if analysis else None,
                 })
         except Exception as e:
             logger.error(f"Error querying latest mentions: {e}")
@@ -211,6 +212,7 @@ def get_latest_mentions(
                 "sentiment": (analysis.sentiment.value if hasattr(analysis.sentiment, 'value') else analysis.sentiment) if analysis else None,
                 "risk_score": analysis.risk_score if analysis else None,
                 "crisis_level": analysis.crisis_level if analysis else None,
+                "ai_provider": analysis.ai_provider if analysis else None,
             })
         
         return {

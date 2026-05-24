@@ -61,7 +61,17 @@ export default function MentionCard({ mention, onActionComplete, userRole }: Men
             </div>
           </div>
         </div>
-        <div className="flex space-x-1">
+        <div className="flex space-x-1 items-center">
+          {mention.ai_provider === 'dummy' && (
+            <span className="px-1.5 py-0.5 text-[9px] font-bold tracking-wider text-orange-700 bg-orange-100 rounded border border-orange-200">
+              DUMMY AI
+            </span>
+          )}
+          {mention.ai_provider && mention.ai_provider !== 'dummy' && (
+            <span className="px-1.5 py-0.5 text-[9px] font-bold tracking-wider text-indigo-700 bg-indigo-100 rounded border border-indigo-200">
+              {mention.ai_provider.toUpperCase()}
+            </span>
+          )}
           <SentimentBadge sentiment={mention.sentiment} />
         </div>
       </div>

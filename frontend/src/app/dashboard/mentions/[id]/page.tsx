@@ -168,7 +168,19 @@ export default function MentionDetailPage() {
           {/* AI Analysis */}
           {mention.ai_analysis && (
             <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">AI Analysis</h3>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">AI Analysis</h3>
+                {mention.ai_analysis.ai_provider === 'dummy' && (
+                  <span className="px-2 py-1 text-xs font-semibold tracking-wider text-orange-700 bg-orange-100 rounded-full border border-orange-200">
+                    DUMMY/DEV
+                  </span>
+                )}
+                {mention.ai_analysis.ai_provider && mention.ai_analysis.ai_provider !== 'dummy' && (
+                  <span className="px-2 py-1 text-xs font-semibold tracking-wider text-indigo-700 bg-indigo-100 rounded-full border border-indigo-200">
+                    {mention.ai_analysis.ai_provider.toUpperCase()}
+                  </span>
+                )}
+              </div>
               
               {/* Risk Score - Prominent */}
               <div className={`p-4 rounded-lg border-2 mb-4 ${getRiskBgColor(mention.ai_analysis.risk_score)}`}>

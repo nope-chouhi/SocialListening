@@ -88,7 +88,8 @@ def list_mentions(
                     "risk_score": analysis.risk_score if analysis else None,
                     "crisis_level": analysis.crisis_level if analysis else None,
                     "summary_vi": analysis.summary_vi if analysis else None,
-                    "suggested_action": analysis.suggested_action if analysis else None
+                    "suggested_action": analysis.suggested_action if analysis else None,
+                    "ai_provider": analysis.ai_provider if analysis else None
                 } if analysis else None
             })
 

@@ -130,8 +130,18 @@ export default function MentionsPage() {
                             Risk: {mention.ai_analysis.risk_score}
                           </span>
                           <span className="text-xs text-gray-500">
-                            Crisis Level: {mention.ai_analysis.crisis_level}/5
+                            Crisis: {mention.ai_analysis.crisis_level}/5
                           </span>
+                          {mention.ai_analysis.ai_provider === 'dummy' && (
+                            <span className="px-2 py-1 text-[10px] font-semibold tracking-wider text-orange-700 bg-orange-100 rounded-full border border-orange-200">
+                              AI: DUMMY/DEV
+                            </span>
+                          )}
+                          {mention.ai_analysis.ai_provider && mention.ai_analysis.ai_provider !== 'dummy' && (
+                            <span className="px-2 py-1 text-[10px] font-semibold tracking-wider text-indigo-700 bg-indigo-100 rounded-full border border-indigo-200">
+                              AI: {mention.ai_analysis.ai_provider.toUpperCase()}
+                            </span>
+                          )}
                         </>
                       )}
                       <span className="text-xs text-gray-500">

@@ -44,11 +44,29 @@ def get_frequency_interval(frequency: str) -> timedelta:
     return intervals.get(frequency, timedelta(hours=1))
 
 
-def calculate_next_crawl_time(source: Source) -> Optional[datetime]:
+def calculate_next_crawl_time(source_or_frequency=None, **kwargs) -> Optional[datetime]:
     """
-    Calculate next crawl time for a source based on its schedule.
-    Returns None if source is manual or inactive.
+    Calculate next crawl time.
+
+    Accepts either:
+    - A Source object (used by scheduler_service)
+    - Keyword args: frequency=, crawl_time=, crawl_day_of_week=, etc. (used by sources.py)
+
+    Returns None if frequency is manual or source is inactive.
     """
+    # Handle keyword-args mode (called from sources.py during creation)
+    if source_or_frequency is None or isinstance(source_or_frequency, str):
+        freq = source_or_frequency or kwargs.get('frequency', 'manual')
+        if hasattr(freq, 'value'):
+            freq = freq.value
+        if freq == 'manual':
+            return None
+        now = datetime.utcnow()
+        interval = get_frequency_interval(freq)
+        return now + interval
+
+    # Handle Source object mode (called from scheduler_service)
+    source = source_or_frequency
     if not source.is_active:
         return None
 
