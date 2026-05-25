@@ -49,8 +49,19 @@ def get_worker_status(
     if status_record and status_record.last_error:
         safe_last_error = "Worker encountered an error."
 
+    import os
+    embedded_enabled = os.getenv("ENABLE_EMBEDDED_SCHEDULER", "false").lower() == "true"
+    
+    if worker_running:
+        worker_mode = "embedded" if embedded_enabled else "standalone"
+        scheduler_enabled = True
+    else:
+        worker_mode = "none"
+        scheduler_enabled = False
+
     return {
-        "scheduler_enabled": True,
+        "scheduler_enabled": scheduler_enabled,
+        "worker_mode": worker_mode,
         "worker_running": worker_running,
         "last_worker_heartbeat": last_heartbeat.isoformat() if last_heartbeat else None,
         "active_sources": active_sources,

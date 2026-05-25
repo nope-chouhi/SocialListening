@@ -6,14 +6,14 @@ import { crawl, keywords as keywordsApi, sources as sourcesApi } from '@/lib/api
 import toast, { Toaster } from 'react-hot-toast';
 
 interface WorkerStatus {
-  scheduler_running: boolean;
   scheduler_enabled: boolean;
-  last_heartbeat: string | null;
-  last_error: string | null;
+  worker_mode: string;
+  worker_running: boolean;
+  last_worker_heartbeat: string | null;
   active_sources: number;
   due_sources: number;
   running_jobs: number;
-  warning: string | null;
+  last_error: string | null;
 }
 
 interface CrawlJob {
@@ -221,40 +221,43 @@ export default function ScanPage() {
       {/* Worker Status Banner */}
       {workerStatus && (
         <div className={`rounded-lg p-4 border ${
-          workerStatus.scheduler_running 
+          workerStatus.worker_running 
             ? 'bg-green-50 border-green-200' 
             : 'bg-yellow-50 border-yellow-200'
         }`}>
           <div className="flex items-start">
-            {workerStatus.scheduler_running ? (
+            {workerStatus.worker_running ? (
               <Activity className="w-5 h-5 text-green-600 mt-0.5 mr-3 flex-shrink-0" />
             ) : (
               <AlertTriangle className="w-5 h-5 text-yellow-600 mt-0.5 mr-3 flex-shrink-0" />
             )}
             <div className="flex-1">
               <h3 className={`text-sm font-semibold ${
-                workerStatus.scheduler_running ? 'text-green-800' : 'text-yellow-800'
+                workerStatus.worker_running ? 'text-green-800' : 'text-yellow-800'
               }`}>
-                {workerStatus.scheduler_running 
-                  ? 'Worker đang hoạt động' 
+                {workerStatus.worker_running 
+                  ? `Worker đang hoạt động (${workerStatus.worker_mode === 'embedded' ? 'Embedded' : 'Standalone'})` 
                   : 'Worker không hoạt động'}
               </h3>
-              {workerStatus.warning && (
-                <p className="text-sm text-yellow-700 mt-1">{workerStatus.warning}</p>
+              {workerStatus.worker_mode === 'embedded' && (
+                <p className="text-sm text-yellow-700 mt-1">
+                  <AlertTriangle className="w-4 h-4 inline mr-1" />
+                  Scheduler chạy chung với Web Service. Nếu Web Service sleep, RSS sẽ không quét 24/7.
+                </p>
               )}
               <div className="flex flex-wrap gap-4 mt-2 text-xs">
-                <span className={workerStatus.scheduler_running ? 'text-green-700' : 'text-yellow-700'}>
+                <span className={workerStatus.worker_running ? 'text-green-700' : 'text-yellow-700'}>
                   Nguồn tự động: <strong>{workerStatus.active_sources}</strong>
                 </span>
-                <span className={workerStatus.scheduler_running ? 'text-green-700' : 'text-yellow-700'}>
+                <span className={workerStatus.worker_running ? 'text-green-700' : 'text-yellow-700'}>
                   Đang chờ scan: <strong>{workerStatus.due_sources}</strong>
                 </span>
-                <span className={workerStatus.scheduler_running ? 'text-green-700' : 'text-yellow-700'}>
+                <span className={workerStatus.worker_running ? 'text-green-700' : 'text-yellow-700'}>
                   Job đang chạy: <strong>{workerStatus.running_jobs}</strong>
                 </span>
-                {workerStatus.last_heartbeat && (
-                  <span className={workerStatus.scheduler_running ? 'text-green-700' : 'text-yellow-700'}>
-                    Heartbeat: <strong>{new Date(workerStatus.last_heartbeat).toLocaleString('vi-VN')}</strong>
+                {workerStatus.last_worker_heartbeat && (
+                  <span className={workerStatus.worker_running ? 'text-green-700' : 'text-yellow-700'}>
+                    Heartbeat: <strong>{new Date(workerStatus.last_worker_heartbeat).toLocaleString('vi-VN')}</strong>
                   </span>
                 )}
               </div>

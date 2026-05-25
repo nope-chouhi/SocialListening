@@ -43,22 +43,25 @@ async def lifespan(app: FastAPI):
         logger.warning(f"Service seed skipped: {e}")
 
     # Start background scheduler
-    try:
-        from app.services.scheduler_service import start_scheduler
-        start_scheduler()
-        logger.info("Background scheduler started")
-    except Exception as e:
-        logger.warning(f"Scheduler start failed: {e}")
+    import os
+    if os.getenv("ENABLE_EMBEDDED_SCHEDULER", "false").lower() == "true":
+        try:
+            from app.services.scheduler_service import start_scheduler
+            start_scheduler(is_embedded=True)
+            logger.info("Embedded background scheduler started")
+        except Exception as e:
+            logger.warning(f"Embedded scheduler start failed: {e}")
 
     yield
     
     # Shutdown scheduler
-    try:
-        from app.services.scheduler_service import stop_scheduler
-        stop_scheduler()
-        logger.info("Background scheduler stopped")
-    except Exception as e:
-        logger.warning(f"Scheduler stop failed: {e}")
+    if os.getenv("ENABLE_EMBEDDED_SCHEDULER", "false").lower() == "true":
+        try:
+            from app.services.scheduler_service import stop_scheduler
+            stop_scheduler()
+            logger.info("Embedded background scheduler stopped")
+        except Exception as e:
+            logger.warning(f"Embedded scheduler stop failed: {e}")
     
     logger.info("Shutting down...")
 
