@@ -256,6 +256,20 @@ def scan_all_due_sources():
         _last_heartbeat = datetime.utcnow()
         logger.info(f"[Worker] Checking due sources at {_last_heartbeat.isoformat()}")
 
+        # Update heartbeat in database for system status
+        try:
+            from app.models.system_settings import WorkerStatus
+            from sqlalchemy.sql import func
+            status = db.query(WorkerStatus).first()
+            if not status:
+                status = WorkerStatus(id=1, running_jobs=0)
+                db.add(status)
+            else:
+                status.last_heartbeat = func.now()
+            db.commit()
+        except Exception as heartbeat_err:
+            logger.error(f"[Worker] Failed to update heartbeat in DB: {heartbeat_err}")
+
         due_sources = get_due_sources(db)
 
         if not due_sources:
@@ -283,27 +297,35 @@ def scan_all_due_sources():
         db.close()
 
 
-def start_scheduler(interval_minutes: int = 10):
+_is_embedded_mode = False
+
+def start_scheduler(interval_minutes: int = 10, is_embedded: bool = False):
     """
     Start the background scheduler.
     Should be called once when the application starts.
     """
-    global scheduler_started
+    global scheduler_started, _is_embedded_mode
 
     if scheduler_started:
         logger.info("Scheduler already started, skipping")
         return
 
-    scheduler_enabled = os.getenv("SCHEDULER_ENABLED", "true").lower() == "true"
+    # If starting as embedded, we don't check SCHEDULER_ENABLED env, we assume caller verified ENABLE_EMBEDDED_SCHEDULER
+    if not is_embedded:
+        scheduler_enabled = os.getenv("SCHEDULER_ENABLED", "true").lower() == "true"
+        if not scheduler_enabled:
+            logger.info("Scheduler disabled by environment variable SCHEDULER_ENABLED=false")
+            return
 
-    if not scheduler_enabled:
-        logger.info("Scheduler disabled by environment variable SCHEDULER_ENABLED=false")
-        return
+    _is_embedded_mode = is_embedded
 
     try:
+        # Use 1 minute interval for embedded mode to ensure heartbeat updates frequently
+        actual_interval = 1 if is_embedded else interval_minutes
+        
         scheduler.add_job(
             scan_all_due_sources,
-            IntervalTrigger(minutes=interval_minutes),
+            IntervalTrigger(minutes=actual_interval),
             id='scan_due_sources',
             name='Scan Due Sources',
             replace_existing=True,
@@ -313,7 +335,8 @@ def start_scheduler(interval_minutes: int = 10):
         scheduler.start()
         scheduler_started = True
 
-        logger.info(f"✅ Background scheduler started (interval: {interval_minutes} min)")
+        mode_str = "embedded" if is_embedded else "standalone"
+        logger.info(f"✅ Background scheduler ({mode_str}) started (interval: {interval_minutes} min)")
 
     except Exception as e:
         logger.error(f"❌ Failed to start scheduler: {e}")

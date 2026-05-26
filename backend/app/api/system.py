@@ -52,12 +52,24 @@ def get_worker_status(
     import os
     embedded_enabled = os.getenv("ENABLE_EMBEDDED_SCHEDULER", "false").lower() == "true"
     
-    if worker_running:
-        worker_mode = "embedded" if embedded_enabled else "standalone"
+    try:
+        from app.services import scheduler_service
+        scheduler_started = scheduler_service.scheduler_started
+    except ImportError:
+        scheduler_started = False
+    
+    if embedded_enabled:
+        worker_mode = "embedded"
         scheduler_enabled = True
+        # If in-memory scheduler is running, consider worker running even if heartbeat hasn't updated yet
+        worker_running = worker_running or scheduler_started
     else:
-        worker_mode = "none"
-        scheduler_enabled = False
+        if worker_running:
+            worker_mode = "standalone"
+            scheduler_enabled = True
+        else:
+            worker_mode = "none"
+            scheduler_enabled = False
 
     return {
         "scheduler_enabled": scheduler_enabled,
