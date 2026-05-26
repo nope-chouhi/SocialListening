@@ -1,5 +1,30 @@
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
+from sqlalchemy.orm import Session
+from sqlalchemy import select, func
+from typing import List, Optional
+from datetime import datetime
+import hashlib
+import requests
+from bs4 import BeautifulSoup
+import feedparser
+from pydantic import BaseModel
+
 from app.core.database import get_db, SessionLocal
+from app.core.security import get_current_active_user
+from app.models.user import User
+from app.models.source import Source
+from app.models.keyword import Keyword, KeywordGroup
+from app.models.mention import Mention, AIAnalysis, SentimentScore
+from app.models.alert import Alert, AlertSeverity, AlertStatus
+from app.models.crawl import CrawlJob, CrawlJobStatus
+from app.services.ai_service import analyze_mention_with_dummy_ai
+
+router = APIRouter()
+
+class ManualScanRequest(BaseModel):
+    keyword_group_ids: List[int]
+    source_ids: Optional[List[int]] = None
+    url: Optional[str] = None
 
 def run_manual_scan_task(job_id: int, source_ids: List[int], keyword_texts: List[str], keyword_ids: List[int]):
     db = SessionLocal()
