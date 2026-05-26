@@ -58,6 +58,23 @@ export default function KeywordsPage() {
     keyword: '',
     keyword_type: 'general'
   });
+  const [showBulkKeywordModal, setShowBulkKeywordModal] = useState(false);
+  const [bulkKeyword, setBulkKeyword] = useState({
+    keywords_text: '',
+    keyword_type: 'general'
+  });
+
+  const KEYWORD_TYPES = [
+    { value: 'general', label: 'Chung' },
+    { value: 'brand', label: 'Thương hiệu' },
+    { value: 'competitor', label: 'Đối thủ' },
+    { value: 'person', label: 'Cá nhân' },
+    { value: 'service', label: 'Dịch vụ' },
+    { value: 'location', label: 'Địa điểm' },
+    { value: 'hashtag', label: 'Hashtag' },
+    { value: 'negative_phrase', label: 'Cụm tiêu cực' },
+    { value: 'positive_phrase', label: 'Cụm tích cực' },
+  ];
 
   useEffect(() => {
     fetchGroups();
@@ -132,9 +149,10 @@ export default function KeywordsPage() {
     try {
       await keywordsApi.createKeyword({
         keyword: newKeyword.keyword,
+        keyword_type: newKeyword.keyword_type,
         group_id: selectedGroupId,
         is_active: true,
-      } as any);
+      });
       
       setShowAddKeywordModal(false);
       setNewKeyword({ keyword: '', keyword_type: 'general' });
@@ -144,7 +162,38 @@ export default function KeywordsPage() {
       fetchGroups();
     } catch (error: any) {
       console.error('Error adding keyword:', error);
-      toast.error('Lỗi khi thêm từ khóa');
+      toast.error(error.response?.data?.detail || 'Lỗi khi thêm từ khóa');
+    }
+  };
+
+  const handleAddBulkKeyword = async () => {
+    if (!bulkKeyword.keywords_text.trim() || !selectedGroupId) {
+      toast.error('Vui lòng nhập từ khóa');
+      return;
+    }
+    const lines = bulkKeyword.keywords_text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+    if (lines.length === 0) {
+      toast.error('Vui lòng nhập ít nhất 1 từ khóa');
+      return;
+    }
+
+    try {
+      const result = await keywordsApi.createKeywordsBulk({
+        group_id: selectedGroupId,
+        keywords: lines,
+        keyword_type: bulkKeyword.keyword_type,
+        is_active: true
+      });
+      
+      setShowBulkKeywordModal(false);
+      setBulkKeyword({ keywords_text: '', keyword_type: 'general' });
+      toast.success(`Đã thêm ${result.created_count} từ khóa, bỏ qua ${result.skipped_count} từ khóa trùng`);
+      
+      await fetchKeywordsInGroup(selectedGroupId);
+      fetchGroups();
+    } catch (error: any) {
+      console.error('Error adding bulk keywords:', error);
+      toast.error(error.response?.data?.detail || 'Lỗi khi thêm từ khóa hàng loạt');
     }
   };
 
@@ -224,9 +273,19 @@ export default function KeywordsPage() {
     setShowAddKeywordModal(true);
   };
 
-  const filteredGroups = groups.filter(g =>
-    g.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const openBulkKeywordModal = (groupId: number) => {
+    setSelectedGroupId(groupId);
+    setShowBulkKeywordModal(true);
+  };
+
+  const filteredGroups = groups.filter(g => {
+    const term = searchTerm.toLowerCase();
+    if (g.name.toLowerCase().includes(term)) return true;
+    if (groupKeywords[g.id]) {
+      return groupKeywords[g.id].some(k => k.keyword.toLowerCase().includes(term));
+    }
+    return false;
+  });
 
   const getPriorityColor = (priority: number) => {
     if (priority >= 4) return 'bg-red-100 text-red-800';
@@ -328,11 +387,18 @@ export default function KeywordsPage() {
                 
                 <div className="flex items-center space-x-2">
                   <button
+                    onClick={() => openBulkKeywordModal(group.id)}
+                    className="px-3 py-1 text-sm bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-colors"
+                  >
+                    <Plus className="w-4 h-4 inline mr-1" />
+                    Thêm nhiều từ khóa
+                  </button>
+                  <button
                     onClick={() => openAddKeywordModal(group.id)}
                     className="px-3 py-1 text-sm bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
                   >
                     <Plus className="w-4 h-4 inline mr-1" />
-                    Thêm từ khóa
+                    Thêm 1 từ khóa
                   </button>
                   <button
                     onClick={() => setDeleteGroupConfirm({ isOpen: true, groupId: group.id, groupName: group.name })}
@@ -362,7 +428,14 @@ export default function KeywordsPage() {
                         >
                           <div className="flex items-center space-x-3">
                             <span className="font-medium text-gray-900">{keyword.keyword}</span>
-                            <span className="text-xs text-gray-500 px-2 py-1 bg-white rounded">{keyword.keyword_type}</span>
+                            <span className="text-xs text-gray-500 px-2 py-1 bg-white rounded border">
+                              {KEYWORD_TYPES.find(t => t.value === keyword.keyword_type)?.label || keyword.keyword_type}
+                            </span>
+                            {keyword.created_at && (
+                              <span className="text-xs text-gray-400">
+                                {new Date(keyword.created_at).toLocaleDateString('vi-VN')}
+                              </span>
+                            )}
                           </div>
                           
                           <div className="flex items-center space-x-2">
@@ -526,10 +599,10 @@ export default function KeywordsPage() {
                   onChange={(e) => setNewKeyword({ ...newKeyword, keyword_type: e.target.value })}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="general">General</option>
-                  <option value="brand">Brand</option>
-                  <option value="product">Product</option>
-                  <option value="competitor">Competitor</option>
+                  <option value="" disabled>-- Chọn loại --</option>
+                  {KEYWORD_TYPES.map(t => (
+                    <option key={t.value} value={t.value}>{t.label}</option>
+                  ))}
                 </select>
               </div>
             </div>
@@ -543,6 +616,64 @@ export default function KeywordsPage() {
               </button>
               <button
                 onClick={handleAddKeyword}
+                className="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Thêm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Keyword Modal */}
+      {showBulkKeywordModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
+            <div className="p-6 border-b">
+              <h2 className="text-xl font-bold text-gray-900">Thêm nhiều từ khóa</h2>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Danh sách từ khóa (mỗi dòng một từ khóa) *
+                </label>
+                <textarea
+                  value={bulkKeyword.keywords_text}
+                  onChange={(e) => setBulkKeyword({ ...bulkKeyword, keywords_text: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Ví dụ:&#10;TTH&#10;TTH Group&#10;Bệnh viện TTH"
+                  rows={5}
+                  autoFocus
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Loại từ khóa
+                </label>
+                <select
+                  value={bulkKeyword.keyword_type}
+                  onChange={(e) => setBulkKeyword({ ...bulkKeyword, keyword_type: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="" disabled>-- Chọn loại --</option>
+                  {KEYWORD_TYPES.map(t => (
+                    <option key={t.value} value={t.value}>{t.label}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="p-6 border-t bg-gray-50 rounded-b-xl flex justify-end space-x-3">
+              <button
+                onClick={() => setShowBulkKeywordModal(false)}
+                className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={handleAddBulkKeyword}
                 className="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
               >
                 Thêm
@@ -584,10 +715,10 @@ export default function KeywordsPage() {
                   onChange={(e) => setSelectedKeyword({ ...selectedKeyword, keyword_type: e.target.value })}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="general">General</option>
-                  <option value="brand">Brand</option>
-                  <option value="product">Product</option>
-                  <option value="competitor">Competitor</option>
+                  <option value="" disabled>-- Chọn loại --</option>
+                  {KEYWORD_TYPES.map(t => (
+                    <option key={t.value} value={t.value}>{t.label}</option>
+                  ))}
                 </select>
               </div>
 

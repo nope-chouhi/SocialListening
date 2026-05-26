@@ -17,6 +17,22 @@ class KeywordCreate(KeywordBase):
     group_id: int
 
 
+class KeywordBulkCreate(BaseModel):
+    group_id: int
+    keywords: List[str]
+    keyword_type: KeywordType = KeywordType.GENERAL
+    is_active: bool = True
+
+
+class KeywordBulkResponse(BaseModel):
+    created: List[dict]
+    skipped_duplicates: List[str]
+    invalid: List[str]
+    created_count: int
+    skipped_count: int
+    invalid_count: int
+
+
 class KeywordUpdate(BaseModel):
     keyword: Optional[str] = Field(None, min_length=1, max_length=500)
     keyword_type: Optional[KeywordType] = None

@@ -5,11 +5,15 @@ from app.core.database import Base
 
 
 class KeywordType(str, Enum):
-    BRAND = "brand"
-    PRODUCT = "product"
-    COMPETITOR = "competitor"
-    SENSITIVE = "sensitive"
     GENERAL = "general"
+    BRAND = "brand"
+    COMPETITOR = "competitor"
+    PERSON = "person"
+    SERVICE = "service"
+    LOCATION = "location"
+    HASHTAG = "hashtag"
+    NEGATIVE_PHRASE = "negative_phrase"
+    POSITIVE_PHRASE = "positive_phrase"
 
 
 class LogicOperator(str, Enum):

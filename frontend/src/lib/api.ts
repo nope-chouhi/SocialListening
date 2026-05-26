@@ -137,16 +137,20 @@ export const keywords = {
     const response = await api.get(`/api/keywords/groups/${groupId}/keywords`);
     return response.data;
   },
-  createKeyword: async (data: { group_id: number; keyword: string; is_active?: boolean }) => {
-    const response = await api.post('/api/keywords/keywords', data);
+  createKeyword: async (data: { group_id: number; keyword: string; keyword_type?: string; is_active?: boolean }) => {
+    const response = await api.post('/api/keywords', data);
+    return response.data;
+  },
+  createKeywordsBulk: async (data: { group_id: number; keywords: string[]; keyword_type?: string; is_active?: boolean }) => {
+    const response = await api.post('/api/keywords/bulk', data);
     return response.data;
   },
   updateKeyword: async (id: number, data: any) => {
-    const response = await api.put(`/api/keywords/keywords/${id}`, data);
+    const response = await api.put(`/api/keywords/${id}`, data);
     return response.data;
   },
   deleteKeyword: async (id: number) => {
-    const response = await api.delete(`/api/keywords/keywords/${id}`);
+    const response = await api.delete(`/api/keywords/${id}`);
     return response.data;
   },
 };
