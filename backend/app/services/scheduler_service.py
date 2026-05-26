@@ -141,7 +141,24 @@ def has_active_job(db: Session, source_id: int) -> bool:
             )
         ).scalars().all()
 
+        now = datetime.utcnow()
         for job in active_jobs:
+            is_stuck = False
+            if job.started_at and (now - job.started_at).total_seconds() > 1800:
+                is_stuck = True
+            elif job.created_at and not job.started_at and (now - job.created_at).total_seconds() > 1800:
+                is_stuck = True
+                
+            if is_stuck:
+                job.status = CrawlJobStatus.FAILED
+                job.error_message = "Job timed out or stuck."
+                job.completed_at = now
+                try:
+                    db.commit()
+                except:
+                    db.rollback()
+                continue
+                
             if job.source_ids and source_id in job.source_ids:
                 return True
 
@@ -266,6 +283,7 @@ def scan_all_due_sources():
                 db.add(status)
             else:
                 status.last_heartbeat = func.now()
+                status.last_error = None
             db.commit()
         except Exception as heartbeat_err:
             logger.error(f"[Worker] Failed to update heartbeat in DB: {heartbeat_err}")
@@ -293,6 +311,14 @@ def scan_all_due_sources():
     except Exception as e:
         _last_error = str(e)
         logger.error(f"[Worker] ❌ Error in scan_all_due_sources: {e}")
+        try:
+            from app.models.system_settings import WorkerStatus
+            status = db.query(WorkerStatus).first()
+            if status:
+                status.last_error = str(e)[:2000]
+                db.commit()
+        except:
+            pass
     finally:
         db.close()
 

@@ -44,10 +44,9 @@ def get_worker_status(
     except:
         due_sources = 0
 
-    # Sanitize last_error for public exposure
     safe_last_error = None
     if status_record and status_record.last_error:
-        safe_last_error = "Worker encountered an error."
+        safe_last_error = status_record.last_error
 
     import os
     embedded_enabled = os.getenv("ENABLE_EMBEDDED_SCHEDULER", "false").lower() == "true"
