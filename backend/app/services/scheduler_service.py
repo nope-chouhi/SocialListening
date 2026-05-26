@@ -5,7 +5,7 @@ Supports standalone worker mode and heartbeat tracking.
 """
 import os
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List, Optional
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
@@ -25,6 +25,13 @@ scheduler_started = False
 # Worker heartbeat tracking (in-memory, also persisted to DB)
 _last_heartbeat: Optional[datetime] = None
 _last_error: Optional[str] = None
+
+def ensure_aware_utc(dt: Optional[datetime]) -> Optional[datetime]:
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc)
 
 
 def get_db() -> Session:
@@ -61,7 +68,7 @@ def calculate_next_crawl_time(source_or_frequency=None, **kwargs) -> Optional[da
             freq = freq.value
         if freq == 'manual':
             return None
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         interval = get_frequency_interval(freq)
         return now + interval
 
@@ -77,7 +84,7 @@ def calculate_next_crawl_time(source_or_frequency=None, **kwargs) -> Optional[da
     if freq == 'manual':
         return None
 
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     interval = get_frequency_interval(freq)
 
     # If never crawled, next time is now
@@ -85,7 +92,8 @@ def calculate_next_crawl_time(source_or_frequency=None, **kwargs) -> Optional[da
         return now
 
     # Calculate next time based on last crawl + interval
-    next_time = source.last_crawled_at + interval
+    last_crawled_at_aware = ensure_aware_utc(source.last_crawled_at)
+    next_time = last_crawled_at_aware + interval
 
     # If next time is in the past, return now (overdue)
     if next_time < now:
@@ -102,7 +110,7 @@ def get_due_sources(db: Session) -> List[Source]:
     - crawl_frequency != manual
     - next_crawl_at <= now OR next_crawl_at is NULL and never crawled
     """
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     sources = db.execute(
         select(Source).where(Source.is_active == True)
     ).scalars().all()
@@ -117,7 +125,8 @@ def get_due_sources(db: Session) -> List[Source]:
             continue
 
         # Check if overdue
-        if source.next_crawl_at and source.next_crawl_at <= now:
+        next_crawl_at_aware = ensure_aware_utc(source.next_crawl_at)
+        if next_crawl_at_aware and next_crawl_at_aware <= now:
             due.append(source)
         elif not source.last_crawled_at and not source.next_crawl_at:
             # Never crawled and no next_crawl_at set
@@ -125,7 +134,8 @@ def get_due_sources(db: Session) -> List[Source]:
         elif not source.next_crawl_at and source.last_crawled_at:
             # Has been crawled but next_crawl_at not set - calculate
             next_time = calculate_next_crawl_time(source)
-            if next_time and next_time <= now:
+            next_time_aware = ensure_aware_utc(next_time)
+            if next_time_aware and next_time_aware <= now:
                 due.append(source)
 
     return due
@@ -141,12 +151,15 @@ def has_active_job(db: Session, source_id: int) -> bool:
             )
         ).scalars().all()
 
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         for job in active_jobs:
             is_stuck = False
-            if job.started_at and (now - job.started_at).total_seconds() > 1800:
+            job_started_at_aware = ensure_aware_utc(job.started_at)
+            job_created_at_aware = ensure_aware_utc(job.created_at)
+            
+            if job_started_at_aware and (now - job_started_at_aware).total_seconds() > 1800:
                 is_stuck = True
-            elif job.created_at and not job.started_at and (now - job.created_at).total_seconds() > 1800:
+            elif job_created_at_aware and not job_started_at_aware and (now - job_created_at_aware).total_seconds() > 1800:
                 is_stuck = True
                 
             if is_stuck:
@@ -204,7 +217,7 @@ def execute_scheduled_scan(source_id: int):
 
         # Update job status to running
         job.status = CrawlJobStatus.RUNNING
-        job.started_at = datetime.utcnow()
+        job.started_at = datetime.now(timezone.utc)
         db.commit()
 
         # Import here to avoid circular dependency
@@ -215,14 +228,15 @@ def execute_scheduled_scan(source_id: int):
 
             # Update job status
             job.status = CrawlJobStatus.COMPLETED
-            job.completed_at = datetime.utcnow()
+            job.completed_at = datetime.now(timezone.utc)
             job.mentions_found = result.get('mentions_found', 0)
             job.processed_sources = 1
             job.error_message = None
 
             # Update source statistics
-            source.last_crawled_at = datetime.utcnow()
-            source.last_success_at = datetime.utcnow()
+            now = datetime.now(timezone.utc)
+            source.last_crawled_at = now
+            source.last_success_at = now
             source.crawl_count = (source.crawl_count or 0) + 1
             source.error_count = 0
             source.last_error = None
@@ -239,12 +253,12 @@ def execute_scheduled_scan(source_id: int):
         except Exception as e:
             # Update job status to failed
             job.status = CrawlJobStatus.FAILED
-            job.completed_at = datetime.utcnow()
+            job.completed_at = datetime.now(timezone.utc)
             job.error_message = str(e)[:2000]
             job.processed_sources = 1
 
             # Update source error count
-            source.last_crawled_at = datetime.utcnow()
+            source.last_crawled_at = datetime.now(timezone.utc)
             source.error_count = (source.error_count or 0) + 1
             source.last_error = str(e)[:2000]
 
@@ -270,7 +284,7 @@ def scan_all_due_sources():
 
     db = get_db()
     try:
-        _last_heartbeat = datetime.utcnow()
+        _last_heartbeat = datetime.now(timezone.utc)
         logger.info(f"[Worker] Checking due sources at {_last_heartbeat.isoformat()}")
 
         # Update heartbeat in database for system status
@@ -355,7 +369,7 @@ def start_scheduler(interval_minutes: int = 10, is_embedded: bool = False):
             id='scan_due_sources',
             name='Scan Due Sources',
             replace_existing=True,
-            next_run_time=datetime.utcnow() + timedelta(seconds=30)  # First run 30s after start
+            next_run_time=datetime.now(timezone.utc) + timedelta(seconds=30)  # First run 30s after start
         )
 
         scheduler.start()

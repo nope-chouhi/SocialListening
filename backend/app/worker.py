@@ -20,7 +20,7 @@ import time
 import signal
 import logging
 import argparse
-from datetime import datetime
+from datetime import datetime, timezone
 
 # Setup logging before imports
 logging.basicConfig(
@@ -79,6 +79,7 @@ def update_heartbeat():
             db.add(status)
         else:
             status.last_heartbeat = func.now()
+            status.last_error = None
         db.commit()
         db.close()
     except Exception as e:
@@ -103,7 +104,7 @@ def run_loop(interval_minutes: int):
     logger.info("=" * 60)
     logger.info(f"RSS Worker - Continuous mode (interval: {interval_minutes} min)")
     logger.info(f"Database: {os.getenv('DATABASE_URL', 'default')}")
-    logger.info(f"Time: {datetime.utcnow().isoformat()}Z")
+    logger.info(f"Time: {datetime.now(timezone.utc).isoformat()}")
     logger.info("=" * 60)
 
     ensure_tables()

@@ -5,7 +5,7 @@ Production-grade RSS scanner with deduplication, keyword matching, AI analysis.
 import hashlib
 import logging
 import requests
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, List, Optional
 from bs4 import BeautifulSoup
 import feedparser
@@ -317,7 +317,7 @@ def crawl_source(db: Session, source_id: int, job_id: int = None) -> Dict:
                 url=article['url'],
                 author=article.get('author'),
                 published_at=article.get('published_at'),
-                collected_at=datetime.utcnow(),
+                collected_at=datetime.now(timezone.utc),
                 matched_keywords=matched_keywords if matched_keywords else None,
                 is_reviewed=False
             )
