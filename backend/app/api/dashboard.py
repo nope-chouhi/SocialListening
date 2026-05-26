@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
-from sqlalchemy import select, func, and_, cast, Date
-from datetime import datetime, timedelta
+from sqlalchemy import select, func, and_, cast, Date, or_
+from datetime import datetime, timedelta, timezone
 from typing import List
 
 from app.core.database import get_db
@@ -26,7 +26,7 @@ def get_dashboard_summary(
     import logging
     logger = logging.getLogger(__name__)
     try:
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
         
         # Total mentions
@@ -270,7 +270,7 @@ def get_dashboard_trends(
     import logging
     logger = logging.getLogger(__name__)
     try:
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         
         if time_range == "today":
             start_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -385,7 +385,7 @@ def get_sentiment_summary(
     import logging
     logger = logging.getLogger(__name__)
     try:
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         
         if time_range == "today":
             start_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -395,6 +395,14 @@ def get_sentiment_summary(
             start_date = now - timedelta(days=30)
         
         from app.models.mention import SentimentScore
+        
+        # Get total mentions in this period
+        try:
+            total_mentions = db.execute(
+                select(func.count(Mention.id)).where(Mention.collected_at >= start_date)
+            ).scalar() or 0
+        except:
+            total_mentions = 0
         
         try:
             positive = db.execute(
@@ -431,12 +439,17 @@ def get_sentiment_summary(
             ).scalar() or 0
         except Exception:
             negative = 0
+            
+        # The remainder are unknown/pending
+        analyzed_total = positive + neutral + negative
+        unknown = max(0, total_mentions - analyzed_total)
         
         return {
             "positive": positive,
             "neutral": neutral,
             "negative": negative,
-            "total": positive + neutral + negative
+            "unknown": unknown,
+            "total": total_mentions
         }
     except Exception as e:
         logger.error(f"Error in get_sentiment_summary: {e}")
@@ -458,7 +471,7 @@ def get_hot_keywords(
     import logging
     logger = logging.getLogger(__name__)
     try:
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         
         if time_range == "today":
             start_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -491,8 +504,18 @@ def get_hot_keywords(
             risk_scores = []
             
             for m in recent_mentions:
-                content_lower = ((m.title or '') + ' ' + (m.content or '')).lower()
-                if kw.keyword.lower() in content_lower:
+                matched = False
+                if m.matched_keywords and isinstance(m.matched_keywords, list):
+                    for mk in m.matched_keywords:
+                        if mk.get('keyword_id') == kw.id or mk.get('keyword', '').lower() == kw.keyword.lower():
+                            matched = True
+                            break
+                else:
+                    content_lower = ((m.title or '') + ' ' + (m.content or '')).lower()
+                    if kw.keyword.lower() in content_lower:
+                        matched = True
+                        
+                if matched:
                     count += 1
                     # Check if this mention has negative analysis
                     try:

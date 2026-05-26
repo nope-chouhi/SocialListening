@@ -5,6 +5,7 @@ interface SentimentData {
   positive: number;
   neutral: number;
   negative: number;
+  unknown?: number;
   total: number;
 }
 
@@ -21,6 +22,7 @@ export default function SentimentDonutChart({ data, isLoading }: { data: Sentime
     { name: 'Tích cực', value: data.positive, color: '#10B981' }, // emerald-500
     { name: 'Trung lập', value: data.neutral, color: '#9CA3AF' }, // gray-400
     { name: 'Tiêu cực', value: data.negative, color: '#EF4444' }, // red-500
+    { name: 'Chưa phân tích', value: data.unknown || 0, color: '#D1D5DB' }, // gray-300
   ].filter(item => item.value > 0);
 
   return (

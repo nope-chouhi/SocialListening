@@ -236,7 +236,7 @@ export default function ScanPage() {
                 workerStatus.worker_running ? 'text-green-800' : 'text-yellow-800'
               }`}>
                 {workerStatus.worker_running 
-                  ? `Worker đang hoạt động (${workerStatus.worker_mode === 'embedded' ? 'Embedded' : 'Standalone'})` 
+                  ? (workerStatus.worker_mode === 'embedded' ? 'Worker đang hoạt động — Embedded Scheduler' : 'Worker đang hoạt động — Standalone')
                   : 'Worker không hoạt động'}
               </h3>
               {workerStatus.worker_mode === 'embedded' && (

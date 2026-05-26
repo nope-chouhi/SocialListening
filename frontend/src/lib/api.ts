@@ -232,7 +232,7 @@ export const crawl = {
     return response.data;
   },
   getWorkerStatus: async () => {
-    const response = await api.get('/api/crawl/worker-status');
+    const response = await api.get('/api/system/worker-status');
     return response.data;
   },
   getSchedulerStatus: async () => {

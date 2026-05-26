@@ -56,13 +56,13 @@ def list_mentions(
             total = 0
 
         offset = (page - 1) * page_size
-        query = query.offset(offset).limit(page_size).order_by(Mention.collected_at.desc())
+        query = query.order_by(Mention.collected_at.desc()).offset(offset).limit(page_size)
 
         try:
             mentions = db.execute(query).scalars().all()
         except Exception as e:
             logger.error(f"Error querying mentions page: {e}")
-            mentions = []
+            raise HTTPException(status_code=500, detail="Lỗi khi truy vấn dữ liệu mentions")
 
         result_items = []
         for m in mentions:
@@ -102,15 +102,11 @@ def list_mentions(
             "page_size": page_size,
             "total_pages": total_pages
         }
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Critical error in list_mentions: {e}")
-        return {
-            "items": [],
-            "total": 0,
-            "page": page,
-            "page_size": page_size,
-            "total_pages": 1
-        }
+        raise HTTPException(status_code=500, detail="Lỗi hệ thống khi tải danh sách mentions")
 
 
 @router.get("/{mention_id}")
