@@ -1,36 +1,99 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
-from sqlalchemy import select, func
-from typing import List, Optional
-from datetime import datetime
-import hashlib
-import requests
-from bs4 import BeautifulSoup
-import feedparser
-from pydantic import BaseModel
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
+from app.core.database import get_db, SessionLocal
 
-from app.core.database import get_db
-from app.core.security import get_current_active_user
-from app.models.user import User
-from app.models.source import Source
-from app.models.keyword import Keyword, KeywordGroup
-from app.models.mention import Mention, AIAnalysis, SentimentScore
-from app.models.alert import Alert, AlertSeverity, AlertStatus
-from app.models.crawl import CrawlJob, CrawlJobStatus
-from app.services.ai_service import analyze_mention_with_dummy_ai
+def run_manual_scan_task(job_id: int, source_ids: List[int], keyword_texts: List[str], keyword_ids: List[int]):
+    db = SessionLocal()
+    try:
+        job = db.execute(select(CrawlJob).where(CrawlJob.id == job_id)).scalar_one_or_none()
+        if not job:
+            return
 
-router = APIRouter()
+        sources_to_scan = db.execute(select(Source).where(Source.id.in_(source_ids))).scalars().all()
+        all_keywords = db.execute(select(Keyword).where(Keyword.id.in_(keyword_ids))).scalars().all()
 
-
-class ManualScanRequest(BaseModel):
-    keyword_group_ids: List[int]
-    source_ids: Optional[List[int]] = None
-    url: Optional[str] = None
+        total_mentions = 0
+        
+        for source in sources_to_scan:
+            try:
+                mentions = crawl_source(source, keyword_texts, all_keywords, db)
+                
+                for mention_data in mentions:
+                    content_hash = hashlib.sha256(mention_data['content'].encode()).hexdigest()
+                    existing = db.execute(select(Mention).where(Mention.content_hash == content_hash)).scalar_one_or_none()
+                    if existing:
+                        continue
+                    
+                    mention = Mention(
+                        source_id=source.id,
+                        title=mention_data.get('title'),
+                        content=mention_data['content'],
+                        content_hash=content_hash,
+                        url=mention_data['url'],
+                        author=mention_data.get('author'),
+                        published_at=mention_data.get('published_at'),
+                        matched_keywords=mention_data.get('matched_keywords', [])
+                    )
+                    db.add(mention)
+                    db.commit()
+                    db.refresh(mention)
+                    
+                    analysis_result = analyze_mention_with_dummy_ai(mention.content, mention.title)
+                    ai_analysis = AIAnalysis(
+                        mention_id=mention.id,
+                        sentiment=analysis_result['sentiment'],
+                        risk_score=analysis_result['risk_score'],
+                        crisis_level=analysis_result['crisis_level'],
+                        summary_vi=analysis_result['summary_vi'],
+                        suggested_action=analysis_result['suggested_action'],
+                        responsible_department=analysis_result['responsible_department'],
+                        confidence_score=analysis_result['confidence_score'],
+                        ai_provider="dummy_ai",
+                        model_version="1.0",
+                        processing_time_ms=analysis_result['processing_time_ms']
+                    )
+                    db.add(ai_analysis)
+                    db.commit()
+                    
+                    if analysis_result['risk_score'] >= 70:
+                        severity = AlertSeverity.CRITICAL if analysis_result['risk_score'] >= 85 else AlertSeverity.HIGH
+                        alert = Alert(
+                            mention_id=mention.id,
+                            severity=severity,
+                            status=AlertStatus.NEW,
+                            title=f"High risk mention detected: {mention.title or 'No title'}",
+                            message=f"Risk score: {analysis_result['risk_score']}, Crisis level: {analysis_result['crisis_level']}"
+                        )
+                        db.add(alert)
+                        db.commit()
+                    
+                    total_mentions += 1
+                
+                source.last_crawled_at = datetime.utcnow()
+                source.last_success_at = datetime.utcnow()
+                source.crawl_count = (source.crawl_count or 0) + 1
+                job.processed_sources = (job.processed_sources or 0) + 1
+                db.commit()
+                
+            except Exception as e:
+                source.last_error = str(e)
+                source.error_count = (source.error_count or 0) + 1
+                job.processed_sources = (job.processed_sources or 0) + 1
+                db.commit()
+                continue
+        
+        job.status = CrawlJobStatus.COMPLETED
+        job.completed_at = datetime.utcnow()
+        job.mentions_found = total_mentions
+        db.commit()
+        
+    finally:
+        db.close()
 
 
 @router.post("/manual-scan")
 def manual_scan(
     body: ManualScanRequest,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
@@ -40,7 +103,6 @@ def manual_scan(
     - Enters a custom URL to scan
     """
     
-    # Get keyword groups and keywords
     keyword_groups = db.execute(
         select(KeywordGroup).where(KeywordGroup.id.in_(body.keyword_group_ids))
     ).scalars().all()
@@ -48,7 +110,6 @@ def manual_scan(
     if not keyword_groups:
         raise HTTPException(status_code=404, detail="Không tìm thấy nhóm từ khóa")
 
-    # Get all keywords from these groups
     all_keywords = []
     for group in keyword_groups:
         keywords = db.execute(
@@ -60,8 +121,8 @@ def manual_scan(
         raise HTTPException(status_code=400, detail="Không có từ khóa hoạt động trong nhóm đã chọn")
 
     keyword_texts = [kw.keyword.lower() for kw in all_keywords]
+    keyword_ids = [kw.id for kw in all_keywords]
 
-    # Determine sources to scan
     sources_to_scan = []
 
     if body.url:
@@ -85,9 +146,10 @@ def manual_scan(
     if not sources_to_scan:
         raise HTTPException(status_code=404, detail="Không tìm thấy nguồn hoạt động")
     
-    # Create crawl job for tracking
+    source_ids = [s.id for s in sources_to_scan]
+    
     job = CrawlJob(
-        source_ids=[s.id for s in sources_to_scan],
+        source_ids=source_ids,
         keyword_group_ids=body.keyword_group_ids,
         job_type='manual',
         status=CrawlJobStatus.RUNNING,
@@ -100,106 +162,18 @@ def manual_scan(
     db.commit()
     db.refresh(job)
 
-    # Scan each source
-    total_mentions = 0
-    new_mentions = []
-    
-    for source in sources_to_scan:
-        try:
-            # Crawl the source
-            mentions = crawl_source(source, keyword_texts, all_keywords, db)
-            
-            for mention_data in mentions:
-                # Check if mention already exists (by content hash)
-                content_hash = hashlib.sha256(mention_data['content'].encode()).hexdigest()
-                
-                existing = db.execute(
-                    select(Mention).where(Mention.content_hash == content_hash)
-                ).scalar_one_or_none()
-                
-                if existing:
-                    continue
-                
-                # Create mention
-                mention = Mention(
-                    source_id=source.id,
-                    title=mention_data.get('title'),
-                    content=mention_data['content'],
-                    content_hash=content_hash,
-                    url=mention_data['url'],
-                    author=mention_data.get('author'),
-                    published_at=mention_data.get('published_at'),
-                    matched_keywords=mention_data.get('matched_keywords', [])
-                )
-                db.add(mention)
-                db.commit()
-                db.refresh(mention)
-                
-                # AI Analysis
-                analysis_result = analyze_mention_with_dummy_ai(mention.content, mention.title)
-                
-                ai_analysis = AIAnalysis(
-                    mention_id=mention.id,
-                    sentiment=analysis_result['sentiment'],
-                    risk_score=analysis_result['risk_score'],
-                    crisis_level=analysis_result['crisis_level'],
-                    summary_vi=analysis_result['summary_vi'],
-                    suggested_action=analysis_result['suggested_action'],
-                    responsible_department=analysis_result['responsible_department'],
-                    confidence_score=analysis_result['confidence_score'],
-                    ai_provider="dummy_ai",
-                    model_version="1.0",
-                    processing_time_ms=analysis_result['processing_time_ms']
-                )
-                db.add(ai_analysis)
-                db.commit()
-                
-                # Create alert if high risk
-                if analysis_result['risk_score'] >= 70:
-                    severity = AlertSeverity.CRITICAL if analysis_result['risk_score'] >= 85 else AlertSeverity.HIGH
-                    
-                    alert = Alert(
-                        mention_id=mention.id,
-                        severity=severity,
-                        status=AlertStatus.NEW,
-                        title=f"High risk mention detected: {mention.title or 'No title'}",
-                        message=f"Risk score: {analysis_result['risk_score']}, Crisis level: {analysis_result['crisis_level']}"
-                    )
-                    db.add(alert)
-                    db.commit()
-                
-                new_mentions.append(mention.id)
-                total_mentions += 1
-            
-            # Update source last crawled
-            source.last_crawled_at = datetime.utcnow()
-            source.last_success_at = datetime.utcnow()
-            source.crawl_count = (source.crawl_count or 0) + 1
-            job.processed_sources = (job.processed_sources or 0) + 1
-            db.commit()
-            
-        except Exception as e:
-            # Update source with error
-            source.last_error = str(e)
-            source.error_count = (source.error_count or 0) + 1
-            job.processed_sources = (job.processed_sources or 0) + 1
-            db.commit()
-            continue
-    
-    # Finalize job
-    job.status = CrawlJobStatus.COMPLETED
-    job.completed_at = datetime.utcnow()
-    job.mentions_found = total_mentions
-    db.commit()
+    # Queue background task to prevent Vercel timeout
+    background_tasks.add_task(run_manual_scan_task, job.id, source_ids, keyword_texts, keyword_ids)
 
     return {
         "success": True,
-        "total_mentions_found": total_mentions,
-        "new_mention_ids": new_mentions,
+        "total_mentions_found": 0,
+        "new_mention_ids": [],
         "sources_scanned": len(sources_to_scan),
         "job_id": job.id,
-        "message": f"Scan completed. Found {total_mentions} new mentions."
-    }
+        "message": f"Scan is running in background for {len(sources_to_scan)} sources."
+    }                
+
 
 
 def crawl_source(source: Source, keyword_texts: List[str], keywords: List[Keyword], db: Session) -> List[dict]:
