@@ -48,7 +48,7 @@ class KeywordResponse(KeywordBase):
     updated_at: Optional[datetime] = None
     
     class Config:
-        from_attributes = True
+        orm_mode = True
 
 
 # Keyword Group Schemas
@@ -79,7 +79,7 @@ class KeywordGroupResponse(KeywordGroupBase):
     keywords: List[KeywordResponse] = []
     
     class Config:
-        from_attributes = True
+        orm_mode = True
 
 
 class KeywordGroupListResponse(KeywordGroupBase):
@@ -88,5 +88,5 @@ class KeywordGroupListResponse(KeywordGroupBase):
     keyword_count: int = 0
     
     class Config:
-        from_attributes = True
+        orm_mode = True
 

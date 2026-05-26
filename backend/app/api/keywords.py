@@ -184,7 +184,7 @@ def create_keyword(
         Keyword.group_id == keyword_data.group_id,
         func.lower(Keyword.keyword) == kw_text.lower()
     )
-    if db.execute(duplicate_query).scalar_one_or_none():
+    if db.execute(duplicate_query).first():
         raise HTTPException(status_code=409, detail="Từ khóa đã tồn tại trong nhóm này")
     
     # Insert new keyword
