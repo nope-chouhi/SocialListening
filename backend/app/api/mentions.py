@@ -62,7 +62,7 @@ def list_mentions(
             mentions = db.execute(query).scalars().all()
         except Exception as e:
             logger.error(f"Error querying mentions page: {e}")
-            raise HTTPException(status_code=500, detail="Lỗi khi truy vấn dữ liệu mentions")
+            raise HTTPException(status_code=500, detail=f"Lỗi khi truy vấn dữ liệu mentions: {str(e)}")
 
         result_items = []
         for m in mentions:
