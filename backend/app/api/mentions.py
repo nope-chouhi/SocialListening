@@ -50,8 +50,20 @@ def list_mentions(
             )
 
         try:
-            total = db.execute(select(func.count()).select_from(query.subquery())).scalar() or 0
+            # Count query without subquery to avoid PostgreSQL alias/syntax issues
+            count_query = select(func.count()).select_from(Mention)
+            if source_id:
+                count_query = count_query.where(Mention.source_id == source_id)
+            if search_query:
+                count_query = count_query.where(
+                    or_(
+                        Mention.title.ilike(search_pattern),
+                        Mention.content.ilike(search_pattern)
+                    )
+                )
+            total = db.execute(count_query).scalar() or 0
         except Exception as e:
+            db.rollback()
             logger.error(f"Error querying total mentions count: {e}")
             total = 0
 
