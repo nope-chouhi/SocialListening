@@ -363,7 +363,8 @@ export default function SourcesPage() {
               </div>
             </div>
           );
-        })}
+        })
+        )}
       </div>
 
       {/* Delete Confirm Dialog */}
