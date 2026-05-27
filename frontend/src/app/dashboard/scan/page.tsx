@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Play, Link as LinkIcon, History, AlertTriangle, CheckCircle, XCircle, Clock, RefreshCw, Loader2, Activity } from 'lucide-react';
+import { Play, Link as LinkIcon, History, AlertTriangle, CheckCircle, XCircle, Clock, RefreshCw, Loader2, Activity, Sparkles, Radar } from 'lucide-react';
 import { crawl, keywords as keywordsApi, sources as sourcesApi } from '@/lib/api';
 import toast, { Toaster } from 'react-hot-toast';
 
@@ -41,6 +41,71 @@ export default function ScanPage() {
   const [workerStatus, setWorkerStatus] = useState<WorkerStatus | null>(null);
   const [crawlJobs, setCrawlJobs] = useState<CrawlJob[]>([]);
   const [retryingJobId, setRetryingJobId] = useState<number | null>(null);
+
+  const [quickKeyword, setQuickKeyword] = useState('');
+  const [quickGroupId, setQuickGroupId] = useState<number | ''>('');
+
+  const handleQuickAddAndScan = async () => {
+    if (!quickKeyword.trim()) {
+      toast.error('Vui lòng nhập từ khóa');
+      return;
+    }
+
+    if (sources.length === 0) {
+      toast.error('Chưa có nguồn quét. Hãy thêm nguồn RSS/Web trước.');
+      return;
+    }
+
+    try {
+      setScanning(true);
+      const loadingToast = toast.loading('Đang thêm từ khóa và scan...');
+
+      let targetGroupId = quickGroupId as number;
+
+      // Auto-create default group if none selected
+      if (!targetGroupId) {
+        if (keywordGroups.length > 0) {
+          targetGroupId = keywordGroups[0].id;
+        } else {
+          const newGroup = await keywordsApi.createGroup({ name: 'Nhóm Mặc Định', description: 'Tự động tạo từ Scan Center' });
+          targetGroupId = newGroup.id;
+        }
+      }
+
+      // Create keyword
+      await keywordsApi.createKeyword({
+        keyword: quickKeyword,
+        group_id: targetGroupId,
+        keyword_type: 'general',
+      });
+
+      // Refresh groups to get the new keyword count
+      await fetchData();
+
+      // Trigger scan with this group and all available sources
+      const sourceIdsToScan = selectedSources.length > 0 ? selectedSources : sources.map(s => s.id);
+
+      const result = await crawl.manualScan({
+        keyword_group_ids: [targetGroupId],
+        source_ids: sourceIdsToScan,
+      });
+
+      toast.dismiss(loadingToast);
+      toast.success(`Đã thêm từ khóa và scan! Tìm thấy ${result.total_mentions_found} mentions mới`);
+      
+      setQuickKeyword('');
+      setSelectedGroups(prev => Array.from(new Set([...prev, targetGroupId])));
+      
+      fetchCrawlJobs();
+      fetchWorkerStatus();
+    } catch (error: any) {
+      console.error('Error in quick add and scan:', error);
+      toast.dismiss();
+      toast.error('Lỗi: ' + (error.response?.data?.detail || error.message));
+    } finally {
+      setScanning(false);
+    }
+  };
 
   useEffect(() => {
     fetchData();
@@ -269,9 +334,62 @@ export default function ScanPage() {
         </div>
       )}
 
+      {/* Thêm nhanh từ khóa theo dõi */}
+      <div className="bg-white rounded-lg shadow p-6 space-y-4">
+        <h2 className="text-lg font-semibold flex items-center">
+          <Sparkles className="w-5 h-5 mr-2 text-blue-600" />
+          Thêm nhanh từ khóa theo dõi
+        </h2>
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Từ khóa cần theo dõi
+            </label>
+            <input
+              type="text"
+              value={quickKeyword}
+              onChange={(e) => setQuickKeyword(e.target.value)}
+              placeholder="Nhập từ khóa (VD: Vinfast, iPhone 16...)"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div className="md:w-1/3">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Nhóm từ khóa
+            </label>
+            <select
+              value={quickGroupId}
+              onChange={(e) => setQuickGroupId(e.target.value ? Number(e.target.value) : '')}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">-- Tự động tạo nhóm mới --</option>
+              {keywordGroups.map((g) => (
+                <option key={g.id} value={g.id}>
+                  {g.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="md:w-auto flex items-end">
+            <button
+              onClick={handleQuickAddAndScan}
+              disabled={scanning}
+              className="w-full md:w-auto px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center font-medium"
+            >
+              {scanning ? (
+                <Loader2 className="w-5 h-5 animate-spin mr-2" />
+              ) : (
+                <Radar className="w-5 h-5 mr-2" />
+              )}
+              {scanning ? 'Đang xử lý...' : 'Thêm và quét'}
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* Scan Form */}
       <div className="bg-white rounded-lg shadow p-6 space-y-6">
-        <h2 className="text-lg font-semibold">Scan Mới</h2>
+        <h2 className="text-lg font-semibold">Scan Thủ Công</h2>
 
         {/* Select Keyword Groups */}
         <div>
