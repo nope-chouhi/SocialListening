@@ -1,1 +1,20 @@
-甧敳挠楬湥❴਻椊灭牯⁴⁻獵䕥晦捥⁴⁽牦浯✠敲捡❴਻浩潰瑲笠甠敳潒瑵牥素映潲⁭渧硥⽴慮楶慧楴湯㬧椊灭牯⁴⁻潌摡牥′⁽牦浯✠畬楣敤爭慥瑣㬧ਊ硥潰瑲搠晥畡瑬映湵瑣潩⁮潍楮潴割摥物捥⡴ ੻†潣獮⁴潲瑵牥㴠甠敳潒瑵牥⤨਻ 甠敳晅敦瑣⠨ 㸽笠 †爠畯整⹲敲汰捡⡥⼧慤桳潢牡⽤捳湡⤧਻†ⱽ嬠潲瑵牥⥝਻ 爠瑥牵⁮ਨ††搼癩挠慬獳慎敭∽業⵮⵨㙛瘰嵨映敬⁸汦硥挭汯椠整獭挭湥整⁲番瑳晩⵹散瑮牥㸢 ††㰠潌摡牥′汣獡乳浡㵥栢㠭眠㠭愠楮慭整猭楰⁮整瑸戭畬ⵥ〶‰扭㐭•㸯 ††㰠⁰汣獡乳浡㵥琢硥⵴牧祡㔭〰㸢懐杮挠畨㽹⁮畨渿⁧㽤⁮捓湡䌠湥整⹲⸮⼼㹰 †㰠搯癩ਾ†㬩紊਍
+'use client';
+
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { Loader2 } from 'lucide-react';
+
+export default function MonitorRedirect() {
+  const router = useRouter();
+
+  useEffect(() => {
+    router.replace('/dashboard/scan');
+  }, [router]);
+
+  return (
+    <div className="min-h-[60vh] flex flex-col items-center justify-center">
+      <Loader2 className="h-8 w-8 animate-spin text-blue-600 mb-4" />
+      <p className="text-gray-500">Đang chuyển hướng đến Scan Center...</p>
+    </div>
+  );
+}
