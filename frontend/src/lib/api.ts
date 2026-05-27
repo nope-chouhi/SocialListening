@@ -25,7 +25,15 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Response interceptor: log full backend error detail for debugging
+// Track if we're already handling a 401 redirect to prevent duplicate redirects
+let isRedirectingToLogin = false;
+
+/** Reset the redirect lock (call after successful login) */
+export function resetAuthRedirectLock() {
+  isRedirectingToLogin = false;
+}
+
+// Response interceptor: handle 401 globally + log errors
 api.interceptors.response.use(
   (response) => response,
   (error: AxiosError<{ detail?: string | any[] }>) => {
@@ -35,9 +43,32 @@ api.interceptors.response.use(
     const method = error.config?.method?.toUpperCase();
     const msg = typeof detail === 'string' ? detail : JSON.stringify(detail);
     console.error(`[API Error] ${method} ${url} → ${status}:`, msg || error.message);
+
+    // Global 401 handler: clear token and redirect to login once.
+    // For ALL 401 errors, swallow the rejection so downstream .catch() / toast.error
+    // never fires — the user is about to be redirected anyway.
+    if (status === 401) {
+      if (!isRedirectingToLogin) {
+        isRedirectingToLogin = true;
+        localStorage.removeItem('access_token');
+        // Use window.location for hard redirect — works from any context
+        if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
+          console.warn('[API] Token expired/invalid — redirecting to login');
+          window.location.href = '/login?expired=1';
+        }
+      }
+      // Return a never-resolving promise to swallow the error silently
+      return new Promise(() => {});
+    }
+
     return Promise.reject(error);
   }
 );
+
+/** Check if an error is a 401 auth error — these are handled globally, so skip toasting. */
+export function isAuthError(error: any): boolean {
+  return error?.response?.status === 401;
+}
 
 /** Extract readable error message from axios error, including HTTP status. */
 export function getErrorMessage(error: any, fallback = 'Lỗi không xác định'): string {

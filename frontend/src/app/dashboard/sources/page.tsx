@@ -58,10 +58,13 @@ export default function SourcesPage() {
       setSources(data);
     } catch (error: any) {
       console.error('Error fetching sources:', error);
-      toast.error(getUserFacingErrorMessage(
-        error,
-        'Lỗi khi tải danh sách nguồn. Vui lòng kiểm tra backend hoặc database migration.'
-      ));
+      // Don't toast for 401 — global interceptor handles redirect
+      if (error?.response?.status !== 401) {
+        toast.error(getUserFacingErrorMessage(
+          error,
+          'Lỗi khi tải danh sách nguồn. Vui lòng kiểm tra backend hoặc database migration.'
+        ));
+      }
     } finally {
       setLoading(false);
     }

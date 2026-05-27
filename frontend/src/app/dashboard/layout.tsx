@@ -53,11 +53,14 @@ export default function DashboardLayout({
         const userData = await auth.getCurrentUser();
         setUser(userData);
         setLoading(false);
-      } catch (error) {
+      } catch (error: any) {
         console.error('Auth error:', error);
-        // If API fails, redirect to login
-        localStorage.removeItem('access_token');
-        router.push('/login');
+        // 401 is handled globally by the API interceptor (redirects to /login?expired=1)
+        // For non-401 errors (network issues, 500, etc.), still show the dashboard in degraded mode
+        if (error?.response?.status !== 401) {
+          setLoading(false);
+        }
+        // If it's 401, the interceptor will redirect — don't set loading=false to avoid flash
       }
     };
 

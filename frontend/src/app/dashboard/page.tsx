@@ -53,7 +53,10 @@ export default function DashboardPage() {
       setMetrics(data);
     } catch (error: any) {
       console.error('Error fetching dashboard summary:', error);
-      toast.error('Lỗi khi tải dữ liệu tổng quan');
+      // Don't toast for 401 — global interceptor handles redirect
+      if (error?.response?.status !== 401) {
+        toast.error('Lỗi khi tải dữ liệu tổng quan');
+      }
     } finally {
       setLoadingMetrics(false);
     }
@@ -72,7 +75,10 @@ export default function DashboardPage() {
       setHotKeywords(keywordsData);
     } catch (error: any) {
       console.error('Error fetching chart data:', error);
-      toast.error('Lỗi khi tải dữ liệu biểu đồ');
+      // Don't toast for 401 — global interceptor handles redirect
+      if (error?.response?.status !== 401) {
+        toast.error('Lỗi khi tải dữ liệu biểu đồ');
+      }
     } finally {
       setLoadingCharts(false);
     }

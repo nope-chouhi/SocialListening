@@ -1,16 +1,24 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { auth } from '@/lib/api';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { auth, resetAuthRedirectLock } from '@/lib/api';
 import LoadingSpinner from '@/components/LoadingSpinner';
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Show session expired message if redirected from 401
+  useEffect(() => {
+    if (searchParams.get('expired') === '1') {
+      setError('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,6 +28,7 @@ export default function LoginPage() {
     try {
       const result = await auth.login(email, password);
       console.log('Login successful:', result);
+      resetAuthRedirectLock(); // Allow future 401s to redirect again
       
       // Show success and redirect
       setTimeout(() => {
@@ -117,3 +126,17 @@ export default function LoginPage() {
     </div>
   );
 }
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <LoadingSpinner 
+        message="Đang tải..."
+        submessage="Vui lòng đợi trong giây lát"
+      />
+    }>
+      <LoginContent />
+    </Suspense>
+  );
+}
+
