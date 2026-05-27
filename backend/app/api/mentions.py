@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from sqlalchemy import select, func
+from sqlalchemy import select, func, text
 from typing import List, Optional
 from pydantic import BaseModel
 from datetime import datetime
@@ -18,6 +18,35 @@ from math import ceil
 
 router = APIRouter()
 
+
+@router.get("/fix-db")
+def fix_database_schema(db: Session = Depends(get_db)):
+    """Emergency endpoint to fix missing columns on production PostgreSQL"""
+    try:
+        stmts = [
+            "ALTER TABLE mentions ADD COLUMN IF NOT EXISTS is_reviewed BOOLEAN DEFAULT FALSE",
+            "ALTER TABLE mentions ADD COLUMN IF NOT EXISTS title TEXT",
+            "ALTER TABLE mentions ADD COLUMN IF NOT EXISTS content_hash VARCHAR(64)",
+            "ALTER TABLE mentions ADD COLUMN IF NOT EXISTS collected_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()",
+            "ALTER TABLE mentions ADD COLUMN IF NOT EXISTS matched_keywords JSON",
+            "ALTER TABLE mentions ADD COLUMN IF NOT EXISTS platform_post_id VARCHAR(255)",
+            "ALTER TABLE mentions ADD COLUMN IF NOT EXISTS meta_data JSON",
+            "ALTER TABLE mentions ADD COLUMN IF NOT EXISTS author VARCHAR(500)",
+            "ALTER TABLE mentions ADD COLUMN IF NOT EXISTS published_at TIMESTAMP WITH TIME ZONE"
+        ]
+        
+        executed = []
+        for stmt in stmts:
+            try:
+                db.execute(text(stmt))
+                db.commit()
+                executed.append(stmt)
+            except Exception as e:
+                db.rollback()
+                
+        return {"status": "success", "message": "Database schema patch executed", "executed": executed}
+    except Exception as e:
+        return {"status": "error", "detail": str(e)}
 
 @router.get("")
 def list_mentions(
