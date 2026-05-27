@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { FileText, Eye, Plus, X, Check } from 'lucide-react';
 import { incidents as incidentsApi, getErrorMessage } from '@/lib/api';
 import toast, { Toaster } from 'react-hot-toast';
+import Link from 'next/link';
 
 const STATUS_OPTIONS = [
   { value: 'new', label: 'Mới' },
@@ -214,10 +215,21 @@ export default function IncidentsPage() {
                       </span>
                     )}
                   </div>
-                  {incident.description && (
-                    <p className="text-sm text-gray-600 mt-2">{incident.description}</p>
-                  )}
-                  <div className="flex items-center space-x-4 text-xs text-gray-500 mt-2">
+                    {incident.description && (
+                      <p className="text-sm text-gray-600 mt-2">{incident.description}</p>
+                    )}
+                    {incident.mention_id && (
+                      <div className="mt-3">
+                        <Link
+                          href={`/dashboard/mentions/${incident.mention_id}`}
+                          className="inline-flex items-center text-xs font-medium text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded transition-colors"
+                        >
+                          <FileText className="w-3.5 h-3.5 mr-1.5" />
+                          Xem Mention Gốc (#{incident.mention_id})
+                        </Link>
+                      </div>
+                    )}
+                    <div className="flex items-center space-x-4 text-xs text-gray-500 mt-2">
                     <span>Tạo: {new Date(incident.created_at).toLocaleString('vi-VN')}</span>
                     {incident.deadline && (
                       <span>Deadline: {new Date(incident.deadline).toLocaleString('vi-VN')}</span>

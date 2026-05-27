@@ -248,6 +248,11 @@ def create_source(
             crawl_month=data.get('crawl_month'),
         )
 
+        # Check for duplicate URL
+        existing = db.execute(select(Source).where(Source.url == data['url'])).scalar_one_or_none()
+        if existing:
+            raise HTTPException(status_code=409, detail="Nguồn với URL này đã tồn tại")
+
         source = Source(**data)
         db.add(source)
         db.commit()
@@ -295,6 +300,11 @@ def update_source(
                 update_dict['crawl_time'] = dtime(int(parts[0]), int(parts[1]))
             except Exception:
                 update_dict['crawl_time'] = None
+
+        if 'url' in update_dict:
+            existing = db.execute(select(Source).where(Source.url == update_dict['url'], Source.id != source_id)).scalar_one_or_none()
+            if existing:
+                raise HTTPException(status_code=409, detail="Nguồn với URL này đã tồn tại")
 
         for field, value in update_dict.items():
             setattr(source, field, value)

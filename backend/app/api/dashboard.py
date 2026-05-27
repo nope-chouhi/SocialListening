@@ -355,14 +355,6 @@ def get_dashboard_trends(
                 "incidents": incidents_count
             })
             
-        # Check if all counts are 0
-        total_sum = sum(
-            x["total_mentions"] + x["negative_mentions"] + x["alerts"] + x["incidents"]
-            for x in items
-        )
-        if total_sum == 0:
-            items = []
-            
         return {
             "range": time_range,
             "items": items

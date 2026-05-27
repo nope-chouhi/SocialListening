@@ -1,9 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { AlertTriangle, Check, X, Plus } from 'lucide-react';
+import { AlertTriangle, Check, X, Plus, FileText } from 'lucide-react';
 import { alerts as alertsApi, getErrorMessage } from '@/lib/api';
 import toast, { Toaster } from 'react-hot-toast';
+import Link from 'next/link';
 
 const SEVERITIES = [
   { value: 'low', label: 'Thấp' },
@@ -163,6 +164,17 @@ export default function AlertsPage() {
                     </span>
                   </div>
                   {alert.message && <p className="text-sm text-gray-600 mt-2">{alert.message}</p>}
+                  {alert.mention_id && (
+                    <div className="mt-3">
+                      <Link
+                        href={`/dashboard/mentions/${alert.mention_id}`}
+                        className="inline-flex items-center text-xs font-medium text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded transition-colors"
+                      >
+                        <FileText className="w-3.5 h-3.5 mr-1.5" />
+                        Xem Mention Gốc (#{alert.mention_id})
+                      </Link>
+                    </div>
+                  )}
                   <div className="text-xs text-gray-500 mt-2">
                     {new Date(alert.created_at).toLocaleString('vi-VN')}
                   </div>

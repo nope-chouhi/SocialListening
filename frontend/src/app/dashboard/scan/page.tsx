@@ -169,6 +169,11 @@ export default function ScanPage() {
       setQuickKeyword('');
       await fetchData();
     } catch (error: any) {
+      if (error.response?.status === 409) {
+        toast.success('Từ khóa đã tồn tại trong nhóm này');
+        setQuickKeyword('');
+        return;
+      }
       toast.error('Lỗi: ' + (error.response?.data?.detail || error.message));
     } finally {
       setAddingKeyword(false);
@@ -181,14 +186,16 @@ export default function ScanPage() {
       toast.error('Vui lòng nhập từ khóa');
       return;
     }
-    if (realSourceCount === 0) {
-      toast.error('Chưa có nguồn thật để quét. Hãy thêm nguồn RSS/Web trước.');
+    if (selectedSources.length === 0 && !customUrl) {
+      toast.error('Vui lòng chọn ít nhất 1 nguồn hợp lệ để quét.');
       return;
     }
+    
     try {
       setScanning(true);
-      const loadingToast = toast.loading('Đang thêm từ khóa và scan...');
+      const loadingToast = toast.loading('Đang xử lý từ khóa và scan...');
       let targetGroupId = quickGroupId as number;
+      
       if (!targetGroupId) {
         if (keywordGroups.length > 0) {
           targetGroupId = keywordGroups[0].id;
@@ -200,19 +207,32 @@ export default function ScanPage() {
           targetGroupId = newGroup.id;
         }
       }
-      await keywordsApi.createKeyword({
-        keyword: quickKeyword,
-        group_id: targetGroupId,
-        keyword_type: 'general',
-      });
+
+      try {
+        await keywordsApi.createKeyword({
+          keyword: quickKeyword,
+          group_id: targetGroupId,
+          keyword_type: 'general',
+        });
+      } catch (error: any) {
+        if (error.response?.status === 409) {
+          toast.success('Từ khóa đã tồn tại, sử dụng từ khóa hiện có.');
+        } else {
+          throw error;
+        }
+      }
+      
       await fetchData();
-      const realSources = sources.filter((s) => !isTestSource(s));
+      
       const result = await crawl.manualScan({
         keyword_group_ids: [targetGroupId],
-        source_ids: realSources.map((s) => s.id),
+        source_ids: selectedSources.length > 0 ? selectedSources : undefined,
+        url: customUrl || undefined,
       });
+      
       toast.dismiss(loadingToast);
-      toast.success(`Đã thêm từ khóa và scan! Tìm thấy ${result.total_mentions_found} mentions mới`);
+      toast.success(`Scan thành công! Tìm thấy ${result.total_mentions_found} mentions mới`);
+      
       setQuickKeyword('');
       setSelectedGroups((prev) => Array.from(new Set([...prev, targetGroupId])));
       fetchCrawlJobs();
@@ -274,7 +294,9 @@ export default function ScanPage() {
 
   // ── Quick actions for sources ──
   const selectAllVisible = () => {
-    const ids = filteredSources.map((s) => s.id);
+    const ids = filteredSources
+      .filter((s) => ['rss', 'website'].includes((s.source_type || '').toLowerCase()))
+      .map((s) => s.id);
     setSelectedSources((prev) => Array.from(new Set([...prev, ...ids])));
   };
 
@@ -587,13 +609,17 @@ export default function ScanPage() {
                 <tbody className="divide-y divide-gray-100">
                   {filteredSources.map((source: any) => {
                     const test = isTestSource(source);
+                    const isSupported = ['rss', 'website'].includes((source.source_type || '').toLowerCase());
+                    const isUnsupported = !isSupported && source.source_type;
+                    
                     return (
                       <tr
                         key={source.id}
-                        className={`hover:bg-gray-50 cursor-pointer transition-colors ${
-                          selectedSources.includes(source.id) ? 'bg-blue-50' : ''
-                        }`}
+                        className={`transition-colors ${
+                          !isSupported ? 'bg-gray-50 opacity-75' : 'hover:bg-gray-50 cursor-pointer'
+                        } ${selectedSources.includes(source.id) ? 'bg-blue-50' : ''}`}
                         onClick={() => {
+                          if (!isSupported) return;
                           if (selectedSources.includes(source.id)) {
                             setSelectedSources(selectedSources.filter((id) => id !== source.id));
                           } else {
@@ -606,14 +632,15 @@ export default function ScanPage() {
                           <input
                             type="checkbox"
                             checked={selectedSources.includes(source.id)}
+                            disabled={!isSupported}
                             onChange={() => {}}
-                            className="rounded text-blue-600 pointer-events-none"
+                            className="rounded text-blue-600 pointer-events-none disabled:opacity-50"
                           />
                         </td>
                         <td className="px-3 py-2">
                           <div className="flex items-center gap-2">
                             <div className="min-w-0 flex-1">
-                              <div className="font-medium text-gray-900 truncate flex items-center gap-1.5">
+                              <div className="font-medium text-gray-900 truncate flex items-center gap-1.5 flex-wrap">
                                 {source.name}
                                 {test && (
                                   <span className="inline-flex items-center gap-0.5 px-1.5 py-0 rounded text-[10px] font-medium bg-orange-100 text-orange-700 flex-shrink-0">
@@ -621,11 +648,16 @@ export default function ScanPage() {
                                     test
                                   </span>
                                 )}
+                                {isUnsupported && (
+                                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0 rounded text-[10px] font-medium bg-red-100 text-red-700 flex-shrink-0">
+                                    Chưa tích hợp
+                                  </span>
+                                )}
                               </div>
                               <div className="text-xs text-gray-400 truncate max-w-xs">{source.url}</div>
                               {source.last_error && (
-                                <div className="text-[10px] text-red-500 truncate mt-0.5" title={source.last_error}>
-                                  ❌ {source.last_error}
+                                <div className="text-xs text-red-600 mt-1 p-1 bg-red-50 rounded" title={source.last_error}>
+                                  RSS lỗi: {source.last_error.substring(0, 100)}{source.last_error.length > 100 ? '...' : ''}
                                 </div>
                               )}
                             </div>
@@ -635,7 +667,7 @@ export default function ScanPage() {
                           <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${
                             (source.source_type || '').toLowerCase() === 'rss'
                               ? 'bg-orange-50 text-orange-700'
-                              : 'bg-blue-50 text-blue-700'
+                              : isUnsupported ? 'bg-gray-100 text-gray-600' : 'bg-blue-50 text-blue-700'
                           }`}>
                             {(source.source_type || '').toLowerCase() === 'rss' ? (
                               <Rss className="w-3 h-3" />
@@ -695,8 +727,8 @@ export default function ScanPage() {
           className={`w-full flex items-center justify-center px-6 py-3 rounded-lg font-medium transition-colors ${
             canScan
               ? 'bg-blue-600 text-white hover:bg-blue-700'
-              : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-          } disabled:opacity-60`}
+              : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+          } disabled:opacity-80`}
         >
           {scanning ? (
             <Loader2 className="w-5 h-5 mr-2 animate-spin" />
@@ -706,8 +738,10 @@ export default function ScanPage() {
           {scanning
             ? 'Đang Scan...'
             : canScan
-              ? `Bắt Đầu Scan (${selectedSources.length} nguồn, ${selectedGroups.length} nhóm)`
-              : 'Chọn nhóm từ khóa và nguồn để scan'}
+              ? `Bắt Đầu Scan (${selectedSources.length > 0 ? selectedSources.length + ' nguồn' : '1 custom URL'}, ${selectedGroups.length} nhóm)`
+              : selectedGroups.length === 0
+                ? 'Vui lòng chọn nhóm từ khóa để bắt đầu scan'
+                : 'Vui lòng chọn ít nhất 1 nguồn hợp lệ để bắt đầu scan'}
         </button>
       </div>
 

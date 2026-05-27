@@ -9,6 +9,7 @@ import ConfirmDialog from '@/components/ConfirmDialog';
 
 export default function MentionsPage() {
   const [mentions, setMentions] = useState<any[]>([]);
+  const [totalMentions, setTotalMentions] = useState<number>(-1);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [page, setPage] = useState(1);
@@ -32,10 +33,11 @@ export default function MentionsPage() {
         search_query: searchTerm || undefined
       });
       setMentions(data.items);
+      setTotalMentions(data.total);
       setTotalPages(data.total_pages);
     } catch (error: any) {
       console.error('Error fetching mentions:', error);
-      toast.error('Lỗi khi tải mentions');
+      toast.error(error.response?.data?.detail || 'Lỗi khi tải mentions');
     } finally {
       setLoading(false);
     }
@@ -107,9 +109,13 @@ export default function MentionsPage() {
 
       {/* Mentions List */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
-        {mentions.length === 0 ? (
+        {totalMentions === 0 && !loading ? (
           <div className="p-8 text-center text-gray-500">
             Chưa có mention nào. Hãy thực hiện scan để thu thập dữ liệu!
+          </div>
+        ) : mentions.length === 0 && !loading ? (
+          <div className="p-8 text-center text-gray-500">
+            Không tìm thấy mentions nào phù hợp với bộ lọc.
           </div>
         ) : (
           <div className="divide-y">

@@ -274,16 +274,33 @@ export default function SourcesPage() {
             Không có nguồn nào. Hãy thêm nguồn đầu tiên!
           </div>
         ) : (
-          filteredSources.map((source) => (
-            <div key={source.id} className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center space-x-3">
-                  {getSourceIcon(source.source_type)}
-                  <div>
-                    <h3 className="font-semibold text-gray-900">{source.name}</h3>
-                    <p className="text-xs text-gray-500">{getSourceTypeText(source.source_type)}</p>
+          filteredSources.map((source) => {
+            const isTest = source.url.includes('example.com') || /daily source|weekly source|monthly source|yearly source/i.test(source.name);
+            const isSupported = ['rss', 'website'].includes((source.source_type || '').toLowerCase());
+            const isUnsupported = !isSupported && source.source_type;
+
+            return (
+              <div key={source.id} className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center space-x-3">
+                    {getSourceIcon(source.source_type)}
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="font-semibold text-gray-900">{source.name}</h3>
+                        {isTest && (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-orange-100 text-orange-700">
+                            Test
+                          </span>
+                        )}
+                        {isUnsupported && (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-red-100 text-red-700">
+                            Chưa tích hợp
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-500">{getSourceTypeText(source.source_type)}</p>
+                    </div>
                   </div>
-                </div>
                 <button
                   onClick={() => handleToggleActive(source)}
                   className={`px-2 py-1 text-xs font-medium rounded-full transition-colors ${
@@ -328,6 +345,12 @@ export default function SourcesPage() {
                   <span className="font-medium">Tạo lúc:</span>{' '}
                   {new Date(source.created_at).toLocaleString('vi-VN')}
                 </p>
+                {(source as any).last_error && (
+                  <div className="text-xs text-red-600 mt-2 p-2 bg-red-50 rounded" title={(source as any).last_error}>
+                    <span className="font-medium text-red-700 block mb-1">Lỗi gần nhất:</span>
+                    {(source as any).last_error.substring(0, 150)}{(source as any).last_error.length > 150 ? '...' : ''}
+                  </div>
+                )}
               </div>
 
               <div className="flex justify-end">
@@ -339,8 +362,8 @@ export default function SourcesPage() {
                 </button>
               </div>
             </div>
-          ))
-        )}
+          );
+        })}
       </div>
 
       {/* Delete Confirm Dialog */}
