@@ -127,7 +127,7 @@ export default function MentionsPage() {
                     <p className="text-sm text-gray-600 mt-2 line-clamp-2">{mention.content}</p>
                     
                     <div className="flex items-center space-x-4 mt-3">
-                      {mention.ai_analysis && (
+                      {mention.ai_analysis ? (
                         <>
                           <span className={`px-2 py-1 text-xs font-medium rounded-full ${getSentimentColor(mention.ai_analysis.sentiment)}`}>
                             {mention.ai_analysis.sentiment}
@@ -149,7 +149,27 @@ export default function MentionsPage() {
                             </span>
                           )}
                         </>
+                      ) : (
+                        <span className="px-2 py-1 text-[10px] font-semibold tracking-wider text-gray-700 bg-gray-100 rounded-full border border-gray-200">
+                          PENDING ANALYSIS
+                        </span>
                       )}
+                      
+                      {mention.matched_keywords && mention.matched_keywords.length > 0 && (
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs text-gray-500">Từ khóa:</span>
+                          <span className="px-1.5 py-0.5 bg-blue-50 text-blue-700 text-xs rounded border border-blue-100">
+                            {mention.matched_keywords.map((k: any) => typeof k === 'string' ? k : k.keyword).join(', ')}
+                          </span>
+                        </div>
+                      )}
+                      
+                      {mention.url && (
+                        <a href={mention.url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline">
+                          Link Gốc
+                        </a>
+                      )}
+                      
                       <span className="text-xs text-gray-500">
                         {new Date(mention.collected_at).toLocaleString('vi-VN')}
                       </span>

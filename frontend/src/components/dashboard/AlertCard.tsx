@@ -73,6 +73,14 @@ export default function AlertCard({ alert, onActionComplete, userRole }: AlertCa
             </span>
             <span>•</span>
             <span>{new Date(alert.created_at).toLocaleString('vi-VN')}</span>
+            {alert.mention_id && (
+              <>
+                <span>•</span>
+                <a href={`/dashboard/mentions/${alert.mention_id}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline flex items-center">
+                  Xem mention <Info className="w-3 h-3 ml-1" />
+                </a>
+              </>
+            )}
           </div>
 
           {!isResolved && (

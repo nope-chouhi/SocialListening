@@ -33,6 +33,7 @@ export default function SourcesPage() {
     sourceId: null,
     sourceName: ''
   });
+  const [showTestSources, setShowTestSources] = useState(false);
   const [newSource, setNewSource] = useState({
     name: '',
     url: '',
@@ -166,10 +167,14 @@ export default function SourcesPage() {
     }
   };
 
-  const filteredSources = sources.filter(s =>
-    s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    s.url.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredSources = sources.filter(s => {
+    const matchesSearch = s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          s.url.toLowerCase().includes(searchTerm.toLowerCase());
+    const isTest = s.url.includes('example.com') || /daily source|weekly source|monthly source|yearly source/i.test(s.name);
+    
+    if (!showTestSources && isTest) return false;
+    return matchesSearch;
+  });
 
   const getSourceIcon = (type: string) => {
     if (type.includes('facebook')) return <Facebook className="w-5 h-5 text-blue-600" />;
@@ -256,15 +261,29 @@ export default function SourcesPage() {
       </div>
 
       {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-        <input
-          type="text"
-          placeholder="Tìm kiếm nguồn..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
+      <div className="flex items-center gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <input
+            type="text"
+            placeholder="Tìm kiếm nguồn..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+        <div className="flex items-center gap-2 bg-white px-4 py-2 border border-gray-300 rounded-lg">
+          <input
+            type="checkbox"
+            id="showTestSources"
+            checked={showTestSources}
+            onChange={(e) => setShowTestSources(e.target.checked)}
+            className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+          />
+          <label htmlFor="showTestSources" className="text-sm text-gray-700 cursor-pointer select-none">
+            Hiện nguồn test
+          </label>
+        </div>
       </div>
 
       {/* Sources Grid */}

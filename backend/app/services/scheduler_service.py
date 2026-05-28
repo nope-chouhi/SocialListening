@@ -117,6 +117,16 @@ def get_due_sources(db: Session) -> List[Source]:
 
     due = []
     for source in sources:
+        # Skip test sources
+        is_test = 'example.com' in source.url or any(x in source.name.lower() for x in ['daily source', 'weekly source', 'monthly source', 'yearly source'])
+        if is_test:
+            continue
+            
+        # Skip unsupported sources
+        is_supported = (source.source_type or '').lower() in ['rss', 'website']
+        if not is_supported:
+            continue
+
         freq = source.crawl_frequency
         if hasattr(freq, 'value'):
             freq = freq.value

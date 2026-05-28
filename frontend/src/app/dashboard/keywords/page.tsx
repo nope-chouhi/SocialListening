@@ -85,6 +85,12 @@ export default function KeywordsPage() {
       setLoading(true);
       const data = await keywordsApi.listGroups();
       setGroups(data);
+      // Pre-fetch keywords for global search
+      data.forEach((g: KeywordGroup) => {
+        keywordsApi.listKeywordsInGroup(g.id).then((kws) => {
+          setGroupKeywords(prev => ({ ...prev, [g.id]: kws }));
+        }).catch(() => {});
+      });
     } catch (error: any) {
       console.error('Error fetching groups:', error);
       toast.error('Lỗi khi tải danh sách nhóm từ khóa');
@@ -162,7 +168,11 @@ export default function KeywordsPage() {
       fetchGroups();
     } catch (error: any) {
       console.error('Error adding keyword:', error);
-      toast.error(error.response?.data?.detail || 'Lỗi khi thêm từ khóa');
+      if (error.response?.status === 409) {
+        toast('Từ khóa đã tồn tại trong nhóm này', { icon: 'ℹ️' });
+      } else {
+        toast.error(error.response?.data?.detail || 'Lỗi khi thêm từ khóa');
+      }
     }
   };
 

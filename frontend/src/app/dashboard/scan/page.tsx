@@ -817,6 +817,9 @@ export default function ScanPage() {
                 </div>
                 <div className="mt-2 flex flex-wrap gap-4 text-xs text-gray-500">
                   <span>Nguồn: {job.processed_sources}/{job.total_sources}</span>
+                  {job.status === 'completed' && job.total_sources > job.processed_sources && (
+                    <span className="text-red-500">Thất bại: {job.total_sources - job.processed_sources} nguồn</span>
+                  )}
                   {job.created_at && <span>Tạo: {formatDate(job.created_at)}</span>}
                   {job.completed_at && <span>Xong: {formatDate(job.completed_at)}</span>}
                   {job.retry_count > 0 && <span className="text-orange-600">Retry #{job.retry_count}</span>}
