@@ -96,8 +96,9 @@ def list_mentions(
             logger.error(f"Error querying total mentions count: {e}")
             total = 0
 
+        from sqlalchemy import nullslast
         offset = (page - 1) * page_size
-        query = query.order_by(Mention.collected_at.desc()).offset(offset).limit(page_size)
+        query = query.order_by(nullslast(Mention.collected_at.desc()), Mention.id.desc()).offset(offset).limit(page_size)
 
         try:
             mentions = db.execute(query).scalars().all()

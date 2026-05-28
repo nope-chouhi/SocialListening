@@ -170,7 +170,7 @@ export default function ScanPage() {
       await fetchData();
     } catch (error: any) {
       if (error.response?.status === 409) {
-        toast.success('Từ khóa đã tồn tại trong nhóm này');
+        toast('Từ khóa đã tồn tại trong nhóm này', { icon: 'ℹ️' });
         setQuickKeyword('');
         return;
       }
@@ -186,7 +186,17 @@ export default function ScanPage() {
       toast.error('Vui lòng nhập từ khóa');
       return;
     }
-    if (selectedSources.length === 0 && !customUrl) {
+    const validSources = selectedSources.filter(id => {
+      const source = sources.find(s => s.id === id);
+      return source && ['rss', 'website'].includes((source.source_type || '').toLowerCase());
+    });
+    
+    if (validSources.length < selectedSources.length) {
+      toast('Đã bỏ qua nguồn chưa tích hợp.', { icon: 'ℹ️' });
+      setSelectedSources(validSources);
+    }
+
+    if (validSources.length === 0 && !customUrl) {
       toast.error('Vui lòng chọn ít nhất 1 nguồn hợp lệ để quét.');
       return;
     }
@@ -216,7 +226,7 @@ export default function ScanPage() {
         });
       } catch (error: any) {
         if (error.response?.status === 409) {
-          toast.success('Từ khóa đã tồn tại, sử dụng từ khóa hiện có.');
+          toast('Từ khóa đã tồn tại, sử dụng từ khóa hiện có.', { icon: 'ℹ️' });
         } else {
           throw error;
         }
@@ -226,7 +236,7 @@ export default function ScanPage() {
       
       const result = await crawl.manualScan({
         keyword_group_ids: [targetGroupId],
-        source_ids: selectedSources.length > 0 ? selectedSources : undefined,
+        source_ids: validSources.length > 0 ? validSources : undefined,
         url: customUrl || undefined,
       });
       
@@ -251,7 +261,17 @@ export default function ScanPage() {
       toast.error('Vui lòng chọn ít nhất 1 nhóm từ khóa');
       return;
     }
-    if (selectedSources.length === 0 && !customUrl) {
+    const validSources = selectedSources.filter(id => {
+      const source = sources.find(s => s.id === id);
+      return source && ['rss', 'website'].includes((source.source_type || '').toLowerCase());
+    });
+
+    if (validSources.length < selectedSources.length) {
+      toast('Đã bỏ qua nguồn chưa tích hợp.', { icon: 'ℹ️' });
+      setSelectedSources(validSources);
+    }
+
+    if (validSources.length === 0 && !customUrl) {
       toast.error('Vui lòng chọn nguồn hoặc nhập URL');
       return;
     }
@@ -260,7 +280,7 @@ export default function ScanPage() {
       const loadingToast = toast.loading('Đang scan...');
       const result = await crawl.manualScan({
         keyword_group_ids: selectedGroups,
-        source_ids: selectedSources.length > 0 ? selectedSources : undefined,
+        source_ids: validSources.length > 0 ? validSources : undefined,
         url: customUrl || undefined,
       });
       toast.dismiss(loadingToast);
@@ -304,8 +324,15 @@ export default function ScanPage() {
     setSelectedSources([]);
   };
 
-  const canScan =
-    selectedGroups.length > 0 && (selectedSources.length > 0 || customUrl.trim().length > 0);
+  const validSelectedSources = selectedSources.filter(id => {
+    const s = sources.find(src => src.id === id);
+    return s && ['rss', 'website'].includes((s.source_type || '').toLowerCase());
+  });
+  
+  const hasValidSources = validSelectedSources.length > 0;
+  const isUrlValid = customUrl.trim().length > 0;
+  
+  const canScan = selectedGroups.length > 0 && (hasValidSources || isUrlValid);
 
   // ── Badge helpers ──
   const getStatusBadge = (status: string) => {
@@ -738,10 +765,14 @@ export default function ScanPage() {
           {scanning
             ? 'Đang Scan...'
             : canScan
-              ? `Bắt Đầu Scan (${selectedSources.length > 0 ? selectedSources.length + ' nguồn' : '1 custom URL'}, ${selectedGroups.length} nhóm)`
+              ? `Bắt Đầu Scan (${validSelectedSources.length > 0 ? validSelectedSources.length + ' nguồn' : '1 custom URL'}, ${selectedGroups.length} nhóm)`
               : selectedGroups.length === 0
-                ? 'Vui lòng chọn nhóm từ khóa để bắt đầu scan'
-                : 'Vui lòng chọn ít nhất 1 nguồn hợp lệ để bắt đầu scan'}
+                ? 'Chưa chọn nhóm từ khóa'
+                : selectedSources.length > 0 && validSelectedSources.length === 0
+                  ? 'Nguồn đã chọn chưa tích hợp'
+                  : customUrl.length > 0 && !isUrlValid
+                    ? 'URL tùy chỉnh không hợp lệ'
+                    : 'Chưa chọn nguồn hợp lệ'}
         </button>
       </div>
 

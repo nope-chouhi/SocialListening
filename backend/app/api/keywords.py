@@ -227,6 +227,7 @@ def create_keywords_bulk(
     invalid = []
     
     seen_in_batch = set()
+    new_keywords = []
 
     for kw in bulk_data.keywords:
         kw_clean = kw.strip()
@@ -250,13 +251,16 @@ def create_keywords_bulk(
             is_active=bulk_data.is_active
         )
         db.add(new_kw)
+        new_keywords.append(new_kw)
+
+    if new_keywords:
         db.commit()
-        db.refresh(new_kw)
-        
-        created.append({
-            "id": new_kw.id,
-            "keyword": new_kw.keyword
-        })
+        for kw in new_keywords:
+            db.refresh(kw)
+            created.append({
+                "id": kw.id,
+                "keyword": kw.keyword
+            })
 
     return {
         "created": created,
