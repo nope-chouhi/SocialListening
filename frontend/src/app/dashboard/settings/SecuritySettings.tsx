@@ -66,64 +66,64 @@ export default function SecuritySettings() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h2 className="text-xl font-semibold text-gray-900">Bảo mật tài khoản</h2>
-        <p className="text-sm text-gray-600 mt-1">Quản lý mật khẩu và bảo mật</p>
+        <h2 className="text-xl font-bold text-white tracking-wide">Bảo mật tài khoản</h2>
+        <p className="text-sm text-gray-400 mt-1">Quản lý mật khẩu và bảo mật</p>
       </div>
 
       {/* Change Password */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6 space-y-4">
-        <h3 className="text-lg font-medium text-gray-900 flex items-center">
-          <Lock className="w-5 h-5 mr-2" />
+      <div className="bg-[#111827] border border-gray-800 rounded-xl shadow-sm p-6 space-y-6">
+        <h3 className="text-lg font-bold text-white flex items-center">
+          <Lock className="w-5 h-5 mr-2 text-indigo-400" />
           Đổi mật khẩu
         </h3>
 
-        <div className="space-y-4">
+        <div className="space-y-4 max-w-2xl">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-300 mb-2">
               Mật khẩu hiện tại *
             </label>
             <input
               type="password"
               value={passwords.current}
               onChange={(e) => setPasswords({ ...passwords, current: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500"
               placeholder="••••••••"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-300 mb-2">
               Mật khẩu mới *
             </label>
             <input
               type="password"
               value={passwords.new}
               onChange={(e) => setPasswords({ ...passwords, new: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500"
               placeholder="••••••••"
             />
-            <p className="text-xs text-gray-500 mt-1">Tối thiểu 8 ký tự</p>
+            <p className="text-xs text-gray-500 mt-1.5 font-medium">Tối thiểu 8 ký tự</p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-300 mb-2">
               Xác nhận mật khẩu mới *
             </label>
             <input
               type="password"
               value={passwords.confirm}
               onChange={(e) => setPasswords({ ...passwords, confirm: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500"
               placeholder="••••••••"
             />
           </div>
         </div>
 
-        <div className="flex justify-end pt-4">
+        <div className="flex justify-end pt-4 border-t border-gray-800">
           <button
             onClick={handleChangePassword}
             disabled={saving}
-            className="flex items-center px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+            className="flex items-center px-6 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed shadow-sm shadow-indigo-500/20 font-medium"
           >
             <Save className="w-4 h-4 mr-2" />
             {saving ? 'Đang lưu...' : 'Đổi mật khẩu'}
@@ -132,9 +132,9 @@ export default function SecuritySettings() {
       </div>
 
       {/* Security Info */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <p className="text-sm text-blue-800">
-          <strong>Lưu ý:</strong> Sau khi đổi mật khẩu, bạn sẽ cần đăng nhập lại trên tất cả thiết bị.
+      <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-xl p-4">
+        <p className="text-sm text-indigo-200">
+          <strong className="text-indigo-300">Lưu ý:</strong> Sau khi đổi mật khẩu, bạn sẽ cần đăng nhập lại trên tất cả thiết bị.
         </p>
       </div>
     </div>

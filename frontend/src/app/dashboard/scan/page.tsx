@@ -337,15 +337,15 @@ export default function ScanPage() {
   // ── Badge helpers ──
   const getStatusBadge = (status: string) => {
     const map: Record<string, { bg: string; icon: React.ReactNode; label: string }> = {
-      completed: { bg: 'bg-green-100 text-green-800', icon: <CheckCircle className="w-3 h-3 mr-1" />, label: 'Hoàn thành' },
-      running: { bg: 'bg-blue-100 text-blue-800', icon: <Loader2 className="w-3 h-3 mr-1 animate-spin" />, label: 'Đang chạy' },
-      failed: { bg: 'bg-red-100 text-red-800', icon: <XCircle className="w-3 h-3 mr-1" />, label: 'Thất bại' },
-      pending: { bg: 'bg-yellow-100 text-yellow-800', icon: <Clock className="w-3 h-3 mr-1" />, label: 'Đang chờ' },
-      cancelled: { bg: 'bg-gray-100 text-gray-800', icon: <XCircle className="w-3 h-3 mr-1" />, label: 'Đã hủy' },
+      completed: { bg: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20', icon: <CheckCircle className="w-3 h-3 mr-1.5" />, label: 'Hoàn thành' },
+      running: { bg: 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20', icon: <Loader2 className="w-3 h-3 mr-1.5 animate-spin" />, label: 'Đang chạy' },
+      failed: { bg: 'bg-rose-500/10 text-rose-400 border border-rose-500/20', icon: <XCircle className="w-3 h-3 mr-1.5" />, label: 'Thất bại' },
+      pending: { bg: 'bg-amber-500/10 text-amber-400 border border-amber-500/20', icon: <Clock className="w-3 h-3 mr-1.5" />, label: 'Đang chờ' },
+      cancelled: { bg: 'bg-[#1E293B] text-gray-400 border border-gray-700', icon: <XCircle className="w-3 h-3 mr-1.5" />, label: 'Đã hủy' },
     };
-    const s = map[status] || { bg: 'bg-gray-100 text-gray-800', icon: null, label: status };
+    const s = map[status] || { bg: 'bg-[#1E293B] text-gray-400 border border-gray-700', icon: null, label: status };
     return (
-      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${s.bg}`}>
+      <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-bold tracking-wide uppercase shadow-sm ${s.bg}`}>
         {s.icon}{s.label}
       </span>
     );
@@ -353,9 +353,9 @@ export default function ScanPage() {
 
   const getJobTypeBadge = (jobType: string) => {
     const styles: Record<string, string> = {
-      manual: 'bg-indigo-100 text-indigo-800',
-      scheduled: 'bg-purple-100 text-purple-800',
-      retry: 'bg-orange-100 text-orange-800',
+      manual: 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20',
+      scheduled: 'bg-purple-500/10 text-purple-400 border border-purple-500/20',
+      retry: 'bg-amber-500/10 text-amber-400 border border-amber-500/20',
     };
     const labels: Record<string, string> = {
       manual: 'Thủ công',
@@ -363,7 +363,7 @@ export default function ScanPage() {
       retry: 'Retry',
     };
     return (
-      <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${styles[jobType] || 'bg-gray-100 text-gray-800'}`}>
+      <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-bold tracking-wide uppercase shadow-sm ${styles[jobType] || 'bg-[#1E293B] text-gray-400 border border-gray-700'}`}>
         {labels[jobType] || jobType}
       </span>
     );
@@ -391,38 +391,42 @@ export default function ScanPage() {
       <Toaster position="top-right" />
 
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Scan Center</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Quét nguồn dữ liệu để thu thập mentions
+          <h1 className="text-2xl font-bold text-white tracking-wide">Scan Center</h1>
+          <p className="text-sm text-gray-400 mt-1">
+            Quét nguồn dữ liệu để thu thập mentions theo nhóm từ khóa.
           </p>
         </div>
         <button
           onClick={() => { fetchWorkerStatus(); fetchCrawlJobs(); fetchData(); }}
-          className="flex items-center px-3 py-2 text-sm text-gray-600 bg-white border rounded-lg hover:bg-gray-50"
+          className="flex items-center px-4 py-2.5 text-sm text-gray-300 bg-[#0B1220] hover:bg-[#1E293B] border border-gray-800 rounded-lg transition-all duration-200 active:scale-95 shadow-sm"
         >
-          <RefreshCw className="w-4 h-4 mr-1" />
+          <RefreshCw className={`w-4 h-4 mr-2 ${scanning ? 'animate-spin text-indigo-400' : ''}`} />
           Làm mới
         </button>
       </div>
 
       {/* ═══ Worker Status Banner ═══ */}
       {workerStatus && (
-        <div className={`rounded-lg p-4 border ${
+        <div className={`rounded-xl p-5 border shadow-sm ${
           workerStatus.worker_running
-            ? 'bg-green-50 border-green-200'
-            : 'bg-yellow-50 border-yellow-200'
+            ? 'bg-emerald-500/5 border-emerald-500/20'
+            : 'bg-amber-500/5 border-amber-500/20'
         }`}>
           <div className="flex items-start">
             {workerStatus.worker_running ? (
-              <Activity className="w-5 h-5 text-green-600 mt-0.5 mr-3 flex-shrink-0" />
+              <div className="p-2 bg-emerald-500/10 rounded-lg mr-4 mt-0.5 border border-emerald-500/20">
+                <Activity className="w-5 h-5 text-emerald-400" />
+              </div>
             ) : (
-              <AlertTriangle className="w-5 h-5 text-yellow-600 mt-0.5 mr-3 flex-shrink-0" />
+              <div className="p-2 bg-amber-500/10 rounded-lg mr-4 mt-0.5 border border-amber-500/20">
+                <AlertTriangle className="w-5 h-5 text-amber-400" />
+              </div>
             )}
             <div className="flex-1">
-              <h3 className={`text-sm font-semibold ${
-                workerStatus.worker_running ? 'text-green-800' : 'text-yellow-800'
+              <h3 className={`text-base font-semibold ${
+                workerStatus.worker_running ? 'text-emerald-400' : 'text-amber-400'
               }`}>
                 {workerStatus.worker_running
                   ? (workerStatus.worker_mode === 'embedded'
@@ -431,29 +435,35 @@ export default function ScanPage() {
                   : 'Worker không hoạt động'}
               </h3>
               {workerStatus.worker_mode === 'embedded' && (
-                <p className="text-sm text-yellow-700 mt-1">
-                  <AlertTriangle className="w-4 h-4 inline mr-1" />
+                <p className="text-sm text-amber-400/80 mt-1.5 flex items-center bg-amber-500/10 inline-flex px-2 py-1 rounded border border-amber-500/20">
+                  <AlertTriangle className="w-3.5 h-3.5 mr-1.5" />
                   Scheduler chạy chung với Web Service. Nếu Web Service sleep, RSS sẽ không quét 24/7.
                 </p>
               )}
-              <div className="flex flex-wrap gap-4 mt-2 text-xs">
-                <span className={workerStatus.worker_running ? 'text-green-700' : 'text-yellow-700'}>
-                  Nguồn tự động: <strong>{workerStatus.active_sources}</strong>
+              <div className="flex flex-wrap gap-x-6 gap-y-2 mt-3 text-sm">
+                <span className="flex items-center text-gray-400">
+                  <span className="w-1.5 h-1.5 rounded-full bg-gray-500 mr-2"></span>
+                  Nguồn tự động: <strong className="ml-1.5 text-gray-200">{workerStatus.active_sources}</strong>
                 </span>
-                <span className={workerStatus.worker_running ? 'text-green-700' : 'text-yellow-700'}>
-                  Đang chờ scan: <strong>{workerStatus.due_sources}</strong>
+                <span className="flex items-center text-gray-400">
+                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500 mr-2"></span>
+                  Đang chờ scan: <strong className="ml-1.5 text-gray-200">{workerStatus.due_sources}</strong>
                 </span>
-                <span className={workerStatus.worker_running ? 'text-green-700' : 'text-yellow-700'}>
-                  Job đang chạy: <strong>{workerStatus.running_jobs}</strong>
+                <span className="flex items-center text-gray-400">
+                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 mr-2"></span>
+                  Job đang chạy: <strong className="ml-1.5 text-gray-200">{workerStatus.running_jobs}</strong>
                 </span>
                 {workerStatus.last_worker_heartbeat && (
-                  <span className={workerStatus.worker_running ? 'text-green-700' : 'text-yellow-700'}>
-                    Heartbeat: <strong>{new Date(workerStatus.last_worker_heartbeat).toLocaleString('vi-VN')}</strong>
+                  <span className="flex items-center text-gray-400">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-2"></span>
+                    Heartbeat: <strong className="ml-1.5 text-gray-200">{new Date(workerStatus.last_worker_heartbeat).toLocaleString('vi-VN')}</strong>
                   </span>
                 )}
               </div>
               {workerStatus.last_error && (
-                <p className="text-xs text-red-600 mt-1">Lỗi gần nhất: {workerStatus.last_error}</p>
+                <p className="text-sm text-rose-400 mt-2 bg-rose-500/10 px-3 py-1.5 rounded border border-rose-500/20 inline-block">
+                  Lỗi gần nhất: {workerStatus.last_error}
+                </p>
               )}
             </div>
           </div>
@@ -461,9 +471,9 @@ export default function ScanPage() {
       )}
 
       {/* ═══ Thêm nhanh từ khóa ═══ */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-lg font-semibold flex items-center mb-4">
-          <Sparkles className="w-5 h-5 mr-2 text-blue-600" />
+      <div className="bg-[#111827] rounded-xl shadow-sm border border-gray-800 p-6">
+        <h2 className="text-lg font-semibold flex items-center mb-5 text-white">
+          <Sparkles className="w-5 h-5 mr-2 text-indigo-400" />
           Thêm nhanh từ khóa theo dõi
         </h2>
         <div className="flex flex-col md:flex-row gap-3">
@@ -474,14 +484,14 @@ export default function ScanPage() {
               onChange={(e) => setQuickKeyword(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleQuickAdd()}
               placeholder="Nhập từ khóa (VD: Vinfast, iPhone 16...)"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500"
             />
           </div>
-          <div className="md:w-48">
+          <div className="md:w-56">
             <select
               value={quickGroupId}
               onChange={(e) => setQuickGroupId(e.target.value ? Number(e.target.value) : '')}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+              className="w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white text-sm"
             >
               <option value="">-- Nhóm mặc định --</option>
               {keywordGroups.map((g) => (
@@ -493,17 +503,17 @@ export default function ScanPage() {
             <button
               onClick={handleQuickAdd}
               disabled={addingKeyword || !quickKeyword.trim()}
-              className="px-4 py-2 bg-gray-100 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center text-sm font-medium whitespace-nowrap"
+              className="px-4 py-2.5 bg-[#1E293B] text-gray-300 border border-gray-700 rounded-lg hover:bg-gray-800 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed flex items-center text-sm font-medium whitespace-nowrap transition-colors"
             >
-              {addingKeyword ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : <Plus className="w-4 h-4 mr-1.5" />}
+              {addingKeyword ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
               Thêm vào nhóm
             </button>
             <button
               onClick={handleQuickAddAndScan}
               disabled={scanning || !quickKeyword.trim()}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center text-sm font-medium whitespace-nowrap"
+              className="px-4 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center text-sm font-medium whitespace-nowrap transition-colors shadow-sm shadow-indigo-500/20"
             >
-              {scanning ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : <Radar className="w-4 h-4 mr-1.5" />}
+              {scanning ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Radar className="w-4 h-4 mr-2" />}
               Thêm và quét
             </button>
           </div>
@@ -511,22 +521,22 @@ export default function ScanPage() {
       </div>
 
       {/* ═══ Scan Thủ Công ═══ */}
-      <div className="bg-white rounded-lg shadow p-6 space-y-5">
-        <h2 className="text-lg font-semibold">Scan thủ công</h2>
+      <div className="bg-[#111827] rounded-xl shadow-sm border border-gray-800 p-6 space-y-6">
+        <h2 className="text-lg font-semibold text-white">Scan thủ công</h2>
 
         {/* Keyword Groups */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Chọn Nhóm Từ Khóa <span className="text-red-500">*</span>
+          <label className="block text-sm font-medium text-gray-300 mb-3">
+            Chọn Nhóm Từ Khóa <span className="text-rose-500">*</span>
           </label>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {keywordGroups.map((group) => (
               <label
                 key={group.id}
-                className={`flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer transition-colors ${
+                className={`flex items-center gap-3 px-4 py-3 border rounded-xl cursor-pointer transition-all duration-200 ${
                   selectedGroups.includes(group.id)
-                    ? 'bg-blue-50 border-blue-300'
-                    : 'hover:bg-gray-50 border-gray-200'
+                    ? 'bg-indigo-500/10 border-indigo-500/30'
+                    : 'bg-[#1E293B] hover:bg-gray-800 border-gray-700'
                 }`}
               >
                 <input
@@ -539,24 +549,24 @@ export default function ScanPage() {
                       setSelectedGroups(selectedGroups.filter((id) => id !== group.id));
                     }
                   }}
-                  className="rounded text-blue-600"
+                  className="rounded border-gray-600 text-indigo-600 focus:ring-indigo-500 bg-gray-800 h-4 w-4"
                 />
-                <span className="font-medium text-sm">{group.name}</span>
-                <span className="text-xs text-gray-400 ml-auto">{group.keyword_count} kw</span>
+                <span className="font-medium text-sm text-gray-200">{group.name}</span>
+                <span className="text-xs text-gray-500 ml-auto bg-gray-800 px-2 py-0.5 rounded-md">{group.keyword_count} kw</span>
               </label>
             ))}
           </div>
           {keywordGroups.length === 0 && (
-            <p className="text-sm text-gray-500">Chưa có nhóm từ khóa. Hãy tạo nhóm từ khóa trước!</p>
+            <p className="text-sm text-gray-500 mt-2 bg-gray-800/50 p-3 rounded-lg border border-gray-700">Chưa có nhóm từ khóa. Hãy tạo nhóm từ khóa trước!</p>
           )}
         </div>
 
         {/* Source Selection with Filters */}
         <div>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 gap-2">
-            <label className="block text-sm font-medium text-gray-700">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-3">
+            <label className="block text-sm font-medium text-gray-300">
               Chọn Nguồn
-              <span className="text-xs text-gray-400 ml-2">
+              <span className="text-xs text-gray-500 ml-2">
                 ({filteredSources.length} hiển thị / {sources.length} tổng)
               </span>
             </label>
@@ -567,10 +577,10 @@ export default function ScanPage() {
                 <button
                   key={tab.key}
                   onClick={() => setSourceFilter(tab.key)}
-                  className={`inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium transition-colors ${
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
                     sourceFilter === tab.key
-                      ? 'bg-blue-100 text-blue-700'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30'
+                      : 'bg-[#1E293B] text-gray-400 hover:text-gray-200 border border-gray-700'
                   }`}
                 >
                   {tab.icon}
@@ -579,10 +589,10 @@ export default function ScanPage() {
               ))}
               <button
                 onClick={() => setHideTestSources(!hideTestSources)}
-                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium transition-colors ${
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ml-2 ${
                   hideTestSources
-                    ? 'bg-orange-100 text-orange-700'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    ? 'bg-orange-500/10 text-orange-400 border border-orange-500/20'
+                    : 'bg-[#1E293B] text-gray-400 hover:text-gray-200 border border-gray-700'
                 }`}
                 title={hideTestSources ? 'Test sources đang ẩn' : 'Hiện tất cả sources'}
               >
@@ -593,17 +603,17 @@ export default function ScanPage() {
           </div>
 
           {/* Quick actions */}
-          <div className="flex gap-2 mb-3">
+          <div className="flex gap-2 mb-4">
             <button
               onClick={selectAllVisible}
-              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded hover:bg-blue-100"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 rounded-md hover:bg-indigo-500/20 transition-colors"
             >
               <CheckSquare className="w-3.5 h-3.5" />
               Chọn tất cả ({filteredSources.length})
             </button>
             <button
               onClick={clearSelection}
-              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-gray-600 bg-gray-50 border border-gray-200 rounded hover:bg-gray-100"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-400 bg-[#1E293B] border border-gray-700 rounded-md hover:text-gray-200 transition-colors"
             >
               <Square className="w-3.5 h-3.5" />
               Bỏ chọn ({selectedSources.length})
@@ -612,28 +622,30 @@ export default function ScanPage() {
 
           {/* Source list */}
           {filteredSources.length === 0 ? (
-            <div className="text-center py-8 bg-gray-50 rounded-lg border border-dashed border-gray-300">
-              <Globe className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-              <p className="text-sm text-gray-500 font-medium">
+            <div className="text-center py-10 bg-[#1E293B]/50 rounded-xl border border-dashed border-gray-700">
+              <div className="w-12 h-12 rounded-full bg-gray-800 mx-auto flex items-center justify-center mb-3">
+                <Globe className="w-6 h-6 text-gray-500" />
+              </div>
+              <p className="text-sm text-gray-400 font-medium">
                 {realSourceCount === 0
                   ? 'Chưa có nguồn thật để quét. Hãy thêm nguồn RSS/Web trước.'
                   : 'Không có nguồn nào phù hợp bộ lọc.'}
               </p>
             </div>
           ) : (
-            <div className="border border-gray-200 rounded-lg overflow-hidden">
+            <div className="border border-gray-800 rounded-xl overflow-hidden bg-[#0B1220]/50">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="bg-gray-50 text-left text-xs text-gray-500 uppercase">
-                    <th className="px-3 py-2 w-8"></th>
-                    <th className="px-3 py-2">Nguồn</th>
-                    <th className="px-3 py-2 hidden md:table-cell">Loại</th>
-                    <th className="px-3 py-2 hidden lg:table-cell">Trạng thái</th>
-                    <th className="px-3 py-2 hidden lg:table-cell">Crawl gần nhất</th>
-                    <th className="px-3 py-2 hidden lg:table-cell">Crawl tiếp</th>
+                  <tr className="bg-[#1E293B] text-left text-xs text-gray-400 uppercase tracking-wider">
+                    <th className="px-4 py-3 w-8 font-medium"></th>
+                    <th className="px-4 py-3 font-medium">Nguồn</th>
+                    <th className="px-4 py-3 hidden md:table-cell font-medium">Loại</th>
+                    <th className="px-4 py-3 hidden lg:table-cell font-medium">Trạng thái</th>
+                    <th className="px-4 py-3 hidden lg:table-cell font-medium">Crawl gần nhất</th>
+                    <th className="px-4 py-3 hidden lg:table-cell font-medium">Crawl tiếp</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-gray-800">
                   {filteredSources.map((source: any) => {
                     const test = isTestSource(source);
                     const isSupported = ['rss', 'website'].includes((source.source_type || '').toLowerCase());
@@ -643,8 +655,8 @@ export default function ScanPage() {
                       <tr
                         key={source.id}
                         className={`transition-colors ${
-                          !isSupported ? 'bg-gray-50 opacity-75' : 'hover:bg-gray-50 cursor-pointer'
-                        } ${selectedSources.includes(source.id) ? 'bg-blue-50' : ''}`}
+                          !isSupported ? 'bg-gray-900/50 opacity-60' : 'hover:bg-[#1E293B]/80 cursor-pointer'
+                        } ${selectedSources.includes(source.id) ? 'bg-indigo-500/5' : ''}`}
                         onClick={() => {
                           if (!isSupported) return;
                           if (selectedSources.includes(source.id)) {
@@ -655,46 +667,46 @@ export default function ScanPage() {
                           }
                         }}
                       >
-                        <td className="px-3 py-2">
+                        <td className="px-4 py-3">
                           <input
                             type="checkbox"
                             checked={selectedSources.includes(source.id)}
                             disabled={!isSupported}
                             onChange={() => {}}
-                            className="rounded text-blue-600 pointer-events-none disabled:opacity-50"
+                            className="rounded border-gray-600 text-indigo-600 focus:ring-indigo-500 bg-gray-800 pointer-events-none disabled:opacity-50"
                           />
                         </td>
-                        <td className="px-3 py-2">
+                        <td className="px-4 py-3">
                           <div className="flex items-center gap-2">
                             <div className="min-w-0 flex-1">
-                              <div className="font-medium text-gray-900 truncate flex items-center gap-1.5 flex-wrap">
+                              <div className="font-medium text-gray-200 truncate flex items-center gap-2 flex-wrap">
                                 {source.name}
                                 {test && (
-                                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0 rounded text-[10px] font-medium bg-orange-100 text-orange-700 flex-shrink-0">
-                                    <FlaskConical className="w-2.5 h-2.5" />
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-orange-500/10 text-orange-400 border border-orange-500/20 flex-shrink-0">
+                                    <FlaskConical className="w-3 h-3" />
                                     test
                                   </span>
                                 )}
                                 {isUnsupported && (
-                                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0 rounded text-[10px] font-medium bg-red-100 text-red-700 flex-shrink-0">
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-rose-500/10 text-rose-400 border border-rose-500/20 flex-shrink-0">
                                     Chưa tích hợp
                                   </span>
                                 )}
                               </div>
-                              <div className="text-xs text-gray-400 truncate max-w-xs">{source.url}</div>
+                              <div className="text-xs text-gray-500 truncate max-w-xs mt-0.5">{source.url}</div>
                               {source.last_error && (
-                                <div className="text-xs text-red-600 mt-1 p-1 bg-red-50 rounded" title={source.last_error}>
-                                  RSS lỗi: {source.last_error.substring(0, 100)}{source.last_error.length > 100 ? '...' : ''}
+                                <div className="text-xs text-rose-400 mt-1.5 p-1.5 bg-rose-500/10 rounded border border-rose-500/20" title={source.last_error}>
+                                  Lỗi: {source.last_error.substring(0, 100)}{source.last_error.length > 100 ? '...' : ''}
                                 </div>
                               )}
                             </div>
                           </div>
                         </td>
-                        <td className="px-3 py-2 hidden md:table-cell">
-                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${
+                        <td className="px-4 py-3 hidden md:table-cell">
+                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium border ${
                             (source.source_type || '').toLowerCase() === 'rss'
-                              ? 'bg-orange-50 text-orange-700'
-                              : isUnsupported ? 'bg-gray-100 text-gray-600' : 'bg-blue-50 text-blue-700'
+                              ? 'bg-orange-500/10 text-orange-400 border-orange-500/20'
+                              : isUnsupported ? 'bg-gray-800 text-gray-400 border-gray-700' : 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20'
                           }`}>
                             {(source.source_type || '').toLowerCase() === 'rss' ? (
                               <Rss className="w-3 h-3" />
@@ -704,14 +716,16 @@ export default function ScanPage() {
                             {source.source_type || 'web'}
                           </span>
                         </td>
-                        <td className="px-3 py-2 hidden lg:table-cell">
-                          <span className={`inline-block w-2 h-2 rounded-full ${source.is_active ? 'bg-green-500' : 'bg-gray-300'}`} />
-                          <span className="text-xs text-gray-500 ml-1.5">{source.is_active ? 'Active' : 'Off'}</span>
+                        <td className="px-4 py-3 hidden lg:table-cell">
+                          <span className="flex items-center">
+                            <span className={`inline-block w-2 h-2 rounded-full ${source.is_active ? 'bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.8)]' : 'bg-gray-600'}`} />
+                            <span className="text-xs text-gray-400 ml-2">{source.is_active ? 'Active' : 'Off'}</span>
+                          </span>
                         </td>
-                        <td className="px-3 py-2 hidden lg:table-cell text-xs text-gray-500">
+                        <td className="px-4 py-3 hidden lg:table-cell text-xs text-gray-500">
                           {formatDate(source.last_crawled_at)}
                         </td>
-                        <td className="px-3 py-2 hidden lg:table-cell text-xs text-gray-500">
+                        <td className="px-4 py-3 hidden lg:table-cell text-xs text-gray-500">
                           {formatDate(source.next_crawl_at)}
                         </td>
                       </tr>
@@ -723,17 +737,17 @@ export default function ScanPage() {
           )}
 
           {/* Custom URL divider */}
-          <div className="relative my-4">
+          <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-200"></div>
+              <div className="w-full border-t border-gray-800"></div>
             </div>
             <div className="relative flex justify-center text-xs">
-              <span className="px-3 bg-white text-gray-400">HOẶC nhập URL tùy chỉnh</span>
+              <span className="px-4 bg-[#111827] text-gray-500 font-medium tracking-widest uppercase">Hoặc nhập URL tùy chỉnh</span>
             </div>
           </div>
 
           <div className="relative">
-            <LinkIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <LinkIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 w-4 h-4" />
             <input
               type="url"
               value={customUrl}
@@ -742,7 +756,7 @@ export default function ScanPage() {
                 if (e.target.value) setSelectedSources([]);
               }}
               placeholder="https://example.com hoặc https://example.com/rss"
-              className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+              className="w-full pl-11 pr-4 py-3 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white text-sm placeholder-gray-500 transition-shadow"
             />
           </div>
         </div>
@@ -751,10 +765,10 @@ export default function ScanPage() {
         <button
           onClick={handleScan}
           disabled={scanning || !canScan}
-          className={`w-full flex items-center justify-center px-6 py-3 rounded-lg font-medium transition-colors ${
+          className={`w-full flex items-center justify-center px-6 py-3.5 rounded-xl font-semibold transition-all duration-300 shadow-sm ${
             canScan
-              ? 'bg-blue-600 text-white hover:bg-blue-700'
-              : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+              ? 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-indigo-500/25 hover:shadow-indigo-500/40'
+              : 'bg-gray-800 text-gray-500 cursor-not-allowed border border-gray-700'
           } disabled:opacity-80`}
         >
           {scanning ? (
@@ -777,55 +791,55 @@ export default function ScanPage() {
       </div>
 
       {/* ═══ Crawl Jobs History ═══ */}
-      <div className="bg-white rounded-lg shadow">
-        <div className="p-6 border-b flex items-center justify-between">
+      <div className="bg-[#111827] rounded-xl shadow-sm border border-gray-800">
+        <div className="p-6 border-b border-gray-800 flex items-center justify-between">
           <div className="flex items-center">
-            <History className="w-5 h-5 mr-2 text-gray-600" />
-            <h2 className="text-lg font-semibold">Lịch Sử Crawl Jobs</h2>
+            <History className="w-5 h-5 mr-3 text-indigo-400" />
+            <h2 className="text-lg font-bold text-white tracking-wide">Lịch Sử Crawl Jobs</h2>
           </div>
-          <span className="text-sm text-gray-500">{crawlJobs.length} jobs</span>
+          <span className="text-sm text-gray-400 font-medium tracking-wide">{crawlJobs.length} jobs</span>
         </div>
-        <div className="divide-y">
+        <div className="divide-y divide-gray-800/80">
           {crawlJobs.length === 0 ? (
-            <p className="text-gray-500 text-center py-8">Chưa có lịch sử scan</p>
+            <p className="text-gray-400 text-center py-8 font-medium tracking-wide">Chưa có lịch sử scan</p>
           ) : (
             crawlJobs.map((job) => (
-              <div key={job.id} className="p-4 hover:bg-gray-50">
+              <div key={job.id} className="p-5 hover:bg-[#1E293B]/50 transition-colors">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
                     {getJobTypeBadge(job.job_type)}
                     {getStatusBadge(job.status)}
-                    <span className="text-sm text-gray-600">#{job.id}</span>
+                    <span className="text-xs text-gray-500 font-mono tracking-wider ml-2">#{job.id}</span>
                   </div>
                   <div className="flex items-center space-x-3">
-                    <span className="text-sm text-gray-500">{job.mentions_found} mentions</span>
+                    <span className="text-sm text-gray-300 font-medium">{job.mentions_found} mentions</span>
                     {(job.status === 'failed' || job.status === 'cancelled') && (
                       <button
                         onClick={() => handleRetry(job.id)}
                         disabled={retryingJobId === job.id}
-                        className="flex items-center px-2 py-1 text-xs text-orange-700 bg-orange-50 border border-orange-200 rounded hover:bg-orange-100 disabled:opacity-50"
+                        className="flex items-center px-3 py-1.5 text-xs font-medium text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-lg hover:bg-amber-500/20 transition-colors shadow-sm disabled:opacity-50"
                       >
                         {retryingJobId === job.id ? (
-                          <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                          <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
                         ) : (
-                          <RefreshCw className="w-3 h-3 mr-1" />
+                          <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
                         )}
                         Retry
                       </button>
                     )}
                   </div>
                 </div>
-                <div className="mt-2 flex flex-wrap gap-4 text-xs text-gray-500">
-                  <span>Nguồn: {job.processed_sources}/{job.total_sources}</span>
+                <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-xs font-medium text-gray-400">
+                  <span className="text-gray-300">Nguồn: {job.processed_sources}/{job.total_sources}</span>
                   {job.status === 'completed' && job.total_sources > job.processed_sources && (
-                    <span className="text-red-500">Thất bại: {job.total_sources - job.processed_sources} nguồn</span>
+                    <span className="text-rose-400">Thất bại: {job.total_sources - job.processed_sources} nguồn</span>
                   )}
                   {job.created_at && <span>Tạo: {formatDate(job.created_at)}</span>}
                   {job.completed_at && <span>Xong: {formatDate(job.completed_at)}</span>}
-                  {job.retry_count > 0 && <span className="text-orange-600">Retry #{job.retry_count}</span>}
+                  {job.retry_count > 0 && <span className="text-amber-400">Retry #{job.retry_count}</span>}
                 </div>
                 {job.error_message && (
-                  <p className="mt-1 text-xs text-red-600 truncate" title={job.error_message}>
+                  <p className="mt-2 text-xs text-rose-400 bg-rose-500/10 px-3 py-2 rounded-lg border border-rose-500/20 truncate" title={job.error_message}>
                     ❌ {job.error_message}
                   </p>
                 )}

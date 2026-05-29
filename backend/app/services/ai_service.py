@@ -35,6 +35,31 @@ class AIProvider(ABC):
         """
         pass
 
+    def generate_executive_brief(self, content: str) -> Dict:
+        """
+        Generate an executive brief in 3 formats based on content.
+        
+        Returns:
+            {
+                "summary_3_lines": str,
+                "zalo_brief": str,
+                "full_brief": str,
+                "risk_level": str,
+                "recommended_decision": str,
+                "owner": str,
+                "deadline": str
+            }
+        """
+        return {
+            "summary_3_lines": "1. Phát hiện sự cố/thảo luận.\n2. Nguy cơ tiềm ẩn trung bình.\n3. Cần theo dõi thêm.",
+            "zalo_brief": "🚨 BÁO CÁO NHANH\n- Sự việc: Có thông tin cần lưu ý\n- Đánh giá: Rủi ro trung bình\n- Hành động: Theo dõi",
+            "full_brief": "BÁO CÁO CHI TIẾT\n\n1. Tình hình: Đang có thảo luận liên quan đến thương hiệu.\n2. Phân tích: Nguy cơ lan rộng trung bình.\n3. Khuyến nghị: Theo dõi chặt chẽ và chuẩn bị kịch bản phản hồi.",
+            "risk_level": "medium",
+            "recommended_decision": "Theo dõi và báo cáo khi có diễn biến mới",
+            "owner": "Quản lý",
+            "deadline": "24h"
+        }
+
 
 # ============================================================================
 # DUMMY AI PROVIDER (FOR TESTING)
@@ -158,6 +183,12 @@ class DummyAIProvider(AIProvider):
             "summary_vi": summary_vi,
             "suggested_action": suggested_action,
             "responsible_department": responsible_department,
+            "urgency": "high" if crisis_level >= 4 else ("medium" if risk_score >= 50 else "low"),
+            "response_type": "escalate_to_legal" if crisis_level >= 4 else "contact_privately",
+            "recommended_owner": "Manager",
+            "deadline_suggestion": "within 2 hours" if crisis_level >= 4 else "within 24 hours",
+            "escalation_needed": crisis_level >= 3,
+            "why_it_matters": f"Nội dung này chứa {crisis_count} từ khóa khủng hoảng và {negative_count} từ tiêu cực.",
             "confidence_score": round(confidence_score, 2),
             "processing_time_ms": processing_time_ms
         }
@@ -195,8 +226,14 @@ Yêu cầu phân tích:
 3. crisis_level: Mức độ khủng hoảng từ 1-5 (1 = bình thường, 5 = khủng hoảng nghiêm trọng)
 4. summary_vi: Tóm tắt ngắn gọn bằng tiếng Việt (1-2 câu)
 5. suggested_action: Hành động đề xuất (monitor, respond, escalate, legal_review)
-6. responsible_department: Bộ phận chịu trách nhiệm (customer_service, PR, legal, executive)
-7. confidence_score: Độ tin cậy của phân tích từ 0-100
+6. responsible_department: Bộ phận chịu trách nhiệm (customer_service, PR, legal, executive, operations, technical)
+7. urgency: Độ khẩn cấp (low, medium, high, critical)
+8. response_type: Kiểu phản hồi gợi ý (monitor_only, reply_publicly, contact_privately, escalate_to_legal, create_incident...)
+9. recommended_owner: Chức danh/Vai trò người nên xử lý (ví dụ: PR Manager, Legal Counsel)
+10. deadline_suggestion: Gợi ý thời hạn xử lý (ví dụ: "trong 2 giờ", "trong 24 giờ")
+11. escalation_needed: Cần leo thang không? (true/false)
+12. why_it_matters: Tại sao vấn đề này quan trọng, có thể ảnh hưởng gì đến thương hiệu? (1-2 câu tiếng Việt)
+13. confidence_score: Độ tin cậy của phân tích từ 0-100
 
 LƯU Ý QUAN TRỌNG:
 - KHÔNG đề xuất hành động bất hợp pháp (hack, DDoS, spam, scraping trái phép)
@@ -234,6 +271,12 @@ Trả về JSON thuần túy, không có markdown:"""
             result["summary_vi"] = result.get("summary_vi", "Không có tóm tắt")
             result["suggested_action"] = result.get("suggested_action", "monitor")
             result["responsible_department"] = result.get("responsible_department", "customer_service")
+            result["urgency"] = result.get("urgency", "low")
+            result["response_type"] = result.get("response_type", "monitor_only")
+            result["recommended_owner"] = result.get("recommended_owner", "CS Staff")
+            result["deadline_suggestion"] = result.get("deadline_suggestion", "N/A")
+            result["escalation_needed"] = bool(result.get("escalation_needed", False))
+            result["why_it_matters"] = result.get("why_it_matters", "")
             result["confidence_score"] = float(result.get("confidence_score", 80))
             result["processing_time_ms"] = int((time.time() - start_time) * 1000)
             
@@ -244,6 +287,50 @@ Trả về JSON thuần túy, không có markdown:"""
             print(f"OpenAI analysis failed: {e}")
             dummy = DummyAIProvider()
             return dummy.analyze_mention(content, title)
+
+    def generate_executive_brief(self, content: str) -> Dict:
+        prompt = f"""Tạo báo cáo điều hành (Executive Brief) cho nội dung sau:
+
+Nội dung:
+{content}
+
+Bạn phải trả về JSON thuần túy (không markdown) với cấu trúc sau:
+{{
+  "summary_3_lines": "Tóm tắt đúng 3 gạch đầu dòng: 1. Chuyện gì xảy ra? 2. Mức độ nghiêm trọng? 3. Cần quyết định/hành động gì?",
+  "zalo_brief": "Báo cáo cực ngắn, súc tích, phong cách Zalo (có dùng emoji phù hợp) để gửi trong group chat lãnh đạo.",
+  "full_brief": "Báo cáo đầy đủ gồm: bối cảnh, phân tích rủi ro, cảm xúc đám đông, và đề xuất chi tiết.",
+  "risk_level": "low/medium/high/critical",
+  "recommended_decision": "Quyết định đề xuất ngắn gọn",
+  "owner": "Người/Bộ phận phụ trách",
+  "deadline": "Thời hạn xử lý đề xuất (VD: Trong vòng 2h)"
+}}
+
+Tuyệt đối chỉ trả về JSON, không có code block markdown:"""
+
+        try:
+            response = self.openai.ChatCompletion.create(
+                model="gpt-4",
+                messages=[
+                    {"role": "system", "content": "Bạn là chuyên gia phân tích khủng hoảng và báo cáo cho ban lãnh đạo. Trả về JSON thuần túy."},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.3,
+                max_tokens=800
+            )
+            
+            result_text = response.choices[0].message.content.strip()
+            
+            if result_text.startswith("```"):
+                result_text = result_text.split("```")[1]
+                if result_text.startswith("json"):
+                    result_text = result_text[4:]
+                result_text = result_text.strip()
+            
+            return json.loads(result_text)
+            
+        except Exception as e:
+            print(f"OpenAI brief generation failed: {e}")
+            return super().generate_executive_brief(content)
 
 
 # ============================================================================
@@ -279,8 +366,14 @@ Yêu cầu phân tích:
 3. crisis_level: Mức độ khủng hoảng từ 1-5 (1 = bình thường, 5 = khủng hoảng nghiêm trọng)
 4. summary_vi: Tóm tắt ngắn gọn bằng tiếng Việt (1-2 câu)
 5. suggested_action: Hành động đề xuất (monitor, respond, escalate, legal_review)
-6. responsible_department: Bộ phận chịu trách nhiệm (customer_service, PR, legal, executive)
-7. confidence_score: Độ tin cậy của phân tích từ 0-100
+6. responsible_department: Bộ phận chịu trách nhiệm (customer_service, PR, legal, executive, operations, technical)
+7. urgency: Độ khẩn cấp (low, medium, high, critical)
+8. response_type: Kiểu phản hồi gợi ý (monitor_only, reply_publicly, contact_privately, escalate_to_legal, create_incident...)
+9. recommended_owner: Chức danh/Vai trò người nên xử lý (ví dụ: PR Manager, Legal Counsel)
+10. deadline_suggestion: Gợi ý thời hạn xử lý (ví dụ: "trong 2 giờ", "trong 24 giờ")
+11. escalation_needed: Cần leo thang không? (true/false)
+12. why_it_matters: Tại sao vấn đề này quan trọng, có thể ảnh hưởng gì đến thương hiệu? (1-2 câu tiếng Việt)
+13. confidence_score: Độ tin cậy của phân tích từ 0-100
 
 LƯU Ý QUAN TRỌNG:
 - KHÔNG đề xuất hành động bất hợp pháp (hack, DDoS, spam, scraping trái phép)
@@ -295,6 +388,12 @@ Trả về JSON thuần túy, không có markdown:
   "summary_vi": "...",
   "suggested_action": "...",
   "responsible_department": "...",
+  "urgency": "...",
+  "response_type": "...",
+  "recommended_owner": "...",
+  "deadline_suggestion": "...",
+  "escalation_needed": false,
+  "why_it_matters": "...",
   "confidence_score": 0
 }}"""
 
@@ -318,6 +417,12 @@ Trả về JSON thuần túy, không có markdown:
             result["summary_vi"] = result.get("summary_vi", "Không có tóm tắt")
             result["suggested_action"] = result.get("suggested_action", "monitor")
             result["responsible_department"] = result.get("responsible_department", "customer_service")
+            result["urgency"] = result.get("urgency", "low")
+            result["response_type"] = result.get("response_type", "monitor_only")
+            result["recommended_owner"] = result.get("recommended_owner", "CS Staff")
+            result["deadline_suggestion"] = result.get("deadline_suggestion", "N/A")
+            result["escalation_needed"] = bool(result.get("escalation_needed", False))
+            result["why_it_matters"] = result.get("why_it_matters", "")
             result["confidence_score"] = float(result.get("confidence_score", 80))
             result["processing_time_ms"] = int((time.time() - start_time) * 1000)
             
@@ -328,6 +433,41 @@ Trả về JSON thuần túy, không có markdown:
             print(f"Gemini analysis failed: {e}")
             dummy = DummyAIProvider()
             return dummy.analyze_mention(content, title)
+
+    def generate_executive_brief(self, content: str) -> Dict:
+        prompt = f"""Tạo báo cáo điều hành (Executive Brief) cho nội dung sau:
+
+Nội dung:
+{content}
+
+Bạn phải trả về JSON thuần túy (không markdown) với cấu trúc sau:
+{{
+  "summary_3_lines": "Tóm tắt đúng 3 gạch đầu dòng: 1. Chuyện gì xảy ra? 2. Mức độ nghiêm trọng? 3. Cần quyết định/hành động gì?",
+  "zalo_brief": "Báo cáo cực ngắn, súc tích, phong cách Zalo (có dùng emoji phù hợp) để gửi trong group chat lãnh đạo.",
+  "full_brief": "Báo cáo đầy đủ gồm: bối cảnh, phân tích rủi ro, cảm xúc đám đông, và đề xuất chi tiết.",
+  "risk_level": "low/medium/high/critical",
+  "recommended_decision": "Quyết định đề xuất ngắn gọn",
+  "owner": "Người/Bộ phận phụ trách",
+  "deadline": "Thời hạn xử lý đề xuất (VD: Trong vòng 2h)"
+}}
+
+Tuyệt đối chỉ trả về JSON, không có code block markdown:"""
+
+        try:
+            response = self.model.generate_content(prompt)
+            result_text = response.text.strip()
+            
+            if result_text.startswith("```"):
+                result_text = result_text.split("```")[1]
+                if result_text.startswith("json"):
+                    result_text = result_text[4:]
+                result_text = result_text.strip()
+            
+            return json.loads(result_text)
+            
+        except Exception as e:
+            print(f"Gemini brief generation failed: {e}")
+            return super().generate_executive_brief(content)
 
 
 # ============================================================================
@@ -464,6 +604,12 @@ class PhoBERTProvider(AIProvider):
                 "summary_vi": summary_vi,
                 "suggested_action": suggested_action,
                 "responsible_department": responsible_department,
+                "urgency": "high" if crisis_level >= 4 else "low",
+                "response_type": "monitor_only",
+                "recommended_owner": "Manager",
+                "deadline_suggestion": "24h",
+                "escalation_needed": crisis_level >= 3,
+                "why_it_matters": "Xác định rủi ro dựa trên mô hình ngôn ngữ.",
                 "confidence_score": round(score * 100, 2),
                 "processing_time_ms": processing_time_ms,
                 "ai_provider": "phobert",

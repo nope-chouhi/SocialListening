@@ -1,4 +1,4 @@
-﻿from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field
 from datetime import datetime
 from typing import Optional, List, Dict, Any
 from app.models.mention import SentimentScore
@@ -43,7 +43,6 @@ class MentionWithAnalysis(MentionResponse):
     ai_analysis: Optional["AIAnalysisResponse"] = None
 
 
-# AI Analysis Schemas
 class AIAnalysisBase(BaseModel):
     sentiment: SentimentScore
     risk_score: float = Field(..., ge=0, le=100)
@@ -51,6 +50,12 @@ class AIAnalysisBase(BaseModel):
     summary_vi: Optional[str] = None
     suggested_action: Optional[str] = None
     responsible_department: Optional[str] = None
+    urgency: Optional[str] = None
+    response_type: Optional[str] = None
+    recommended_owner: Optional[str] = None
+    deadline_suggestion: Optional[str] = None
+    escalation_needed: Optional[bool] = False
+    why_it_matters: Optional[str] = None
     confidence_score: Optional[float] = Field(None, ge=0, le=100)
 
 

@@ -130,12 +130,12 @@ export default function BrandingSettings() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-semibold text-gray-900">Giao diện hệ thống</h2>
-          <p className="text-sm text-gray-600 mt-1">Tùy chỉnh logo, màu sắc và giao diện toàn hệ thống</p>
+          <h2 className="text-xl font-bold text-white tracking-wide">Giao diện hệ thống</h2>
+          <p className="text-sm text-gray-400 mt-1">Tùy chỉnh logo, màu sắc và giao diện toàn hệ thống</p>
         </div>
         <button
           onClick={handleReset}
-          className="flex items-center px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
+          className="flex items-center px-4 py-2.5 text-gray-300 bg-[#1E293B] border border-gray-700 rounded-xl hover:bg-gray-800 transition-colors font-medium shadow-sm"
         >
           <RotateCcw className="w-4 h-4 mr-2" />
           Khôi phục mặc định
@@ -144,157 +144,153 @@ export default function BrandingSettings() {
 
       <form onSubmit={handleSave} className="space-y-6">
         {/* Color Settings */}
-        <div className="bg-white border border-gray-200 rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-            <Palette className="w-5 h-5 mr-2 text-blue-600" />
+        <div className="bg-[#111827] border border-gray-800 rounded-xl shadow-sm p-6">
+          <h3 className="text-lg font-bold text-white mb-6 flex items-center">
+            <Palette className="w-5 h-5 mr-2 text-indigo-400" />
             Màu sắc
           </h3>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
                 Màu chính (Primary)
               </label>
               <div className="flex items-center space-x-3">
-                <input
-                  type="color"
-                  value={formData.primary_color}
-                  onChange={(e) => setFormData({ ...formData, primary_color: e.target.value })}
-                  className="h-10 w-20 rounded border border-gray-300 cursor-pointer"
-                />
+                <div className="relative overflow-hidden rounded-lg w-12 h-10 border border-gray-700 shrink-0">
+                  <input
+                    type="color"
+                    value={formData.primary_color}
+                    onChange={(e) => setFormData({ ...formData, primary_color: e.target.value })}
+                    className="absolute -top-2 -left-2 w-16 h-16 cursor-pointer"
+                  />
+                </div>
                 <input
                   type="text"
                   value={formData.primary_color}
                   onChange={(e) => setFormData({ ...formData, primary_color: e.target.value })}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="flex-1 px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white font-mono"
                   placeholder="#3B82F6"
                   pattern="^#[0-9A-Fa-f]{6}$"
                 />
               </div>
-              <div 
-                className="mt-2 h-12 rounded-lg border border-gray-300"
-                style={{ backgroundColor: formData.primary_color }}
-              />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
                 Màu phụ (Secondary)
               </label>
               <div className="flex items-center space-x-3">
-                <input
-                  type="color"
-                  value={formData.secondary_color}
-                  onChange={(e) => setFormData({ ...formData, secondary_color: e.target.value })}
-                  className="h-10 w-20 rounded border border-gray-300 cursor-pointer"
-                />
+                <div className="relative overflow-hidden rounded-lg w-12 h-10 border border-gray-700 shrink-0">
+                  <input
+                    type="color"
+                    value={formData.secondary_color}
+                    onChange={(e) => setFormData({ ...formData, secondary_color: e.target.value })}
+                    className="absolute -top-2 -left-2 w-16 h-16 cursor-pointer"
+                  />
+                </div>
                 <input
                   type="text"
                   value={formData.secondary_color}
                   onChange={(e) => setFormData({ ...formData, secondary_color: e.target.value })}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="flex-1 px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white font-mono"
                   placeholder="#10B981"
                   pattern="^#[0-9A-Fa-f]{6}$"
                 />
               </div>
-              <div 
-                className="mt-2 h-12 rounded-lg border border-gray-300"
-                style={{ backgroundColor: formData.secondary_color }}
-              />
             </div>
           </div>
         </div>
 
         {/* Logo & Images */}
-        <div className="bg-white border border-gray-200 rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Logo & Hình ảnh</h3>
+        <div className="bg-[#111827] border border-gray-800 rounded-xl shadow-sm p-6">
+          <h3 className="text-lg font-bold text-white mb-6">Logo & Hình ảnh</h3>
 
-          <div className="space-y-4">
+          <div className="space-y-5">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
                 Logo (Light Mode)
               </label>
               <input
                 type="url"
                 value={formData.logo_light_url}
                 onChange={(e) => setFormData({ ...formData, logo_light_url: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500"
                 placeholder="https://example.com/logo-light.png"
               />
-              <p className="text-xs text-gray-500 mt-1">URL của logo hiển thị ở chế độ sáng</p>
+              <p className="text-xs text-gray-500 mt-1.5 font-medium">URL của logo hiển thị ở chế độ sáng</p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
                 Logo (Dark Mode)
               </label>
               <input
                 type="url"
                 value={formData.logo_dark_url}
                 onChange={(e) => setFormData({ ...formData, logo_dark_url: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500"
                 placeholder="https://example.com/logo-dark.png"
               />
-              <p className="text-xs text-gray-500 mt-1">URL của logo hiển thị ở chế độ tối</p>
+              <p className="text-xs text-gray-500 mt-1.5 font-medium">URL của logo hiển thị ở chế độ tối</p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
                 Favicon
               </label>
               <input
                 type="url"
                 value={formData.favicon_url}
                 onChange={(e) => setFormData({ ...formData, favicon_url: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500"
                 placeholder="https://example.com/favicon.ico"
               />
-              <p className="text-xs text-gray-500 mt-1">Icon hiển thị trên tab trình duyệt</p>
+              <p className="text-xs text-gray-500 mt-1.5 font-medium">Icon hiển thị trên tab trình duyệt</p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
                 Ảnh nền trang đăng nhập
               </label>
               <input
                 type="url"
                 value={formData.login_background_url}
                 onChange={(e) => setFormData({ ...formData, login_background_url: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500"
                 placeholder="https://example.com/login-bg.jpg"
               />
-              <p className="text-xs text-gray-500 mt-1">Ảnh nền cho trang đăng nhập</p>
+              <p className="text-xs text-gray-500 mt-1.5 font-medium">Ảnh nền cho trang đăng nhập</p>
             </div>
           </div>
         </div>
 
         {/* Custom CSS */}
-        <div className="bg-white border border-gray-200 rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Custom CSS</h3>
+        <div className="bg-[#111827] border border-gray-800 rounded-xl shadow-sm p-6">
+          <h3 className="text-lg font-bold text-white mb-6">Custom CSS</h3>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-300 mb-2">
               CSS tùy chỉnh (nâng cao)
             </label>
             <textarea
               value={formData.custom_css}
               onChange={(e) => setFormData({ ...formData, custom_css: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+              className="w-full px-4 py-3 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white font-mono text-sm placeholder-gray-500 resize-y"
               rows={8}
               placeholder=".custom-class { color: red; }"
             />
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-gray-500 mt-2 font-medium">
               CSS này sẽ được áp dụng toàn hệ thống. Sử dụng cẩn thận.
             </p>
           </div>
         </div>
 
         {/* Save Button */}
-        <div className="flex justify-end">
+        <div className="flex justify-end pt-2">
           <button
             type="submit"
             disabled={saving}
-            className="flex items-center px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400"
+            className="flex items-center px-6 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed shadow-sm shadow-indigo-500/20 font-medium"
           >
             <Save className="w-4 h-4 mr-2" />
             {saving ? 'Đang lưu...' : 'Lưu cài đặt'}
@@ -303,9 +299,9 @@ export default function BrandingSettings() {
       </form>
 
       {/* Info Box */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <p className="text-sm text-blue-800">
-          <strong>Lưu ý:</strong> Thay đổi branding sẽ ảnh hưởng đến toàn bộ hệ thống. 
+      <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-xl p-4">
+        <p className="text-sm text-indigo-200">
+          <strong className="text-indigo-300">Lưu ý:</strong> Thay đổi branding sẽ ảnh hưởng đến toàn bộ hệ thống. 
           Hãy đảm bảo logo và màu sắc phù hợp với thương hiệu của bạn.
         </p>
       </div>

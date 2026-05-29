@@ -96,7 +96,7 @@ export default function PersonalNotifications() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
       </div>
     );
   }
@@ -105,12 +105,12 @@ export default function PersonalNotifications() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h2 className="text-xl font-semibold text-gray-900">Thông báo cá nhân</h2>
-        <p className="text-sm text-gray-600 mt-1">Quản lý thông báo bạn nhận được</p>
+        <h2 className="text-xl font-bold text-white tracking-wide">Thông báo cá nhân</h2>
+        <p className="text-sm text-gray-400 mt-1">Quản lý thông báo bạn nhận được</p>
       </div>
 
       {/* Notification Settings */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6 space-y-4">
+      <div className="bg-[#111827] border border-gray-800 rounded-xl shadow-sm p-6 space-y-4">
         <div className="space-y-4">
           {[
             { key: 'emailNotifications', label: 'Email notifications', description: 'Nhận thông báo qua email' },
@@ -119,10 +119,10 @@ export default function PersonalNotifications() {
             { key: 'incidentNotifications', label: 'Sự cố', description: 'Thông báo khi được gán sự cố' },
             { key: 'reportNotifications', label: 'Báo cáo', description: 'Nhận báo cáo định kỳ' }
           ].map((item) => (
-            <div key={item.key} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
+            <div key={item.key} className="flex items-center justify-between py-3 border-b border-gray-800 last:border-0">
               <div className="flex-1">
-                <p className="text-sm font-medium text-gray-900">{item.label}</p>
-                <p className="text-xs text-gray-500 mt-1">{item.description}</p>
+                <p className="text-sm font-medium text-white">{item.label}</p>
+                <p className="text-xs text-gray-400 mt-1">{item.description}</p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer ml-4">
                 <input
@@ -134,13 +134,13 @@ export default function PersonalNotifications() {
                   }}
                   className="sr-only peer"
                 />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                <div className="w-11 h-6 bg-[#1E293B] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-500/50 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
               </label>
             </div>
           ))}
         </div>
 
-        <div className="flex justify-end pt-4">
+        <div className="flex justify-end pt-4 border-t border-gray-800">
           <button
             onClick={() => {
               console.log('🔴 SAVE BUTTON CLICKED');
@@ -148,7 +148,7 @@ export default function PersonalNotifications() {
               handleSave();
             }}
             disabled={saving}
-            className="flex items-center px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center px-6 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed shadow-sm shadow-indigo-500/20 font-medium"
           >
             <Save className="w-4 h-4 mr-2" />
             {saving ? 'Đang lưu...' : 'Lưu cài đặt'}

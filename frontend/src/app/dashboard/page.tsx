@@ -114,22 +114,22 @@ export default function DashboardPage() {
       <Toaster position="top-right" />
       
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
-          <p className="text-sm text-gray-500 mt-1">Tổng quan giám sát mạng xã hội và phân tích dữ liệu</p>
+          <h1 className="text-2xl font-bold text-white tracking-wide">Dashboard</h1>
+          <p className="text-sm text-gray-400 mt-1">Tổng quan giám sát truyền thông, mentions và cảnh báo rủi ro.</p>
         </div>
         
         <div className="flex items-center space-x-3">
-          <div className="inline-flex bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
+          <div className="inline-flex bg-[#0B1220] border border-gray-800 rounded-lg p-1 shadow-inner">
             {['today', '7d', '30d'].map((range) => (
               <button
                 key={range}
                 onClick={() => setTimeRange(range)}
-                className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-200 ${
                   timeRange === range 
-                    ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm' 
-                    : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
+                    ? 'bg-[#1E293B] text-white shadow-sm shadow-black/20' 
+                    : 'text-gray-500 hover:text-gray-300 hover:bg-gray-800/50'
                 }`}
               >
                 {range === 'today' ? 'Hôm nay' : range === '7d' ? '7 ngày' : '30 ngày'}
@@ -138,10 +138,10 @@ export default function DashboardPage() {
           </div>
           <button 
             onClick={handleRefresh}
-            className="p-2 text-gray-500 hover:text-gray-900 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm"
+            className="p-2.5 text-gray-400 hover:text-white bg-[#0B1220] hover:bg-[#1E293B] border border-gray-800 rounded-lg shadow-sm transition-all duration-200 active:scale-95"
             title="Làm mới"
           >
-            <RefreshCcw className={`w-5 h-5 ${loadingCharts || loadingMetrics ? 'animate-spin' : ''}`} />
+            <RefreshCcw className={`w-4 h-4 ${loadingCharts || loadingMetrics ? 'animate-spin text-indigo-400' : ''}`} />
           </button>
         </div>
       </div>
@@ -160,21 +160,26 @@ export default function DashboardPage() {
       </div>
 
       {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         {/* Trend Chart */}
-        <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5">
-          <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-4">Xu Hướng Đề Cập</h2>
-          <TrendChart data={trends?.items || []} isLoading={loadingCharts} />
+        <div className="xl:col-span-2 bg-[#111827] rounded-xl shadow-sm border border-gray-800 p-5 flex flex-col">
+          <div className="mb-4">
+            <h2 className="text-base font-semibold text-white">Xu Hướng Đề Cập</h2>
+            <p className="text-xs text-gray-500 mt-1">Lượng mentions, cảnh báo và sự cố theo thời gian</p>
+          </div>
+          <div className="flex-1 min-h-[300px]">
+            <TrendChart data={trends?.items || []} isLoading={loadingCharts} />
+          </div>
         </div>
 
         {/* Sentiment & Hot Keywords */}
         <div className="space-y-6">
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5">
-            <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-4">Phân Bố Sắc Thái</h2>
+          <div className="bg-[#111827] rounded-xl shadow-sm border border-gray-800 p-5">
+            <h2 className="text-base font-semibold text-white mb-4">Phân Bố Sắc Thái</h2>
             <SentimentDonutChart data={sentiment} isLoading={loadingCharts} />
           </div>
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5">
-            <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-4">Từ Khóa Nổi Bật</h2>
+          <div className="bg-[#111827] rounded-xl shadow-sm border border-gray-800 p-5">
+            <h2 className="text-base font-semibold text-white mb-4">Từ Khóa Nổi Bật</h2>
             <HotKeywordsWidget data={hotKeywords?.items || []} isLoading={loadingCharts} />
           </div>
         </div>
@@ -183,16 +188,19 @@ export default function DashboardPage() {
       {/* Lists Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Latest Mentions */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col h-[600px]">
-          <div className="p-5 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gray-50/50 dark:bg-gray-800/50 rounded-t-xl">
-            <h2 className="text-base font-semibold text-gray-900 dark:text-white">Mentions Mới Nhất</h2>
-            <span className="text-xs font-medium bg-blue-100 text-blue-800 px-2 py-1 rounded-full">Top 10</span>
+        <div className="bg-[#111827] rounded-xl shadow-sm border border-gray-800 flex flex-col h-[600px] overflow-hidden">
+          <div className="p-4 border-b border-gray-800 flex justify-between items-center bg-[#0B1220]/50">
+            <h2 className="text-base font-semibold text-white">Mentions Mới Nhất</h2>
+            <span className="text-[10px] font-bold tracking-wider uppercase bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 px-2.5 py-1 rounded-md shadow-sm">Top 10</span>
           </div>
-          <div className="p-5 overflow-y-auto flex-1 space-y-4">
+          <div className="p-4 overflow-y-auto flex-1 space-y-3 custom-scrollbar">
             {!metrics?.latest_mentions || metrics.latest_mentions.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full text-gray-500">
-                <FileText className="w-12 h-12 mb-3 text-gray-300" />
-                <p>Chưa có mention nào. Hãy thêm nguồn và chạy quét đầu tiên.</p>
+              <div className="flex flex-col items-center justify-center h-full text-gray-400 font-medium tracking-wide">
+                <div className="w-16 h-16 mb-4 rounded-xl bg-[#1E293B] flex items-center justify-center border border-gray-800 shadow-sm">
+                  <FileText className="w-8 h-8 text-gray-500" />
+                </div>
+                <p className="text-sm text-gray-300">Chưa có mention nào.</p>
+                <p className="text-xs mt-1.5 text-gray-500">Hãy thêm nguồn và chạy quét đầu tiên.</p>
               </div>
             ) : (
               metrics.latest_mentions.map((mention: any) => (
@@ -208,16 +216,18 @@ export default function DashboardPage() {
         </div>
 
         {/* Latest Alerts */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col h-[600px]">
-          <div className="p-5 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gray-50/50 dark:bg-gray-800/50 rounded-t-xl">
-            <h2 className="text-base font-semibold text-gray-900 dark:text-white">Cảnh Báo Cần Xử Lý</h2>
-            <span className="text-xs font-medium bg-red-100 text-red-800 px-2 py-1 rounded-full">Top 10</span>
+        <div className="bg-[#111827] rounded-xl shadow-sm border border-gray-800 flex flex-col h-[600px] overflow-hidden">
+          <div className="p-4 border-b border-gray-800 flex justify-between items-center bg-[#0B1220]/50">
+            <h2 className="text-base font-semibold text-white">Cảnh Báo Cần Xử Lý</h2>
+            <span className="text-[10px] font-bold tracking-wider uppercase bg-rose-500/10 border border-rose-500/20 text-rose-400 px-2.5 py-1 rounded-md shadow-sm">Top 10</span>
           </div>
-          <div className="p-5 overflow-y-auto flex-1 space-y-4">
+          <div className="p-4 overflow-y-auto flex-1 space-y-3 custom-scrollbar">
             {!metrics?.latest_alerts || metrics.latest_alerts.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full text-gray-500">
-                <AlertTriangle className="w-12 h-12 mb-3 text-gray-300" />
-                <p>Tuyệt vời! Không có cảnh báo mới nào.</p>
+              <div className="flex flex-col items-center justify-center h-full text-gray-400 font-medium tracking-wide">
+                <div className="w-16 h-16 mb-4 rounded-xl bg-[#1E293B] flex items-center justify-center border border-gray-800 shadow-sm">
+                  <AlertTriangle className="w-8 h-8 text-gray-500" />
+                </div>
+                <p className="text-sm text-gray-300">Không có cảnh báo mới nào.</p>
               </div>
             ) : (
               metrics.latest_alerts.map((alert: any) => (

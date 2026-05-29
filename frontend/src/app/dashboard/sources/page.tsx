@@ -234,7 +234,7 @@ export default function SourcesPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-lg text-gray-600">Đang tải...</div>
+        <div className="text-lg text-gray-400 font-medium tracking-wide">Đang tải...</div>
       </div>
     );
   }
@@ -244,16 +244,16 @@ export default function SourcesPage() {
       <Toaster position="top-right" />
       
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Quản lý nguồn</h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <h1 className="text-2xl font-bold text-white tracking-wide">Quản lý nguồn</h1>
+          <p className="text-sm text-gray-400 mt-1">
             Quản lý các nguồn dữ liệu để thu thập thông tin
           </p>
         </div>
         <button
           onClick={() => setShowAddModal(true)}
-          className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          className="flex items-center px-4 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all duration-200 shadow-sm shadow-indigo-500/20 font-medium"
         >
           <Plus className="w-5 h-5 mr-2" />
           Thêm nguồn
@@ -261,36 +261,39 @@ export default function SourcesPage() {
       </div>
 
       {/* Search */}
-      <div className="flex items-center gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+      <div className="flex flex-col sm:flex-row items-center gap-4 mb-6">
+        <div className="relative flex-1 w-full">
+          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
           <input
             type="text"
             placeholder="Tìm kiếm nguồn..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full pl-11 pr-4 py-3 bg-[#111827] border border-gray-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500 shadow-sm transition-shadow"
           />
         </div>
-        <div className="flex items-center gap-2 bg-white px-4 py-2 border border-gray-300 rounded-lg">
+        <div className="flex items-center gap-3 bg-[#111827] px-4 py-3 border border-gray-800 rounded-xl w-full sm:w-auto">
           <input
             type="checkbox"
             id="showTestSources"
             checked={showTestSources}
             onChange={(e) => setShowTestSources(e.target.checked)}
-            className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+            className="w-4 h-4 text-indigo-600 bg-gray-800 border-gray-600 rounded focus:ring-indigo-500 focus:ring-offset-gray-900"
           />
-          <label htmlFor="showTestSources" className="text-sm text-gray-700 cursor-pointer select-none">
+          <label htmlFor="showTestSources" className="text-sm font-medium text-gray-300 cursor-pointer select-none">
             Hiện nguồn test
           </label>
         </div>
       </div>
 
       {/* Sources Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {filteredSources.length === 0 ? (
-          <div className="col-span-full bg-white rounded-lg shadow p-8 text-center text-gray-500">
-            Không có nguồn nào. Hãy thêm nguồn đầu tiên!
+          <div className="col-span-full bg-[#111827] border border-gray-800 rounded-xl shadow-sm p-10 text-center text-gray-400 font-medium tracking-wide">
+            <div className="w-16 h-16 rounded-xl bg-[#1E293B] flex items-center justify-center mx-auto mb-4 border border-gray-800 shadow-sm">
+              <Globe className="w-8 h-8 text-gray-500" />
+            </div>
+            {searchTerm ? 'Không tìm thấy nguồn phù hợp.' : 'Không có nguồn nào. Hãy thêm nguồn đầu tiên!'}
           </div>
         ) : (
           filteredSources.map((source) => {
@@ -299,83 +302,81 @@ export default function SourcesPage() {
             const isUnsupported = !isSupported && source.source_type;
 
             return (
-              <div key={source.id} className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow">
-                <div className="flex items-start justify-between mb-4">
+              <div key={source.id} className="bg-[#111827] rounded-xl shadow-sm border border-gray-800 p-6 transition-all duration-300 hover:border-indigo-500/30 hover:shadow-indigo-500/5 group flex flex-col h-full">
+                <div className="flex items-start justify-between mb-5">
                   <div className="flex items-center space-x-3">
-                    {getSourceIcon(source.source_type)}
+                    <div className="p-2.5 bg-[#1E293B] rounded-lg border border-gray-700 group-hover:scale-110 transition-transform duration-300">
+                      {getSourceIcon(source.source_type)}
+                    </div>
                     <div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="font-semibold text-gray-900">{source.name}</h3>
+                      <div className="flex items-center gap-2 flex-wrap mb-1">
+                        <h3 className="font-semibold text-white tracking-wide truncate max-w-[150px]" title={source.name}>{source.name}</h3>
                         {isTest && (
-                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-orange-100 text-orange-700">
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-orange-500/10 text-orange-400 border border-orange-500/20">
                             Test
                           </span>
                         )}
                         {isUnsupported && (
-                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-red-100 text-red-700">
-                            Chưa tích hợp
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-rose-500/10 text-rose-400 border border-rose-500/20">
+                            Chưa hỗ trợ
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-gray-500">{getSourceTypeText(source.source_type)}</p>
+                      <p className="text-[11px] font-medium tracking-wider uppercase text-gray-500">{getSourceTypeText(source.source_type)}</p>
                     </div>
                   </div>
                 <button
                   onClick={() => handleToggleActive(source)}
-                  className={`px-2 py-1 text-xs font-medium rounded-full transition-colors ${
+                  className={`px-2.5 py-1 text-[10px] font-bold tracking-wider uppercase rounded-md transition-colors border ${
                     source.is_active
-                      ? 'bg-green-100 text-green-800 hover:bg-green-200'
-                      : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                      ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20'
+                      : 'bg-gray-800 text-gray-500 border-gray-700 hover:bg-gray-700'
                   }`}
                 >
                   {source.is_active ? 'ON' : 'OFF'}
                 </button>
               </div>
 
-              <div className="space-y-2 mb-4">
-                <p className="text-sm text-gray-600 truncate">
-                  <span className="font-medium">URL:</span> {source.url}
+              <div className="space-y-3 mb-6 flex-1">
+                <p className="text-sm text-gray-400 truncate bg-[#0B1220] p-2.5 rounded-lg border border-gray-800" title={source.url}>
+                  <span className="font-medium text-gray-500 mr-2 block text-xs uppercase tracking-wider mb-1">URL</span> {source.url}
                 </p>
                 
                 {/* Schedule Info */}
-                <div className="flex items-center space-x-2 text-sm">
-                  <Clock className="w-4 h-4 text-gray-400" />
-                  <div>
-                    <span className="font-medium text-gray-700">Lịch:</span>
-                    <span className="text-gray-600 ml-1">{getScheduleDescription(source)}</span>
+                <div className="flex items-center space-x-3 text-sm text-gray-400 px-1">
+                  <Clock className="w-4 h-4 text-indigo-400 flex-shrink-0" />
+                  <div className="flex-1 truncate" title={getScheduleDescription(source)}>
+                    {getScheduleDescription(source)}
                   </div>
                 </div>
                 
                 {source.next_crawl_at && (
-                  <p className="text-sm text-gray-600">
-                    <span className="font-medium">Lần tiếp theo:</span>{' '}
+                  <p className="text-xs text-gray-500 px-1 truncate">
+                    <span className="font-medium mr-1 text-gray-400">Tiếp theo:</span>
                     {new Date(source.next_crawl_at).toLocaleString('vi-VN')}
                   </p>
                 )}
                 
-                <p className="text-sm text-gray-600">
-                  <span className="font-medium">Lần cuối:</span>{' '}
+                <p className="text-xs text-gray-500 px-1 truncate">
+                  <span className="font-medium mr-1 text-gray-400">Gần nhất:</span>
                   {source.last_crawled_at 
                     ? new Date(source.last_crawled_at).toLocaleString('vi-VN')
                     : 'Chưa crawl'
                   }
                 </p>
-                <p className="text-sm text-gray-600">
-                  <span className="font-medium">Tạo lúc:</span>{' '}
-                  {new Date(source.created_at).toLocaleString('vi-VN')}
-                </p>
                 {(source as any).last_error && (
-                  <div className="text-xs text-red-600 mt-2 p-2 bg-red-50 rounded" title={(source as any).last_error}>
-                    <span className="font-medium text-red-700 block mb-1">Lỗi gần nhất:</span>
-                    {(source as any).last_error.substring(0, 150)}{(source as any).last_error.length > 150 ? '...' : ''}
+                  <div className="text-xs text-rose-400 mt-3 p-2.5 bg-rose-500/5 border border-rose-500/20 rounded-lg" title={(source as any).last_error}>
+                    <span className="font-semibold text-rose-500 block mb-1 uppercase tracking-wider text-[10px]">Lỗi gần nhất</span>
+                    <span className="opacity-90">{(source as any).last_error.substring(0, 100)}{(source as any).last_error.length > 100 ? '...' : ''}</span>
                   </div>
                 )}
               </div>
 
-              <div className="flex justify-end">
+              <div className="flex justify-end pt-4 border-t border-gray-800/50 mt-auto">
                 <button
                   onClick={() => setDeleteConfirm({ isOpen: true, sourceId: source.id, sourceName: source.name })}
-                  className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                  className="p-1.5 text-gray-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors border border-transparent hover:border-rose-500/20"
+                  title="Xóa nguồn"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -400,48 +401,48 @@ export default function SourcesPage() {
 
       {/* Add Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b">
-              <h2 className="text-xl font-bold text-gray-900">Thêm nguồn mới</h2>
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-[#111827] border border-gray-800 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto custom-scrollbar">
+            <div className="p-6 border-b border-gray-800 bg-[#0B1220]/50 sticky top-0 z-10">
+              <h2 className="text-xl font-bold text-white">Thêm nguồn mới</h2>
             </div>
             
-            <div className="p-6 space-y-4">
+            <div className="p-6 space-y-5">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-300 mb-2">
                   Tên nguồn *
                 </label>
                 <input
                   type="text"
                   value={newSource.name}
                   onChange={(e) => setNewSource({ ...newSource, name: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500"
                   placeholder="Ví dụ: VnExpress"
                   autoFocus
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-300 mb-2">
                   URL *
                 </label>
                 <input
                   type="url"
                   value={newSource.url}
                   onChange={(e) => setNewSource({ ...newSource, url: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500"
                   placeholder="https://example.com"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-300 mb-2">
                   Loại nguồn
                 </label>
                 <select
                   value={newSource.source_type}
                   onChange={(e) => setNewSource({ ...newSource, source_type: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white"
                 >
                   <option value="website">Website</option>
                   <option value="facebook_page">Facebook Page</option>
@@ -459,40 +460,40 @@ export default function SourcesPage() {
               {/* Dynamic form based on source type */}
               {/* Website, News, Forum, Manual URL - just need URL */}
               {['website', 'news', 'forum', 'manual_url'].includes(newSource.source_type) && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <p className="text-sm text-blue-800">
-                    <strong>Website/News/Forum:</strong> Chỉ cần nhập URL ở trên. Hệ thống sẽ tự động crawl nội dung.
+                <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-xl p-4">
+                  <p className="text-sm text-indigo-300">
+                    <strong className="text-indigo-400">Website/News/Forum:</strong> Chỉ cần nhập URL ở trên. Hệ thống sẽ tự động crawl nội dung.
                   </p>
                 </div>
               )}
 
               {/* Facebook - need login credentials */}
               {newSource.source_type.startsWith('facebook_') && (
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 space-y-3">
-                  <p className="text-sm text-yellow-800 font-medium">
-                    <strong>Facebook:</strong> Cần thông tin đăng nhập để truy cập nội dung
+                <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 space-y-4">
+                  <p className="text-sm text-amber-300 font-medium">
+                    <strong className="text-amber-400">Facebook:</strong> Cần thông tin đăng nhập để truy cập nội dung
                   </p>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-300 mb-1.5">
                       Email/Username Facebook
                     </label>
                     <input
                       type="text"
                       placeholder="email@example.com"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 bg-[#1E293B] border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 text-white placeholder-gray-500"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-300 mb-1.5">
                       Password
                     </label>
                     <input
                       type="password"
                       placeholder="••••••••"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 bg-[#1E293B] border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 text-white placeholder-gray-500"
                     />
                   </div>
-                  <p className="text-xs text-gray-600">
+                  <p className="text-xs text-gray-400">
                     ⚠️ Thông tin đăng nhập được mã hóa và chỉ dùng để crawl dữ liệu
                   </p>
                 </div>
@@ -500,31 +501,31 @@ export default function SourcesPage() {
 
               {/* YouTube - need API key or login */}
               {newSource.source_type.startsWith('youtube_') && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4 space-y-3">
-                  <p className="text-sm text-red-800 font-medium">
-                    <strong>YouTube:</strong> Chọn phương thức truy cập
+                <div className="bg-rose-500/10 border border-rose-500/20 rounded-xl p-4 space-y-4">
+                  <p className="text-sm text-rose-300 font-medium">
+                    <strong className="text-rose-400">YouTube:</strong> Chọn phương thức truy cập
                   </p>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-300 mb-1.5">
                       Phương thức
                     </label>
-                    <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <select className="w-full px-3 py-2 bg-[#1E293B] border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500 text-white">
                       <option value="public">Public (không cần đăng nhập)</option>
                       <option value="api_key">YouTube API Key</option>
                       <option value="login">Đăng nhập Google</option>
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-300 mb-1.5">
                       YouTube API Key (tùy chọn)
                     </label>
                     <input
                       type="text"
                       placeholder="AIzaSy..."
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 bg-[#1E293B] border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500 text-white placeholder-gray-500"
                     />
                   </div>
-                  <p className="text-xs text-gray-600">
+                  <p className="text-xs text-gray-400">
                     💡 API Key giúp tăng giới hạn request. Lấy tại: console.cloud.google.com
                   </p>
                 </div>
@@ -532,22 +533,22 @@ export default function SourcesPage() {
 
               {/* RSS - need feed settings */}
               {newSource.source_type === 'rss' && (
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4 space-y-3">
-                  <p className="text-sm text-green-800 font-medium">
-                    <strong>RSS Feed:</strong> Cấu hình RSS
+                <div className="bg-orange-500/10 border border-orange-500/20 rounded-xl p-4 space-y-4">
+                  <p className="text-sm text-orange-300 font-medium">
+                    <strong className="text-orange-400">RSS Feed:</strong> Cấu hình RSS
                   </p>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-300 mb-1.5">
                       RSS Feed URL
                     </label>
                     <input
                       type="url"
                       placeholder="https://example.com/feed.xml"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 bg-[#1E293B] border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-white placeholder-gray-500"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-300 mb-1.5">
                       Số lượng items tối đa mỗi lần crawl
                     </label>
                     <input
@@ -555,16 +556,16 @@ export default function SourcesPage() {
                       defaultValue={50}
                       min={1}
                       max={500}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 bg-[#1E293B] border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-white"
                     />
                   </div>
                   <div className="flex items-center">
                     <input
                       type="checkbox"
                       id="rss-full-content"
-                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      className="w-4 h-4 text-orange-600 bg-gray-800 border-gray-600 rounded focus:ring-orange-500 focus:ring-offset-gray-900"
                     />
-                    <label htmlFor="rss-full-content" className="ml-2 text-sm text-gray-700">
+                    <label htmlFor="rss-full-content" className="ml-3 text-sm text-gray-300 cursor-pointer">
                       Lấy full content (nếu RSS chỉ có summary)
                     </label>
                   </div>
@@ -572,11 +573,11 @@ export default function SourcesPage() {
               )}
 
               {/* Crawl Schedule */}
-              <div className="border-t pt-4">
-                <h3 className="text-lg font-medium text-gray-900 mb-3">Lịch Quét</h3>
+              <div className="border-t border-gray-800 pt-5 mt-2">
+                <h3 className="text-base font-semibold text-white mb-4">Lịch Quét</h3>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
                     Tần suất quét
                   </label>
                   <select
@@ -585,9 +586,9 @@ export default function SourcesPage() {
                       ...newSource, 
                       crawl_frequency: e.target.value as 'manual' | 'daily' | 'weekly' | 'monthly' | 'yearly'
                     })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white"
                   >
-                    <option value="manual">Thủ công</option>
+                    <option value="manual">Thủ công (Không tự động quét)</option>
                     <option value="daily">Hằng ngày</option>
                     <option value="weekly">Hằng tuần</option>
                     <option value="monthly">Hằng tháng</option>
@@ -595,8 +596,8 @@ export default function SourcesPage() {
                   </select>
                 </div>
 
-                {/* Schedule Selector Component */}
-                <div className="mt-4">
+                {/* Schedule Selector Component wrapper in dark mode via CSS global .dark but let's assume it works. The component might need inline fix if it relies on text-gray-700 */}
+                <div className="mt-4 schedule-dark-wrapper">
                   <ScheduleSelector
                     frequency={newSource.crawl_frequency}
                     value={newSource.schedule}
@@ -606,18 +607,18 @@ export default function SourcesPage() {
               </div>
             </div>
 
-            <div className="p-6 border-t bg-gray-50 rounded-b-xl flex justify-end space-x-3">
+            <div className="p-6 border-t border-gray-800 bg-[#0B1220]/50 rounded-b-2xl flex justify-end space-x-3 sticky bottom-0">
               <button
                 onClick={() => setShowAddModal(false)}
-                className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                className="px-5 py-2.5 text-sm font-medium text-gray-300 bg-[#1E293B] border border-gray-700 rounded-xl hover:bg-gray-800 hover:text-white transition-colors"
               >
                 Hủy
               </button>
               <button
                 onClick={handleAddSource}
-                className="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+                className="px-5 py-2.5 text-sm font-medium text-white bg-indigo-600 rounded-xl hover:bg-indigo-700 shadow-sm shadow-indigo-500/20 transition-all"
               >
-                Thêm
+                Thêm Nguồn
               </button>
             </div>
           </div>

@@ -4,29 +4,6 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
-    --radius: 0.5rem;
-  }
-
-  .dark {
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
     --card: 222.2 84% 4.9%;
@@ -46,6 +23,29 @@
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
     --ring: 224.3 76.3% 48%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 226 48% 8%; /* #0B1020 */
+    --foreground: 210 40% 98%; /* #F8FAFC */
+    --card: 222 47% 11%; /* #0F172A or #111827 */
+    --card-foreground: 210 40% 98%;
+    --popover: 222 47% 11%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 250 89% 65%; /* violet/indigo */
+    --primary-foreground: 210 40% 98%;
+    --secondary: 199 89% 48%; /* cyan/blue */
+    --secondary-foreground: 210 40% 98%;
+    --muted: 215 25% 27%; /* #334155 */
+    --muted-foreground: 215 20.2% 65.1%; /* #94A3B8 */
+    --accent: 215 25% 27%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 348 83% 47%; /* rose */
+    --destructive-foreground: 210 40% 98%;
+    --border: 215 25% 20%; /* rgba(148, 163, 184, 0.16) approx */
+    --input: 215 25% 27%;
+    --ring: 250 89% 65%;
   }
 }
 
@@ -54,100 +54,99 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased selection:bg-primary selection:text-white;
   }
 }
 
-/* Dark mode styles */
-.dark {
-  color-scheme: dark;
-}
-
+/* Dark mode overrides for specific elements to enforce premium look */
 .dark body {
-  @apply bg-gray-900 text-gray-100;
+  background-color: #0B1020; /* Deep navy/charcoal */
+  color: #F8FAFC;
 }
 
 .dark .bg-white {
-  @apply bg-gray-800;
+  background-color: #111827 !important; /* Card surface */
 }
 
 .dark .bg-gray-50 {
-  @apply bg-gray-800;
+  background-color: #0B1020 !important; /* App background */
 }
 
 .dark .bg-gray-100 {
-  @apply bg-gray-700;
+  background-color: #1E293B !important; /* Elevated surface */
 }
 
 .dark .text-gray-900 {
-  @apply text-gray-100;
+  color: #F8FAFC !important;
 }
 
 .dark .text-gray-800 {
-  @apply text-gray-200;
+  color: #F1F5F9 !important;
 }
 
 .dark .text-gray-700 {
-  @apply text-gray-300;
+  color: #CBD5E1 !important;
 }
 
 .dark .text-gray-600 {
-  @apply text-gray-400;
+  color: #94A3B8 !important;
 }
 
-.dark .border-gray-200 {
-  @apply border-gray-700;
+.dark .text-gray-500 {
+  color: #64748B !important;
 }
 
-.dark .border-gray-300 {
-  @apply border-gray-600;
+.dark .border-gray-100, .dark .border-gray-200, .dark .border-gray-300 {
+  border-color: rgba(148, 163, 184, 0.16) !important;
 }
 
 .dark .hover\:bg-gray-50:hover {
-  @apply bg-gray-700;
+  background-color: #1E293B !important;
 }
 
 .dark .hover\:bg-gray-100:hover {
-  @apply bg-gray-600;
+  background-color: #334155 !important;
 }
 
 .dark input,
 .dark select,
 .dark textarea {
-  @apply bg-gray-700 text-gray-100 border-gray-600;
+  background-color: #1E293B !important;
+  color: #F8FAFC !important;
+  border-color: rgba(148, 163, 184, 0.16) !important;
 }
 
 .dark input:focus,
 .dark select:focus,
 .dark textarea:focus {
-  @apply border-blue-500 ring-blue-500;
+  border-color: #8B5CF6 !important; /* violet/indigo */
+  outline-color: #8B5CF6 !important;
+  --tw-ring-color: #8B5CF6 !important;
 }
 
-/* Animations */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+/* Glass morphism */
+.glass {
+  background-color: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(16px);
 }
 
-.animate-fadeIn {
-  animation: fadeIn 0.3s ease-out;
+.dark .glass {
+  background-color: rgba(15, 23, 42, 0.6) !important; /* #0F172A with opacity */
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.1);
 }
 
-@keyframes fadeSlideUp {
-  from {
-    opacity: 0;
-    transform: translateY(16px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+/* Premium Card shadows for dark mode */
+.dark .shadow-sm {
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.3) !important;
+}
+
+.dark .shadow {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2) !important;
+}
+
+.dark .shadow-lg {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.2) !important;
 }
 
 /* Scrollbar hide */
@@ -160,16 +159,31 @@
   scrollbar-width: none;
 }
 
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out;
+}
+
 /* Gradient text */
 .gradient-text {
-  @apply bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  background-image: linear-gradient(to right, #8B5CF6, #3B82F6);
 }
 
-/* Glass morphism */
-.glass {
-  @apply bg-white bg-opacity-80 backdrop-blur-lg;
+/* Premium Active/Hover states */
+.dark .sidebar-item-active {
+  background: linear-gradient(90deg, rgba(139, 92, 246, 0.15) 0%, rgba(139, 92, 246, 0.05) 100%) !important;
+  border-left: 3px solid #8B5CF6;
+  color: #F8FAFC !important;
 }
 
-.dark .glass {
-  @apply bg-gray-800 bg-opacity-80;
+.dark .sidebar-item-hover:hover {
+  background-color: rgba(30, 41, 59, 0.5) !important;
 }

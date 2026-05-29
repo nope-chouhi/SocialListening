@@ -44,31 +44,31 @@ export default function MentionCard({ mention, onActionComplete, userRole }: Men
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 hover:shadow-md transition-shadow">
+    <div className="bg-[#1E293B] rounded-xl shadow-sm border border-gray-800 p-4 hover:shadow-md hover:border-gray-700 transition-all">
       <div className="flex items-start justify-between">
-        <div className="flex items-center space-x-2">
-          <div className="p-2 bg-gray-50 dark:bg-gray-700 rounded-lg">
-            <SourceIcon type={mention.source_type} className="w-5 h-5 text-gray-500" />
+        <div className="flex items-center space-x-3">
+          <div className="p-2.5 bg-[#111827] border border-gray-700/50 rounded-xl shadow-sm">
+            <SourceIcon type={mention.source_type} className="w-5 h-5 text-indigo-400" />
           </div>
           <div>
-            <h3 className="font-semibold text-gray-900 dark:text-white line-clamp-1">
+            <h3 className="font-semibold text-white tracking-wide line-clamp-1 pr-2">
               {mention.title || 'Không có tiêu đề'}
             </h3>
-            <div className="flex items-center text-xs text-gray-500 mt-1 space-x-2">
-              <span className="font-medium text-blue-600">{mention.source_name}</span>
-              <span>•</span>
+            <div className="flex items-center text-xs text-gray-400 mt-1.5 space-x-2 font-medium">
+              <span className="text-indigo-400 font-semibold tracking-wide">{mention.source_name}</span>
+              <span className="text-gray-700">•</span>
               <span>{new Date(mention.collected_at || mention.published_at).toLocaleString('vi-VN')}</span>
             </div>
           </div>
         </div>
-        <div className="flex space-x-1 items-center">
+        <div className="flex space-x-1.5 items-center">
           {mention.ai_provider === 'dummy' && (
-            <span className="px-1.5 py-0.5 text-[9px] font-bold tracking-wider text-orange-700 bg-orange-100 rounded border border-orange-200">
+            <span className="px-2 py-0.5 text-[9px] font-bold tracking-wider text-amber-400 bg-amber-500/10 rounded-md border border-amber-500/20 shadow-sm">
               DUMMY AI
             </span>
           )}
           {mention.ai_provider && mention.ai_provider !== 'dummy' && (
-            <span className="px-1.5 py-0.5 text-[9px] font-bold tracking-wider text-indigo-700 bg-indigo-100 rounded border border-indigo-200">
+            <span className="px-2 py-0.5 text-[9px] font-bold tracking-wider text-indigo-400 bg-indigo-500/10 rounded-md border border-indigo-500/20 shadow-sm">
               {mention.ai_provider.toUpperCase()}
             </span>
           )}
@@ -76,15 +76,15 @@ export default function MentionCard({ mention, onActionComplete, userRole }: Men
         </div>
       </div>
 
-      <div className="mt-3">
-        <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2">
+      <div className="mt-4">
+        <p className="text-sm text-gray-300 leading-relaxed line-clamp-2">
           {mention.content}
         </p>
       </div>
 
-      <div className="mt-3 flex flex-wrap gap-2">
+      <div className="mt-4 flex flex-wrap gap-2">
         {mention.matched_keywords && mention.matched_keywords.length > 0 && (
-          <span className="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 text-xs rounded-full">
+          <span className="px-2.5 py-1 bg-[#111827] border border-gray-700 text-gray-400 text-[11px] tracking-wide font-medium rounded-md shadow-sm">
             KW: {mention.matched_keywords.join(', ')}
           </span>
         )}
@@ -92,7 +92,7 @@ export default function MentionCard({ mention, onActionComplete, userRole }: Men
         <CrisisLevelBadge level={mention.crisis_level} />
       </div>
 
-      <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-700 flex flex-wrap items-center justify-between gap-2">
+      <div className="mt-4 pt-4 border-t border-gray-800/80 flex flex-wrap items-center justify-between gap-3">
         <div className="flex space-x-2">
           <DashboardQuickActionButton
             label="Đã xem"
@@ -126,9 +126,9 @@ export default function MentionCard({ mention, onActionComplete, userRole }: Men
             href={mention.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-md bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 transition-colors"
+            className="inline-flex items-center px-4 py-2 text-xs font-medium rounded-xl bg-[#111827] text-gray-300 border border-gray-700 hover:bg-gray-800 transition-colors shadow-sm"
           >
-            <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
+            <ExternalLink className="w-3.5 h-3.5 mr-2" />
             Nguồn
           </a>
         </div>

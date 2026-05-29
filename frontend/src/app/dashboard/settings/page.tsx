@@ -96,10 +96,10 @@ export default function SettingsPage() {
     const adminTabs: TabId[] = ['users', 'permissions', 'organization', 'email', 'system-notifications', 'api', 'branding', 'logs'];
     if (!isAdmin && adminTabs.includes(activeTab)) {
       return (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-8 text-center">
-          <Shield className="w-12 h-12 mx-auto mb-4 text-red-600" />
-          <h3 className="text-lg font-semibold text-red-900 mb-2">Không có quyền truy cập</h3>
-          <p className="text-red-700">Bạn không có quyền truy cập chức năng quản trị này.</p>
+        <div className="bg-rose-500/10 border border-rose-500/20 rounded-xl p-8 text-center">
+          <Shield className="w-12 h-12 mx-auto mb-4 text-rose-400" />
+          <h3 className="text-lg font-semibold text-rose-300 mb-2">Không có quyền truy cập</h3>
+          <p className="text-rose-400/80">Bạn không có quyền truy cập chức năng quản trị này.</p>
         </div>
       );
     }
@@ -137,19 +137,18 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-8">
-      {/* Header with gradient */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl shadow-xl">
-        <div className="absolute inset-0 bg-black opacity-10"></div>
-        <div className="relative px-8 py-12">
-          <div className="flex items-center space-x-4 mb-4">
-            <div className="p-3 bg-white bg-opacity-20 rounded-xl backdrop-blur-sm">
-              <Settings className="w-8 h-8 text-white" />
+      {/* Header */}
+      <div className="relative overflow-hidden bg-[#111827] border border-gray-800 rounded-2xl shadow-sm">
+        <div className="relative px-8 py-10">
+          <div className="flex items-center space-x-4">
+            <div className="p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-xl">
+              <Settings className="w-8 h-8 text-indigo-400" />
             </div>
             <div>
-              <h1 className="text-4xl font-bold text-white">
-                {isAdmin ? '⚙️ Cài đặt' : '👤 Cài đặt cá nhân'}
+              <h1 className="text-3xl font-bold text-white tracking-wide">
+                {isAdmin ? 'Cài đặt' : 'Cài đặt cá nhân'}
               </h1>
-              <p className="mt-2 text-blue-100 text-lg">
+              <p className="mt-2 text-gray-400">
                 {isAdmin 
                   ? 'Quản lý cấu hình cá nhân, người dùng và hệ thống'
                   : 'Quản lý thông tin cá nhân, bảo mật và tùy chọn hiển thị'
@@ -160,9 +159,9 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {/* Tabs with modern design */}
-      <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-        <div className="border-b border-gray-100">
+      {/* Tabs */}
+      <div className="bg-[#111827] border border-gray-800 rounded-2xl shadow-sm overflow-hidden">
+        <div className="border-b border-gray-800">
           <nav className="flex overflow-x-auto -mb-px scrollbar-hide">
             {/* Personal Settings Group */}
             {personalTabs.map((tab) => {
@@ -174,14 +173,14 @@ export default function SettingsPage() {
                   onClick={() => setActiveTab(tab.id)}
                   className={`group relative flex items-center px-6 py-4 text-sm font-medium border-b-2 whitespace-nowrap transition-all duration-200 ${
                     isActive
-                      ? 'border-blue-500 text-blue-600 bg-blue-50'
-                      : 'border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                      ? 'border-indigo-500 text-indigo-400 bg-[#1E293B]/30'
+                      : 'border-transparent text-gray-400 hover:text-gray-300 hover:bg-[#1E293B]/20'
                   }`}
                 >
                   <Icon className={`w-5 h-5 mr-2 transition-transform duration-200 ${isActive ? 'scale-110' : 'group-hover:scale-105'}`} />
                   {tab.name}
                   {isActive && (
-                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-500 to-purple-500"></div>
+                    <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.5)]"></div>
                   )}
                 </button>
               );
@@ -190,7 +189,7 @@ export default function SettingsPage() {
             {/* Admin Settings Group - Only for admin */}
             {isAdmin && (
               <>
-                <div className="border-l border-gray-200 mx-2 my-3" />
+                <div className="border-l border-gray-800 mx-2 my-3" />
                 {adminTabs.map((tab) => {
                   const Icon = tab.icon;
                   const isActive = activeTab === tab.id;
@@ -200,14 +199,14 @@ export default function SettingsPage() {
                       onClick={() => setActiveTab(tab.id)}
                       className={`group relative flex items-center px-6 py-4 text-sm font-medium border-b-2 whitespace-nowrap transition-all duration-200 ${
                         isActive
-                          ? 'border-purple-500 text-purple-600 bg-purple-50'
-                          : 'border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                          ? 'border-purple-500 text-purple-400 bg-[#1E293B]/30'
+                          : 'border-transparent text-gray-400 hover:text-gray-300 hover:bg-[#1E293B]/20'
                       }`}
                     >
                       <Icon className={`w-5 h-5 mr-2 transition-transform duration-200 ${isActive ? 'scale-110' : 'group-hover:scale-105'}`} />
                       {tab.name}
                       {isActive && (
-                        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-purple-500 to-pink-500"></div>
+                        <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.5)]"></div>
                       )}
                     </button>
                   );
@@ -228,12 +227,12 @@ export default function SettingsPage() {
 
 function ComingSoon({ title }: { title: string }) {
   return (
-    <div className="text-center py-12">
-      <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-4">
+    <div className="text-center py-12 bg-[#1E293B] border border-gray-800 rounded-xl">
+      <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-800 border border-gray-700 mb-4">
         <FileText className="w-8 h-8 text-gray-400" />
       </div>
-      <h3 className="text-lg font-medium text-gray-900 mb-2">{title}</h3>
-      <p className="text-gray-500">Tính năng này đang được phát triển</p>
+      <h3 className="text-lg font-medium text-white mb-2">{title}</h3>
+      <p className="text-gray-400">Tính năng này đang được phát triển</p>
     </div>
   );
 }

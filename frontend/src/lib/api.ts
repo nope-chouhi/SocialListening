@@ -567,3 +567,37 @@ export const monitor = {
     return response.data;
   },
 };
+
+// ─── AI (Executive Brief & etc) ───────────────────────────────────────────────
+export const ai = {
+  generateBrief: async (data: { mention_ids?: number[]; incident_id?: number }) => {
+    const response = await api.post('/api/ai/generate-brief', data);
+    return response.data;
+  },
+};
+
+// ─── Evidence Locker ──────────────────────────────────────────────────────────
+export const evidence = {
+  list: async (incidentId: number) => {
+    const response = await api.get(`/api/evidence/incident/${incidentId}`);
+    return response.data;
+  },
+  create: async (incidentId: number, data: {
+    file_name: string;
+    file_path: string;
+    file_type?: string;
+    file_size?: number;
+    capture_method?: string;
+    original_url?: string;
+    metadata?: string;
+  }) => {
+    const response = await api.post(`/api/evidence/${incidentId}`, data);
+    return response.data;
+  },
+  delete: async (id: number) => {
+    const response = await api.delete(`/api/evidence/${id}`);
+    return response.data;
+  },
+};
+
+

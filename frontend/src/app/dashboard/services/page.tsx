@@ -190,48 +190,48 @@ export default function ServicesPage() {
 
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
-      'draft': 'bg-gray-100 text-gray-800',
-      'submitted': 'bg-blue-100 text-blue-800',
-      'pending_approval': 'bg-yellow-100 text-yellow-800',
-      'approved': 'bg-green-100 text-green-800',
-      'in_progress': 'bg-indigo-100 text-indigo-800',
-      'waiting_external_response': 'bg-orange-100 text-orange-800',
-      'completed': 'bg-green-100 text-green-800',
-      'rejected': 'bg-red-100 text-red-800',
-      'cancelled': 'bg-gray-100 text-gray-800'
+      'draft': 'bg-gray-800 text-gray-400 border-gray-700',
+      'submitted': 'bg-blue-500/10 text-blue-400 border-blue-500/20',
+      'pending_approval': 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+      'approved': 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+      'in_progress': 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
+      'waiting_external_response': 'bg-orange-500/10 text-orange-400 border-orange-500/20',
+      'completed': 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+      'rejected': 'bg-rose-500/10 text-rose-400 border-rose-500/20',
+      'cancelled': 'bg-gray-800 text-gray-400 border-gray-700'
     };
-    return colors[status] || 'bg-gray-100 text-gray-800';
+    return `${colors[status] || 'bg-gray-800 text-gray-400 border-gray-700'} border`;
   };
 
   const getApprovalStatusColor = (status: string) => {
     const colors: Record<string, string> = {
-      'not_required': 'bg-gray-100 text-gray-800',
-      'pending': 'bg-yellow-100 text-yellow-800',
-      'approved': 'bg-green-100 text-green-800',
-      'rejected': 'bg-red-100 text-red-800',
-      'revision_required': 'bg-orange-100 text-orange-800'
+      'not_required': 'bg-gray-800 text-gray-400 border-gray-700',
+      'pending': 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+      'approved': 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+      'rejected': 'bg-rose-500/10 text-rose-400 border-rose-500/20',
+      'revision_required': 'bg-orange-500/10 text-orange-400 border-orange-500/20'
     };
-    return colors[status] || 'bg-gray-100 text-gray-800';
+    return `${colors[status] || 'bg-gray-800 text-gray-400 border-gray-700'} border`;
   };
 
   const getPriorityColor = (priority: string) => {
     const colors: Record<string, string> = {
-      'low': 'bg-green-100 text-green-800',
-      'medium': 'bg-yellow-100 text-yellow-800',
-      'high': 'bg-orange-100 text-orange-800',
-      'urgent': 'bg-red-100 text-red-800'
+      'low': 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+      'medium': 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+      'high': 'bg-orange-500/10 text-orange-400 border-orange-500/20',
+      'urgent': 'bg-rose-500/10 text-rose-400 border-rose-500/20'
     };
-    return colors[priority] || 'bg-gray-100 text-gray-800';
+    return `${colors[priority] || 'bg-gray-800 text-gray-400 border-gray-700'} border`;
   };
 
   const getRiskLevelColor = (level: string) => {
     const colors: Record<string, string> = {
-      'low': 'bg-green-100 text-green-800',
-      'medium': 'bg-yellow-100 text-yellow-800',
-      'high': 'bg-orange-100 text-orange-800',
-      'critical': 'bg-red-100 text-red-800'
+      'low': 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+      'medium': 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+      'high': 'bg-orange-500/10 text-orange-400 border-orange-500/20',
+      'critical': 'bg-rose-500/10 text-rose-400 border-rose-500/20'
     };
-    return colors[level] || 'bg-gray-100 text-gray-800';
+    return `${colors[level] || 'bg-gray-800 text-gray-400 border-gray-700'} border`;
   };
 
   const formatPrice = (price: number) => {
@@ -261,18 +261,18 @@ export default function ServicesPage() {
       
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Dịch Vụ</h1>
-        <p className="text-sm text-gray-500 mt-1">
+        <h1 className="text-2xl font-bold text-white tracking-wide">Dịch Vụ</h1>
+        <p className="text-sm text-gray-400 mt-1">
           Quản lý các gói dịch vụ bảo vệ danh tiếng và xử lý khủng hoảng
         </p>
       </div>
 
       {/* Compliance Notice */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+      <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-xl p-4">
         <div className="flex items-start space-x-3">
-          <AlertTriangle className="w-5 h-5 text-blue-600 mt-0.5" />
-          <div className="text-sm text-blue-800">
-            <strong>Lưu ý tuân thủ:</strong> Tất cả quy trình dịch vụ trong hệ thống được thiết kế cho việc bảo vệ danh tiếng hợp pháp, 
+          <AlertTriangle className="w-5 h-5 text-indigo-400 mt-0.5 shrink-0" />
+          <div className="text-sm text-indigo-200">
+            <strong className="text-indigo-300">Lưu ý tuân thủ:</strong> Tất cả quy trình dịch vụ trong hệ thống được thiết kế cho việc bảo vệ danh tiếng hợp pháp, 
             thu thập bằng chứng, soạn thảo phản hồi chính thức, báo cáo chính sách nền tảng và chuẩn bị yêu cầu gỡ bỏ/sửa chữa hợp pháp. 
             Hệ thống không hỗ trợ hack, DDoS, spam report, truy cập trái phép, chiếm đoạt tài khoản, scraping riêng tư hoặc thao túng nền tảng.
           </div>
@@ -280,8 +280,8 @@ export default function ServicesPage() {
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-gray-200">
-        <nav className="-mb-px flex space-x-8">
+      <div className="border-b border-gray-800">
+        <nav className="-mb-px flex space-x-8 overflow-x-auto">
           {[
             { key: 'overview', label: 'Tổng Quan', icon: DollarSign },
             { key: 'catalog', label: 'Danh Mục Dịch Vụ', icon: FileText },
@@ -290,10 +290,10 @@ export default function ServicesPage() {
             <button
               key={key}
               onClick={() => setActiveTab(key as any)}
-              className={`flex items-center space-x-2 py-2 px-1 border-b-2 font-medium text-sm ${
+              className={`flex items-center space-x-2 py-3 px-1 border-b-2 font-medium text-sm transition-all whitespace-nowrap ${
                 activeTab === key
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ? 'border-indigo-500 text-indigo-400'
+                  : 'border-transparent text-gray-500 hover:text-gray-300 hover:border-gray-700'
               }`}
             >
               <Icon className="w-4 h-4" />
@@ -308,74 +308,74 @@ export default function ServicesPage() {
         <div className="space-y-6">
           {/* Dashboard Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div className="bg-white rounded-lg shadow p-6">
+            <div className="bg-[#111827] border border-gray-800 rounded-xl shadow-sm p-6 hover:border-gray-700 transition-colors">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Dịch vụ hoạt động</p>
-                  <p className="text-3xl font-bold text-gray-900 mt-2">{dashboardSummary.total_active_services}</p>
+                  <p className="text-sm font-medium text-gray-400">Dịch vụ hoạt động</p>
+                  <p className="text-3xl font-bold text-white mt-2">{dashboardSummary.total_active_services}</p>
                 </div>
-                <div className="bg-blue-500 p-3 rounded-lg">
-                  <FileText className="w-6 h-6 text-white" />
+                <div className="bg-indigo-500/10 border border-indigo-500/20 p-3 rounded-xl">
+                  <FileText className="w-6 h-6 text-indigo-400" />
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow p-6">
+            <div className="bg-[#111827] border border-gray-800 rounded-xl shadow-sm p-6 hover:border-gray-700 transition-colors">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Yêu cầu đang mở</p>
-                  <p className="text-3xl font-bold text-gray-900 mt-2">{dashboardSummary.open_service_requests}</p>
+                  <p className="text-sm font-medium text-gray-400">Yêu cầu đang mở</p>
+                  <p className="text-3xl font-bold text-white mt-2">{dashboardSummary.open_service_requests}</p>
                 </div>
-                <div className="bg-orange-500 p-3 rounded-lg">
-                  <Clock className="w-6 h-6 text-white" />
+                <div className="bg-amber-500/10 border border-amber-500/20 p-3 rounded-xl">
+                  <Clock className="w-6 h-6 text-amber-400" />
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow p-6">
+            <div className="bg-[#111827] border border-gray-800 rounded-xl shadow-sm p-6 hover:border-gray-700 transition-colors">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Chờ phê duyệt</p>
-                  <p className="text-3xl font-bold text-gray-900 mt-2">{dashboardSummary.pending_approvals}</p>
+                  <p className="text-sm font-medium text-gray-400">Chờ phê duyệt</p>
+                  <p className="text-3xl font-bold text-white mt-2">{dashboardSummary.pending_approvals}</p>
                 </div>
-                <div className="bg-yellow-500 p-3 rounded-lg">
-                  <AlertTriangle className="w-6 h-6 text-white" />
+                <div className="bg-orange-500/10 border border-orange-500/20 p-3 rounded-xl">
+                  <AlertTriangle className="w-6 h-6 text-orange-400" />
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow p-6">
+            <div className="bg-[#111827] border border-gray-800 rounded-xl shadow-sm p-6 hover:border-gray-700 transition-colors">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Đã hoàn thành</p>
-                  <p className="text-3xl font-bold text-gray-900 mt-2">{dashboardSummary.completed_requests}</p>
+                  <p className="text-sm font-medium text-gray-400">Đã hoàn thành</p>
+                  <p className="text-3xl font-bold text-white mt-2">{dashboardSummary.completed_requests}</p>
                 </div>
-                <div className="bg-green-500 p-3 rounded-lg">
-                  <CheckCircle className="w-6 h-6 text-white" />
+                <div className="bg-emerald-500/10 border border-emerald-500/20 p-3 rounded-xl">
+                  <CheckCircle className="w-6 h-6 text-emerald-400" />
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow p-6">
+            <div className="bg-[#111827] border border-gray-800 rounded-xl shadow-sm p-6 hover:border-gray-700 transition-colors">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Rủi ro cao</p>
-                  <p className="text-3xl font-bold text-gray-900 mt-2">{dashboardSummary.high_risk_requests}</p>
+                  <p className="text-sm font-medium text-gray-400">Rủi ro cao</p>
+                  <p className="text-3xl font-bold text-white mt-2">{dashboardSummary.high_risk_requests}</p>
                 </div>
-                <div className="bg-red-500 p-3 rounded-lg">
-                  <XCircle className="w-6 h-6 text-white" />
+                <div className="bg-rose-500/10 border border-rose-500/20 p-3 rounded-xl">
+                  <XCircle className="w-6 h-6 text-rose-400" />
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow p-6">
+            <div className="bg-[#111827] border border-gray-800 rounded-xl shadow-sm p-6 hover:border-gray-700 transition-colors">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Chi phí tháng này</p>
-                  <p className="text-2xl font-bold text-gray-900 mt-2">{formatPrice(dashboardSummary.monthly_estimated_cost)}</p>
+                  <p className="text-sm font-medium text-gray-400">Chi phí tháng này</p>
+                  <p className="text-2xl font-bold text-white mt-2">{formatPrice(dashboardSummary.monthly_estimated_cost)}</p>
                 </div>
-                <div className="bg-purple-500 p-3 rounded-lg">
-                  <DollarSign className="w-6 h-6 text-white" />
+                <div className="bg-purple-500/10 border border-purple-500/20 p-3 rounded-xl">
+                  <DollarSign className="w-6 h-6 text-purple-400" />
                 </div>
               </div>
             </div>
@@ -388,65 +388,65 @@ export default function ServicesPage() {
         <div className="space-y-6">
           {/* Search */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
             <input
               type="text"
               placeholder="Tìm kiếm dịch vụ..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full pl-11 pr-4 py-3 bg-[#111827] border border-gray-800 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
             />
           </div>
 
           {/* Services Table */}
-          <div className="bg-white rounded-lg shadow overflow-hidden">
+          <div className="bg-[#111827] border border-gray-800 rounded-xl shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+              <table className="min-w-full divide-y divide-gray-800">
+                <thead className="bg-[#1E293B]/50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">
                       Dịch vụ
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">
                       Danh mục
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">
                       Nền tảng
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">
                       Giá cơ bản
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">
                       SLA
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">
                       Rủi ro
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">
                       Phê duyệt
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">
                       Hành động
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="divide-y divide-gray-800">
                   {filteredServices.map((service) => (
-                    <tr key={service.id} className="hover:bg-gray-50">
+                    <tr key={service.id} className="hover:bg-[#1E293B]/30 transition-colors">
                       <td className="px-6 py-4">
                         <div>
-                          <div className="text-sm font-medium text-gray-900">{service.name}</div>
-                          <div className="text-sm text-gray-500 truncate max-w-xs">{service.description}</div>
+                          <div className="text-sm font-bold text-white">{service.name}</div>
+                          <div className="text-sm text-gray-400 truncate max-w-xs mt-0.5">{service.description}</div>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-sm text-gray-900">{service.category.name}</span>
+                        <span className="text-sm font-medium text-gray-300">{service.category.name}</span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-sm text-gray-900 capitalize">{service.platform.replace('_', ' ')}</span>
+                        <span className="text-sm font-medium text-gray-300 capitalize">{service.platform.replace('_', ' ')}</span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-sm text-gray-900">
+                        <span className="text-sm font-medium text-white">
                           {service.base_price ? formatPrice(service.base_price) : 'Thỏa thuận'}
                         </span>
                         {service.unit && (
@@ -454,33 +454,33 @@ export default function ServicesPage() {
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-sm text-gray-900">
+                        <span className="text-sm font-medium text-gray-300">
                           {service.sla_hours ? `${service.sla_hours}h` : service.estimated_duration}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${getRiskLevelColor(service.risk_level)}`}>
+                        <span className={`px-2 py-0.5 text-[10px] uppercase tracking-wider font-bold rounded ${getRiskLevelColor(service.risk_level)}`}>
                           {service.risk_level}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         {service.requires_approval ? (
-                          <CheckCircle className="w-5 h-5 text-yellow-500" />
+                          <CheckCircle className="w-5 h-5 text-amber-500" />
                         ) : (
-                          <XCircle className="w-5 h-5 text-green-500" />
+                          <CheckCircle className="w-5 h-5 text-emerald-500" />
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                         <button
                           onClick={() => handleServiceClick(service)}
-                          className="text-blue-600 hover:text-blue-900"
+                          className="p-2 text-gray-400 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg transition-colors border border-transparent hover:border-indigo-500/20"
                           title="Xem chi tiết"
                         >
                           <Eye className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleCreateRequest(service)}
-                          className="text-green-600 hover:text-green-900"
+                          className="p-2 text-gray-400 hover:text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-colors border border-transparent hover:border-emerald-500/20"
                           title="Tạo yêu cầu"
                         >
                           <Plus className="w-4 h-4" />
@@ -499,75 +499,75 @@ export default function ServicesPage() {
       {activeTab === 'requests' && (
         <div className="space-y-6">
           {/* Service Requests Table */}
-          <div className="bg-white rounded-lg shadow overflow-hidden">
+          <div className="bg-[#111827] border border-gray-800 rounded-xl shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+              <table className="min-w-full divide-y divide-gray-800">
+                <thead className="bg-[#1E293B]/50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">
                       ID
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">
                       Dịch vụ
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">
                       Trạng thái
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">
                       Ưu tiên
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">
                       Phê duyệt
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">
                       Giá
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">
                       Tạo lúc
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">
                       Hành động
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="divide-y divide-gray-800">
                   {serviceRequests.map((request) => (
-                    <tr key={request.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    <tr key={request.id} className="hover:bg-[#1E293B]/30 transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-indigo-400">
                         #{request.id}
                       </td>
                       <td className="px-6 py-4">
                         <div>
-                          <div className="text-sm font-medium text-gray-900">{request.service.name}</div>
-                          <div className="text-sm text-gray-500">{request.service.category.name}</div>
+                          <div className="text-sm font-bold text-white">{request.service.name}</div>
+                          <div className="text-sm text-gray-400 mt-0.5">{request.service.category.name}</div>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(request.status)}`}>
+                        <span className={`px-2 py-0.5 text-[10px] uppercase tracking-wider font-bold rounded ${getStatusColor(request.status)}`}>
                           {request.status.replace('_', ' ')}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${getPriorityColor(request.priority)}`}>
+                        <span className={`px-2 py-0.5 text-[10px] uppercase tracking-wider font-bold rounded ${getPriorityColor(request.priority)}`}>
                           {request.priority}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${getApprovalStatusColor(request.approval_status)}`}>
+                        <span className={`px-2 py-0.5 text-[10px] uppercase tracking-wider font-bold rounded ${getApprovalStatusColor(request.approval_status)}`}>
                           {request.approval_status.replace('_', ' ')}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">
                         {request.final_price ? formatPrice(request.final_price) : 
                          request.quoted_price ? formatPrice(request.quoted_price) : 'Chưa báo giá'}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-500">
                         {new Date(request.created_at).toLocaleString('vi-VN')}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <button
                           onClick={() => handleRequestClick(request)}
-                          className="text-blue-600 hover:text-blue-900"
+                          className="p-2 text-gray-400 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg transition-colors border border-transparent hover:border-indigo-500/20"
                           title="Xem chi tiết"
                         >
                           <Eye className="w-4 h-4" />
@@ -584,115 +584,126 @@ export default function ServicesPage() {
 
       {/* Service Detail Modal */}
       {showServiceDetail && selectedService && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold text-gray-900">{selectedService.name}</h2>
-                <button
-                  onClick={() => setShowServiceDetail(false)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <XCircle className="w-6 h-6" />
-                </button>
+        <div className="fixed inset-0 z-[60] overflow-y-auto">
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm transition-opacity" onClick={() => setShowServiceDetail(false)} />
+          <div className="flex min-h-full items-center justify-center p-4">
+            <div className="relative bg-[#111827] border border-gray-800 rounded-2xl shadow-2xl w-full max-w-4xl transform transition-all overflow-hidden flex flex-col max-h-[90vh]">
+              <div className="p-6 border-b border-gray-800 bg-[#1E293B]/30 shrink-0">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xl font-bold text-white pr-4">{selectedService.name}</h2>
+                  <button
+                    onClick={() => setShowServiceDetail(false)}
+                    className="text-gray-500 hover:text-gray-300 transition-colors shrink-0"
+                  >
+                    <XCircle className="w-6 h-6" />
+                  </button>
+                </div>
               </div>
-            </div>
-            
-            <div className="p-6 space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Thông tin cơ bản</h3>
-                  <div className="space-y-3">
-                    <div>
-                      <span className="text-sm font-medium text-gray-700">Mã dịch vụ:</span>
-                      <span className="ml-2 text-sm text-gray-900">{selectedService.code}</span>
+              
+              <div className="p-6 space-y-6 overflow-y-auto">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <h3 className="text-lg font-bold text-white mb-4">Thông tin cơ bản</h3>
+                    <div className="space-y-4">
+                      <div className="flex flex-col">
+                        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Mã dịch vụ</span>
+                        <span className="text-sm font-medium text-white">{selectedService.code}</span>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Danh mục</span>
+                        <span className="text-sm font-medium text-white">{selectedService.category.name}</span>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Loại dịch vụ</span>
+                        <span className="text-sm font-medium text-white capitalize">{selectedService.service_type.replace('_', ' ')}</span>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Nền tảng</span>
+                        <span className="text-sm font-medium text-white capitalize">{selectedService.platform.replace('_', ' ')}</span>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Mức rủi ro</span>
+                        <div className="mt-1">
+                          <span className={`px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded ${getRiskLevelColor(selectedService.risk_level)}`}>
+                            {selectedService.risk_level}
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <span className="text-sm font-medium text-gray-700">Danh mục:</span>
-                      <span className="ml-2 text-sm text-gray-900">{selectedService.category.name}</span>
-                    </div>
-                    <div>
-                      <span className="text-sm font-medium text-gray-700">Loại dịch vụ:</span>
-                      <span className="ml-2 text-sm text-gray-900 capitalize">{selectedService.service_type.replace('_', ' ')}</span>
-                    </div>
-                    <div>
-                      <span className="text-sm font-medium text-gray-700">Nền tảng:</span>
-                      <span className="ml-2 text-sm text-gray-900 capitalize">{selectedService.platform.replace('_', ' ')}</span>
-                    </div>
-                    <div>
-                      <span className="text-sm font-medium text-gray-700">Mức rủi ro:</span>
-                      <span className={`ml-2 px-2 py-1 text-xs font-medium rounded-full ${getRiskLevelColor(selectedService.risk_level)}`}>
-                        {selectedService.risk_level}
-                      </span>
+                  </div>
+                  
+                  <div>
+                    <h3 className="text-lg font-bold text-white mb-4">Giá và SLA</h3>
+                    <div className="space-y-4">
+                      <div className="flex flex-col">
+                        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Giá cơ bản</span>
+                        <span className="text-sm font-bold text-white">
+                          {selectedService.base_price ? formatPrice(selectedService.base_price) : 'Thỏa thuận'}
+                          {selectedService.unit && <span className="text-gray-500 ml-1 font-medium">/{selectedService.unit}</span>}
+                        </span>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Thời gian ước tính</span>
+                        <span className="text-sm font-medium text-white">{selectedService.estimated_duration}</span>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">SLA</span>
+                        <span className="text-sm font-medium text-white">{selectedService.sla_hours}h</span>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Số lượng tối thiểu</span>
+                        <span className="text-sm font-medium text-white">{selectedService.min_quantity || 1} {selectedService.unit}</span>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Yêu cầu phê duyệt</span>
+                        <div className="mt-1">
+                          {selectedService.requires_approval ? (
+                            <span className="inline-flex items-center text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-1 rounded text-xs font-medium">
+                              <CheckCircle className="w-3.5 h-3.5 mr-1" />
+                              Bắt buộc
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-1 rounded text-xs font-medium">
+                              <XCircle className="w-3.5 h-3.5 mr-1" />
+                              Không yêu cầu
+                            </span>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
                 
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Giá và SLA</h3>
-                  <div className="space-y-3">
-                    <div>
-                      <span className="text-sm font-medium text-gray-700">Giá cơ bản:</span>
-                      <span className="ml-2 text-sm text-gray-900">
-                        {selectedService.base_price ? formatPrice(selectedService.base_price) : 'Thỏa thuận'}
-                        {selectedService.unit && <span className="text-gray-500">/{selectedService.unit}</span>}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-sm font-medium text-gray-700">Thời gian ước tính:</span>
-                      <span className="ml-2 text-sm text-gray-900">{selectedService.estimated_duration}</span>
-                    </div>
-                    <div>
-                      <span className="text-sm font-medium text-gray-700">SLA:</span>
-                      <span className="ml-2 text-sm text-gray-900">{selectedService.sla_hours}h</span>
-                    </div>
-                    <div>
-                      <span className="text-sm font-medium text-gray-700">Số lượng tối thiểu:</span>
-                      <span className="ml-2 text-sm text-gray-900">{selectedService.unit}</span>
-                    </div>
-                    <div>
-                      <span className="text-sm font-medium text-gray-700">Yêu cầu phê duyệt:</span>
-                      <span className="ml-2">
-                        {selectedService.requires_approval ? (
-                          <CheckCircle className="w-4 h-4 text-yellow-500 inline" />
-                        ) : (
-                          <XCircle className="w-4 h-4 text-green-500 inline" />
-                        )}
-                      </span>
-                    </div>
+                <div className="pt-4 border-t border-gray-800">
+                  <h3 className="text-lg font-bold text-white mb-3">Mô tả</h3>
+                  <p className="text-sm text-gray-400 leading-relaxed bg-[#1E293B] p-4 rounded-xl border border-gray-800">{selectedService.description}</p>
+                </div>
+                
+                {selectedService.legal_basis && (
+                  <div className="pt-4 border-t border-gray-800">
+                    <h3 className="text-lg font-bold text-white mb-3">Cơ sở pháp lý</h3>
+                    <p className="text-sm text-gray-400 leading-relaxed bg-[#1E293B] p-4 rounded-xl border border-gray-800">{selectedService.legal_basis}</p>
                   </div>
-                </div>
+                )}
               </div>
-              
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">Mô tả</h3>
-                <p className="text-sm text-gray-700 leading-relaxed">{selectedService.description}</p>
-              </div>
-              
-              {selectedService.legal_basis && (
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Cơ sở pháp lý</h3>
-                  <p className="text-sm text-gray-700 leading-relaxed">{selectedService.legal_basis}</p>
-                </div>
-              )}
-            </div>
 
-            <div className="p-6 border-t bg-gray-50 rounded-b-xl flex justify-end space-x-3">
-              <button
-                onClick={() => setShowServiceDetail(false)}
-                className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                Đóng
-              </button>
-              <button
-                onClick={() => {
-                  setShowServiceDetail(false);
-                  handleCreateRequest(selectedService);
-                }}
-                className="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                Tạo yêu cầu
-              </button>
+              <div className="p-6 border-t border-gray-800 bg-[#1E293B]/30 flex justify-end space-x-3 shrink-0">
+                <button
+                  onClick={() => setShowServiceDetail(false)}
+                  className="px-5 py-2.5 text-gray-300 bg-[#111827] border border-gray-700 rounded-xl hover:bg-gray-800 hover:text-white transition-colors font-medium"
+                >
+                  Đóng
+                </button>
+                <button
+                  onClick={() => {
+                    setShowServiceDetail(false);
+                    handleCreateRequest(selectedService);
+                  }}
+                  className="px-5 py-2.5 text-white bg-indigo-600 rounded-xl hover:bg-indigo-700 transition-colors font-medium shadow-sm shadow-indigo-500/20"
+                >
+                  Tạo yêu cầu
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -700,181 +711,188 @@ export default function ServicesPage() {
       
       {/* Service Request Detail Modal */}
       {showRequestDetail && selectedRequest && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-xl font-bold text-gray-900">Chi Tiết Yêu Cầu Dịch Vụ #{selectedRequest.id}</h2>
-                  <p className="text-sm text-gray-500 mt-1">{selectedRequest.service.name}</p>
-                </div>
-                <button
-                  onClick={() => setShowRequestDetail(false)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <XCircle className="w-6 h-6" />
-                </button>
-              </div>
-            </div>
-            
-            <div className="p-6 space-y-6">
-              {/* Status Overview */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <p className="text-sm font-medium text-gray-600 mb-2">Trạng thái</p>
-                  <span className={`px-3 py-1 text-sm font-medium rounded-full ${getStatusColor(selectedRequest.status)}`}>
-                    {selectedRequest.status.replace('_', ' ')}
-                  </span>
-                </div>
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <p className="text-sm font-medium text-gray-600 mb-2">Ưu tiên</p>
-                  <span className={`px-3 py-1 text-sm font-medium rounded-full ${getPriorityColor(selectedRequest.priority)}`}>
-                    {selectedRequest.priority}
-                  </span>
-                </div>
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <p className="text-sm font-medium text-gray-600 mb-2">Phê duyệt</p>
-                  <span className={`px-3 py-1 text-sm font-medium rounded-full ${getApprovalStatusColor(selectedRequest.approval_status)}`}>
-                    {selectedRequest.approval_status.replace('_', ' ')}
-                  </span>
+        <div className="fixed inset-0 z-[60] overflow-y-auto">
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm transition-opacity" onClick={() => setShowRequestDetail(false)} />
+          <div className="flex min-h-full items-center justify-center p-4">
+            <div className="relative bg-[#111827] border border-gray-800 rounded-2xl shadow-2xl w-full max-w-4xl transform transition-all overflow-hidden flex flex-col max-h-[90vh]">
+              <div className="p-6 border-b border-gray-800 bg-[#1E293B]/30 shrink-0">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-xl font-bold text-white">Chi Tiết Yêu Cầu Dịch Vụ <span className="text-indigo-400">#{selectedRequest.id}</span></h2>
+                    <p className="text-sm text-gray-400 mt-1">{selectedRequest.service.name}</p>
+                  </div>
+                  <button
+                    onClick={() => setShowRequestDetail(false)}
+                    className="text-gray-500 hover:text-gray-300 transition-colors"
+                  >
+                    <XCircle className="w-6 h-6" />
+                  </button>
                 </div>
               </div>
+              
+              <div className="p-6 space-y-8 overflow-y-auto">
+                {/* Status Overview */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-[#1E293B] border border-gray-700 p-5 rounded-xl">
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Trạng thái</p>
+                    <span className={`px-2 py-0.5 text-xs font-bold uppercase tracking-wider rounded ${getStatusColor(selectedRequest.status)}`}>
+                      {selectedRequest.status.replace('_', ' ')}
+                    </span>
+                  </div>
+                  <div className="bg-[#1E293B] border border-gray-700 p-5 rounded-xl">
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Ưu tiên</p>
+                    <span className={`px-2 py-0.5 text-xs font-bold uppercase tracking-wider rounded ${getPriorityColor(selectedRequest.priority)}`}>
+                      {selectedRequest.priority}
+                    </span>
+                  </div>
+                  <div className="bg-[#1E293B] border border-gray-700 p-5 rounded-xl">
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Phê duyệt</p>
+                    <span className={`px-2 py-0.5 text-xs font-bold uppercase tracking-wider rounded ${getApprovalStatusColor(selectedRequest.approval_status)}`}>
+                      {selectedRequest.approval_status.replace('_', ' ')}
+                    </span>
+                  </div>
+                </div>
 
-              {/* Service Info */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">Thông tin dịch vụ</h3>
-                <div className="bg-gray-50 p-4 rounded-lg space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-sm font-medium text-gray-700">Dịch vụ:</span>
-                    <span className="text-sm text-gray-900">{selectedRequest.service.name}</span>
+                {/* Service Info & Pricing Grid */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  {/* Service Info */}
+                  <div>
+                    <h3 className="text-lg font-bold text-white mb-4">Thông tin dịch vụ</h3>
+                    <div className="bg-[#1E293B] border border-gray-700 p-5 rounded-xl space-y-4">
+                      <div className="flex flex-col">
+                        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Dịch vụ</span>
+                        <span className="text-sm font-medium text-white">{selectedRequest.service.name}</span>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Danh mục</span>
+                        <span className="text-sm font-medium text-white">{selectedRequest.service.category.name}</span>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Nền tảng</span>
+                        <span className="text-sm font-medium text-white capitalize">{selectedRequest.service.platform.replace('_', ' ')}</span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm font-medium text-gray-700">Danh mục:</span>
-                    <span className="text-sm text-gray-900">{selectedRequest.service.category.name}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm font-medium text-gray-700">Nền tảng:</span>
-                    <span className="text-sm text-gray-900 capitalize">{selectedRequest.service.platform.replace('_', ' ')}</span>
-                  </div>
-                </div>
-              </div>
 
-              {/* Request Details */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">Chi tiết yêu cầu</h3>
-                <div className="space-y-3">
-                  <div>
-                    <p className="text-sm font-medium text-gray-700 mb-1">Lý do yêu cầu:</p>
-                    <p className="text-sm text-gray-900 bg-gray-50 p-3 rounded-lg">{(selectedRequest as any).request_reason || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-700 mb-1">Tóm tắt bằng chứng:</p>
-                    <p className="text-sm text-gray-900 bg-gray-50 p-3 rounded-lg">{(selectedRequest as any).evidence_summary || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-700 mb-1">Kết quả mong muốn:</p>
-                    <p className="text-sm text-gray-900 bg-gray-50 p-3 rounded-lg">{(selectedRequest as any).desired_outcome || 'N/A'}</p>
-                  </div>
-                  {(selectedRequest as any).result_summary && (
+                  {/* Pricing & Timeline */}
+                  <div className="space-y-8">
                     <div>
-                      <p className="text-sm font-medium text-gray-700 mb-1">Kết quả thực tế:</p>
-                      <p className="text-sm text-gray-900 bg-green-50 p-3 rounded-lg border border-green-200">{(selectedRequest as any).result_summary}</p>
+                      <h3 className="text-lg font-bold text-white mb-4">Giá cả</h3>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="bg-[#1E293B] border border-gray-700 p-5 rounded-xl">
+                          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Giá báo</p>
+                          <p className="text-lg font-bold text-white">
+                            {selectedRequest.quoted_price ? formatPrice(selectedRequest.quoted_price) : 'Chưa báo giá'}
+                          </p>
+                        </div>
+                        <div className="bg-[#1E293B] border border-indigo-500/30 p-5 rounded-xl shadow-[inset_0_0_20px_rgba(99,102,241,0.05)]">
+                          <p className="text-xs font-semibold text-indigo-400/80 uppercase tracking-wider mb-1">Giá cuối cùng</p>
+                          <p className="text-lg font-bold text-indigo-400">
+                            {selectedRequest.final_price ? formatPrice(selectedRequest.final_price) : 'Chưa xác định'}
+                          </p>
+                        </div>
+                      </div>
                     </div>
-                  )}
-                </div>
-              </div>
 
-              {/* Pricing */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">Giá cả</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <p className="text-sm font-medium text-gray-600 mb-1">Giá báo</p>
-                    <p className="text-lg font-bold text-gray-900">
-                      {selectedRequest.quoted_price ? formatPrice(selectedRequest.quoted_price) : 'Chưa báo giá'}
-                    </p>
-                  </div>
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <p className="text-sm font-medium text-gray-600 mb-1">Giá cuối cùng</p>
-                    <p className="text-lg font-bold text-gray-900">
-                      {selectedRequest.final_price ? formatPrice(selectedRequest.final_price) : 'Chưa xác định'}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Timeline */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">Thời gian</h3>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Tạo lúc:</span>
-                    <span className="text-gray-900">{new Date(selectedRequest.created_at).toLocaleString('vi-VN')}</span>
-                  </div>
-                  {selectedRequest.deadline && (
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Deadline:</span>
-                      <span className="text-gray-900">{new Date(selectedRequest.deadline).toLocaleString('vi-VN')}</span>
+                    <div>
+                      <h3 className="text-lg font-bold text-white mb-4">Thời gian</h3>
+                      <div className="bg-[#1E293B] border border-gray-700 p-5 rounded-xl space-y-4">
+                        <div className="flex flex-col">
+                          <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Tạo lúc</span>
+                          <span className="text-sm font-medium text-white">{new Date(selectedRequest.created_at).toLocaleString('vi-VN')}</span>
+                        </div>
+                        {selectedRequest.deadline && (
+                          <div className="flex flex-col">
+                            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Deadline</span>
+                            <span className="text-sm font-medium text-rose-400">{new Date(selectedRequest.deadline).toLocaleString('vi-VN')}</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  )}
+                  </div>
+                </div>
+
+                {/* Request Details */}
+                <div>
+                  <h3 className="text-lg font-bold text-white mb-4">Chi tiết yêu cầu</h3>
+                  <div className="space-y-4">
+                    <div className="bg-[#1E293B] border border-gray-700 p-5 rounded-xl">
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Lý do yêu cầu</p>
+                      <p className="text-sm text-gray-300 leading-relaxed">{(selectedRequest as any).request_reason || 'N/A'}</p>
+                    </div>
+                    <div className="bg-[#1E293B] border border-gray-700 p-5 rounded-xl">
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Tóm tắt bằng chứng</p>
+                      <p className="text-sm text-gray-300 leading-relaxed">{(selectedRequest as any).evidence_summary || 'N/A'}</p>
+                    </div>
+                    <div className="bg-[#1E293B] border border-gray-700 p-5 rounded-xl">
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Kết quả mong muốn</p>
+                      <p className="text-sm text-gray-300 leading-relaxed">{(selectedRequest as any).desired_outcome || 'N/A'}</p>
+                    </div>
+                    {(selectedRequest as any).result_summary && (
+                      <div className="bg-emerald-500/5 border border-emerald-500/20 p-5 rounded-xl">
+                        <p className="text-xs font-semibold text-emerald-400/80 uppercase tracking-wider mb-2">Kết quả thực tế</p>
+                        <p className="text-sm text-emerald-100 leading-relaxed">{(selectedRequest as any).result_summary}</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Admin Actions */}
-            <div className="p-6 border-t bg-gray-50 rounded-b-xl">
-              <div className="flex justify-between items-center">
-                <button
-                  onClick={() => setShowRequestDetail(false)}
-                  className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  Đóng
-                </button>
-                
-                <div className="flex space-x-3">
-                  {selectedRequest.approval_status === 'pending' && (
-                    <>
-                      <button
-                        onClick={() => handleRejectRequest(selectedRequest.id)}
-                        className="px-4 py-2 text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors"
-                      >
-                        Từ chối
-                      </button>
-                      <button
-                        onClick={() => handleApproveRequest(selectedRequest.id)}
-                        className="px-4 py-2 text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors"
-                      >
-                        Phê duyệt
-                      </button>
-                    </>
-                  )}
+              {/* Admin Actions */}
+              <div className="p-6 border-t border-gray-800 bg-[#1E293B]/30 shrink-0">
+                <div className="flex justify-between items-center">
+                  <button
+                    onClick={() => setShowRequestDetail(false)}
+                    className="px-5 py-2.5 text-gray-300 bg-[#111827] border border-gray-700 rounded-xl hover:bg-gray-800 hover:text-white transition-colors font-medium"
+                  >
+                    Đóng
+                  </button>
                   
-                  {(selectedRequest.status === 'in_progress' || selectedRequest.status === 'waiting_external_response') && (
-                    <button
-                      onClick={() => handleCompleteRequest(selectedRequest.id)}
-                      className="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
-                    >
-                      Hoàn thành
-                    </button>
-                  )}
-                  
-                  {selectedRequest.status === 'approved' && (
-                    <button
-                      onClick={async () => {
-                        try {
-                          await serviceRequestsApi.update(selectedRequest.id, { status: 'in_progress' });
-                          toast.success('Đã chuyển sang trạng thái đang xử lý!');
-                          fetchData();
-                          setShowRequestDetail(false);
-                        } catch (error: any) {
-                          toast.error('Lỗi khi cập nhật trạng thái');
-                        }
-                      }}
-                      className="px-4 py-2 text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors"
-                    >
-                      Bắt đầu xử lý
-                    </button>
-                  )}
+                  <div className="flex space-x-3">
+                    {selectedRequest.approval_status === 'pending' && (
+                      <>
+                        <button
+                          onClick={() => handleRejectRequest(selectedRequest.id)}
+                          className="px-5 py-2.5 text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded-xl hover:bg-rose-500/20 transition-colors font-medium"
+                        >
+                          Từ chối
+                        </button>
+                        <button
+                          onClick={() => handleApproveRequest(selectedRequest.id)}
+                          className="px-5 py-2.5 text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-xl hover:bg-emerald-500/20 transition-colors font-medium"
+                        >
+                          Phê duyệt
+                        </button>
+                      </>
+                    )}
+                    
+                    {(selectedRequest.status === 'in_progress' || selectedRequest.status === 'waiting_external_response') && (
+                      <button
+                        onClick={() => handleCompleteRequest(selectedRequest.id)}
+                        className="px-5 py-2.5 text-white bg-indigo-600 rounded-xl hover:bg-indigo-700 transition-colors font-medium shadow-sm shadow-indigo-500/20"
+                      >
+                        Hoàn thành
+                      </button>
+                    )}
+                    
+                    {selectedRequest.status === 'approved' && (
+                      <button
+                        onClick={async () => {
+                          try {
+                            await serviceRequestsApi.update(selectedRequest.id, { status: 'in_progress' });
+                            toast.success('Đã chuyển sang trạng thái đang xử lý!');
+                            fetchData();
+                            setShowRequestDetail(false);
+                          } catch (error: any) {
+                            toast.error('Lỗi khi cập nhật trạng thái');
+                          }
+                        }}
+                        className="px-5 py-2.5 text-white bg-indigo-600 rounded-xl hover:bg-indigo-700 transition-colors font-medium shadow-sm shadow-indigo-500/20"
+                      >
+                        Bắt đầu xử lý
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -884,159 +902,164 @@ export default function ServicesPage() {
 
       {/* Create Service Request Modal */}
       {showCreateRequest && selectedService && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-xl font-bold text-gray-900">Tạo Yêu Cầu Dịch Vụ</h2>
-                  <p className="text-sm text-gray-500 mt-1">{selectedService.name}</p>
+        <div className="fixed inset-0 z-[60] overflow-y-auto">
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm transition-opacity" onClick={() => setShowCreateRequest(false)} />
+          <div className="flex min-h-full items-center justify-center p-4">
+            <div className="relative bg-[#111827] border border-gray-800 rounded-2xl shadow-2xl w-full max-w-3xl transform transition-all overflow-hidden flex flex-col max-h-[90vh]">
+              <div className="p-6 border-b border-gray-800 bg-[#1E293B]/30 shrink-0">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-xl font-bold text-white">Tạo Yêu Cầu Dịch Vụ</h2>
+                    <p className="text-sm text-gray-400 mt-1">{selectedService.name}</p>
+                  </div>
+                  <button
+                    onClick={() => setShowCreateRequest(false)}
+                    className="text-gray-500 hover:text-gray-300 transition-colors"
+                  >
+                    <XCircle className="w-6 h-6" />
+                  </button>
                 </div>
+              </div>
+              
+              <div className="p-6 space-y-6 overflow-y-auto">
+                {/* Service Info */}
+                <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-xl p-5">
+                  <div className="grid grid-cols-2 gap-6 text-sm">
+                    <div className="flex flex-col">
+                      <span className="text-xs font-semibold text-indigo-400/80 uppercase tracking-wider mb-1">Danh mục</span>
+                      <span className="font-medium text-white">{selectedService.category.name}</span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-xs font-semibold text-indigo-400/80 uppercase tracking-wider mb-1">Giá cơ bản</span>
+                      <span className="font-bold text-indigo-400">
+                        {selectedService.base_price ? formatPrice(selectedService.base_price) : 'Thỏa thuận'}
+                      </span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-xs font-semibold text-indigo-400/80 uppercase tracking-wider mb-1">Thời gian ước tính</span>
+                      <span className="font-medium text-white">{selectedService.estimated_duration}</span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-xs font-semibold text-indigo-400/80 uppercase tracking-wider mb-1">SLA</span>
+                      <span className="font-medium text-white">{selectedService.sla_hours}h</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Priority */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Mức độ ưu tiên <span className="text-rose-500">*</span>
+                  </label>
+                  <select
+                    value={requestForm.priority}
+                    onChange={(e) => setRequestForm({ ...requestForm, priority: e.target.value })}
+                    className="w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white"
+                  >
+                    <option value="low">Thấp</option>
+                    <option value="medium">Trung bình</option>
+                    <option value="high">Cao</option>
+                    <option value="urgent">Khẩn cấp</option>
+                  </select>
+                </div>
+
+                {/* Request Reason */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Lý do yêu cầu <span className="text-rose-500">*</span>
+                  </label>
+                  <textarea
+                    value={requestForm.request_reason}
+                    onChange={(e) => setRequestForm({ ...requestForm, request_reason: e.target.value })}
+                    rows={3}
+                    placeholder="Mô tả lý do cần dịch vụ này..."
+                    className="w-full px-4 py-3 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500 resize-none"
+                  />
+                </div>
+
+                {/* Evidence Summary */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Tóm tắt bằng chứng
+                  </label>
+                  <textarea
+                    value={requestForm.evidence_summary}
+                    onChange={(e) => setRequestForm({ ...requestForm, evidence_summary: e.target.value })}
+                    rows={3}
+                    placeholder="Tóm tắt các bằng chứng, mentions, alerts liên quan..."
+                    className="w-full px-4 py-3 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500 resize-none"
+                  />
+                </div>
+
+                {/* Desired Outcome */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Kết quả mong muốn <span className="text-rose-500">*</span>
+                  </label>
+                  <textarea
+                    value={requestForm.desired_outcome}
+                    onChange={(e) => setRequestForm({ ...requestForm, desired_outcome: e.target.value })}
+                    rows={3}
+                    placeholder="Mô tả kết quả mong muốn từ dịch vụ này..."
+                    className="w-full px-4 py-3 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500 resize-none"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Quoted Price */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Giá báo (VND)
+                    </label>
+                    <input
+                      type="number"
+                      value={requestForm.quoted_price}
+                      onChange={(e) => setRequestForm({ ...requestForm, quoted_price: parseFloat(e.target.value) })}
+                      className="w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white"
+                    />
+                  </div>
+
+                  {/* Deadline */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Thời hạn
+                    </label>
+                    <input
+                      type="datetime-local"
+                      value={requestForm.deadline}
+                      onChange={(e) => setRequestForm({ ...requestForm, deadline: e.target.value })}
+                      className="w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white"
+                    />
+                  </div>
+                </div>
+
+                {/* Compliance Notice */}
+                <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4">
+                  <div className="flex items-start space-x-3">
+                    <AlertTriangle className="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" />
+                    <div className="text-sm text-amber-200/80">
+                      <strong className="text-amber-400">Lưu ý:</strong> Yêu cầu này sẽ được xem xét và phê duyệt trước khi thực hiện. 
+                      Tất cả dịch vụ phải tuân thủ pháp luật và chính sách nền tảng.
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-6 border-t border-gray-800 bg-[#1E293B]/30 flex justify-end space-x-3 shrink-0">
                 <button
                   onClick={() => setShowCreateRequest(false)}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="px-5 py-2.5 text-gray-300 bg-[#111827] border border-gray-700 rounded-xl hover:bg-gray-800 hover:text-white transition-colors font-medium"
                 >
-                  <XCircle className="w-6 h-6" />
+                  Hủy
+                </button>
+                <button
+                  onClick={handleSubmitRequest}
+                  disabled={!requestForm.request_reason || !requestForm.desired_outcome}
+                  className="px-5 py-2.5 text-white bg-indigo-600 rounded-xl hover:bg-indigo-700 transition-colors disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed font-medium shadow-sm shadow-indigo-500/20"
+                >
+                  Tạo yêu cầu
                 </button>
               </div>
-            </div>
-            
-            <div className="p-6 space-y-6">
-              {/* Service Info */}
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="font-medium text-gray-700">Danh mục:</span>
-                    <span className="ml-2 text-gray-900">{selectedService.category.name}</span>
-                  </div>
-                  <div>
-                    <span className="font-medium text-gray-700">Giá cơ bản:</span>
-                    <span className="ml-2 text-gray-900">
-                      {selectedService.base_price ? formatPrice(selectedService.base_price) : 'Thỏa thuận'}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="font-medium text-gray-700">Thời gian ước tính:</span>
-                    <span className="ml-2 text-gray-900">{selectedService.estimated_duration}</span>
-                  </div>
-                  <div>
-                    <span className="font-medium text-gray-700">SLA:</span>
-                    <span className="ml-2 text-gray-900">{selectedService.sla_hours}h</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Priority */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Mức độ ưu tiên <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={requestForm.priority}
-                  onChange={(e) => setRequestForm({ ...requestForm, priority: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="low">Thấp</option>
-                  <option value="medium">Trung bình</option>
-                  <option value="high">Cao</option>
-                  <option value="urgent">Khẩn cấp</option>
-                </select>
-              </div>
-
-              {/* Request Reason */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Lý do yêu cầu <span className="text-red-500">*</span>
-                </label>
-                <textarea
-                  value={requestForm.request_reason}
-                  onChange={(e) => setRequestForm({ ...requestForm, request_reason: e.target.value })}
-                  rows={3}
-                  placeholder="Mô tả lý do cần dịch vụ này..."
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              {/* Evidence Summary */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Tóm tắt bằng chứng
-                </label>
-                <textarea
-                  value={requestForm.evidence_summary}
-                  onChange={(e) => setRequestForm({ ...requestForm, evidence_summary: e.target.value })}
-                  rows={3}
-                  placeholder="Tóm tắt các bằng chứng, mentions, alerts liên quan..."
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              {/* Desired Outcome */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Kết quả mong muốn <span className="text-red-500">*</span>
-                </label>
-                <textarea
-                  value={requestForm.desired_outcome}
-                  onChange={(e) => setRequestForm({ ...requestForm, desired_outcome: e.target.value })}
-                  rows={3}
-                  placeholder="Mô tả kết quả mong muốn từ dịch vụ này..."
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              {/* Quoted Price */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Giá báo (VND)
-                </label>
-                <input
-                  type="number"
-                  value={requestForm.quoted_price}
-                  onChange={(e) => setRequestForm({ ...requestForm, quoted_price: parseFloat(e.target.value) })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              {/* Deadline */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Thời hạn
-                </label>
-                <input
-                  type="datetime-local"
-                  value={requestForm.deadline}
-                  onChange={(e) => setRequestForm({ ...requestForm, deadline: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              {/* Compliance Notice */}
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                <div className="flex items-start space-x-3">
-                  <AlertTriangle className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
-                  <div className="text-sm text-yellow-800">
-                    <strong>Lưu ý:</strong> Yêu cầu này sẽ được xem xét và phê duyệt trước khi thực hiện. 
-                    Tất cả dịch vụ phải tuân thủ pháp luật và chính sách nền tảng.
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="p-6 border-t bg-gray-50 rounded-b-xl flex justify-end space-x-3">
-              <button
-                onClick={() => setShowCreateRequest(false)}
-                className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                Hủy
-              </button>
-              <button
-                onClick={handleSubmitRequest}
-                disabled={!requestForm.request_reason || !requestForm.desired_outcome}
-                className="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
-              >
-                Tạo yêu cầu
-              </button>
             </div>
           </div>
         </div>

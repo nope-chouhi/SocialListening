@@ -157,18 +157,18 @@ export default function PersonalProfile() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h2 className="text-xl font-semibold text-gray-900">Hồ sơ cá nhân</h2>
-        <p className="text-sm text-gray-600 mt-1">Quản lý thông tin cá nhân của bạn</p>
+        <h2 className="text-xl font-bold text-white tracking-wide">Hồ sơ cá nhân</h2>
+        <p className="text-sm text-gray-400 mt-1">Quản lý thông tin cá nhân của bạn</p>
       </div>
 
       {/* Avatar */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6">
+      <div className="bg-[#111827] border border-gray-800 rounded-xl shadow-sm p-6">
         <div className="flex items-center space-x-6">
-          <div className="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden">
+          <div className="w-24 h-24 bg-[#1E293B] border border-gray-700 rounded-full flex items-center justify-center overflow-hidden shadow-inner">
             {avatarUrl ? (
               <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
             ) : (
-              <UserIcon className="w-12 h-12 text-gray-400" />
+              <UserIcon className="w-12 h-12 text-gray-500" />
             )}
           </div>
           <div>
@@ -182,88 +182,88 @@ export default function PersonalProfile() {
             <button 
               onClick={handleUploadClick}
               disabled={uploading}
-              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+              className="flex items-center px-4 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed shadow-sm shadow-indigo-500/20 font-medium"
             >
               <Upload className="w-4 h-4 mr-2" />
               {uploading ? 'Đang tải...' : 'Tải ảnh lên'}
             </button>
-            <p className="text-xs text-gray-500 mt-2">JPG, PNG. Tối đa 2MB</p>
+            <p className="text-xs text-gray-500 mt-2 font-medium">JPG, PNG. Tối đa 2MB</p>
           </div>
         </div>
       </div>
 
       {/* Profile Form */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6 space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="bg-[#111827] border border-gray-800 rounded-xl shadow-sm p-6 space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-300 mb-2">
               Họ và tên *
             </label>
             <input
               type="text"
               value={profile.full_name}
               onChange={(e) => setProfile({ ...profile, full_name: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-300 mb-2">
               Email
             </label>
             <input
               type="email"
               value={profile.email}
               disabled
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
+              className="w-full px-4 py-2.5 bg-[#1E293B]/50 border border-gray-800 rounded-xl text-gray-500 cursor-not-allowed opacity-70"
             />
-            <p className="text-xs text-gray-500 mt-1">Email không thể thay đổi</p>
+            <p className="text-xs text-gray-500 mt-1.5 font-medium">Email không thể thay đổi</p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-300 mb-2">
               Số điện thoại
             </label>
             <input
               type="tel"
               value={profile.phone}
               onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500"
               placeholder="+84 xxx xxx xxx"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-300 mb-2">
               Phòng ban
             </label>
             <input
               type="text"
               value={profile.department}
               onChange={(e) => setProfile({ ...profile, department: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500"
               placeholder="Ví dụ: Marketing"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-300 mb-2">
               Vai trò
             </label>
-            <div className="flex items-center space-x-2">
-              <span className={`px-3 py-2 rounded-lg text-sm font-medium ${getRoleBadgeColor(profile.role)}`}>
+            <div className="flex items-center space-x-3 mt-1">
+              <span className={`px-3 py-1 rounded-md text-xs font-bold uppercase tracking-wider ${getRoleBadgeColor(profile.role)}`}>
                 {getRoleDisplayName(profile.role)}
               </span>
-              <span className="text-xs text-gray-500">(Chỉ admin có thể thay đổi)</span>
+              <span className="text-xs font-medium text-gray-500">(Chỉ admin có thể thay đổi)</span>
             </div>
           </div>
         </div>
 
-        <div className="flex justify-end pt-4">
+        <div className="flex justify-end pt-4 border-t border-gray-800">
           <button
             onClick={handleSave}
             disabled={saving}
-            className="flex items-center px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+            className="flex items-center px-6 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed shadow-sm shadow-indigo-500/20 font-medium"
           >
             <Save className="w-4 h-4 mr-2" />
             {saving ? 'Đang lưu...' : 'Lưu thay đổi'}

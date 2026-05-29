@@ -61,6 +61,14 @@ class AIAnalysis(Base):
     suggested_action = Column(String(100))  # monitor, respond, escalate, legal_review
     responsible_department = Column(String(100))  # customer_service, PR, legal, executive
     
+    # Risk-to-Action Engine Extended Fields
+    urgency = Column(String(50))  # low, medium, high, critical
+    response_type = Column(String(100))  # monitor_only, reply_publicly, contact_privately, escalate_to_legal...
+    recommended_owner = Column(String(100))  # role or title suggestion
+    deadline_suggestion = Column(String(100))  # e.g., "within 2 hours", "next 24 hours"
+    escalation_needed = Column(Boolean, default=False)
+    why_it_matters = Column(Text)
+    
     # Confidence
     confidence_score = Column(Float)  # 0-100
     reasoning = Column(Text)  # AI reasoning (not exposed to user)

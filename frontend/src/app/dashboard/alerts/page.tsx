@@ -90,11 +90,18 @@ export default function AlertsPage() {
     }
   };
 
-  const getSeverityColor = (severity: string) => {
-    if (severity === 'critical') return 'bg-red-100 text-red-800 border-red-200';
-    if (severity === 'high') return 'bg-orange-100 text-orange-800 border-orange-200';
-    if (severity === 'medium') return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-    return 'bg-blue-100 text-blue-800 border-blue-200';
+  const getSeverityBadge = (severity: string) => {
+    if (severity === 'critical') return 'bg-rose-500/10 text-rose-400 border-rose-500/20';
+    if (severity === 'high') return 'bg-orange-500/10 text-orange-400 border-orange-500/20';
+    if (severity === 'medium') return 'bg-amber-500/10 text-amber-400 border-amber-500/20';
+    return 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20';
+  };
+
+  const getSeverityBorder = (severity: string) => {
+    if (severity === 'critical') return 'border-l-rose-500';
+    if (severity === 'high') return 'border-l-orange-500';
+    if (severity === 'medium') return 'border-l-amber-500';
+    return 'border-l-indigo-500';
   };
 
   const getSeverityLabel = (s: string) =>
@@ -103,7 +110,7 @@ export default function AlertsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-lg text-gray-600">Đang tải...</div>
+        <div className="text-lg text-gray-400 font-medium tracking-wide">Đang tải...</div>
       </div>
     );
   }
@@ -113,14 +120,14 @@ export default function AlertsPage() {
       <Toaster position="top-right" />
 
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Cảnh Báo</h1>
-          <p className="text-sm text-gray-500 mt-1">Quản lý các cảnh báo từ hệ thống</p>
+          <h1 className="text-2xl font-bold text-white tracking-wide">Cảnh Báo</h1>
+          <p className="text-sm text-gray-400 mt-1">Quản lý các cảnh báo từ hệ thống</p>
         </div>
         <button
           onClick={() => setShowCreate(true)}
-          className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          className="flex items-center justify-center space-x-2 px-4 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors shadow-sm shadow-indigo-500/20 font-medium"
         >
           <Plus className="w-4 h-4" />
           <span>Tạo cảnh báo</span>
@@ -128,13 +135,15 @@ export default function AlertsPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex space-x-2">
+      <div className="flex flex-wrap gap-2">
         {['all', 'new', 'acknowledged', 'resolved'].map((f) => (
           <button
             key={f}
             onClick={() => setFilter(f)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium ${
-              filter === f ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 border'
+            className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+              filter === f 
+                ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-500/20 border border-indigo-500/50' 
+                : 'bg-[#111827] text-gray-400 border border-gray-800 hover:text-white hover:bg-[#1E293B]'
             }`}
           >
             {f === 'all' ? 'Tất cả' : f === 'new' ? 'Mới' : f === 'acknowledged' ? 'Đã xác nhận' : 'Đã giải quyết'}
@@ -143,59 +152,68 @@ export default function AlertsPage() {
       </div>
 
       {/* Alerts List */}
-      <div className="space-y-4">
+      <div className="space-y-3">
         {alerts.length === 0 ? (
-          <div className="bg-white rounded-lg shadow p-8 text-center text-gray-500">
-            Không có cảnh báo nào
+          <div className="bg-[#111827] border border-gray-800 rounded-xl p-12 text-center shadow-sm">
+            <div className="w-16 h-16 rounded-xl bg-[#1E293B] flex items-center justify-center mx-auto mb-4 border border-gray-800 shadow-sm">
+              <AlertTriangle className="w-8 h-8 text-gray-500" />
+            </div>
+            <p className="text-gray-400 font-medium tracking-wide">Không có cảnh báo nào</p>
           </div>
         ) : (
           alerts.map((alert) => (
-            <div key={alert.id} className={`bg-white rounded-lg shadow p-6 border-l-4 ${getSeverityColor(alert.severity)}`}>
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center space-x-3">
-                    <AlertTriangle className="w-5 h-5" />
-                    <h3 className="font-semibold text-gray-900">{alert.title}</h3>
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getSeverityColor(alert.severity)}`}>
+            <div key={alert.id} className={`bg-[#111827] rounded-xl shadow-sm p-5 sm:p-6 border-y border-r border-gray-800 border-l-[3px] hover:bg-[#1E293B]/30 transition-colors ${getSeverityBorder(alert.severity)}`}>
+              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <AlertTriangle className={`w-5 h-5 ${
+                      alert.severity === 'critical' ? 'text-rose-500' :
+                      alert.severity === 'high' ? 'text-orange-500' :
+                      alert.severity === 'medium' ? 'text-amber-500' : 'text-indigo-500'
+                    }`} />
+                    <h3 className="font-bold text-white truncate">{alert.title}</h3>
+                    <span className={`px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded border ${getSeverityBadge(alert.severity)}`}>
                       {getSeverityLabel(alert.severity)}
                     </span>
-                    <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-700">
+                    <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded bg-gray-800 text-gray-400 border border-gray-700">
                       {alert.status}
                     </span>
                   </div>
-                  {alert.message && <p className="text-sm text-gray-600 mt-2">{alert.message}</p>}
+                  {alert.message && <p className="text-sm text-gray-400 mt-3 leading-relaxed">{alert.message}</p>}
                   {alert.mention_id && (
-                    <div className="mt-3">
+                    <div className="mt-4">
                       <Link
                         href={`/dashboard/mentions/${alert.mention_id}`}
-                        className="inline-flex items-center text-xs font-medium text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded transition-colors"
+                        className="inline-flex items-center text-xs font-semibold tracking-wide text-indigo-400 hover:text-indigo-300 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 px-3 py-1.5 rounded-lg transition-colors"
                       >
                         <FileText className="w-3.5 h-3.5 mr-1.5" />
                         Xem Mention Gốc (#{alert.mention_id})
                       </Link>
                     </div>
                   )}
-                  <div className="text-xs text-gray-500 mt-2">
+                  <div className="text-xs font-medium text-gray-500 mt-4">
                     {new Date(alert.created_at).toLocaleString('vi-VN')}
                   </div>
                 </div>
-                <div className="flex space-x-2 ml-4">
+                <div className="flex items-center space-x-2 sm:ml-4 flex-shrink-0">
                   {alert.status === 'new' && (
                     <button
                       onClick={() => handleAcknowledge(alert.id)}
-                      className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
+                      className="flex items-center justify-center px-3 py-1.5 text-sm font-medium text-indigo-400 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 rounded-lg transition-colors"
                       title="Xác nhận"
                     >
-                      <Check className="w-5 h-5" />
+                      <Check className="w-4 h-4 mr-1.5" />
+                      Xác nhận
                     </button>
                   )}
                   {alert.status !== 'resolved' && (
                     <button
                       onClick={() => handleResolve(alert.id)}
-                      className="p-2 text-green-600 hover:bg-green-50 rounded-lg"
+                      className="flex items-center justify-center px-3 py-1.5 text-sm font-medium text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 rounded-lg transition-colors"
                       title="Giải quyết"
                     >
-                      <X className="w-5 h-5" />
+                      <Check className="w-4 h-4 mr-1.5" />
+                      Giải quyết
                     </button>
                   )}
                 </div>
@@ -207,84 +225,87 @@ export default function AlertsPage() {
 
       {/* Create Alert Modal */}
       {showCreate && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg">
-            <div className="p-6 border-b flex items-center justify-between">
-              <h2 className="text-xl font-bold text-gray-900">Tạo Cảnh Báo</h2>
-              <button onClick={() => setShowCreate(false)} className="text-gray-400 hover:text-gray-600">
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-            <div className="p-6 space-y-4">
-              {/* Title */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Tiêu đề <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={form.title}
-                  onChange={(e) => setForm({ ...form, title: e.target.value })}
-                  placeholder="Nhập tiêu đề cảnh báo..."
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+        <div className="fixed inset-0 z-[60] overflow-y-auto">
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm transition-opacity" onClick={() => setShowCreate(false)} />
+          <div className="flex min-h-full items-center justify-center p-4">
+            <div className="relative bg-[#111827] border border-gray-800 rounded-2xl shadow-2xl w-full max-w-lg transform transition-all overflow-hidden">
+              <div className="p-6 border-b border-gray-800 flex items-center justify-between bg-[#1E293B]/30">
+                <h2 className="text-xl font-bold text-white">Tạo Cảnh Báo</h2>
+                <button onClick={() => setShowCreate(false)} className="text-gray-500 hover:text-gray-300 transition-colors">
+                  <X className="w-6 h-6" />
+                </button>
               </div>
-              {/* Severity */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Mức độ <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={form.severity}
-                  onChange={(e) => setForm({ ...form, severity: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              <div className="p-6 space-y-5">
+                {/* Title */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Tiêu đề <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={form.title}
+                    onChange={(e) => setForm({ ...form, title: e.target.value })}
+                    placeholder="Nhập tiêu đề cảnh báo..."
+                    className="w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500"
+                  />
+                </div>
+                {/* Severity */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Mức độ <span className="text-rose-500">*</span>
+                  </label>
+                  <select
+                    value={form.severity}
+                    onChange={(e) => setForm({ ...form, severity: e.target.value })}
+                    className="w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white"
+                  >
+                    {SEVERITIES.map((s) => (
+                      <option key={s.value} value={s.value}>{s.label}</option>
+                    ))}
+                  </select>
+                </div>
+                {/* Message */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Nội dung
+                  </label>
+                  <textarea
+                    value={form.message}
+                    onChange={(e) => setForm({ ...form, message: e.target.value })}
+                    rows={4}
+                    placeholder="Mô tả chi tiết cảnh báo..."
+                    className="w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500 resize-none"
+                  />
+                </div>
+                {/* Mention ID (optional) */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    ID Mention (tùy chọn)
+                  </label>
+                  <input
+                    type="number"
+                    value={form.mention_id}
+                    onChange={(e) => setForm({ ...form, mention_id: e.target.value })}
+                    placeholder="Nhập ID mention liên quan..."
+                    className="w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500"
+                  />
+                </div>
+              </div>
+              <div className="p-6 border-t border-gray-800 bg-[#1E293B]/30 flex justify-end space-x-3">
+                <button
+                  onClick={() => setShowCreate(false)}
+                  className="px-5 py-2.5 text-gray-300 bg-[#111827] border border-gray-700 rounded-xl hover:bg-gray-800 hover:text-white transition-colors font-medium"
                 >
-                  {SEVERITIES.map((s) => (
-                    <option key={s.value} value={s.value}>{s.label}</option>
-                  ))}
-                </select>
+                  Hủy
+                </button>
+                <button
+                  onClick={handleCreate}
+                  disabled={submitting || !form.title.trim()}
+                  className="px-5 py-2.5 text-white bg-indigo-600 rounded-xl hover:bg-indigo-700 disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed transition-all shadow-sm shadow-indigo-500/20 font-medium"
+                >
+                  {submitting ? 'Đang tạo...' : 'Tạo cảnh báo'}
+                </button>
               </div>
-              {/* Message */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Nội dung
-                </label>
-                <textarea
-                  value={form.message}
-                  onChange={(e) => setForm({ ...form, message: e.target.value })}
-                  rows={3}
-                  placeholder="Mô tả chi tiết cảnh báo..."
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              {/* Mention ID (optional) */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  ID Mention (tùy chọn)
-                </label>
-                <input
-                  type="number"
-                  value={form.mention_id}
-                  onChange={(e) => setForm({ ...form, mention_id: e.target.value })}
-                  placeholder="Nhập ID mention liên quan..."
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-            </div>
-            <div className="p-6 border-t bg-gray-50 rounded-b-xl flex justify-end space-x-3">
-              <button
-                onClick={() => setShowCreate(false)}
-                className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
-              >
-                Hủy
-              </button>
-              <button
-                onClick={handleCreate}
-                disabled={submitting || !form.title.trim()}
-                className="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
-              >
-                {submitting ? 'Đang tạo...' : 'Tạo cảnh báo'}
-              </button>
             </div>
           </div>
         </div>
