@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, AlertTriangle, FileText, ExternalLink } from 'lucide-react';
+import { ArrowLeft, AlertTriangle, FileText, ExternalLink, Activity } from 'lucide-react';
 import { mentions as mentionsApi, alerts as alertsApi, incidents as incidentsApi } from '@/lib/api';
 import toast, { Toaster } from 'react-hot-toast';
 import ExecutiveBriefModal from '@/components/dashboard/ExecutiveBriefModal';
