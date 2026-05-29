@@ -145,7 +145,7 @@ export default function DashboardLayout({
               <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
                 <Globe className="w-6 h-6 text-white" />
               </div>
-              <h1 className="text-xl font-bold text-white">Social Listening</h1>
+              <h1 className="text-xl font-bold text-white">Nope</h1>
             </div>
             <button
               onClick={() => setSidebarOpen(false)}

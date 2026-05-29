@@ -244,7 +244,7 @@ export default function EmailSettings() {
               value={settings.fromName}
               onChange={(e) => setSettings({ ...settings, fromName: e.target.value })}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Social Listening"
+              placeholder="Nope"
             />
           </div>
         </div>

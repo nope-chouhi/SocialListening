@@ -5,8 +5,15 @@ import './globals.css'
 const inter = Inter({ subsets: ['latin', 'vietnamese'] })
 
 export const metadata: Metadata = {
-  title: 'Social Listening Platform',
-  description: 'Vietnamese Social Listening & Reputation Protection',
+  title: 'Nope',
+  description: 'Nền tảng giám sát truyền thông, thu thập mentions, phân tích sắc thái và cảnh báo rủi ro.',
+  applicationName: 'Nope',
+  creator: 'Nope',
+  themeColor: '#111827',
+  manifest: '/manifest.json',
+  icons: {
+    icon: '/favicon.svg',
+  },
 }
 
 export default function RootLayout({
