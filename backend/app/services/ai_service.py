@@ -706,3 +706,136 @@ def analyze_mention_with_dummy_ai(content: str, title: str = None) -> Dict:
     Kept for backward compatibility
     """
     return analyze_mention(content, title)
+
+
+# ============================================================================
+# REPUTATION HANDLING DRAFTS
+# ============================================================================
+
+async def draft_reputation_response(case) -> str:
+    # Build content context from evidence
+    evidence_texts = [e.captured_text for e in case.evidence] if case.evidence else []
+    context = "\n".join(evidence_texts)
+    
+    prompt = f"""Dự thảo một phản hồi CÔNG KHAI, lịch sự và chuyên nghiệp cho bình luận/bài viết sau:
+Nội dung gốc: {context}
+
+Yêu cầu:
+1. Giữ giọng văn bình tĩnh, tôn trọng, giải quyết vấn đề.
+2. KHÔNG nhận lỗi nếu chưa có kết luận rõ ràng.
+3. Mời khách hàng liên hệ qua kênh riêng (inbox, email, hotline) để giải quyết chi tiết.
+4. KHÔNG dùng ngôn ngữ tấn công hoặc đe dọa.
+5. Ngắn gọn, súc tích (dưới 100 chữ)."""
+    
+    try:
+        provider = get_ai_provider()
+        if hasattr(provider, 'openai'):
+            response = provider.openai.ChatCompletion.create(
+                model="gpt-4",
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.7,
+                max_tokens=300
+            )
+            return response.choices[0].message.content.strip()
+        elif hasattr(provider, 'model'):
+            response = provider.model.generate_content(prompt)
+            return response.text.strip()
+    except Exception as e:
+        logger.error(f"AI draft response failed: {e}")
+        
+    return "Chào bạn, chúng tôi đã ghi nhận thông tin và đang tiến hành kiểm tra. Bạn vui lòng kiểm tra hộp thư tin nhắn hoặc cung cấp thêm thông tin liên hệ để chúng tôi hỗ trợ kịp thời nhé. Cảm ơn bạn!"
+
+async def draft_correction_request(case) -> str:
+    evidence_texts = [e.captured_text for e in case.evidence] if case.evidence else []
+    context = "\n".join(evidence_texts)
+    
+    prompt = f"""Dự thảo MỘT EMAIL/CÔNG VĂN YÊU CẦU ĐÍNH CHÍNH thông tin sai lệch:
+Nội dung sai lệch đang lan truyền: {context}
+
+Yêu cầu:
+1. Giọng văn trang trọng, pháp lý, cứng rắn nhưng lịch sự.
+2. Trích dẫn URL gốc: {case.source_url or 'không rõ'}.
+3. Yêu cầu tác giả/nền tảng gỡ bỏ hoặc đính chính thông tin trong vòng 24-48 giờ.
+4. Nhấn mạnh việc bảo lưu quyền sử dụng các biện pháp pháp lý nếu không hợp tác.
+5. Ngắn gọn (1-2 đoạn)."""
+    
+    try:
+        provider = get_ai_provider()
+        if hasattr(provider, 'openai'):
+            response = provider.openai.ChatCompletion.create(
+                model="gpt-4",
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.4,
+                max_tokens=500
+            )
+            return response.choices[0].message.content.strip()
+        elif hasattr(provider, 'model'):
+            response = provider.model.generate_content(prompt)
+            return response.text.strip()
+    except Exception as e:
+        logger.error(f"AI draft correction failed: {e}")
+        
+    return "Kính gửi Bộ phận phụ trách/Tác giả bài viết,\n\nChúng tôi phát hiện nội dung bài viết tại liên kết trên chứa thông tin không chính xác, gây ảnh hưởng đến danh tiếng công ty chúng tôi. Chúng tôi yêu cầu gỡ bỏ hoặc đính chính thông tin này trong thời gian sớm nhất.\n\nTrân trọng,"
+
+async def draft_platform_report(case) -> str:
+    evidence_texts = [e.captured_text for e in case.evidence] if case.evidence else []
+    context = "\n".join(evidence_texts)
+    
+    prompt = f"""Dự thảo lý do BÁO CÁO VI PHẠM (Report) gửi cho đội ngũ hỗ trợ của nền tảng {case.platform or 'Mạng xã hội'}:
+Nội dung vi phạm: {context}
+URL vi phạm: {case.source_url}
+
+Yêu cầu:
+1. Nêu rõ nội dung vi phạm điều khoản nào (ví dụ: bôi nhọ danh dự, spam, tin giả, mạo danh).
+2. Trình bày ngắn gọn, dễ hiểu để kiểm duyệt viên nền tảng đọc nhanh (dưới 100 chữ).
+3. Bằng tiếng Việt và Tiếng Anh (nếu là nền tảng quốc tế)."""
+    
+    try:
+        provider = get_ai_provider()
+        if hasattr(provider, 'openai'):
+            response = provider.openai.ChatCompletion.create(
+                model="gpt-4",
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.3,
+                max_tokens=300
+            )
+            return response.choices[0].message.content.strip()
+        elif hasattr(provider, 'model'):
+            response = provider.model.generate_content(prompt)
+            return response.text.strip()
+    except Exception as e:
+        logger.error(f"AI draft report failed: {e}")
+        
+    return "Nội dung này vi phạm chính sách cộng đồng (lan truyền thông tin sai lệch/bôi nhọ danh dự). Vui lòng xem xét và gỡ bỏ."
+
+async def draft_executive_brief(case) -> str:
+    evidence_texts = [e.captured_text for e in case.evidence] if case.evidence else []
+    context = "\n".join(evidence_texts)
+    
+    prompt = f"""Dự thảo một ĐOẠN TÓM TẮT DÀNH CHO LÃNH ĐẠO (Executive Brief) về sự cố sau:
+Tiêu đề: {case.title}
+Mức rủi ro: {case.risk_level}
+Nội dung tóm tắt: {context[:500]}
+
+Yêu cầu:
+1. Format 3 gạch đầu dòng: (1) Tình hình, (2) Đánh giá rủi ro, (3) Đề xuất xử lý.
+2. Ngắn gọn, đi thẳng vào vấn đề.
+3. Không markdown code block."""
+
+    try:
+        provider = get_ai_provider()
+        if hasattr(provider, 'openai'):
+            response = provider.openai.ChatCompletion.create(
+                model="gpt-4",
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.3,
+                max_tokens=300
+            )
+            return response.choices[0].message.content.strip()
+        elif hasattr(provider, 'model'):
+            response = provider.model.generate_content(prompt)
+            return response.text.strip()
+    except Exception as e:
+        logger.error(f"AI brief failed: {e}")
+        
+    return "- Tình hình: Đang có bài viết/phản ánh có thể ảnh hưởng danh tiếng.\n- Đánh giá: Cần chú ý theo dõi.\n- Đề xuất: Chờ thu thập thêm bằng chứng và lên phương án phản hồi."

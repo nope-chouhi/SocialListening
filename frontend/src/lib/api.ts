@@ -633,4 +633,62 @@ export const influencers = {
   },
 };
 
-
+// ─── Reputation ─────────────────────────────────────────────────────────────
+export const reputation = {
+  listCases: async (params?: any) => {
+    const response = await api.get('/api/reputation/cases', { params });
+    return response.data;
+  },
+  getCase: async (id: number) => {
+    const response = await api.get(`/api/reputation/cases/${id}`);
+    return response.data;
+  },
+  createCase: async (data: any) => {
+    const response = await api.post('/api/reputation/cases', data);
+    return response.data;
+  },
+  updateCase: async (id: number, data: any) => {
+    const response = await api.patch(`/api/reputation/cases/${id}`, data);
+    return response.data;
+  },
+  createFromMention: async (mentionId: number) => {
+    const response = await api.post(`/api/reputation/cases/from-mention/${mentionId}`);
+    return response.data;
+  },
+  listEvidence: async (caseId: number) => {
+    const response = await api.get(`/api/reputation/cases/${caseId}/evidence`);
+    return response.data;
+  },
+  addEvidence: async (caseId: number, data: any) => {
+    const response = await api.post(`/api/reputation/cases/${caseId}/evidence`, data);
+    return response.data;
+  },
+  listActions: async (caseId: number) => {
+    const response = await api.get(`/api/reputation/cases/${caseId}/actions`);
+    return response.data;
+  },
+  addAction: async (caseId: number, data: any) => {
+    const response = await api.post(`/api/reputation/cases/${caseId}/actions`, data);
+    return response.data;
+  },
+  updateAction: async (actionId: number, data: any) => {
+    const response = await api.patch(`/api/reputation/actions/${actionId}`, data);
+    return response.data;
+  },
+  draftResponse: async (caseId: number) => {
+    const response = await api.post(`/api/reputation/cases/${caseId}/draft-response`);
+    return response.data;
+  },
+  draftCorrection: async (caseId: number) => {
+    const response = await api.post(`/api/reputation/cases/${caseId}/draft-correction-request`);
+    return response.data;
+  },
+  draftPlatformReport: async (caseId: number) => {
+    const response = await api.post(`/api/reputation/cases/${caseId}/draft-platform-report`);
+    return response.data;
+  },
+  draftExecutiveBrief: async (caseId: number) => {
+    const response = await api.post(`/api/reputation/cases/${caseId}/executive-brief`);
+    return response.data;
+  },
+};

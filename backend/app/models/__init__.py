@@ -34,6 +34,13 @@ from app.models.service import (
     ServiceType, Platform, RiskLevel, ServiceRequestStatus, ApprovalStatus, Priority, DeliverableType
 )
 
+# Reputation models
+from app.models.reputation import (
+    ReputationCase, ReputationEvidence, ReputationAction,
+    ReputationCaseType, ReputationCaseStatus,
+    ReputationActionType, ReputationActionStatus
+)
+
 # RBAC models
 from app.models.rbac import Role, UserRole, APIKey, BrandingSettings, AuditLog
 
@@ -58,5 +65,8 @@ __all__ = [
     "ServiceType", "Platform", "RiskLevel", "ServiceRequestStatus", "ApprovalStatus", "Priority", "DeliverableType",
     "Role", "UserRole", "APIKey", "BrandingSettings", "AuditLog",
     "UserPreferences", "UserNotificationSettings", "UserSession",
-    "OrganizationSettings", "EmailSettings", "SystemNotificationSettings"
+    "OrganizationSettings", "EmailSettings", "SystemNotificationSettings",
+    "ReputationCase", "ReputationEvidence", "ReputationAction",
+    "ReputationCaseType", "ReputationCaseStatus",
+    "ReputationActionType", "ReputationActionStatus"
 ]

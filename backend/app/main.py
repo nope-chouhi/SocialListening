@@ -11,7 +11,8 @@ from app.core.database import engine, Base, SessionLocal
 from app.api import (
     auth, keywords, sources, mentions, alerts,
     incidents, reports, dashboard, crawl, takedown, services, admin, users, settings as settings_api,
-    roles, api_keys, branding, audit, monitor, system, ai, evidence, ai_chat, competitors, influencers
+    roles, api_keys, branding, audit, monitor, system, ai, evidence, ai_chat, competitors, influencers,
+    reputation
 )
 from app.api import service_requests
 
@@ -174,6 +175,7 @@ app.include_router(ai_chat.router,          prefix="/api/ai",                tag
 app.include_router(evidence.router,         prefix="/api/evidence",          tags=["Evidence Locker"])
 app.include_router(competitors.router,      prefix="/api/competitors",       tags=["Competitors"])
 app.include_router(influencers.router,      prefix="/api/influencers",       tags=["Influencers"])
+app.include_router(reputation.router,       prefix="/api/reputation",        tags=["Reputation Handling"])
 
 @app.get("/")
 def root():

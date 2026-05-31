@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, AlertTriangle, FileText, ExternalLink, Activity } from 'lucide-react';
-import { mentions as mentionsApi, alerts as alertsApi, incidents as incidentsApi } from '@/lib/api';
+import { mentions as mentionsApi, alerts as alertsApi, incidents as incidentsApi, reputation } from '@/lib/api';
 import toast, { Toaster } from 'react-hot-toast';
 import ExecutiveBriefModal from '@/components/dashboard/ExecutiveBriefModal';
 
@@ -65,6 +65,20 @@ export default function MentionDetailPage() {
     } catch (error: any) {
       console.error('Error creating incident:', error);
       toast.error('Lỗi khi tạo sự cố');
+    }
+  };
+
+  const handleCreateReputationCase = async () => {
+    if (!mention) return;
+    const toastId = toast.loading('Đang tạo hồ sơ xử lý danh tiếng...');
+    try {
+      const newCase = await reputation.createFromMention(mention.id);
+      toast.success('Tạo hồ sơ xử lý thành công!', { id: toastId });
+      // Redirect to the new case
+      router.push(`/dashboard/services`);
+    } catch (error: any) {
+      console.error('Error creating reputation case:', error);
+      toast.error('Lỗi khi tạo hồ sơ xử lý', { id: toastId });
     }
   };
 
@@ -325,6 +339,13 @@ export default function MentionDetailPage() {
               >
                 <FileText className="w-4 h-4 mr-2" />
                 Tạo Executive Brief
+              </button>
+              <button
+                onClick={handleCreateReputationCase}
+                className="w-full flex items-center justify-center px-4 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors font-semibold shadow-sm shadow-indigo-500/20"
+              >
+                <FileText className="w-5 h-5 mr-2" />
+                Tạo Hồ Sơ Xử Lý
               </button>
               <button
                 onClick={handleCreateIncident}
