@@ -95,7 +95,22 @@ app.add_middleware(
 )
 
 
+from fastapi.exceptions import HTTPException
+
 # ─── Global exception handler — ensures 500s return JSON + CORS ───────────────
+@app.exception_handler(HTTPException)
+async def custom_http_exception_handler(request: Request, exc: HTTPException):
+    if exc.status_code >= 500 and settings.ENVIRONMENT == "production":
+        logger.error(f"HTTPException 500 on {request.method} {request.url}: {exc.detail}")
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={"detail": "Lỗi hệ thống. Vui lòng thử lại sau."},
+        )
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail},
+    )
+
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     logger.error(f"Unhandled exception on {request.method} {request.url}: {traceback.format_exc()}")

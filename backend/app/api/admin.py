@@ -1,4 +1,4 @@
-﻿from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from app.core.database import get_db
@@ -260,7 +260,7 @@ def seed_services_inline(db: Session):
 @router.post("/run-migrations")
 def run_migrations(
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_superuser)
 ):
     """Run database migrations"""
     try:
@@ -474,7 +474,7 @@ def run_migrations(
 @router.post("/seed-services")
 def seed_services_data(
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_superuser)
 ):
     """Seed service catalog data"""
     try:
@@ -499,7 +499,7 @@ def seed_services_data(
 @router.get("/service-catalog-status")
 def get_service_catalog_status(
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_superuser)
 ):
     """Check service catalog status"""
     try:

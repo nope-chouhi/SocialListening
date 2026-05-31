@@ -271,9 +271,26 @@ export default function ReputationPage() {
                             </div>
                             {action.status === 'draft' && action.requires_approval && (
                               <div className="mt-4 flex gap-2">
-                                <button className="px-3 py-1.5 bg-indigo-500 text-white text-xs font-medium rounded-lg hover:bg-indigo-600">
+                                <button 
+                                  onClick={async () => {
+                                    try {
+                                      await reputation.updateAction(action.id, { status: 'waiting_approval' });
+                                      toast.success('Đã trình phê duyệt thành công');
+                                      fetchCaseDetail(selectedCase.id);
+                                    } catch (e) {
+                                      toast.error('Lỗi khi trình phê duyệt');
+                                    }
+                                  }}
+                                  className="px-3 py-1.5 bg-indigo-500 text-white text-xs font-medium rounded-lg hover:bg-indigo-600">
                                   Trình phê duyệt
                                 </button>
+                              </div>
+                            )}
+                            {action.status === 'waiting_approval' && (
+                              <div className="mt-4 flex gap-2">
+                                <span className="px-3 py-1.5 bg-amber-500/20 text-amber-300 text-xs font-medium rounded-lg border border-amber-500/20">
+                                  Đang chờ phê duyệt
+                                </span>
                               </div>
                             )}
                           </div>

@@ -115,6 +115,18 @@ export default function ScanPage() {
     fetchCrawlJobs();
   }, []);
 
+  // Poll for job updates if any job is running
+  useEffect(() => {
+    const hasRunningJob = crawlJobs.some(j => j.status === 'running' || j.status === 'pending');
+    if (hasRunningJob) {
+      const interval = setInterval(() => {
+        fetchWorkerStatus();
+        fetchCrawlJobs();
+      }, 5000);
+      return () => clearInterval(interval);
+    }
+  }, [crawlJobs]);
+
   const fetchData = async () => {
     try {
       const [groupsData, sourcesData] = await Promise.all([

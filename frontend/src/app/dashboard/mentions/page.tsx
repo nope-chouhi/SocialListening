@@ -882,6 +882,20 @@ export default function MentionsPage() {
                             </a>
                           )}
                           <button
+                            disabled
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-medium text-gray-500 opacity-50 cursor-not-allowed rounded-lg border border-transparent"
+                            title="Chưa tích hợp"
+                          >
+                            Gắn thẻ (Chưa tích hợp)
+                          </button>
+                          <button
+                            disabled
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-medium text-gray-500 opacity-50 cursor-not-allowed rounded-lg border border-transparent"
+                            title="Chưa tích hợp"
+                          >
+                            Mute nguồn (Chưa tích hợp)
+                          </button>
+                          <button
                             onClick={() => setDeleteConfirm({ isOpen: true, mentionId: mention.id, mentionTitle: mention.title || 'Mention' })}
                             className="p-1.5 text-gray-600 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-all"
                             title="Xóa"
