@@ -311,18 +311,88 @@ export default function SourcesPage() {
                     <div>
                       <div className="flex items-center gap-2 flex-wrap mb-1">
                         <h3 className="font-semibold text-white tracking-wide truncate max-w-[150px]" title={source.name}>{source.name}</h3>
-                        {isTest && (
-                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-orange-500/10 text-orange-400 border border-orange-500/20">
-                            Test
-                          </span>
-                        )}
-                        {isUnsupported && (
-                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-rose-500/10 text-rose-400 border border-rose-500/20">
-                            Chưa hỗ trợ
-                          </span>
-                        )}
+                        {(() => {
+                          if (isUnsupported) {
+                            return (
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-gray-500/10 text-gray-400 border border-gray-500/20">
+                                Chưa hỗ trợ
+                              </span>
+                            );
+                          }
+                          if (isTest) {
+                            return (
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-gray-500/10 text-gray-400 border border-gray-500/20">
+                                Nguồn test
+                              </span>
+                            );
+                          }
+                          const error = (source as any).last_error;
+                          const isInvalidRss = error && (error.includes('invalid_rss_feed') || 
+                                               error.includes('Feed parse error') || 
+                                               error.includes('not well-formed') ||
+                                               error.includes('invalid token') ||
+                                               (source.source_type === 'rss' && error.includes('not well-formed')));
+                          const isAiConfigError = error && (error.includes('ai_provider_not_configured') || 
+                                                  error.includes('openai_dependency_missing') || 
+                                                  error.includes('AI chưa cấu hình') ||
+                                                  error.includes('thiếu package openai') ||
+                                                  error.includes('openai package not installed'));
+                          
+                          if (isInvalidRss) {
+                            return (
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-rose-500/10 text-rose-400 border border-rose-500/20">
+                                RSS không hợp lệ
+                              </span>
+                            );
+                          } else if (error && !isAiConfigError) {
+                            return (
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-rose-500/10 text-rose-400 border border-rose-500/20">
+                                Lỗi crawl
+                              </span>
+                            );
+                          } else if (source.last_crawled_at) {
+                            return (
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                Quét thành công
+                              </span>
+                            );
+                          } else {
+                            return (
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-gray-500/10 text-gray-400 border border-gray-500/20">
+                                Chưa crawl
+                              </span>
+                            );
+                          }
+                        })()}
                       </div>
-                      <p className="text-[11px] font-medium tracking-wider uppercase text-gray-500">{getSourceTypeText(source.source_type)}</p>
+                      <div className="flex items-center gap-2 mb-1">
+                        <p className="text-[11px] font-medium tracking-wider uppercase text-gray-500">{getSourceTypeText(source.source_type)}</p>
+                        {(() => {
+                          if (isUnsupported || isTest) return null;
+                          
+                          const error = (source as any).last_error;
+                          const isAiConfigError = error && (error.includes('ai_provider_not_configured') || 
+                                                  error.includes('openai_dependency_missing') || 
+                                                  error.includes('AI chưa cấu hình') ||
+                                                  error.includes('thiếu package openai') ||
+                                                  error.includes('openai package not installed'));
+                          
+                          if (isAiConfigError) {
+                             return (
+                               <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                                 AI chưa cấu hình
+                               </span>
+                             );
+                          } else if (source.last_crawled_at && (!error || error === '')) {
+                             return (
+                               <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                                 AI đã phân tích
+                               </span>
+                             );
+                          }
+                          return null;
+                        })()}
+                      </div>
                     </div>
                   </div>
                 <button
@@ -378,9 +448,6 @@ export default function SourcesPage() {
                   if (isInvalidRss) {
                     return (
                       <div className="text-xs mt-3 p-2.5 bg-rose-500/5 border border-rose-500/20 rounded-lg">
-                        <span className="font-bold text-rose-500 block mb-1 uppercase tracking-wider text-[10px]">
-                          RSS không hợp lệ
-                        </span>
                         <span className="text-rose-400 opacity-90 block mb-1">
                           URL này là trang web, không phải RSS feed.
                         </span>
@@ -401,11 +468,8 @@ export default function SourcesPage() {
                   if (isAiConfigError) {
                     return (
                       <div className="text-xs mt-3 p-2.5 bg-amber-500/5 border border-amber-500/20 rounded-lg">
-                        <span className="font-bold text-amber-500 block mb-1 uppercase tracking-wider text-[10px]">
-                          AI chưa sẵn sàng
-                        </span>
                         <span className="text-amber-400 opacity-90">
-                          AI chưa sẵn sàng: thiếu cấu hình hoặc package.
+                          Mention đã được thu thập, nhưng AI chưa phân tích do thiếu cấu hình hoặc package.
                         </span>
                       </div>
                     );
@@ -420,9 +484,18 @@ export default function SourcesPage() {
                     }
                   }
                   
+                  if (isTest) {
+                    return (
+                      <div className="text-xs text-gray-400 mt-3 p-2.5 bg-gray-500/5 border border-gray-500/20 rounded-lg" title={error}>
+                        <span className="font-semibold text-gray-500 block mb-1 uppercase tracking-wider text-[10px]">Nguồn test — không tính vào vận hành</span>
+                        <span className="opacity-90">{cleanMsg.substring(0, 100)}{cleanMsg.length > 100 ? '...' : ''}</span>
+                      </div>
+                    );
+                  }
+                  
                   return (
                     <div className="text-xs text-rose-400 mt-3 p-2.5 bg-rose-500/5 border border-rose-500/20 rounded-lg" title={error}>
-                      <span className="font-semibold text-rose-500 block mb-1 uppercase tracking-wider text-[10px]">Lỗi gần nhất</span>
+                      <span className="font-semibold text-rose-500 block mb-1 uppercase tracking-wider text-[10px]">Lỗi crawl gần nhất</span>
                       <span className="opacity-90">{cleanMsg.substring(0, 100)}{cleanMsg.length > 100 ? '...' : ''}</span>
                     </div>
                   );

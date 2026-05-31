@@ -720,20 +720,96 @@ export default function ScanPage() {
                         <div className="flex items-center gap-2 min-w-0">
                           <div className="min-w-0 flex-1">
                             <div className="font-medium text-gray-300 truncate flex items-center gap-1.5 flex-wrap text-xs">
-                              {source.name}
-                              {test && (
-                                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-bold tracking-wider uppercase bg-orange-500/10 text-orange-400 border border-orange-500/15 flex-shrink-0">
-                                  <FlaskConical className="w-2.5 h-2.5" />
-                                  test
-                                </span>
-                              )}
-                              {isUnsupported && (
-                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold tracking-wider uppercase bg-rose-500/10 text-rose-400 border border-rose-500/15 flex-shrink-0">
-                                  Chưa tích hợp
-                                </span>
-                              )}
+                              <span title={source.name}>{source.name}</span>
+                              {(() => {
+                                if (isUnsupported) {
+                                  return (
+                                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-gray-500/10 text-gray-400 border border-gray-500/20">
+                                      Chưa hỗ trợ
+                                    </span>
+                                  );
+                                }
+                                if (test) {
+                                  return (
+                                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-gray-500/10 text-gray-400 border border-gray-500/20">
+                                      <FlaskConical className="w-2.5 h-2.5" />
+                                      Nguồn test
+                                    </span>
+                                  );
+                                }
+                                const error = source.last_error;
+                                const isInvalidRss = error && (error.includes('invalid_rss_feed') || 
+                                                     error.includes('Feed parse error') || 
+                                                     error.includes('not well-formed') ||
+                                                     error.includes('invalid token') ||
+                                                     (source.source_type === 'rss' && error.includes('not well-formed')));
+                                const isAiConfigError = error && (error.includes('ai_provider_not_configured') || 
+                                                        error.includes('openai_dependency_missing') || 
+                                                        error.includes('AI chưa cấu hình') ||
+                                                        error.includes('thiếu package openai') ||
+                                                        error.includes('openai package not installed'));
+                                
+                                if (isInvalidRss) {
+                                  return (
+                                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-rose-500/10 text-rose-400 border border-rose-500/20 flex-shrink-0">
+                                      RSS không hợp lệ
+                                    </span>
+                                  );
+                                } else if (error && !isAiConfigError) {
+                                  return (
+                                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-rose-500/10 text-rose-400 border border-rose-500/20 flex-shrink-0">
+                                      Lỗi crawl
+                                    </span>
+                                  );
+                                } else if (source.last_crawled_at) {
+                                  return (
+                                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex-shrink-0">
+                                      Quét thành công
+                                    </span>
+                                  );
+                                } else {
+                                  return (
+                                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-gray-500/10 text-gray-400 border border-gray-500/20 flex-shrink-0">
+                                      Chưa crawl
+                                    </span>
+                                  );
+                                }
+                              })()}
                             </div>
                             <div className="text-[10px] text-gray-600 truncate max-w-xs mt-0.5">{source.url}</div>
+                            {(() => {
+                              if (isUnsupported || test) return null;
+                              
+                              const error = source.last_error;
+                              const isAiConfigError = error && (error.includes('ai_provider_not_configured') || 
+                                                      error.includes('openai_dependency_missing') || 
+                                                      error.includes('AI chưa cấu hình') ||
+                                                      error.includes('thiếu package openai') ||
+                                                      error.includes('openai package not installed'));
+                              
+                              if (isAiConfigError) {
+                                 return (
+                                   <div className="mt-1 flex items-center gap-1">
+                                     <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                                       AI chưa cấu hình
+                                     </span>
+                                     <span className="text-[10px] text-gray-500 truncate" title="Mention đã thu thập, nhưng AI chưa phân tích do thiếu package.">
+                                       Mention đã thu thập, thiếu package.
+                                     </span>
+                                   </div>
+                                 );
+                              } else if (source.last_crawled_at && (!error || error === '')) {
+                                 return (
+                                   <div className="mt-1 flex items-center gap-1">
+                                     <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                                       AI đã phân tích
+                                     </span>
+                                   </div>
+                                 );
+                              }
+                              return null;
+                            })()}
+                            
                             {source.last_error && (() => {
                               const error = source.last_error;
                               const isInvalidRss = error.includes('invalid_rss_feed') || 
@@ -743,23 +819,22 @@ export default function ScanPage() {
                                                    ((source.source_type || '').toLowerCase() === 'rss' && error.includes('not well-formed'));
                               if (isInvalidRss) {
                                 return (
-                                  <div className="text-[10px] text-rose-400 mt-1 truncate max-w-sm" title={error}>
+                                  <div className="text-[10px] text-rose-400 mt-1 truncate max-w-sm" title="URL này là trang web, không phải RSS feed. Hãy đổi loại nguồn sang Website.">
                                     ⚠ RSS không hợp lệ: URL hiện tại là trang web.
                                   </div>
                                 );
                               }
+                              
+                              // Check if AI error, if so, DO NOT display as crawl error!
                               const isAiConfigError = error.includes('ai_provider_not_configured') || 
                                                       error.includes('openai_dependency_missing') || 
                                                       error.includes('AI chưa cấu hình') ||
                                                       error.includes('thiếu package openai') ||
                                                       error.includes('openai package not installed');
                               if (isAiConfigError) {
-                                return (
-                                  <div className="text-[10px] text-amber-400 mt-1 truncate max-w-sm" title={error}>
-                                    ⚠ AI chưa sẵn sàng: thiếu cấu hình hoặc package.
-                                  </div>
-                                );
+                                return null;
                               }
+                              
                               let cleanMsg = error;
                               if (error.includes(': ')) {
                                 const parts = error.split(': ');
@@ -767,6 +842,15 @@ export default function ScanPage() {
                                   cleanMsg = parts.slice(1).join(': ');
                                 }
                               }
+                              
+                              if (test) {
+                                return (
+                                  <div className="text-[10px] text-gray-500 mt-1 truncate max-w-sm" title={error}>
+                                    ⚠ {cleanMsg} (lỗi test)
+                                  </div>
+                                );
+                              }
+                              
                               return (
                                 <div className="text-[10px] text-rose-400 mt-1 truncate max-w-sm" title={error}>
                                   ⚠ {cleanMsg}
