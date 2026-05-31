@@ -1,38 +1,217 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { Search, Eye, Trash2, AlertTriangle, FileText, X } from 'lucide-react';
-import { mentions as mentionsApi, alerts as alertsApi, incidents as incidentsApi } from '@/lib/api';
+import { useEffect, useState, useCallback, useRef } from 'react';
+import {
+  Search, Eye, Trash2, FileText, X, ExternalLink,
+  ArrowUpDown, ChevronDown, ChevronUp, Filter, BarChart3,
+  Globe, Rss, TrendingUp, TrendingDown, Minus,
+  AlertTriangle, CheckCircle2, BrainCircuit, Loader2,
+  Facebook, Youtube, RefreshCw, SlidersHorizontal,
+} from 'lucide-react';
+import { mentions as mentionsApi, dashboard } from '@/lib/api';
 import toast, { Toaster } from 'react-hot-toast';
 import Link from 'next/link';
 import ConfirmDialog from '@/components/ConfirmDialog';
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
+} from 'recharts';
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TYPE DEFINITIONS
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+interface MentionItem {
+  id: number;
+  source_id: number;
+  source_name: string;
+  source_type: string;
+  title: string | null;
+  content: string;
+  url: string;
+  author: string | null;
+  published_at: string | null;
+  collected_at: string | null;
+  is_reviewed: boolean;
+  matched_keywords: any[] | null;
+  ai_analysis: {
+    sentiment: string | null;
+    risk_score: number | null;
+    crisis_level: number | null;
+    summary_vi: string | null;
+    suggested_action: string | null;
+    ai_provider: string | null;
+  } | null;
+}
+
+interface Filters {
+  sentiment: string | null;
+  source_type: string | null;
+  min_risk_score: number | null;
+  sort_by: string;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CONSTANTS
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+const SENTIMENT_OPTIONS = [
+  { value: 'positive', label: 'Tích cực', dot: 'bg-emerald-500', bg: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' },
+  { value: 'neutral', label: 'Trung lập', dot: 'bg-gray-400', bg: 'bg-gray-500/10 border-gray-500/20 text-gray-400' },
+  { value: 'negative_low', label: 'Tiêu cực nhẹ', dot: 'bg-amber-500', bg: 'bg-amber-500/10 border-amber-500/20 text-amber-400' },
+  { value: 'negative_medium', label: 'Tiêu cực', dot: 'bg-orange-500', bg: 'bg-orange-500/10 border-orange-500/20 text-orange-400' },
+  { value: 'negative_high', label: 'Nghiêm trọng', dot: 'bg-rose-500 animate-pulse', bg: 'bg-rose-500/10 border-rose-500/20 text-rose-400' },
+];
+
+const SOURCE_TYPE_OPTIONS = [
+  { value: 'rss', label: 'RSS', icon: Rss, color: 'text-orange-400' },
+  { value: 'website', label: 'Website', icon: Globe, color: 'text-blue-400' },
+  { value: 'facebook_page', label: 'Facebook Page', icon: Facebook, color: 'text-blue-500' },
+  { value: 'facebook_group', label: 'Facebook Group', icon: Facebook, color: 'text-blue-400' },
+  { value: 'youtube_channel', label: 'YouTube Channel', icon: Youtube, color: 'text-red-400' },
+  { value: 'news', label: 'Tin tức', icon: FileText, color: 'text-gray-400' },
+  { value: 'forum', label: 'Forum', icon: Globe, color: 'text-purple-400' },
+];
+
+const SORT_OPTIONS = [
+  { value: 'newest', label: 'Mới nhất' },
+  { value: 'oldest', label: 'Cũ nhất' },
+  { value: 'risk_high', label: 'Risk cao → thấp' },
+  { value: 'risk_low', label: 'Risk thấp → cao' },
+];
+
+const RISK_PRESETS = [
+  { value: null, label: 'Tất cả' },
+  { value: 40, label: '≥ 40' },
+  { value: 60, label: '≥ 60' },
+  { value: 80, label: '≥ 80' },
+];
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   HELPER COMPONENTS
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+function SourceIcon({ type, className }: { type: string; className?: string }) {
+  const baseClass = className || 'w-4 h-4';
+  switch (type?.toLowerCase()) {
+    case 'facebook_page':
+    case 'facebook_group':
+    case 'facebook_profile':
+      return <Facebook className={baseClass} />;
+    case 'youtube_channel':
+    case 'youtube_video':
+      return <Youtube className={baseClass} />;
+    case 'rss':
+      return <Rss className={baseClass} />;
+    case 'news':
+      return <FileText className={baseClass} />;
+    default:
+      return <Globe className={baseClass} />;
+  }
+}
+
+function SentimentDot({ sentiment }: { sentiment: string | null }) {
+  const opt = SENTIMENT_OPTIONS.find((s) => s.value === sentiment);
+  if (!opt) return <span className="w-2 h-2 rounded-full bg-gray-600 inline-block" />;
+  return <span className={`w-2 h-2 rounded-full ${opt.dot} inline-block`} />;
+}
+
+function formatRelativeTime(dateStr: string | null) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  const now = new Date();
+  const diffMs = now.getTime() - d.getTime();
+  const diffMin = Math.floor(diffMs / 60000);
+  if (diffMin < 1) return 'Vừa xong';
+  if (diffMin < 60) return `${diffMin} phút trước`;
+  const diffHours = Math.floor(diffMin / 60);
+  if (diffHours < 24) return `${diffHours} giờ trước`;
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffDays < 7) return `${diffDays} ngày trước`;
+  return d.toLocaleDateString('vi-VN');
+}
+
+function highlightKeywords(text: string, keywords: any[] | null) {
+  if (!keywords || keywords.length === 0 || !text) return text;
+  const kwStrings = keywords
+    .map((k: any) => (typeof k === 'string' ? k : k.keyword))
+    .filter(Boolean);
+  if (kwStrings.length === 0) return text;
+  const escaped = kwStrings.map((s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  const regex = new RegExp(`(${escaped.join('|')})`, 'gi');
+  const parts = text.split(regex);
+  return parts.map((part, i) =>
+    regex.test(part) ? (
+      <mark key={i} className="bg-indigo-500/20 text-indigo-300 rounded px-0.5">{part}</mark>
+    ) : (
+      <span key={i}>{part}</span>
+    )
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MAIN COMPONENT
+   ═══════════════════════════════════════════════════════════════════════════ */
 
 export default function MentionsPage() {
-  const [mentions, setMentions] = useState<any[]>([]);
+  // Data
+  const [mentionsList, setMentionsList] = useState<MentionItem[]>([]);
   const [totalMentions, setTotalMentions] = useState<number>(-1);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [sentimentSummary, setSentimentSummary] = useState<any>(null);
+  const [trendData, setTrendData] = useState<any[]>([]);
+
+  // UI state
+  const [loading, setLoading] = useState(true);
+  const [loadingChart, setLoadingChart] = useState(true);
+  const [page, setPage] = useState(1);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [searchInput, setSearchInput] = useState('');
+  const [filters, setFilters] = useState<Filters>({
+    sentiment: null,
+    source_type: null,
+    min_risk_score: null,
+    sort_by: 'newest',
+  });
+  const [filterPanelOpen, setFilterPanelOpen] = useState(false);
+  const [sortOpen, setSortOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; mentionId: number | null; mentionTitle: string }>({
     isOpen: false,
     mentionId: null,
-    mentionTitle: ''
+    mentionTitle: '',
   });
+  const [actionLoading, setActionLoading] = useState<Record<string, boolean>>({});
 
+  const searchTimeout = useRef<NodeJS.Timeout | null>(null);
+  const sortRef = useRef<HTMLDivElement>(null);
+
+  // Close sort dropdown on outside click
   useEffect(() => {
-    fetchMentions();
-  }, [page, searchTerm]);
+    function handleClick(e: MouseEvent) {
+      if (sortRef.current && !sortRef.current.contains(e.target as Node)) {
+        setSortOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
 
-  const fetchMentions = async () => {
+  /* ─── DATA FETCHING ─────────────────────────────────────────────────── */
+
+  const fetchMentions = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await mentionsApi.list({
+      const params: any = {
         page,
         page_size: 20,
-        search_query: searchTerm || undefined
-      });
-      setMentions(data.items);
+        sort_by: filters.sort_by,
+      };
+      if (searchTerm) params.search_query = searchTerm;
+      if (filters.sentiment) params.sentiment = filters.sentiment;
+      if (filters.source_type) params.source_type = filters.source_type;
+      if (filters.min_risk_score !== null) params.min_risk_score = filters.min_risk_score;
+
+      const data = await mentionsApi.list(params);
+      setMentionsList(data.items);
       setTotalMentions(data.total);
       setTotalPages(data.total_pages);
     } catch (error: any) {
@@ -41,184 +220,720 @@ export default function MentionsPage() {
     } finally {
       setLoading(false);
     }
+  }, [page, searchTerm, filters]);
+
+  const fetchChartData = useCallback(async () => {
+    try {
+      setLoadingChart(true);
+      const [sentRes, trendRes] = await Promise.all([
+        dashboard.sentimentSummary('7d'),
+        dashboard.trends('7d'),
+      ]);
+      setSentimentSummary(sentRes);
+      setTrendData(trendRes.items || []);
+    } catch {
+      // Silently fail — charts are secondary
+    } finally {
+      setLoadingChart(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchMentions();
+  }, [fetchMentions]);
+
+  useEffect(() => {
+    fetchChartData();
+  }, [fetchChartData]);
+
+  /* ─── SEARCH DEBOUNCE ───────────────────────────────────────────────── */
+
+  const handleSearchChange = (val: string) => {
+    setSearchInput(val);
+    if (searchTimeout.current) clearTimeout(searchTimeout.current);
+    searchTimeout.current = setTimeout(() => {
+      setSearchTerm(val);
+      setPage(1);
+    }, 400);
   };
+
+  /* ─── FILTER ACTIONS ────────────────────────────────────────────────── */
+
+  const updateFilter = (key: keyof Filters, value: any) => {
+    setFilters((prev) => ({ ...prev, [key]: value }));
+    setPage(1);
+  };
+
+  const clearAllFilters = () => {
+    setFilters({ sentiment: null, source_type: null, min_risk_score: null, sort_by: 'newest' });
+    setSearchTerm('');
+    setSearchInput('');
+    setPage(1);
+  };
+
+  const hasActiveFilters = filters.sentiment || filters.source_type || filters.min_risk_score !== null || searchTerm;
+
+  const activeFilterCount = [filters.sentiment, filters.source_type, filters.min_risk_score, searchTerm].filter(Boolean).length;
+
+  /* ─── MENTION ACTIONS ───────────────────────────────────────────────── */
 
   const handleDelete = async () => {
     if (!deleteConfirm.mentionId) return;
-    
     try {
       await mentionsApi.delete(deleteConfirm.mentionId);
       toast.success('Xóa mention thành công!');
       fetchMentions();
     } catch (error: any) {
-      console.error('Error deleting mention:', error);
       toast.error('Lỗi khi xóa mention');
     }
   };
 
-  const getSentimentColor = (sentiment: string) => {
-    if (sentiment === 'positive') return 'bg-green-100 text-green-800';
-    if (sentiment === 'neutral') return 'bg-gray-100 text-gray-800';
-    if (sentiment === 'negative_low') return 'bg-yellow-100 text-yellow-800';
-    if (sentiment === 'negative_medium') return 'bg-orange-100 text-orange-800';
-    if (sentiment === 'negative_high') return 'bg-red-100 text-red-800';
-    return 'bg-gray-100 text-gray-800';
+  const handleAction = async (mentionId: number, action: string, apiCall: () => Promise<any>, successMsg: string) => {
+    setActionLoading((prev) => ({ ...prev, [`${mentionId}_${action}`]: true }));
+    try {
+      await apiCall();
+      toast.success(successMsg);
+      fetchMentions();
+    } catch (error: any) {
+      toast.error(error?.response?.data?.detail || 'Có lỗi xảy ra');
+    } finally {
+      setActionLoading((prev) => ({ ...prev, [`${mentionId}_${action}`]: false }));
+    }
   };
 
-  const getRiskColor = (score: number) => {
-    if (score >= 80) return 'text-red-600';
-    if (score >= 60) return 'text-orange-600';
-    if (score >= 40) return 'text-yellow-600';
-    return 'text-green-600';
-  };
+  /* ─── SENTIMENT SUMMARY STATS ───────────────────────────────────────── */
 
-  if (loading && mentions.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-lg text-gray-400 font-medium tracking-wide">Đang tải...</div>
-      </div>
-    );
-  }
+  const summaryStats = sentimentSummary
+    ? [
+        { label: 'Tổng mentions', value: sentimentSummary.total || 0, icon: BarChart3, color: 'text-indigo-400', bg: 'bg-indigo-500/10' },
+        { label: 'Tích cực', value: sentimentSummary.positive || 0, icon: TrendingUp, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
+        { label: 'Tiêu cực', value: sentimentSummary.negative || 0, icon: TrendingDown, color: 'text-rose-400', bg: 'bg-rose-500/10' },
+        { label: 'Trung lập', value: sentimentSummary.neutral || 0, icon: Minus, color: 'text-gray-400', bg: 'bg-gray-500/10' },
+      ]
+    : [];
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     RENDER
+     ═══════════════════════════════════════════════════════════════════════ */
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-0 -mt-2">
       <Toaster position="top-right" />
-      
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+
+      {/* ─── PAGE HEADER ─────────────────────────────────────────────────── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
         <div>
-          <h1 className="text-2xl font-bold text-white tracking-wide">Mentions</h1>
-          <p className="text-sm text-gray-400 mt-1">
-            Danh sách các mentions đã thu thập
+          <h1 className="text-2xl font-bold text-white tracking-wide flex items-center gap-2.5">
+            <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg shadow-indigo-500/20">
+              <FileText className="w-4 h-4 text-white" />
+            </div>
+            Mentions
+          </h1>
+          <p className="text-sm text-gray-500 mt-1.5 ml-[42px]">
+            {totalMentions >= 0 ? `${totalMentions.toLocaleString()} kết quả` : 'Đang tải...'}
+            {hasActiveFilters && ' (đã lọc)'}
           </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => { fetchMentions(); fetchChartData(); }}
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-300 bg-[#1E293B] border border-gray-700 rounded-xl hover:bg-gray-800 hover:text-white transition-all"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            Làm mới
+          </button>
         </div>
       </div>
 
-      {/* Search */}
-      <div className="relative mb-6">
+      {/* ─── SEARCH BAR ──────────────────────────────────────────────────── */}
+      <div className="relative mb-5">
         <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
         <input
+          id="mentions-search"
           type="text"
-          placeholder="Tìm kiếm mentions..."
-          value={searchTerm}
-          onChange={(e) => {
-            setSearchTerm(e.target.value);
-            setPage(1);
-          }}
-          className="w-full pl-11 pr-4 py-3 bg-[#111827] border border-gray-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500 shadow-sm transition-shadow"
+          placeholder="Tìm kiếm mentions theo tiêu đề, nội dung..."
+          value={searchInput}
+          onChange={(e) => handleSearchChange(e.target.value)}
+          className="w-full pl-12 pr-12 py-3.5 bg-[#111827] border border-gray-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 text-white placeholder-gray-500 shadow-sm transition-all text-sm"
         />
-      </div>
-
-      {/* Mentions List */}
-      <div className="bg-[#111827] border border-gray-800 rounded-xl shadow-sm overflow-hidden">
-        {totalMentions === 0 && !loading ? (
-          <div className="p-10 text-center text-gray-400 font-medium tracking-wide">
-            <div className="w-16 h-16 rounded-xl bg-[#1E293B] flex items-center justify-center mx-auto mb-4 border border-gray-800 shadow-sm">
-              <FileText className="w-8 h-8 text-gray-500" />
-            </div>
-            Chưa có mention nào. Hãy thực hiện scan để thu thập dữ liệu!
-          </div>
-        ) : mentions.length === 0 && !loading ? (
-          <div className="p-10 text-center text-gray-400 font-medium tracking-wide">
-            <div className="w-16 h-16 rounded-xl bg-[#1E293B] flex items-center justify-center mx-auto mb-4 border border-gray-800 shadow-sm">
-              <Search className="w-8 h-8 text-gray-500" />
-            </div>
-            Không tìm thấy mentions nào phù hợp với bộ lọc.
-          </div>
-        ) : (
-          <div className="divide-y divide-gray-800">
-            {mentions.map((mention) => (
-              <div key={mention.id} className="p-6 hover:bg-[#1E293B]/50 transition-colors duration-200">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1 min-w-0 pr-4">
-                    <h3 className="font-semibold text-white truncate" title={mention.title}>{mention.title || 'No title'}</h3>
-                    <p className="text-sm text-gray-400 mt-2 line-clamp-2 leading-relaxed">{mention.content}</p>
-                    
-                    <div className="flex flex-wrap items-center gap-3 mt-4">
-                      {mention.ai_analysis ? (
-                        <>
-                          <span className={`px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase rounded-md border ${
-                            mention.ai_analysis.sentiment === 'positive' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
-                            mention.ai_analysis.sentiment === 'negative_low' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
-                            mention.ai_analysis.sentiment === 'negative_medium' ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' :
-                            mention.ai_analysis.sentiment === 'negative_high' ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' :
-                            'bg-gray-800 text-gray-400 border-gray-700'
-                          }`}>
-                            {mention.ai_analysis.sentiment}
-                          </span>
-                          <span className={`text-[11px] font-semibold tracking-wider uppercase ${
-                            mention.ai_analysis.risk_score >= 80 ? 'text-rose-500' :
-                            mention.ai_analysis.risk_score >= 60 ? 'text-orange-500' :
-                            mention.ai_analysis.risk_score >= 40 ? 'text-amber-500' :
-                            'text-emerald-500'
-                          }`}>
-                            Risk: {mention.ai_analysis.risk_score}
-                          </span>
-                          <span className="text-[11px] font-medium text-gray-500 uppercase tracking-wider">
-                            Crisis: {mention.ai_analysis.crisis_level}/5
-                          </span>
-                          {(mention.ai_analysis.ai_provider === 'dummy' || mention.ai_analysis.ai_provider === 'dummy_ai') && (
-                            <span className="px-1.5 py-0.5 text-[9px] font-bold tracking-wider uppercase text-orange-400 bg-orange-500/10 rounded border border-orange-500/20">
-                              AI: DUMMY
-                            </span>
-                          )}
-                          {mention.ai_analysis.ai_provider && mention.ai_analysis.ai_provider !== 'dummy' && mention.ai_analysis.ai_provider !== 'dummy_ai' && (
-                            <span className="px-1.5 py-0.5 text-[9px] font-bold tracking-wider uppercase text-indigo-400 bg-indigo-500/10 rounded border border-indigo-500/20">
-                              AI: {mention.ai_analysis.ai_provider}
-                            </span>
-                          )}
-                        </>
-                      ) : (
-                        <span className="px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase text-gray-500 bg-gray-800 rounded border border-gray-700">
-                          PENDING
-                        </span>
-                      )}
-                      
-                      {mention.matched_keywords && mention.matched_keywords.length > 0 && (
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-[11px] font-medium text-gray-600 uppercase tracking-wider">Từ khóa:</span>
-                          <span className="px-1.5 py-0.5 bg-indigo-500/10 text-indigo-400 text-[10px] font-bold tracking-wider uppercase rounded border border-indigo-500/20 truncate max-w-[150px]">
-                            {mention.matched_keywords.map((k: any) => typeof k === 'string' ? k : k.keyword).join(', ')}
-                          </span>
-                        </div>
-                      )}
-                      
-                      {mention.url && (
-                        <a href={mention.url} target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-indigo-400 hover:text-indigo-300 hover:underline transition-colors flex items-center">
-                          Link Gốc
-                        </a>
-                      )}
-                      
-                      <span className="text-[11px] text-gray-500 font-medium">
-                        {new Date(mention.collected_at).toLocaleString('vi-VN')}
-                      </span>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center space-x-1 ml-2 flex-shrink-0">
-                    <Link
-                      href={`/dashboard/mentions/${mention.id}`}
-                      className="p-2 text-gray-400 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg transition-colors border border-transparent hover:border-indigo-500/20"
-                      title="Xem chi tiết"
-                    >
-                      <Eye className="w-4 h-4 sm:w-5 sm:h-5" />
-                    </Link>
-                    <button
-                      onClick={() => setDeleteConfirm({ isOpen: true, mentionId: mention.id, mentionTitle: mention.title || 'No title' })}
-                      className="p-2 text-gray-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors border border-transparent hover:border-rose-500/20"
-                      title="Xóa"
-                    >
-                      <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+        {searchInput && (
+          <button
+            onClick={() => { setSearchInput(''); setSearchTerm(''); setPage(1); }}
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
         )}
       </div>
 
-      {/* Delete Confirm Dialog */}
+      {/* ─── ACTIVE FILTER CHIPS ─────────────────────────────────────────── */}
+      {hasActiveFilters && (
+        <div className="flex flex-wrap items-center gap-2 mb-5 animate-fadeIn">
+          <span className="text-xs text-gray-500 font-medium uppercase tracking-wider mr-1">Bộ lọc:</span>
+          {filters.sentiment && (
+            <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border ${SENTIMENT_OPTIONS.find((s) => s.value === filters.sentiment)?.bg || 'bg-gray-800 text-gray-400 border-gray-700'}`}>
+              <SentimentDot sentiment={filters.sentiment} />
+              {SENTIMENT_OPTIONS.find((s) => s.value === filters.sentiment)?.label}
+              <button onClick={() => updateFilter('sentiment', null)} className="ml-1 hover:text-white transition-colors">
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          )}
+          {filters.source_type && (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border bg-blue-500/10 text-blue-400 border-blue-500/20">
+              <SourceIcon type={filters.source_type} className="w-3.5 h-3.5" />
+              {SOURCE_TYPE_OPTIONS.find((s) => s.value === filters.source_type)?.label || filters.source_type}
+              <button onClick={() => updateFilter('source_type', null)} className="ml-1 hover:text-white transition-colors">
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          )}
+          {filters.min_risk_score !== null && (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border bg-orange-500/10 text-orange-400 border-orange-500/20">
+              Risk ≥ {filters.min_risk_score}
+              <button onClick={() => updateFilter('min_risk_score', null)} className="ml-1 hover:text-white transition-colors">
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          )}
+          {searchTerm && (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border bg-purple-500/10 text-purple-400 border-purple-500/20">
+              "{searchTerm}"
+              <button onClick={() => { setSearchTerm(''); setSearchInput(''); setPage(1); }} className="ml-1 hover:text-white transition-colors">
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          )}
+          <button
+            onClick={clearAllFilters}
+            className="text-xs text-gray-500 hover:text-white transition-colors underline underline-offset-2 ml-2"
+          >
+            Xóa tất cả
+          </button>
+        </div>
+      )}
+
+      {/* ─── SUMMARY STATS ───────────────────────────────────────────────── */}
+      {summaryStats.length > 0 && (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+          {summaryStats.map((stat) => (
+            <div
+              key={stat.label}
+              className="bg-[#111827] border border-gray-800 rounded-xl p-4 flex items-center gap-3 hover:border-gray-700 transition-colors group"
+            >
+              <div className={`w-10 h-10 ${stat.bg} rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform`}>
+                <stat.icon className={`w-5 h-5 ${stat.color}`} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xl font-bold text-white tabular-nums">{stat.value.toLocaleString()}</p>
+                <p className="text-[11px] text-gray-500 font-medium uppercase tracking-wider truncate">{stat.label}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ─── CHART + MINI TREND ──────────────────────────────────────────── */}
+      {trendData.length > 0 && (
+        <div className="bg-[#111827] border border-gray-800 rounded-xl p-4 mb-5">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold text-gray-300 flex items-center gap-2">
+              <BarChart3 className="w-4 h-4 text-indigo-400" />
+              Xu hướng 7 ngày
+            </h3>
+          </div>
+          <div className="h-36">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={trendData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1E293B" />
+                <XAxis
+                  dataKey="date"
+                  tick={{ fill: '#64748B', fontSize: 10 }}
+                  tickLine={false}
+                  axisLine={false}
+                  tickFormatter={(v) => {
+                    if (typeof v === 'string' && v.includes('-')) {
+                      const parts = v.split('-');
+                      if (parts.length === 3) return `${parts[2]}/${parts[1]}`;
+                    }
+                    return v;
+                  }}
+                />
+                <YAxis tick={{ fill: '#64748B', fontSize: 10 }} tickLine={false} axisLine={false} />
+                <Tooltip
+                  contentStyle={{
+                    borderRadius: '12px',
+                    border: '1px solid #374151',
+                    backgroundColor: '#1E293B',
+                    color: '#F3F4F6',
+                    fontSize: '12px',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
+                  }}
+                />
+                <Bar dataKey="total_mentions" name="Mentions" radius={[4, 4, 0, 0]}>
+                  {trendData.map((_, i) => (
+                    <Cell key={i} fill={i === trendData.length - 1 ? '#818CF8' : '#4F46E5'} />
+                  ))}
+                </Bar>
+                <Bar dataKey="negative_mentions" name="Tiêu cực" fill="#F43F5E" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
+
+      {/* ─── MAIN CONTENT: FILTERS + FEED ────────────────────────────────── */}
+      <div className="flex gap-5">
+
+        {/* ──── LEFT FILTER PANEL (Desktop) ────────────────────────────────── */}
+        <aside className="hidden lg:block w-[260px] flex-shrink-0">
+          <div className="bg-[#111827] border border-gray-800 rounded-xl p-4 sticky top-24 space-y-5">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                <SlidersHorizontal className="w-4 h-4 text-indigo-400" />
+                Bộ lọc
+              </h3>
+              {hasActiveFilters && (
+                <button onClick={clearAllFilters} className="text-[10px] text-indigo-400 hover:text-indigo-300 font-medium uppercase tracking-wider transition-colors">
+                  Reset
+                </button>
+              )}
+            </div>
+
+            {/* Sentiment */}
+            <div>
+              <h4 className="text-[11px] text-gray-500 font-semibold uppercase tracking-wider mb-2.5">Cảm xúc</h4>
+              <div className="space-y-1">
+                {SENTIMENT_OPTIONS.map((s) => (
+                  <button
+                    key={s.value}
+                    onClick={() => updateFilter('sentiment', filters.sentiment === s.value ? null : s.value)}
+                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+                      filters.sentiment === s.value
+                        ? 'bg-indigo-500/15 text-white border border-indigo-500/30'
+                        : 'text-gray-400 hover:text-gray-200 hover:bg-[#1E293B] border border-transparent'
+                    }`}
+                  >
+                    <span className={`w-2 h-2 rounded-full flex-shrink-0 ${s.dot}`} />
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Platform */}
+            <div>
+              <h4 className="text-[11px] text-gray-500 font-semibold uppercase tracking-wider mb-2.5">Nền tảng</h4>
+              <div className="space-y-1">
+                {SOURCE_TYPE_OPTIONS.map((st) => (
+                  <button
+                    key={st.value}
+                    onClick={() => updateFilter('source_type', filters.source_type === st.value ? null : st.value)}
+                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+                      filters.source_type === st.value
+                        ? 'bg-indigo-500/15 text-white border border-indigo-500/30'
+                        : 'text-gray-400 hover:text-gray-200 hover:bg-[#1E293B] border border-transparent'
+                    }`}
+                  >
+                    <st.icon className={`w-3.5 h-3.5 flex-shrink-0 ${st.color}`} />
+                    {st.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Risk Score */}
+            <div>
+              <h4 className="text-[11px] text-gray-500 font-semibold uppercase tracking-wider mb-2.5">Risk Score</h4>
+              <div className="grid grid-cols-2 gap-1.5">
+                {RISK_PRESETS.map((r) => (
+                  <button
+                    key={r.label}
+                    onClick={() => updateFilter('min_risk_score', filters.min_risk_score === r.value ? null : r.value)}
+                    className={`px-3 py-2 rounded-lg text-xs font-medium transition-all text-center ${
+                      filters.min_risk_score === r.value
+                        ? 'bg-indigo-500/15 text-white border border-indigo-500/30'
+                        : 'text-gray-400 hover:text-gray-200 hover:bg-[#1E293B] border border-gray-800'
+                    }`}
+                  >
+                    {r.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </aside>
+
+        {/* ──── MOBILE FILTER BUTTON ───────────────────────────────────────── */}
+        <button
+          onClick={() => setFilterPanelOpen(!filterPanelOpen)}
+          className="lg:hidden fixed bottom-6 right-6 z-30 w-14 h-14 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-full shadow-xl shadow-indigo-500/30 flex items-center justify-center text-white hover:scale-105 transition-transform"
+        >
+          <Filter className="w-5 h-5" />
+          {activeFilterCount > 0 && (
+            <span className="absolute -top-1 -right-1 w-5 h-5 bg-rose-500 rounded-full text-[10px] font-bold flex items-center justify-center">
+              {activeFilterCount}
+            </span>
+          )}
+        </button>
+
+        {/* ──── MOBILE FILTER PANEL ────────────────────────────────────────── */}
+        {filterPanelOpen && (
+          <>
+            <div className="lg:hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" onClick={() => setFilterPanelOpen(false)} />
+            <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#111827] border-t border-gray-800 rounded-t-2xl p-5 max-h-[70vh] overflow-y-auto animate-fadeIn">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                  <SlidersHorizontal className="w-4 h-4 text-indigo-400" />
+                  Bộ lọc
+                </h3>
+                <button onClick={() => setFilterPanelOpen(false)} className="p-1 text-gray-400 hover:text-white"><X className="w-5 h-5" /></button>
+              </div>
+
+              {/* Sentiment */}
+              <h4 className="text-[11px] text-gray-500 font-semibold uppercase tracking-wider mb-2">Cảm xúc</h4>
+              <div className="flex flex-wrap gap-1.5 mb-4">
+                {SENTIMENT_OPTIONS.map((s) => (
+                  <button
+                    key={s.value}
+                    onClick={() => updateFilter('sentiment', filters.sentiment === s.value ? null : s.value)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
+                      filters.sentiment === s.value
+                        ? 'bg-indigo-500/15 text-white border-indigo-500/30'
+                        : 'text-gray-400 border-gray-800 hover:border-gray-700'
+                    }`}
+                  >
+                    <span className={`w-2 h-2 rounded-full ${s.dot}`} /> {s.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Platform */}
+              <h4 className="text-[11px] text-gray-500 font-semibold uppercase tracking-wider mb-2">Nền tảng</h4>
+              <div className="flex flex-wrap gap-1.5 mb-4">
+                {SOURCE_TYPE_OPTIONS.map((st) => (
+                  <button
+                    key={st.value}
+                    onClick={() => updateFilter('source_type', filters.source_type === st.value ? null : st.value)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
+                      filters.source_type === st.value
+                        ? 'bg-indigo-500/15 text-white border-indigo-500/30'
+                        : 'text-gray-400 border-gray-800 hover:border-gray-700'
+                    }`}
+                  >
+                    <st.icon className={`w-3.5 h-3.5 ${st.color}`} /> {st.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Risk */}
+              <h4 className="text-[11px] text-gray-500 font-semibold uppercase tracking-wider mb-2">Risk Score</h4>
+              <div className="flex flex-wrap gap-1.5 mb-4">
+                {RISK_PRESETS.map((r) => (
+                  <button
+                    key={r.label}
+                    onClick={() => updateFilter('min_risk_score', filters.min_risk_score === r.value ? null : r.value)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
+                      filters.min_risk_score === r.value
+                        ? 'bg-indigo-500/15 text-white border-indigo-500/30'
+                        : 'text-gray-400 border-gray-800 hover:border-gray-700'
+                    }`}
+                  >
+                    {r.label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex gap-2 pt-3 border-t border-gray-800">
+                <button onClick={clearAllFilters} className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-300 bg-[#1E293B] border border-gray-700 rounded-xl hover:bg-gray-800 transition-colors">
+                  Reset
+                </button>
+                <button onClick={() => setFilterPanelOpen(false)} className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-indigo-600 rounded-xl hover:bg-indigo-500 transition-colors">
+                  Áp dụng
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* ──── MAIN RESULTS FEED ──────────────────────────────────────────── */}
+        <div className="flex-1 min-w-0">
+          {/* Sort bar */}
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-xs text-gray-500 font-medium">
+              {loading ? (
+                <span className="inline-flex items-center gap-1.5"><Loader2 className="w-3 h-3 animate-spin" /> Đang tải...</span>
+              ) : (
+                <>Hiển thị {mentionsList.length} / {totalMentions.toLocaleString()} mentions</>
+              )}
+            </p>
+            <div className="relative" ref={sortRef}>
+              <button
+                onClick={() => setSortOpen(!sortOpen)}
+                className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-gray-400 bg-[#111827] border border-gray-800 rounded-lg hover:text-white hover:border-gray-700 transition-all"
+              >
+                <ArrowUpDown className="w-3.5 h-3.5" />
+                {SORT_OPTIONS.find((s) => s.value === filters.sort_by)?.label}
+                <ChevronDown className={`w-3 h-3 transition-transform ${sortOpen ? 'rotate-180' : ''}`} />
+              </button>
+              {sortOpen && (
+                <div className="absolute right-0 top-full mt-1 w-44 bg-[#1E293B] border border-gray-700 rounded-xl shadow-2xl z-20 py-1 animate-fadeIn">
+                  {SORT_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => { updateFilter('sort_by', opt.value); setSortOpen(false); }}
+                      className={`w-full text-left px-4 py-2 text-xs font-medium transition-colors ${
+                        filters.sort_by === opt.value
+                          ? 'text-indigo-400 bg-indigo-500/10'
+                          : 'text-gray-300 hover:bg-[#111827]'
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* ── RESULTS LIST ─────────────────────────────────────────────── */}
+          {loading && mentionsList.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-64 gap-3">
+              <Loader2 className="w-8 h-8 text-indigo-400 animate-spin" />
+              <p className="text-sm text-gray-500 font-medium">Đang tải dữ liệu...</p>
+            </div>
+          ) : totalMentions === 0 && !loading ? (
+            <div className="bg-[#111827] border border-gray-800 rounded-xl p-10 text-center">
+              <div className="w-16 h-16 rounded-xl bg-[#1E293B] flex items-center justify-center mx-auto mb-4 border border-gray-800">
+                {hasActiveFilters ? <Search className="w-8 h-8 text-gray-600" /> : <FileText className="w-8 h-8 text-gray-600" />}
+              </div>
+              <p className="text-gray-400 font-medium mb-1">
+                {hasActiveFilters ? 'Không tìm thấy mentions nào' : 'Chưa có mention nào'}
+              </p>
+              <p className="text-xs text-gray-600">
+                {hasActiveFilters
+                  ? 'Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm.'
+                  : 'Hãy thực hiện scan để thu thập dữ liệu!'}
+              </p>
+              {hasActiveFilters && (
+                <button onClick={clearAllFilters} className="mt-4 text-xs text-indigo-400 hover:text-indigo-300 underline underline-offset-2 font-medium transition-colors">
+                  Xóa tất cả bộ lọc
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {mentionsList.map((mention, idx) => {
+                const analysis = mention.ai_analysis;
+                const sentimentOpt = analysis ? SENTIMENT_OPTIONS.find((s) => s.value === analysis.sentiment) : null;
+                const riskScore = analysis?.risk_score;
+                const isDummy = analysis?.ai_provider === 'dummy' || analysis?.ai_provider === 'dummy_ai';
+
+                return (
+                  <div
+                    key={mention.id}
+                    className={`bg-[#111827] border rounded-xl overflow-hidden transition-all duration-200 hover:border-gray-700 group ${
+                      mention.is_reviewed ? 'border-gray-800/60 opacity-80' : 'border-gray-800'
+                    }`}
+                    style={{ animationDelay: `${idx * 30}ms` }}
+                  >
+                    <div className="p-5">
+                      {/* ── Top Row: Source Info + Badges ───────────────────── */}
+                      <div className="flex items-start justify-between gap-3 mb-3">
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          <div className="w-9 h-9 bg-[#0B1220] border border-gray-800 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:border-gray-700 transition-colors">
+                            <SourceIcon type={mention.source_type} className="w-4 h-4 text-indigo-400" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-semibold text-indigo-400 tracking-wide truncate">{mention.source_name}</span>
+                              <span className="text-gray-700">·</span>
+                              <span className="text-[11px] text-gray-500 flex-shrink-0">{formatRelativeTime(mention.collected_at)}</span>
+                              {mention.author && (
+                                <>
+                                  <span className="text-gray-700">·</span>
+                                  <span className="text-[11px] text-gray-500 truncate">{mention.author}</span>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Right badges */}
+                        <div className="flex items-center gap-1.5 flex-shrink-0">
+                          {isDummy && (
+                            <span className="px-2 py-0.5 text-[9px] font-bold tracking-wider text-amber-400 bg-amber-500/10 rounded-md border border-amber-500/20">
+                              DUMMY
+                            </span>
+                          )}
+                          {analysis?.ai_provider && !isDummy && (
+                            <span className="px-2 py-0.5 text-[9px] font-bold tracking-wider text-indigo-400 bg-indigo-500/10 rounded-md border border-indigo-500/20">
+                              {analysis.ai_provider.toUpperCase()}
+                            </span>
+                          )}
+                          {sentimentOpt && (
+                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold tracking-wider rounded-md border ${sentimentOpt.bg}`}>
+                              <span className={`w-1.5 h-1.5 rounded-full ${sentimentOpt.dot}`} />
+                              {sentimentOpt.label}
+                            </span>
+                          )}
+                          {!analysis && (
+                            <span className="px-2 py-0.5 text-[10px] font-bold tracking-wider text-gray-500 bg-gray-800 rounded-md border border-gray-700">
+                              PENDING
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* ── Title ───────────────────────────────────────────── */}
+                      <h3 className="font-semibold text-white text-[15px] leading-snug mb-2 line-clamp-2">
+                        {mention.title
+                          ? highlightKeywords(mention.title, mention.matched_keywords)
+                          : <span className="text-gray-500 italic">Không có tiêu đề</span>
+                        }
+                      </h3>
+
+                      {/* ── Content Preview ─────────────────────────────────── */}
+                      <p className="text-sm text-gray-400 leading-relaxed line-clamp-2 mb-3">
+                        {mention.content
+                          ? highlightKeywords(mention.content.substring(0, 300), mention.matched_keywords)
+                          : ''
+                        }
+                      </p>
+
+                      {/* ── Meta Row: Risk, Crisis, Keywords ────────────────── */}
+                      <div className="flex flex-wrap items-center gap-2 mb-3">
+                        {riskScore !== null && riskScore !== undefined && (
+                          <span className={`px-2 py-0.5 text-[10px] font-bold tracking-wider rounded-md border ${
+                            riskScore >= 80 ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' :
+                            riskScore >= 60 ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' :
+                            riskScore >= 40 ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
+                            'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                          }`}>
+                            RISK {riskScore}
+                          </span>
+                        )}
+                        {analysis?.crisis_level && (
+                          <span className="px-2 py-0.5 text-[10px] font-bold tracking-wider text-purple-400 bg-purple-500/10 rounded-md border border-purple-500/20">
+                            CRISIS L{analysis.crisis_level}
+                          </span>
+                        )}
+                        {mention.matched_keywords && mention.matched_keywords.length > 0 && (
+                          <span className="px-2 py-0.5 text-[10px] font-medium text-gray-400 bg-[#0B1220] rounded-md border border-gray-800">
+                            🔑 {mention.matched_keywords.map((k: any) => typeof k === 'string' ? k : k.keyword).join(', ')}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* ── Action Bar ──────────────────────────────────────── */}
+                      <div className="flex items-center justify-between pt-3 border-t border-gray-800/60">
+                        <div className="flex items-center gap-1.5">
+                          <Link
+                            href={`/dashboard/mentions/${mention.id}`}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium text-gray-400 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg transition-all border border-transparent hover:border-indigo-500/20"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                            Chi tiết
+                          </Link>
+                          {!mention.is_reviewed && (
+                            <button
+                              onClick={() => handleAction(mention.id, 'review', () => mentionsApi.markReviewed(mention.id), 'Đã đánh dấu xem')}
+                              disabled={!!actionLoading[`${mention.id}_review`]}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium text-gray-400 hover:text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-all border border-transparent hover:border-emerald-500/20 disabled:opacity-50"
+                            >
+                              {actionLoading[`${mention.id}_review`] ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
+                              Đã xem
+                            </button>
+                          )}
+                          {!analysis && (
+                            <button
+                              onClick={() => handleAction(mention.id, 'analyze', () => mentionsApi.analyze(mention.id), 'Phân tích xong!')}
+                              disabled={!!actionLoading[`${mention.id}_analyze`]}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium text-gray-400 hover:text-purple-400 hover:bg-purple-500/10 rounded-lg transition-all border border-transparent hover:border-purple-500/20 disabled:opacity-50"
+                            >
+                              {actionLoading[`${mention.id}_analyze`] ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <BrainCircuit className="w-3.5 h-3.5" />}
+                              Phân tích AI
+                            </button>
+                          )}
+                          {analysis && riskScore !== null && riskScore !== undefined && riskScore >= 50 && (
+                            <button
+                              onClick={() => handleAction(mention.id, 'alert', () => mentionsApi.createAlert(mention.id), 'Đã tạo cảnh báo!')}
+                              disabled={!!actionLoading[`${mention.id}_alert`]}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium text-gray-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-all border border-transparent hover:border-rose-500/20 disabled:opacity-50"
+                            >
+                              {actionLoading[`${mention.id}_alert`] ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <AlertTriangle className="w-3.5 h-3.5" />}
+                              Cảnh báo
+                            </button>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          {mention.url && (
+                            <a
+                              href={mention.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-medium text-gray-500 hover:text-blue-400 rounded-lg transition-colors"
+                            >
+                              <ExternalLink className="w-3 h-3" />
+                              Nguồn
+                            </a>
+                          )}
+                          <button
+                            onClick={() => setDeleteConfirm({ isOpen: true, mentionId: mention.id, mentionTitle: mention.title || 'Mention' })}
+                            className="p-1.5 text-gray-600 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-all"
+                            title="Xóa"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* ── PAGINATION ────────────────────────────────────────────────── */}
+          {totalPages > 1 && (
+            <div className="flex justify-center items-center gap-2 mt-6 mb-2">
+              <button
+                onClick={() => setPage(1)}
+                disabled={page === 1}
+                className="px-3 py-2 text-xs font-medium border border-gray-800 bg-[#111827] text-gray-400 rounded-lg hover:bg-[#1E293B] hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                ««
+              </button>
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="px-4 py-2 text-xs font-medium border border-gray-800 bg-[#111827] text-gray-400 rounded-lg hover:bg-[#1E293B] hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                Trước
+              </button>
+              <span className="px-4 py-2 text-xs font-medium text-gray-400 bg-[#111827] border border-gray-800 rounded-lg">
+                <span className="text-white">{page}</span> / <span className="text-white">{totalPages}</span>
+              </span>
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                className="px-4 py-2 text-xs font-medium border border-gray-800 bg-[#111827] text-gray-400 rounded-lg hover:bg-[#1E293B] hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                Sau
+              </button>
+              <button
+                onClick={() => setPage(totalPages)}
+                disabled={page === totalPages}
+                className="px-3 py-2 text-xs font-medium border border-gray-800 bg-[#111827] text-gray-400 rounded-lg hover:bg-[#1E293B] hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                »»
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ─── DELETE DIALOG ────────────────────────────────────────────────── */}
       <ConfirmDialog
         isOpen={deleteConfirm.isOpen}
         onClose={() => setDeleteConfirm({ isOpen: false, mentionId: null, mentionTitle: '' })}
@@ -229,29 +944,6 @@ export default function MentionsPage() {
         cancelText="Hủy"
         type="danger"
       />
-
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex justify-center items-center space-x-3">
-          <button
-            onClick={() => setPage(p => Math.max(1, p - 1))}
-            disabled={page === 1}
-            className="px-4 py-2 border border-gray-700 bg-[#1E293B] text-gray-300 rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm"
-          >
-            Trước
-          </button>
-          <span className="px-4 py-2 text-sm font-medium text-gray-400 bg-[#111827] border border-gray-800 rounded-lg">
-            Trang <span className="text-white mx-1">{page}</span> / <span className="text-white mx-1">{totalPages}</span>
-          </span>
-          <button
-            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-            disabled={page === totalPages}
-            className="px-4 py-2 border border-gray-700 bg-[#1E293B] text-gray-300 rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm"
-          >
-            Sau
-          </button>
-        </div>
-      )}
     </div>
   );
 }

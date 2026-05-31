@@ -53,9 +53,11 @@ def list_mentions(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     source_id: Optional[int] = None,
+    source_type: Optional[str] = None,
     sentiment: Optional[str] = None,
     min_risk_score: Optional[float] = Query(None, ge=0, le=100),
     search_query: Optional[str] = None,
+    sort_by: Optional[str] = Query("newest", pattern="^(newest|oldest|risk_high|risk_low)$"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
@@ -64,11 +66,18 @@ def list_mentions(
     logger = logging.getLogger(__name__)
     try:
         from sqlalchemy import or_
+        from app.models.source import Source
+
         query = select(Mention)
         has_ai_filter = sentiment or min_risk_score is not None
+        need_source_join = bool(source_type)
+        need_ai_join = has_ai_filter or sort_by in ("risk_high", "risk_low")
 
         if source_id:
             query = query.where(Mention.source_id == source_id)
+
+        if source_type:
+            query = query.join(Source, Source.id == Mention.source_id).where(Source.source_type == source_type)
 
         if search_query:
             search_pattern = f"%{search_query}%"
@@ -79,18 +88,23 @@ def list_mentions(
                 )
             )
 
-        if has_ai_filter:
-            query = query.join(AIAnalysis, AIAnalysis.mention_id == Mention.id)
+        if need_ai_join:
+            if has_ai_filter:
+                query = query.join(AIAnalysis, AIAnalysis.mention_id == Mention.id)
+            else:
+                query = query.outerjoin(AIAnalysis, AIAnalysis.mention_id == Mention.id)
             if sentiment:
                 query = query.where(AIAnalysis.sentiment == sentiment)
             if min_risk_score is not None:
                 query = query.where(AIAnalysis.risk_score >= min_risk_score)
 
         try:
-            # Count query without subquery to avoid PostgreSQL alias/syntax issues
+            # Count query
             count_query = select(func.count()).select_from(Mention)
             if source_id:
                 count_query = count_query.where(Mention.source_id == source_id)
+            if source_type:
+                count_query = count_query.join(Source, Source.id == Mention.source_id).where(Source.source_type == source_type)
             if search_query:
                 count_query = count_query.where(
                     or_(
@@ -99,7 +113,10 @@ def list_mentions(
                     )
                 )
             if has_ai_filter:
-                count_query = count_query.join(AIAnalysis, AIAnalysis.mention_id == Mention.id)
+                if not source_type:
+                    count_query = count_query.join(AIAnalysis, AIAnalysis.mention_id == Mention.id)
+                else:
+                    count_query = count_query.join(AIAnalysis, AIAnalysis.mention_id == Mention.id)
                 if sentiment:
                     count_query = count_query.where(AIAnalysis.sentiment == sentiment)
                 if min_risk_score is not None:
@@ -112,13 +129,36 @@ def list_mentions(
 
         from sqlalchemy import nullslast
         offset = (page - 1) * page_size
-        query = query.order_by(nullslast(Mention.collected_at.desc()), Mention.id.desc()).offset(offset).limit(page_size)
+
+        # Sorting
+        if sort_by == "oldest":
+            query = query.order_by(Mention.collected_at.asc(), Mention.id.asc())
+        elif sort_by == "risk_high":
+            query = query.order_by(nullslast(AIAnalysis.risk_score.desc()), Mention.id.desc())
+        elif sort_by == "risk_low":
+            query = query.order_by(nullslast(AIAnalysis.risk_score.asc()), Mention.id.asc())
+        else:
+            query = query.order_by(nullslast(Mention.collected_at.desc()), Mention.id.desc())
+
+        query = query.offset(offset).limit(page_size)
 
         try:
             mentions = db.execute(query).scalars().all()
         except Exception as e:
             logger.error(f"Error querying mentions page: {e}")
             raise HTTPException(status_code=500, detail=f"Lỗi khi truy vấn dữ liệu mentions: {str(e)}")
+
+        # Pre-load sources for this batch
+        source_ids = list(set(m.source_id for m in mentions if m.source_id))
+        sources_map = {}
+        if source_ids:
+            try:
+                source_rows = db.execute(
+                    select(Source).where(Source.id.in_(source_ids))
+                ).scalars().all()
+                sources_map = {s.id: s for s in source_rows}
+            except Exception:
+                pass
 
         result_items = []
         for m in mentions:
@@ -129,15 +169,20 @@ def list_mentions(
             except Exception:
                 analysis = None
 
+            src = sources_map.get(m.source_id)
+
             result_items.append({
                 "id": m.id,
                 "source_id": m.source_id,
+                "source_name": src.name if src else "Unknown",
+                "source_type": (src.source_type.value if src and hasattr(src.source_type, 'value') else (src.source_type if src else "website")),
                 "title": m.title,
                 "content": m.content,
                 "url": m.url,
                 "author": m.author,
                 "published_at": m.published_at.isoformat() if m.published_at else None,
                 "collected_at": m.collected_at.isoformat() if m.collected_at else None,
+                "is_reviewed": m.is_reviewed,
                 "matched_keywords": m.matched_keywords,
                 "ai_analysis": {
                     "sentiment": analysis.sentiment.value if analysis and hasattr(analysis.sentiment, 'value') else (analysis.sentiment if analysis else None),
