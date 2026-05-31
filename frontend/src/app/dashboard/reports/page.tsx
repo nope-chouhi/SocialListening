@@ -42,7 +42,7 @@ export default function ReportsPage() {
         const html2pdf = (await import('html2pdf.js')).default;
         const element = document.getElementById('report-content');
         
-        const opt = {
+        const opt: any = {
           margin:       10,
           filename:     `Brand_Report_${new Date().toISOString().split('T')[0]}.pdf`,
           image:        { type: 'jpeg', quality: 0.98 },
