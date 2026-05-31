@@ -1,3 +1,4 @@
+import os
 import logging
 import traceback
 from fastapi import FastAPI, Request
@@ -46,7 +47,6 @@ async def lifespan(app: FastAPI):
         logger.warning(f"Service seed skipped: {e}")
 
     # Start background scheduler
-    import os
     if os.getenv("ENABLE_EMBEDDED_SCHEDULER", "false").lower() == "true":
         try:
             from app.services.scheduler_service import start_scheduler
@@ -123,7 +123,6 @@ def health_check():
         db_status = "connected"
     except Exception as e:
         db_status = f"error: {str(e)}"
-    import os
     return {
         "status": "ok" if db_status == "connected" else "degraded",
         "database": db_status,
