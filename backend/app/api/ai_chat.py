@@ -32,7 +32,13 @@ def chat_with_brand_assistant(
     # Simple simulated logic based on keywords
     response_text = ""
     
-    if "tổng quan" in last_message or "summary" in last_message or "tình hình" in last_message:
+    if "chào" in last_message or "hello" in last_message or "hi" in last_message:
+        response_text = "Chào bạn! Mình là AI Brand Assistant của hệ thống Social Listening. Mình có thể phân tích dữ liệu Mentions, Cảnh báo, Đối thủ và Influencer. Bạn cần hỗ trợ gì hôm nay?"
+        
+    elif "giúp" in last_message or "help" in last_message:
+        response_text = "Mình sẵn sàng giúp đỡ. Bạn có thể yêu cầu:\n- Tổng quan tình hình\n- Phân tích tiêu cực\n- Đánh giá Influencer\n- Tình hình đối thủ"
+        
+    elif "tổng quan" in last_message or "summary" in last_message or "tình hình" in last_message:
         # Fetch some real stats to make it look authentic
         total = db.execute(select(func.count(Mention.id))).scalar() or 0
         neg = db.execute(select(func.count(AIAnalysis.id)).where(AIAnalysis.sentiment.like('%negative%'))).scalar() or 0
@@ -64,7 +70,13 @@ def chat_with_brand_assistant(
         
     else:
         # Generic response
-        response_text = "Tôi là AI Brand Assistant. Tôi đã được huấn luyện trên toàn bộ dữ liệu Social Listening của bạn. Bạn có thể hỏi tôi về:\n- Tóm tắt tình hình thương hiệu\n- Phân tích khủng hoảng / thảo luận tiêu cực\n- So sánh đối thủ\n- Đánh giá Influencers"
+        fallbacks = [
+            "Xin lỗi, mình chưa hiểu rõ ý bạn. Bạn có muốn xem Báo cáo tổng quan hay Kiểm tra Mentions tiêu cực không?",
+            "Hiện tại mình chỉ tập trung phân tích dữ liệu Social Listening. Bạn có thể hỏi mình về: Đối thủ, Khủng hoảng, hoặc Influencers nhé.",
+            "Hmm, câu hỏi này hơi ngoài vùng dữ liệu của mình. Bạn có thể thử hỏi về 'Tóm tắt tình hình' hoặc 'Thảo luận tiêu cực' xem sao?",
+            "Mình là AI Brand Assistant. Bạn có thể yêu cầu mình:\n- Tóm tắt tình hình thương hiệu\n- Phân tích khủng hoảng / thảo luận tiêu cực\n- So sánh đối thủ\n- Đánh giá Influencers"
+        ]
+        response_text = random.choice(fallbacks)
 
     # Simulate network/thinking delay
     time.sleep(1.5)
