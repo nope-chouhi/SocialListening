@@ -69,6 +69,14 @@ class AIAnalysis(Base):
     escalation_needed = Column(Boolean, default=False)
     why_it_matters = Column(Text)
     
+    # Vietnamese Context Understanding
+    vietnamese_context_label = Column(String(100))
+    tone = Column(String(50))
+    sarcasm_possible = Column(Boolean, default=False)
+    complaint_type = Column(String(100))
+    sensitive_signal = Column(Boolean, default=False)
+    explanation = Column(Text)
+    
     # Confidence
     confidence_score = Column(Float)  # 0-100
     reasoning = Column(Text)  # AI reasoning (not exposed to user)

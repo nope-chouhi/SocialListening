@@ -138,10 +138,10 @@ export default function SettingsPage() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="relative overflow-hidden bg-[#111827] border border-gray-800 rounded-2xl shadow-sm">
+      <div className="relative overflow-hidden bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl">
         <div className="relative px-8 py-10">
           <div className="flex items-center space-x-4">
-            <div className="p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-xl">
+            <div className="p-3 bg-indigo-500/20 border border-indigo-500/30 rounded-xl shadow-[0_0_15px_rgba(99,102,241,0.3)]">
               <Settings className="w-8 h-8 text-indigo-400" />
             </div>
             <div>
@@ -160,8 +160,8 @@ export default function SettingsPage() {
       </div>
 
       {/* Tabs */}
-      <div className="bg-[#111827] border border-gray-800 rounded-2xl shadow-sm overflow-hidden">
-        <div className="border-b border-gray-800">
+      <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
+        <div className="border-b border-white/10">
           <nav className="flex overflow-x-auto -mb-px scrollbar-hide">
             {/* Personal Settings Group */}
             {personalTabs.map((tab) => {

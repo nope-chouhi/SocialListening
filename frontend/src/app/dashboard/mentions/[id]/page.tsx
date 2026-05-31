@@ -143,8 +143,10 @@ export default function MentionDetailPage() {
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
           {/* Content Card */}
-          <div className="bg-[#111827] border border-gray-800 rounded-xl shadow-sm p-6 sm:p-8">
-            <h2 className="text-xl font-bold text-white mb-6 leading-snug">
+          <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-6 sm:p-8 relative overflow-hidden">
+            {mention.ai_analysis?.sentiment === 'negative_high' && <div className="absolute top-0 right-0 w-64 h-64 bg-rose-500/10 blur-3xl rounded-full" />}
+            {mention.ai_analysis?.sentiment === 'positive' && <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 blur-3xl rounded-full" />}
+            <h2 className="text-xl font-bold text-white mb-6 leading-snug relative z-10">
               {mention.title || 'No title'}
             </h2>
             <div className="prose prose-invert max-w-none">
@@ -167,7 +169,7 @@ export default function MentionDetailPage() {
 
           {/* Matched Keywords */}
           {mention.matched_keywords && mention.matched_keywords.length > 0 && (
-            <div className="bg-[#111827] border border-gray-800 rounded-xl shadow-sm p-6 sm:p-8">
+            <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-6 sm:p-8">
               <h3 className="text-lg font-bold text-white mb-5 flex items-center">Từ khóa khớp</h3>
               <div className="flex flex-wrap gap-2.5">
                 {mention.matched_keywords.map((kw: any, idx: number) => (
@@ -184,7 +186,8 @@ export default function MentionDetailPage() {
         <div className="space-y-6">
           {/* AI Analysis */}
           {mention.ai_analysis && (
-            <div className="bg-[#111827] border border-gray-800 rounded-xl shadow-sm p-6">
+            <div className="bg-[#050A15]/90 backdrop-blur-3xl border border-white/10 rounded-2xl shadow-[0_0_50px_rgba(0,0,0,0.8)] p-6 relative overflow-hidden">
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-indigo-500 to-transparent opacity-50" />
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-lg font-bold text-white">AI Analysis</h3>
                 {(mention.ai_analysis.ai_provider === 'dummy' || mention.ai_analysis.ai_provider === 'dummy_ai') && (
@@ -323,8 +326,8 @@ export default function MentionDetailPage() {
           )}
 
           {/* Actions */}
-          <div className="bg-[#111827] border border-gray-800 rounded-xl shadow-sm p-6">
-            <h3 className="text-lg font-bold text-white mb-5">Hành động</h3>
+          <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-6">
+            <h3 className="text-lg font-bold text-white mb-5 uppercase tracking-widest text-[11px] border-b border-white/10 pb-2">Hành động xử lý</h3>
             <div className="space-y-4">
               <button
                 onClick={handleCreateAlert}
@@ -358,8 +361,8 @@ export default function MentionDetailPage() {
           </div>
 
           {/* Meta Information */}
-          <div className="bg-[#111827] border border-gray-800 rounded-xl shadow-sm p-6">
-            <h3 className="text-lg font-bold text-white mb-5">Thông tin</h3>
+          <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-6">
+            <h3 className="text-lg font-bold text-white mb-5 uppercase tracking-widest text-[11px] border-b border-white/10 pb-2">Thông tin hệ thống</h3>
             <div className="space-y-4 text-sm">
               <div className="flex justify-between items-center">
                 <span className="text-gray-400 font-medium">Thu thập:</span>

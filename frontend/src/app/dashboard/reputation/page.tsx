@@ -111,19 +111,19 @@ export default function ReputationPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {stats.map((stat, idx) => (
-          <div key={idx} className="bg-zinc-900/50 border border-white/5 rounded-2xl p-5 backdrop-blur-xl hover:border-white/10 transition-colors">
+          <div key={idx} className="bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-xl hover:border-white/20 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_0_20px_rgba(255,255,255,0.05)]">
             <div className="flex justify-between items-start mb-4">
-              <div className={`p-2 rounded-xl bg-white/5 ${stat.color}`}>
-                <stat.icon className="w-5 h-5" />
+              <div className={`p-3 rounded-xl bg-white/5 shadow-inner ${stat.color}`}>
+                <stat.icon className="w-5 h-5 drop-shadow-[0_0_8px_currentColor]" />
               </div>
             </div>
-            <div className="text-3xl font-display font-semibold text-white mb-1">{stat.value}</div>
-            <div className="text-sm text-zinc-400">{stat.label}</div>
+            <div className="text-3xl font-black text-white tracking-tight drop-shadow-md mb-1">{stat.value}</div>
+            <div className="text-xs font-bold text-zinc-400 uppercase tracking-wider">{stat.label}</div>
           </div>
         ))}
       </div>
 
-      <div className="bg-zinc-900/50 border border-white/5 rounded-2xl overflow-hidden backdrop-blur-xl">
+      <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden backdrop-blur-xl shadow-2xl">
         <div className="border-b border-white/5">
           <div className="flex gap-1 p-2">
             <button
@@ -201,9 +201,9 @@ export default function ReputationPage() {
 
       {/* Case Details Drawer/Modal */}
       {selectedCaseId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-end bg-black/50 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => setSelectedCaseId(null)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-end bg-black/80 backdrop-blur-md animate-in fade-in duration-200" onClick={() => setSelectedCaseId(null)}>
           <div 
-            className="w-full max-w-2xl h-full bg-zinc-950 border-l border-white/10 shadow-2xl animate-in slide-in-from-right overflow-y-auto"
+            className="w-full max-w-2xl h-full bg-[#050A15]/95 border-l border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.8)] animate-in slide-in-from-right overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             {selectedCase ? (
@@ -272,17 +272,42 @@ export default function ReputationPage() {
 
                   {selectedCase.actions && selectedCase.actions.length > 0 && (
                     <div>
-                      <h3 className="text-sm font-semibold text-zinc-300 mb-2">Bản nháp & Hành động</h3>
-                      <div className="space-y-3">
-                        {selectedCase.actions.map((action: any) => (
-                          <div key={action.id} className="bg-white/5 border border-white/5 rounded-xl p-4">
-                            <div className="flex justify-between mb-2">
-                              <span className="text-sm font-semibold text-zinc-200">{action.title}</span>
-                              <span className="text-xs text-zinc-500">{new Date(action.created_at).toLocaleDateString()}</span>
+                      <h3 className="text-sm font-bold text-white mb-3 uppercase tracking-widest border-b border-white/10 pb-2">Bản nháp & Hành động</h3>
+                      <div className="space-y-4">
+                        {selectedCase.actions.map((action: any) => {
+                          const isZalo = action.type === 'executive_brief' || action.title?.toLowerCase().includes('lãnh đạo');
+                          return (
+                          <div key={action.id} className={`bg-white/5 border ${isZalo ? 'border-blue-500/30 shadow-[0_0_15px_rgba(59,130,246,0.1)]' : 'border-white/10'} rounded-2xl p-5 relative`}>
+                            {isZalo && <div className="absolute top-0 right-0 bg-blue-500 text-white text-[10px] font-black uppercase px-2 py-1 rounded-bl-lg rounded-tr-xl">Zalo UI Mockup</div>}
+                            <div className="flex justify-between items-center mb-3 border-b border-white/5 pb-2">
+                              <span className="text-sm font-bold text-white flex items-center gap-2">
+                                {isZalo && <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-[10px]">Z</div>}
+                                {action.title}
+                              </span>
+                              <span className="text-xs font-mono text-zinc-500 bg-black/30 px-2 py-1 rounded-md">{new Date(action.created_at).toLocaleDateString()}</span>
                             </div>
-                            <div className="text-sm text-zinc-400 bg-black/20 p-3 rounded-lg mt-2 font-mono whitespace-pre-wrap">
-                              {action.content}
-                            </div>
+                            
+                            {isZalo ? (
+                              <div className="bg-[#E5E7EB] p-4 rounded-xl max-w-[85%] mt-2 relative shadow-md">
+                                <div className="absolute -left-2 top-4 w-4 h-4 bg-[#E5E7EB] rotate-45" />
+                                <div className="text-[13px] text-gray-900 font-sans whitespace-pre-wrap leading-relaxed relative z-10">
+                                  {action.content}
+                                </div>
+                                <button 
+                                  onClick={(e) => {
+                                    navigator.clipboard.writeText(action.content);
+                                    toast.success('Đã copy nội dung Zalo!');
+                                  }}
+                                  className="mt-3 text-xs bg-white text-blue-600 font-bold px-3 py-1.5 rounded-lg border border-blue-200 hover:bg-blue-50 transition-colors flex items-center gap-1 w-fit"
+                                >
+                                  Copy gửi Zalo
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="text-[13px] text-zinc-300 bg-black/40 p-4 rounded-xl mt-2 font-mono whitespace-pre-wrap border border-white/5 shadow-inner">
+                                {action.content}
+                              </div>
+                            )}
                             {action.status === 'draft' && action.requires_approval && (
                               <div className="mt-4 flex gap-2">
                                 <button 
@@ -352,22 +377,39 @@ export default function ReputationPage() {
                               </div>
                             )}
                           </div>
-                        ))}
+                        ); })}
                       </div>
                     </div>
                   )}
 
                   {selectedCase.evidence && selectedCase.evidence.length > 0 && (
                     <div>
-                      <h3 className="text-sm font-semibold text-zinc-300 mb-2">Bằng chứng đã lưu</h3>
-                      <div className="space-y-2">
+                      <h3 className="text-sm font-bold text-white mb-3 uppercase tracking-widest border-b border-white/10 pb-2">Bằng chứng đã lưu (Blockchain Verified)</h3>
+                      <div className="space-y-3">
                         {selectedCase.evidence.map((ev: any) => (
-                          <div key={ev.id} className="bg-white/5 p-3 rounded-lg text-sm text-zinc-400 flex items-start gap-2">
-                            <FileSearch className="w-4 h-4 mt-0.5 text-zinc-500 shrink-0" />
-                            <div>
-                              <p className="font-medium text-zinc-300">Nội dung bị bắt giữ</p>
-                              <p className="line-clamp-2 mt-1">{ev.captured_text}</p>
-                              <p className="text-xs text-zinc-500 mt-2">Hash: {ev.content_hash}</p>
+                          <div key={ev.id} className="bg-gradient-to-r from-emerald-900/20 to-black/40 border border-emerald-500/30 p-4 rounded-2xl flex items-start gap-4 relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/10 blur-xl rounded-full group-hover:bg-emerald-500/20 transition-all" />
+                            <div className="p-2 bg-emerald-500/20 rounded-xl border border-emerald-500/30 shrink-0 shadow-[0_0_15px_rgba(16,185,129,0.2)]">
+                              <ShieldCheck className="w-5 h-5 text-emerald-400" />
+                            </div>
+                            <div className="flex-1 min-w-0 relative z-10">
+                              <div className="flex justify-between items-start mb-2">
+                                <p className="font-bold text-emerald-100 text-sm">Bằng chứng nội dung</p>
+                                <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded border border-emerald-500/30 uppercase font-bold tracking-widest">Verified</span>
+                              </div>
+                              <div className="bg-black/60 p-3 rounded-lg border border-white/5 mb-3">
+                                <p className="text-sm text-zinc-300 line-clamp-3 italic">"{ev.captured_text}"</p>
+                              </div>
+                              <div className="grid grid-cols-2 gap-2 text-[11px] font-mono bg-black/40 p-2 rounded-lg border border-white/5">
+                                <div>
+                                  <span className="text-emerald-500/60 block mb-0.5">TIMESTAMP</span>
+                                  <span className="text-emerald-400">{new Date(ev.created_at).toISOString()}</span>
+                                </div>
+                                <div>
+                                  <span className="text-emerald-500/60 block mb-0.5">SHA-256 HASH</span>
+                                  <span className="text-emerald-400 truncate block" title={ev.content_hash}>{ev.content_hash}</span>
+                                </div>
+                              </div>
                             </div>
                           </div>
                         ))}

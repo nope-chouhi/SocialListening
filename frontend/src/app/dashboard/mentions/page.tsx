@@ -40,6 +40,11 @@ interface MentionItem {
     summary_vi: string | null;
     suggested_action: string | null;
     ai_provider: string | null;
+    vietnamese_context_label: string | null;
+    tone: string | null;
+    sarcasm_possible: boolean | null;
+    complaint_type: string | null;
+    sensitive_signal: boolean | null;
   } | null;
 }
 
@@ -732,14 +737,26 @@ export default function MentionsPage() {
                 const riskScore = analysis?.risk_score;
                 const isDummy = analysis?.ai_provider === 'dummy' || analysis?.ai_provider === 'dummy_ai';
 
+                const isCritical = analysis?.sentiment === 'negative_high' || (riskScore !== null && riskScore !== undefined && riskScore >= 80);
+                const isPositive = analysis?.sentiment === 'positive';
+                
+                const glowClass = isCritical 
+                  ? 'border-rose-500/40 shadow-[0_0_30px_rgba(225,29,72,0.15)] bg-gradient-to-r from-rose-950/40 to-[#050A15]'
+                  : isPositive 
+                  ? 'border-emerald-500/30 shadow-[0_0_20px_rgba(16,185,129,0.1)] bg-gradient-to-r from-emerald-950/30 to-[#050A15]'
+                  : mention.is_reviewed 
+                    ? 'border-white/5 opacity-70 bg-[#050A15]' 
+                    : 'border-white/10 hover:border-white/20 bg-white/5 backdrop-blur-xl hover:shadow-[0_0_25px_rgba(255,255,255,0.05)]';
+
                 return (
                   <div
                     key={mention.id}
-                    className={`bg-[#111827] border rounded-xl overflow-hidden transition-all duration-200 hover:border-gray-700 group ${
-                      mention.is_reviewed ? 'border-gray-800/60 opacity-80' : 'border-gray-800'
-                    }`}
+                    className={`rounded-2xl border overflow-hidden transition-all duration-500 hover:-translate-y-1 group relative ${glowClass}`}
                     style={{ animationDelay: `${idx * 30}ms` }}
                   >
+                    {isCritical && <div className="absolute left-0 top-0 bottom-0 w-1 bg-rose-500 shadow-[0_0_15px_rgba(225,29,72,1)]" />}
+                    {isPositive && <div className="absolute left-0 top-0 bottom-0 w-1 bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,1)]" />}
+
                     <div className="p-5">
                       {/* ── Top Row: Source Info + Badges ───────────────────── */}
                       <div className="flex items-start justify-between gap-3 mb-3">
@@ -819,6 +836,26 @@ export default function MentionsPage() {
                         {analysis?.crisis_level && (
                           <span className="px-2 py-0.5 text-[10px] font-bold tracking-wider text-purple-400 bg-purple-500/10 rounded-md border border-purple-500/20">
                             CRISIS L{analysis.crisis_level}
+                          </span>
+                        )}
+                        {analysis?.vietnamese_context_label && (
+                          <span className="px-2 py-0.5 text-[10px] font-medium text-indigo-300 bg-indigo-500/10 rounded-md border border-indigo-500/20">
+                            🏷️ {analysis.vietnamese_context_label}
+                          </span>
+                        )}
+                        {analysis?.tone && (
+                          <span className="px-2 py-0.5 text-[10px] font-medium text-cyan-300 bg-cyan-500/10 rounded-md border border-cyan-500/20">
+                            🎭 {analysis.tone}
+                          </span>
+                        )}
+                        {analysis?.sarcasm_possible && (
+                          <span className="px-2 py-0.5 text-[10px] font-bold tracking-wider text-amber-300 bg-amber-500/10 rounded-md border border-amber-500/20">
+                            😏 MỈA MAI
+                          </span>
+                        )}
+                        {analysis?.sensitive_signal && (
+                          <span className="px-2 py-0.5 text-[10px] font-bold tracking-wider text-rose-300 bg-rose-500/10 rounded-md border border-rose-500/20 animate-pulse">
+                            ⚠️ NHẠY CẢM
                           </span>
                         )}
                         {mention.matched_keywords && mention.matched_keywords.length > 0 && (

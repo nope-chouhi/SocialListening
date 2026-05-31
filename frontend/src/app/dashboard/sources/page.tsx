@@ -292,10 +292,10 @@ export default function SourcesPage() {
             placeholder="Tìm kiếm nguồn..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-11 pr-4 py-3 bg-[#111827] border border-gray-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500 shadow-sm transition-shadow"
+            className="w-full pl-11 pr-4 py-3 bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500 shadow-xl transition-shadow"
           />
         </div>
-        <div className="flex items-center gap-3 bg-[#111827] px-4 py-3 border border-gray-800 rounded-xl w-full sm:w-auto">
+        <div className="flex items-center gap-3 bg-white/5 backdrop-blur-xl px-4 py-3 border border-white/10 rounded-xl w-full sm:w-auto shadow-xl">
           <input
             type="checkbox"
             id="showTestSources"
@@ -312,8 +312,8 @@ export default function SourcesPage() {
       {/* Sources Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {filteredSources.length === 0 ? (
-          <div className="col-span-full bg-[#111827] border border-gray-800 rounded-xl shadow-sm p-10 text-center text-gray-400 font-medium tracking-wide">
-            <div className="w-16 h-16 rounded-xl bg-[#1E293B] flex items-center justify-center mx-auto mb-4 border border-gray-800 shadow-sm">
+          <div className="col-span-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-10 text-center text-gray-400 font-medium tracking-wide">
+            <div className="w-16 h-16 rounded-xl bg-white/5 flex items-center justify-center mx-auto mb-4 border border-white/10 shadow-sm">
               <Globe className="w-8 h-8 text-gray-500" />
             </div>
             {searchTerm ? 'Không tìm thấy nguồn phù hợp.' : 'Không có nguồn nào. Hãy thêm nguồn đầu tiên!'}
@@ -325,10 +325,10 @@ export default function SourcesPage() {
             const isUnsupported = !isSupported && source.source_type;
 
             return (
-              <div key={source.id} className="bg-[#111827] rounded-xl shadow-sm border border-gray-800 p-6 transition-all duration-300 hover:border-indigo-500/30 hover:shadow-indigo-500/5 group flex flex-col h-full">
+              <div key={source.id} className="bg-white/5 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/10 p-6 transition-all duration-300 hover:border-indigo-500/50 hover:shadow-[0_0_30px_rgba(99,102,241,0.15)] group flex flex-col h-full hover:-translate-y-1">
                 <div className="flex items-start justify-between mb-5">
                   <div className="flex items-center space-x-3">
-                    <div className="p-2.5 bg-[#1E293B] rounded-lg border border-gray-700 group-hover:scale-110 transition-transform duration-300">
+                    <div className="p-2.5 bg-[#050A15] rounded-xl border border-white/10 group-hover:scale-110 transition-transform duration-300 shadow-inner">
                       {getSourceIcon(source.source_type)}
                     </div>
                     <div>
@@ -431,7 +431,7 @@ export default function SourcesPage() {
               </div>
 
               <div className="space-y-3 mb-6 flex-1">
-                <p className="text-sm text-gray-400 truncate bg-[#0B1220] p-2.5 rounded-lg border border-gray-800" title={source.url}>
+                <p className="text-sm text-gray-400 truncate bg-[#050A15] p-3 rounded-xl border border-white/10 shadow-inner" title={source.url}>
                   <span className="font-medium text-gray-500 mr-2 block text-xs uppercase tracking-wider mb-1">URL</span> {source.url}
                 </p>
                 
@@ -554,9 +554,10 @@ export default function SourcesPage() {
 
       {/* Add Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-[#111827] border border-gray-800 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto custom-scrollbar">
-            <div className="p-6 border-b border-gray-800 bg-[#0B1220]/50 sticky top-0 z-10">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 p-4">
+          <div className="bg-[#050A15]/90 border border-white/10 rounded-2xl shadow-[0_0_50px_rgba(0,0,0,0.8)] w-full max-w-lg max-h-[90vh] overflow-y-auto custom-scrollbar relative">
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-indigo-500 to-transparent opacity-50" />
+            <div className="p-6 border-b border-white/10 bg-white/5 sticky top-0 z-10 backdrop-blur-xl">
               <h2 className="text-xl font-bold text-white">Thêm nguồn mới</h2>
             </div>
             
@@ -782,16 +783,16 @@ export default function SourcesPage() {
               </div>
             </div>
 
-            <div className="p-6 border-t border-gray-800 bg-[#0B1220]/50 rounded-b-2xl flex justify-end space-x-3 sticky bottom-0">
+            <div className="p-6 border-t border-white/10 bg-white/5 rounded-b-2xl flex justify-end space-x-3 sticky bottom-0 backdrop-blur-xl">
               <button
                 onClick={() => setShowAddModal(false)}
-                className="px-5 py-2.5 text-sm font-medium text-gray-300 bg-[#1E293B] border border-gray-700 rounded-xl hover:bg-gray-800 hover:text-white transition-colors"
+                className="px-5 py-2.5 text-sm font-medium text-gray-300 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 hover:text-white transition-colors"
               >
                 Hủy
               </button>
               <button
                 onClick={handleAddSource}
-                className="px-5 py-2.5 text-sm font-medium text-white bg-indigo-600 rounded-xl hover:bg-indigo-700 shadow-sm shadow-indigo-500/20 transition-all"
+                className="px-5 py-2.5 text-sm font-medium text-white bg-indigo-600 rounded-xl hover:bg-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.4)] transition-all"
               >
                 Thêm Nguồn
               </button>

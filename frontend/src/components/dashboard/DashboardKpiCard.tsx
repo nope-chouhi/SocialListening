@@ -29,17 +29,17 @@ export default function DashboardKpiCard({ title, value, icon: Icon, colorClass 
   else if (isIndigo) { accentGradient = 'from-indigo-500/10 to-transparent'; iconColor = 'text-indigo-400'; iconBg = 'bg-indigo-500/10 border-indigo-500/20'; }
 
   return (
-    <div className={`relative overflow-hidden bg-[#111827] rounded-xl border border-gray-800 p-6 flex items-center justify-between transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-black/20 group`}>
+    <div className={`relative overflow-hidden bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-6 flex items-center justify-between transition-all duration-500 hover:-translate-y-1.5 hover:shadow-2xl hover:border-white/20 group`}>
       {/* Background Gradient Accent */}
       <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl ${accentGradient} rounded-full blur-2xl -mr-10 -mt-10 opacity-60 transition-opacity group-hover:opacity-100`}></div>
       
       <div className="relative z-10">
-        <p className="text-sm font-medium text-gray-400 tracking-wide">{title}</p>
-        <p className="text-3xl font-bold text-white mt-2 tracking-tight">{value}</p>
+        <p className="text-xs font-bold text-zinc-400 tracking-wider uppercase mb-1">{title}</p>
+        <p className="text-3xl font-black text-white tracking-tight drop-shadow-md">{value}</p>
       </div>
       
-      <div className={`relative z-10 p-3.5 rounded-xl border ${iconBg} shadow-sm flex items-center justify-center transition-transform duration-300 group-hover:scale-110`}>
-        <Icon className={`w-6 h-6 ${iconColor}`} />
+      <div className={`relative z-10 p-3.5 rounded-2xl border ${iconBg} shadow-inner flex items-center justify-center transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3`}>
+        <Icon className={`w-6 h-6 ${iconColor} drop-shadow-[0_0_8px_currentColor]`} />
       </div>
     </div>
   );

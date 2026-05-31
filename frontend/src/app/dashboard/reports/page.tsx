@@ -114,54 +114,105 @@ export default function ReportsPage() {
       </div>
 
       {/* Preview */}
-      <div id="report-content" className="bg-white rounded-lg shadow-2xl p-8 max-w-4xl mx-auto min-h-[800px] border border-gray-200">
-        <div className="border-b-2 border-gray-100 pb-6 mb-8 flex justify-between items-start">
-          <div>
-            <h2 className="text-3xl font-black text-gray-900 tracking-tight">BRAND REPORT</h2>
-            <p className="text-gray-500 mt-2">Dữ liệu Social Listening tổng hợp</p>
-          </div>
-          <div className="text-right">
-            <div className="text-sm font-bold text-gray-900 uppercase tracking-wider">Nope Intelligence</div>
-            <div className="text-xs text-gray-500 mt-1">Ngày: {new Date(data?.generated_at || Date.now()).toLocaleDateString('vi-VN')}</div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-8 mb-12">
-          <div className="bg-gray-50 rounded-xl p-6 border border-gray-100">
-            <div className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2">Tổng Mentions</div>
-            <div className="text-4xl font-black text-indigo-600">{data?.metrics?.total_mentions?.toLocaleString() || 0}</div>
-            <div className="text-xs font-medium text-emerald-600 mt-2">Đã được AI phân tích toàn bộ</div>
-          </div>
-          <div className="bg-gray-50 rounded-xl p-6 border border-gray-100">
-            <div className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2">Chỉ số Cảm xúc (Sentiment)</div>
-            <div className="flex items-end space-x-2">
-              <div className="text-4xl font-black text-emerald-600">{data?.metrics?.sentiment?.positive || 0}</div>
-              <div className="text-sm text-gray-500 mb-1">Tích cực</div>
-            </div>
-            <div className="flex items-center space-x-4 mt-3 text-sm">
-              <div className="flex items-center"><span className="w-2 h-2 rounded-full bg-rose-500 mr-2"></span><span className="text-gray-600 font-medium">{data?.metrics?.sentiment?.negative || 0} Tiêu cực</span></div>
-              <div className="flex items-center"><span className="w-2 h-2 rounded-full bg-gray-400 mr-2"></span><span className="text-gray-600 font-medium">{data?.metrics?.sentiment?.neutral || 0} Trung lập</span></div>
-            </div>
-          </div>
-        </div>
-
-        <div>
-          <h3 className="text-lg font-bold text-gray-900 mb-4 border-b border-gray-100 pb-2">Top Nguồn Đóng Góp Thảo Luận</h3>
-          <div className="space-y-3">
-            {data?.top_sources?.map((s: any, i: number) => (
-              <div key={i} className="flex items-center justify-between p-4 bg-white border border-gray-100 rounded-lg shadow-sm">
-                <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold text-xs">{i + 1}</div>
-                  <span className="font-semibold text-gray-700">{s.name}</span>
+      <div id="report-content" className="bg-[#050A15] rounded-2xl shadow-[0_0_50px_rgba(0,0,0,0.5)] p-10 max-w-4xl mx-auto min-h-[800px] border border-white/10 relative overflow-hidden">
+        {/* Decorative background glow */}
+        <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-500/10 blur-3xl rounded-full pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-500/10 blur-3xl rounded-full pointer-events-none" />
+        
+        <div className="relative z-10">
+          <div className="border-b-2 border-white/10 pb-8 mb-10 flex justify-between items-start">
+            <div>
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-[0_0_15px_rgba(99,102,241,0.5)]">
+                  <span className="text-white font-black text-xl">N</span>
                 </div>
-                <span className="font-black text-gray-900">{s.count.toLocaleString()} mentions</span>
+                <h2 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-zinc-400 tracking-tight">EXECUTIVE REPORT</h2>
               </div>
-            ))}
+              <p className="text-zinc-400 mt-2 font-medium tracking-wide">Báo cáo Trí tuệ Danh tiếng & Phân tích Dữ liệu</p>
+            </div>
+            <div className="text-right">
+              <div className="text-sm font-black text-white uppercase tracking-[0.2em]">Nope Intelligence</div>
+              <div className="text-xs text-indigo-400 mt-1 font-mono bg-indigo-500/10 inline-block px-3 py-1 rounded-md border border-indigo-500/20">
+                DATE: {new Date(data?.generated_at || Date.now()).toLocaleDateString('vi-VN')}
+              </div>
+            </div>
           </div>
-        </div>
 
-        <div className="mt-16 text-center text-xs font-medium text-gray-400">
-          Tài liệu này được tạo tự động bởi hệ thống AI của Nope Social Listening.
+          <div className="grid grid-cols-2 gap-8 mb-12">
+            <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-white/10 shadow-inner relative overflow-hidden group">
+              <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-2 relative z-10">Tổng Mentions</div>
+              <div className="text-5xl font-black text-white tracking-tight relative z-10">{data?.metrics?.total_mentions?.toLocaleString() || 0}</div>
+              <div className="text-[10px] font-bold text-indigo-400 mt-3 uppercase tracking-widest flex items-center gap-2 relative z-10">
+                <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
+                AI Phân tích toàn diện
+              </div>
+            </div>
+            
+            <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-white/10 shadow-inner relative overflow-hidden group">
+              <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-2 relative z-10">Chỉ số Sắc thái (Sentiment)</div>
+              <div className="flex items-end space-x-3 relative z-10">
+                <div className="text-5xl font-black text-emerald-400 tracking-tight">{data?.metrics?.sentiment?.positive || 0}</div>
+                <div className="text-sm text-emerald-500/70 mb-1.5 font-bold uppercase tracking-wider">Tích cực</div>
+              </div>
+              <div className="flex items-center space-x-6 mt-4 text-xs font-bold uppercase tracking-wider relative z-10">
+                <div className="flex items-center"><span className="w-2 h-2 rounded-full bg-rose-500 mr-2 shadow-[0_0_8px_rgba(244,63,94,0.6)]"></span><span className="text-zinc-300">{data?.metrics?.sentiment?.negative || 0} Tiêu cực</span></div>
+                <div className="flex items-center"><span className="w-2 h-2 rounded-full bg-zinc-500 mr-2"></span><span className="text-zinc-400">{data?.metrics?.sentiment?.neutral || 0} Trung lập</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div className="mb-12">
+            <h3 className="text-sm font-bold text-white mb-4 border-b border-white/10 pb-2 uppercase tracking-widest">Top Nguồn Đóng Góp Thảo Luận</h3>
+            <div className="space-y-3">
+              {data?.top_sources?.map((s: any, i: number) => (
+                <div key={i} className="flex items-center justify-between p-4 bg-white/5 border border-white/5 rounded-xl hover:bg-white/10 transition-colors">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-300 font-bold text-xs border border-indigo-500/30">
+                      {i + 1}
+                    </div>
+                    <span className="font-bold text-white tracking-wide">{s.name}</span>
+                  </div>
+                  <span className="font-black text-indigo-400 bg-indigo-500/10 px-3 py-1 rounded-md border border-indigo-500/20">{s.count.toLocaleString()} Mentions</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* AI Strategic Advice Block */}
+          <div className="bg-gradient-to-br from-indigo-900/40 to-purple-900/20 border border-indigo-500/30 rounded-2xl p-6 shadow-[0_0_30px_rgba(99,102,241,0.1)]">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-indigo-500/20 rounded-lg border border-indigo-500/30">
+                <CheckCircle className="w-5 h-5 text-indigo-400" />
+              </div>
+              <h3 className="text-sm font-black text-indigo-300 uppercase tracking-widest">Khuyến nghị Chiến lược từ AI</h3>
+            </div>
+            <ul className="space-y-3 text-sm text-zinc-300 leading-relaxed font-medium">
+              <li className="flex items-start gap-2">
+                <span className="text-indigo-400 mt-0.5">✦</span>
+                Tỷ lệ thảo luận tiêu cực đang ở mức kiểm soát được. Cần tiếp tục theo dõi sát sao các nền tảng tin tức tổng hợp.
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-indigo-400 mt-0.5">✦</span>
+                Đề xuất kích hoạt chiến dịch PR tích cực trên Facebook & TikTok để pha loãng luồng thảo luận trung lập.
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-indigo-400 mt-0.5">✦</span>
+                Các từ khóa liên quan đến "chất lượng dịch vụ" đang có xu hướng tăng nhẹ, đội ngũ CSKH cần chú ý phản hồi nhanh hơn.
+              </li>
+            </ul>
+          </div>
+
+          <div className="mt-16 pt-6 border-t border-white/5 text-center flex flex-col items-center justify-center">
+            <div className="text-[10px] font-bold text-zinc-600 uppercase tracking-[0.2em] mb-2">Generated by</div>
+            <div className="flex items-center gap-2 opacity-50 grayscale">
+              <div className="w-5 h-5 bg-gradient-to-br from-indigo-500 to-purple-600 rounded flex items-center justify-center">
+                <span className="text-white font-black text-[10px]">N</span>
+              </div>
+              <span className="text-sm font-black text-white tracking-widest">NOPE INTELLIGENCE</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>

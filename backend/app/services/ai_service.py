@@ -277,6 +277,15 @@ Trả về JSON thuần túy, không có markdown:"""
             result["deadline_suggestion"] = result.get("deadline_suggestion", "N/A")
             result["escalation_needed"] = bool(result.get("escalation_needed", False))
             result["why_it_matters"] = result.get("why_it_matters", "")
+            
+            # Vietnamese Context fields
+            result["vietnamese_context_label"] = result.get("vietnamese_context_label", "")
+            result["tone"] = result.get("tone", "")
+            result["sarcasm_possible"] = bool(result.get("sarcasm_possible", False))
+            result["complaint_type"] = result.get("complaint_type", "")
+            result["sensitive_signal"] = bool(result.get("sensitive_signal", False))
+            result["explanation"] = result.get("explanation", "")
+            
             result["confidence_score"] = float(result.get("confidence_score", 80))
             result["processing_time_ms"] = int((time.time() - start_time) * 1000)
             
@@ -425,6 +434,15 @@ Trả về JSON thuần túy, không có markdown:
             result["deadline_suggestion"] = result.get("deadline_suggestion", "N/A")
             result["escalation_needed"] = bool(result.get("escalation_needed", False))
             result["why_it_matters"] = result.get("why_it_matters", "")
+            
+            # Vietnamese Context fields
+            result["vietnamese_context_label"] = result.get("vietnamese_context_label", "")
+            result["tone"] = result.get("tone", "")
+            result["sarcasm_possible"] = bool(result.get("sarcasm_possible", False))
+            result["complaint_type"] = result.get("complaint_type", "")
+            result["sensitive_signal"] = bool(result.get("sensitive_signal", False))
+            result["explanation"] = result.get("explanation", "")
+            
             result["confidence_score"] = float(result.get("confidence_score", 80))
             result["processing_time_ms"] = int((time.time() - start_time) * 1000)
             

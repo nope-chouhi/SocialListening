@@ -427,78 +427,85 @@ export default function ScanPage() {
       <Toaster position="top-right" />
 
       {/* ═══════════════════════════════════════════════════════════════════
-          1. PAGE HEADER — Compact
+          1. PAGE HEADER — Terminal / Radar Theme
          ═══════════════════════════════════════════════════════════════════ */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg shadow-indigo-500/20">
-            <Radar className="w-4 h-4 text-white" />
+      <div className="flex items-center justify-between border-b border-[#0f2e24] pb-4 mb-4">
+        <div className="flex items-center gap-4">
+          <div className="relative flex items-center justify-center w-12 h-12">
+            <div className="absolute inset-0 border-2 border-emerald-500/30 rounded-full animate-ping" />
+            <div className="absolute inset-1 border border-emerald-500/60 rounded-full animate-[spin_3s_linear_infinite]" />
+            <div className="absolute inset-0 bg-emerald-500/10 rounded-full blur-md" />
+            <Radar className="w-5 h-5 text-emerald-400 relative z-10" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-white tracking-wide leading-tight">Scan Center</h1>
-            <p className="text-xs text-gray-500 mt-0.5">Quét nguồn dữ liệu để thu thập mentions theo nhóm từ khóa.</p>
+            <h1 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400 tracking-wider font-mono">
+              RADAR SCAN CENTER
+            </h1>
+            <p className="text-xs text-emerald-500/60 font-mono mt-1 uppercase tracking-widest">
+              [SYSTEM_READY] • DATA ACQUISITION PROTOCOL
+            </p>
           </div>
         </div>
         <button
           onClick={() => { fetchWorkerStatus(); fetchCrawlJobs(); fetchData(); }}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-400 bg-[#111827] hover:bg-[#1E293B] border border-gray-800 rounded-lg transition-all hover:text-white"
+          className="group relative flex items-center gap-2 px-4 py-2 text-xs font-bold font-mono text-emerald-400 bg-[#051510] border border-emerald-500/30 rounded transition-all hover:bg-emerald-950 hover:border-emerald-400 hover:shadow-[0_0_15px_rgba(52,211,153,0.3)]"
         >
-          <RefreshCw className={`w-3.5 h-3.5 ${scanning ? 'animate-spin text-indigo-400' : ''}`} />
-          Làm mới
+          <RefreshCw className={`w-3.5 h-3.5 ${scanning ? 'animate-spin text-emerald-300' : 'group-hover:rotate-180 transition-transform duration-500'}`} />
+          {scanning ? 'SCANNING...' : 'SYNC'}
         </button>
       </div>
 
       {/* ═══════════════════════════════════════════════════════════════════
-          2. WORKER STATUS BAR — Compact horizontal
+          2. WORKER STATUS BAR — Terminal horizontal
          ═══════════════════════════════════════════════════════════════════ */}
       {workerStatus && (
-        <div className={`rounded-lg px-4 py-2.5 border flex flex-wrap items-center gap-x-4 gap-y-1.5 ${
+        <div className={`rounded font-mono px-4 py-3 border shadow-inner flex flex-wrap items-center gap-x-4 gap-y-1.5 ${
           workerStatus.worker_running
-            ? 'bg-emerald-500/5 border-emerald-500/15'
-            : 'bg-amber-500/5 border-amber-500/15'
+            ? 'bg-[#021008] border-emerald-500/30 text-emerald-400 shadow-[inset_0_0_20px_rgba(16,185,129,0.05)]'
+            : 'bg-[#150a0a] border-rose-500/30 text-rose-400 shadow-[inset_0_0_20px_rgba(244,63,94,0.05)]'
         }`}>
           {/* Status icon + label */}
           <div className="flex items-center gap-2">
             {workerStatus.worker_running ? (
-              <Activity className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+              <Activity className="w-4 h-4 animate-pulse flex-shrink-0" />
             ) : (
-              <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0" />
+              <AlertTriangle className="w-4 h-4 flex-shrink-0" />
             )}
-            <span className={`text-xs font-semibold ${workerStatus.worker_running ? 'text-emerald-400' : 'text-amber-400'}`}>
+            <span className="text-[11px] font-bold tracking-wider">
               {workerStatus.worker_running
-                ? (workerStatus.worker_mode === 'embedded' ? 'Worker hoạt động — Embedded' : 'Worker hoạt động')
-                : 'Worker không hoạt động'}
+                ? (workerStatus.worker_mode === 'embedded' ? 'SYS.WORKER // EMBEDDED_MODE' : 'SYS.WORKER // ONLINE')
+                : 'SYS.WORKER // OFFLINE'}
             </span>
           </div>
 
-          {/* Embedded warning — compact */}
+          {/* Embedded warning */}
           {workerStatus.worker_mode === 'embedded' && (
-            <span className="text-[10px] text-amber-400/70 flex items-center gap-1">
+            <span className="text-[10px] text-amber-500/80 flex items-center gap-1 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
               <AlertTriangle className="w-3 h-3" />
-              Web Service sleep → RSS không quét 24/7
+              BACKGROUND_CRON_DISABLED
             </span>
           )}
 
-          {/* Metrics inline — separated by dot */}
-          <div className="flex items-center gap-3 ml-auto text-[11px] text-gray-500 font-medium">
-            <span>Nguồn: <strong className="text-gray-300">{workerStatus.active_sources}</strong></span>
-            <span className="text-gray-800">|</span>
-            <span>Chờ scan: <strong className="text-gray-300">{workerStatus.due_sources}</strong></span>
-            <span className="text-gray-800">|</span>
-            <span>Job: <strong className="text-gray-300">{workerStatus.running_jobs}</strong></span>
+          {/* Metrics inline */}
+          <div className="flex items-center gap-3 ml-auto text-[11px] font-medium opacity-80">
+            <span>TARGETS: <strong>{workerStatus.active_sources}</strong></span>
+            <span className="opacity-30">|</span>
+            <span>QUEUE: <strong>{workerStatus.due_sources}</strong></span>
+            <span className="opacity-30">|</span>
+            <span>ACTIVE_JOBS: <strong>{workerStatus.running_jobs}</strong></span>
             {workerStatus.last_worker_heartbeat && (
               <>
-                <span className="text-gray-800">|</span>
-                <span>Heartbeat: <strong className="text-gray-300">{formatDate(workerStatus.last_worker_heartbeat)}</strong></span>
+                <span className="opacity-30">|</span>
+                <span>PING: <strong>{formatDate(workerStatus.last_worker_heartbeat)}</strong></span>
               </>
             )}
           </div>
 
           {/* Error line */}
           {workerStatus.last_error && (
-            <div className="w-full mt-1">
-              <span className="text-[10px] text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded border border-rose-500/15 inline-block truncate max-w-full" title={workerStatus.last_error}>
-                Lỗi: {workerStatus.last_error.substring(0, 120)}{workerStatus.last_error.length > 120 ? '...' : ''}
+            <div className="w-full mt-2 pt-2 border-t border-rose-500/20">
+              <span className="text-[10px] text-rose-400 font-bold tracking-wider inline-block truncate max-w-full">
+                [ERR] {workerStatus.last_error}
               </span>
             </div>
           )}
@@ -508,11 +515,11 @@ export default function ScanPage() {
       {/* ═══════════════════════════════════════════════════════════════════
           3. QUICK KEYWORD ADD BAR — Single row
          ═══════════════════════════════════════════════════════════════════ */}
-      <div className="bg-[#111827] rounded-xl border border-gray-800 px-4 py-3">
+      <div className="bg-[#040C12] rounded border border-cyan-900/40 px-4 py-3 shadow-[0_0_15px_rgba(8,145,178,0.05)]">
         <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2">
-          <div className="flex items-center gap-2 text-xs font-semibold text-gray-400 flex-shrink-0">
-            <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
-            <span className="whitespace-nowrap">Thêm nhanh từ khóa</span>
+          <div className="flex items-center gap-2 text-xs font-mono font-bold text-cyan-500 flex-shrink-0">
+            <Sparkles className="w-4 h-4 text-cyan-400 animate-pulse" />
+            <span className="whitespace-nowrap tracking-wider">INPUT_TARGET</span>
           </div>
           <div className="flex flex-1 flex-col sm:flex-row gap-2">
             <input
@@ -521,16 +528,16 @@ export default function ScanPage() {
               value={quickKeyword}
               onChange={(e) => setQuickKeyword(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleQuickAdd()}
-              placeholder="Nhập từ khóa (VD: Vinfast, iPhone 16...)"
-              className="flex-1 min-w-0 px-3 py-2 bg-[#1E293B] border border-gray-700 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 text-white text-sm placeholder-gray-500"
+              placeholder="ENTER TRACKING KEYWORD (E.G., VINFAST, IPHONE)"
+              className="flex-1 min-w-0 px-3 py-2 bg-[#02060A] border border-cyan-900 focus:border-cyan-400 rounded-sm focus:outline-none focus:ring-1 focus:ring-cyan-500 font-mono text-cyan-100 text-xs placeholder-cyan-900/60 transition-colors uppercase"
             />
             <select
               id="quick-keyword-group"
               value={quickGroupId}
               onChange={(e) => setQuickGroupId(e.target.value ? Number(e.target.value) : '')}
-              className="sm:w-44 px-3 py-2 bg-[#1E293B] border border-gray-700 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 text-white text-xs"
+              className="sm:w-44 px-3 py-2 bg-[#02060A] border border-cyan-900 focus:border-cyan-400 rounded-sm focus:outline-none focus:ring-1 focus:ring-cyan-500 font-mono text-cyan-400 text-xs uppercase"
             >
-              <option value="">-- Nhóm mặc định --</option>
+              <option value="">-- DEFAULT_GROUP --</option>
               {keywordGroups.map((g) => (
                 <option key={g.id} value={g.id}>{g.name}</option>
               ))}
@@ -539,18 +546,18 @@ export default function ScanPage() {
               <button
                 onClick={handleQuickAdd}
                 disabled={addingKeyword || !quickKeyword.trim()}
-                className="px-3 py-2 bg-[#1E293B] text-gray-300 border border-gray-700 rounded-lg hover:bg-gray-800 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed flex items-center text-xs font-medium whitespace-nowrap transition-colors"
+                className="px-4 py-2 bg-[#02060A] text-cyan-500 border border-cyan-900 rounded-sm hover:bg-cyan-950 hover:text-cyan-300 hover:border-cyan-500 disabled:opacity-40 disabled:cursor-not-allowed flex items-center text-xs font-mono font-bold whitespace-nowrap transition-all uppercase tracking-wider"
               >
                 {addingKeyword ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : <Plus className="w-3.5 h-3.5 mr-1.5" />}
-                Thêm vào nhóm
+                ADD_ONLY
               </button>
               <button
                 onClick={handleQuickAddAndScan}
                 disabled={scanning || !quickKeyword.trim()}
-                className="px-3 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed flex items-center text-xs font-medium whitespace-nowrap transition-colors shadow-sm shadow-indigo-500/20"
+                className="px-4 py-2 bg-cyan-950 text-cyan-400 border border-cyan-500 rounded-sm hover:bg-cyan-900 disabled:opacity-40 disabled:cursor-not-allowed flex items-center text-xs font-mono font-bold whitespace-nowrap transition-all shadow-[0_0_10px_rgba(8,145,178,0.2)] hover:shadow-[0_0_15px_rgba(8,145,178,0.4)] uppercase tracking-wider"
               >
-                {scanning ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : <Radar className="w-3.5 h-3.5 mr-1.5" />}
-                Thêm và quét
+                {scanning ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : <Radar className="w-3.5 h-3.5 mr-1.5 animate-pulse" />}
+                ADD_AND_SCAN
               </button>
             </div>
           </div>
@@ -558,9 +565,9 @@ export default function ScanPage() {
       </div>
 
       {/* ═══════════════════════════════════════════════════════════════════
-          4. MANUAL SCAN CONTROL PANEL — Compact unified card
+          4. MANUAL SCAN CONTROL PANEL — Terminal card
          ═══════════════════════════════════════════════════════════════════ */}
-      <div className="bg-[#111827] rounded-xl border border-gray-800 overflow-hidden">
+      <div className="bg-[#02060A] border border-emerald-900/50 shadow-[0_0_20px_rgba(16,185,129,0.03)] rounded font-mono">
 
         {/* ── 4A. Keyword Groups ───────────────────────────────────────── */}
         <div className="px-4 py-3 border-b border-gray-800/80">

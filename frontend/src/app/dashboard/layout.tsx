@@ -165,33 +165,37 @@ export default function DashboardLayout({
   ];
 
   return (
-    <div className="min-h-screen bg-[#0B1220]">
+    <div className="min-h-screen bg-[#050A15]">
       {/* Mobile sidebar backdrop */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-40 bg-gray-600 bg-opacity-75 lg:hidden"
+          className="fixed inset-0 z-40 bg-black/80 backdrop-blur-sm lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
       {/* Sidebar */}
       <div
-        className={`fixed inset-y-0 left-0 z-50 w-64 bg-[#080D19] border-r border-gray-800 shadow-2xl transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 w-64 bg-[#030614] border-r border-white/5 shadow-[4px_0_24px_rgba(0,0,0,0.6)] transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-full relative">
+          {/* Subtle background glow in sidebar */}
+          <div className="absolute top-0 left-0 w-full h-64 bg-indigo-500/5 blur-3xl pointer-events-none" />
+          
           {/* Logo with premium styling */}
-          <div className="flex items-center justify-between h-[72px] px-6 border-b border-gray-800/50">
-            <div className="flex items-center space-x-3">
-              <div className="w-9 h-9 bg-gradient-to-br from-[#8B5CF6] to-[#3B82F6] rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20 border border-indigo-400/20">
-                <span className="text-white font-bold text-lg leading-none tracking-tight">N</span>
+          <div className="flex items-center justify-between h-[72px] px-6 border-b border-white/5 relative overflow-hidden z-10">
+            <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/10 to-transparent pointer-events-none" />
+            <div className="flex items-center space-x-3 relative">
+              <div className="w-9 h-9 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-[0_0_15px_rgba(99,102,241,0.5)] border border-white/20">
+                <span className="text-white font-bold text-lg leading-none tracking-tight drop-shadow-md">N</span>
               </div>
-              <h1 className="text-xl font-bold text-white tracking-wide">Nope</h1>
+              <h1 className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-zinc-400 tracking-wide">Nope</h1>
             </div>
             <button
               onClick={() => setSidebarOpen(false)}
-              className="lg:hidden p-2 -mr-2 text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-gray-800"
+              className="lg:hidden p-2 -mr-2 text-zinc-400 hover:text-white transition-colors rounded-lg hover:bg-white/10"
             >
               <X className="w-5 h-5" />
             </button>
@@ -223,23 +227,22 @@ export default function DashboardLayout({
                     <Link
                       key={item.name}
                       href={item.href}
-                      className={`group flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
+                      className={`group flex items-center px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-300 relative overflow-hidden ${
                         isActive
-                          ? 'sidebar-item-active text-white bg-[#1E293B]/80 shadow-sm border border-gray-700/50'
-                          : 'text-gray-400 sidebar-item-hover hover:text-gray-100 hover:bg-gray-800/50'
+                          ? 'text-white bg-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] border border-white/10'
+                          : 'text-zinc-400 hover:text-white hover:bg-white/5 border border-transparent'
                       }`}
                       onClick={() => setSidebarOpen(false)}
                     >
+                      {isActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-indigo-500 rounded-r-full shadow-[0_0_10px_rgba(99,102,241,1)]" />}
                       <item.icon 
-                        className={`w-5 h-5 mr-3 flex-shrink-0 transition-colors duration-200 ${
-                          isActive ? 'text-indigo-400' : 'text-gray-500 group-hover:text-gray-300'
+                        className={`w-5 h-5 mr-3 flex-shrink-0 transition-transform duration-300 ${
+                          isActive ? 'text-indigo-400 scale-110' : 'text-zinc-500 group-hover:text-zinc-300 group-hover:scale-110'
                         }`} 
                       />
                       <span className="truncate">{item.name}</span>
                       {(item as any).badge ? (
                         <SidebarBadge count={(item as any).badge} />
-                      ) : isActive ? (
-                        <div className="ml-auto w-1.5 h-1.5 bg-indigo-400 rounded-full shadow-[0_0_8px_rgba(129,140,248,0.8)]"></div>
                       ) : null}
                     </Link>
                   );
@@ -249,17 +252,18 @@ export default function DashboardLayout({
           </nav>
 
           {/* Premium User Profile Bottom */}
-          <div className="p-4 border-t border-gray-800/80 bg-[#0B1220]">
-            <div className="flex items-center justify-between group cursor-pointer hover:bg-gray-800/50 p-2 -m-2 rounded-xl transition-colors">
+          <div className="p-4 border-t border-white/5 bg-[#030614] relative z-10">
+            <div className="absolute inset-0 bg-gradient-to-t from-indigo-500/5 to-transparent pointer-events-none" />
+            <div className="flex items-center justify-between group cursor-pointer hover:bg-white/5 p-2 -m-2 rounded-xl transition-colors relative z-20">
               <div className="flex items-center space-x-3 flex-1 min-w-0">
-                <div className="w-9 h-9 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white font-medium text-sm border border-gray-700/50 shadow-sm">
+                <div className="w-9 h-9 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white font-medium text-sm border border-white/10 shadow-[0_0_10px_rgba(99,102,241,0.2)] group-hover:shadow-[0_0_15px_rgba(99,102,241,0.4)] transition-all">
                   {(user?.full_name || user?.email || 'U')[0].toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-200 truncate">
+                  <p className="text-sm font-medium text-zinc-200 truncate">
                     {user?.full_name || user?.email || 'User'}
                   </p>
-                  <p className="text-xs text-gray-500 truncate mt-0.5 capitalize">
+                  <p className="text-xs text-zinc-500 truncate mt-0.5 capitalize">
                     {user?.role || 'Guest'}
                   </p>
                 </div>
@@ -282,7 +286,7 @@ export default function DashboardLayout({
       {/* Main content */}
       <div className="lg:pl-64 flex flex-col min-h-screen">
         {/* Premium Top bar */}
-        <div className="sticky top-0 z-10 flex items-center h-16 px-4 bg-[#0B1020]/80 backdrop-blur-md border-b border-gray-800/50 lg:px-8">
+        <div className="sticky top-0 z-20 flex items-center h-16 px-4 bg-[#050A15]/70 backdrop-blur-2xl border-b border-white/5 lg:px-8">
           <button
             onClick={() => setSidebarOpen(true)}
             className="lg:hidden p-2 -ml-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors mr-2"

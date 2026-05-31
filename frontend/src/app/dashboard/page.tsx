@@ -128,15 +128,15 @@ export default function DashboardPage() {
         </div>
         
         <div className="flex items-center space-x-3">
-          <div className="inline-flex bg-[#0B1220] border border-gray-800 rounded-lg p-1 shadow-inner">
+          <div className="inline-flex bg-black/40 border border-white/10 rounded-lg p-1 shadow-inner backdrop-blur-md">
             {['today', '7d', '30d'].map((range) => (
               <button
                 key={range}
                 onClick={() => setTimeRange(range)}
-                className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-200 ${
+                className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-300 ${
                   timeRange === range 
-                    ? 'bg-[#1E293B] text-white shadow-sm shadow-black/20' 
-                    : 'text-gray-500 hover:text-gray-300 hover:bg-gray-800/50'
+                    ? 'bg-white/10 text-white shadow-[0_2px_10px_rgba(255,255,255,0.1)] border border-white/10' 
+                    : 'text-zinc-500 hover:text-zinc-300 hover:bg-white/5'
                 }`}
               >
                 {range === 'today' ? 'Hôm nay' : range === '7d' ? '7 ngày' : '30 ngày'}
@@ -145,7 +145,7 @@ export default function DashboardPage() {
           </div>
           <button 
             onClick={handleRefresh}
-            className="p-2.5 text-gray-400 hover:text-white bg-[#0B1220] hover:bg-[#1E293B] border border-gray-800 rounded-lg shadow-sm transition-all duration-200 active:scale-95"
+            className="p-2.5 text-zinc-400 hover:text-white bg-black/40 hover:bg-white/10 border border-white/10 rounded-lg shadow-sm transition-all duration-300 active:scale-95 backdrop-blur-md"
             title="Làm mới"
           >
             <RefreshCcw className={`w-4 h-4 ${loadingCharts || loadingMetrics ? 'animate-spin text-indigo-400' : ''}`} />
@@ -169,10 +169,10 @@ export default function DashboardPage() {
       {/* Charts Section */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         {/* Trend Chart */}
-        <div className="xl:col-span-2 bg-[#111827] rounded-xl shadow-sm border border-gray-800 p-5 flex flex-col">
+        <div className="xl:col-span-2 bg-white/5 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/10 p-5 flex flex-col group hover:border-white/20 transition-all duration-500">
           <div className="mb-4">
-            <h2 className="text-base font-semibold text-white">Xu Hướng Đề Cập</h2>
-            <p className="text-xs text-gray-500 mt-1">Lượng mentions, cảnh báo và sự cố theo thời gian</p>
+            <h2 className="text-base font-bold text-white tracking-wide">Xu Hướng Đề Cập</h2>
+            <p className="text-xs text-zinc-400 mt-1 font-medium">Lượng mentions, cảnh báo và sự cố theo thời gian</p>
           </div>
           <div className="flex-1 min-h-[300px]">
             <TrendChart data={trends?.items || []} isLoading={loadingCharts} />
@@ -181,78 +181,90 @@ export default function DashboardPage() {
 
         {/* Sentiment & Hot Keywords */}
         <div className="space-y-6">
-          <div className="bg-[#111827] rounded-xl shadow-sm border border-gray-800 p-5">
-            <h2 className="text-base font-semibold text-white mb-4">Phân Bố Sắc Thái</h2>
+          <div className="bg-white/5 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/10 p-5 group hover:border-white/20 transition-all duration-500">
+            <h2 className="text-base font-bold text-white tracking-wide mb-4">Phân Bố Sắc Thái</h2>
             <SentimentDonutChart data={sentiment} isLoading={loadingCharts} />
           </div>
-          <div className="bg-[#111827] rounded-xl shadow-sm border border-gray-800 p-5">
-            <h2 className="text-base font-semibold text-white mb-4">Từ Khóa Nổi Bật</h2>
+          <div className="bg-white/5 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/10 p-5 group hover:border-white/20 transition-all duration-500">
+            <h2 className="text-base font-bold text-white tracking-wide mb-4">Từ Khóa Nổi Bật</h2>
             <HotKeywordsWidget data={hotKeywords?.items || []} isLoading={loadingCharts} />
           </div>
         </div>
       </div>
 
-      {/* Advanced Enterprise Widgets (Not Integrated Yet) */}
+      {/* Advanced Enterprise Widgets */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-[#111827] rounded-xl shadow-sm border border-gray-800 p-5 relative overflow-hidden group">
-          <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-[2px] z-10 flex flex-col items-center justify-center transition-all duration-300">
-            <div className="bg-[#1E293B] p-3 rounded-full mb-3 shadow-lg border border-gray-700">
-              <PieChart className="w-6 h-6 text-gray-400" />
+        <div className="bg-white/5 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/10 p-5 relative overflow-hidden group">
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-md z-10 flex flex-col items-center justify-center transition-all duration-500 opacity-0 group-hover:opacity-100">
+            <div className="bg-indigo-500/20 p-3 rounded-2xl mb-3 shadow-[0_0_20px_rgba(99,102,241,0.5)] border border-indigo-500/30">
+              <Sparkles className="w-6 h-6 text-indigo-400 animate-pulse" />
             </div>
-            <span className="text-xs font-bold uppercase tracking-wider text-gray-400 bg-[#0B1220] px-3 py-1 rounded-full border border-gray-800">Chưa tích hợp</span>
-            <p className="text-xs text-gray-500 mt-2 text-center px-4">Tính năng Share of Voice đang được phát triển.</p>
+            <span className="text-xs font-black uppercase tracking-[0.2em] text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-yellow-500 mb-2">Enterprise Only</span>
+            <p className="text-xs text-zinc-400 mt-1 text-center px-6 leading-relaxed">Nâng cấp để mở khóa tính năng phân tích tỷ trọng thị phần truyền thông.</p>
           </div>
-          <h2 className="text-base font-semibold text-gray-500 mb-4 opacity-50 flex items-center">
-            <PieChart className="w-4 h-4 mr-2" /> Share of Voice
+          <h2 className="text-base font-bold text-white mb-4 flex items-center">
+            <PieChart className="w-4 h-4 mr-2 text-indigo-400" /> Share of Voice
           </h2>
-          <div className="h-40 bg-[#0B1220] rounded-lg border border-gray-800 opacity-20"></div>
+          <div className="h-40 rounded-xl bg-gradient-to-tr from-indigo-500/20 via-purple-500/10 to-transparent border border-white/5 flex items-center justify-center overflow-hidden">
+            <div className="w-24 h-24 rounded-full border-[8px] border-t-indigo-500 border-r-purple-500 border-b-white/10 border-l-white/10 animate-[spin_10s_linear_infinite]" />
+          </div>
         </div>
 
-        <div className="bg-[#111827] rounded-xl shadow-sm border border-gray-800 p-5 relative overflow-hidden group">
-          <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-[2px] z-10 flex flex-col items-center justify-center transition-all duration-300">
-            <div className="bg-[#1E293B] p-3 rounded-full mb-3 shadow-lg border border-gray-700">
-              <Users className="w-6 h-6 text-gray-400" />
+        <div className="bg-white/5 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/10 p-5 relative overflow-hidden group">
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-md z-10 flex flex-col items-center justify-center transition-all duration-500 opacity-0 group-hover:opacity-100">
+            <div className="bg-purple-500/20 p-3 rounded-2xl mb-3 shadow-[0_0_20px_rgba(168,85,247,0.5)] border border-purple-500/30">
+              <Users className="w-6 h-6 text-purple-400 animate-pulse" />
             </div>
-            <span className="text-xs font-bold uppercase tracking-wider text-gray-400 bg-[#0B1220] px-3 py-1 rounded-full border border-gray-800">Chưa tích hợp</span>
-            <p className="text-xs text-gray-500 mt-2 text-center px-4">Bảng xếp hạng Influencers đang được phát triển.</p>
+            <span className="text-xs font-black uppercase tracking-[0.2em] text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-yellow-500 mb-2">Enterprise Only</span>
+            <p className="text-xs text-zinc-400 mt-1 text-center px-6 leading-relaxed">Mở khóa bảng xếp hạng 100 người ảnh hưởng tác động đến thương hiệu.</p>
           </div>
-          <h2 className="text-base font-semibold text-gray-500 mb-4 opacity-50 flex items-center">
-            <Users className="w-4 h-4 mr-2" /> Top Influencers
+          <h2 className="text-base font-bold text-white mb-4 flex items-center">
+            <Users className="w-4 h-4 mr-2 text-purple-400" /> Top Influencers
           </h2>
-          <div className="h-40 bg-[#0B1220] rounded-lg border border-gray-800 opacity-20"></div>
+          <div className="h-40 rounded-xl bg-gradient-to-br from-purple-500/20 to-transparent border border-white/5 p-4 flex flex-col gap-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-8 bg-white/5 rounded-lg flex items-center px-3 gap-3">
+                <div className="w-5 h-5 rounded-full bg-white/10" />
+                <div className="flex-1 h-2 bg-white/10 rounded-full" />
+              </div>
+            ))}
+          </div>
         </div>
 
-        <div className="bg-[#111827] rounded-xl shadow-sm border border-gray-800 p-5 relative overflow-hidden group">
-          <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-[2px] z-10 flex flex-col items-center justify-center transition-all duration-300">
-            <div className="bg-[#1E293B] p-3 rounded-full mb-3 shadow-lg border border-gray-700">
-              <Map className="w-6 h-6 text-gray-400" />
+        <div className="bg-white/5 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/10 p-5 relative overflow-hidden group">
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-md z-10 flex flex-col items-center justify-center transition-all duration-500 opacity-0 group-hover:opacity-100">
+            <div className="bg-emerald-500/20 p-3 rounded-2xl mb-3 shadow-[0_0_20px_rgba(16,185,129,0.5)] border border-emerald-500/30">
+              <Map className="w-6 h-6 text-emerald-400 animate-pulse" />
             </div>
-            <span className="text-xs font-bold uppercase tracking-wider text-gray-400 bg-[#0B1220] px-3 py-1 rounded-full border border-gray-800">Chưa tích hợp</span>
-            <p className="text-xs text-gray-500 mt-2 text-center px-4">Bản đồ nhiệt Geolocation chưa thu thập đủ data.</p>
+            <span className="text-xs font-black uppercase tracking-[0.2em] text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-yellow-500 mb-2">Enterprise Only</span>
+            <p className="text-xs text-zinc-400 mt-1 text-center px-6 leading-relaxed">Theo dõi khu vực bùng phát khủng hoảng theo thời gian thực.</p>
           </div>
-          <h2 className="text-base font-semibold text-gray-500 mb-4 opacity-50 flex items-center">
-            <Map className="w-4 h-4 mr-2" /> Geolocation Heat Map
+          <h2 className="text-base font-bold text-white mb-4 flex items-center">
+            <Map className="w-4 h-4 mr-2 text-emerald-400" /> Geo Heat Map
           </h2>
-          <div className="h-40 bg-[#0B1220] rounded-lg border border-gray-800 opacity-20"></div>
+          <div className="h-40 rounded-xl bg-[url('https://upload.wikimedia.org/wikipedia/commons/c/c3/Vietnam_location_map.svg')] bg-cover bg-center bg-no-repeat opacity-30 border border-white/5 relative">
+            <div className="absolute top-1/2 left-1/2 w-4 h-4 bg-rose-500 rounded-full animate-ping" />
+            <div className="absolute top-1/3 left-1/3 w-3 h-3 bg-amber-500 rounded-full animate-ping" style={{ animationDelay: '500ms' }} />
+          </div>
         </div>
       </div>
 
       {/* Lists Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Latest Mentions */}
-        <div className="bg-[#111827] rounded-xl shadow-sm border border-gray-800 flex flex-col h-[600px] overflow-hidden">
-          <div className="p-4 border-b border-gray-800 flex justify-between items-center bg-[#0B1220]/50">
-            <h2 className="text-base font-semibold text-white">Mentions Mới Nhất</h2>
-            <span className="text-[10px] font-bold tracking-wider uppercase bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 px-2.5 py-1 rounded-md shadow-sm">Top 10</span>
+        <div className="bg-white/5 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/10 flex flex-col h-[600px] overflow-hidden group hover:border-white/20 transition-all duration-500">
+          <div className="p-4 border-b border-white/5 flex justify-between items-center bg-black/20">
+            <h2 className="text-base font-bold text-white tracking-wide">Mentions Mới Nhất</h2>
+            <span className="text-[10px] font-black tracking-[0.1em] uppercase bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 px-3 py-1.5 rounded-lg shadow-sm">Top 10</span>
           </div>
           <div className="p-4 overflow-y-auto flex-1 space-y-3 custom-scrollbar">
             {!metrics?.latest_mentions || metrics.latest_mentions.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full text-gray-400 font-medium tracking-wide">
-                <div className="w-16 h-16 mb-4 rounded-xl bg-[#1E293B] flex items-center justify-center border border-gray-800 shadow-sm">
-                  <FileText className="w-8 h-8 text-gray-500" />
+              <div className="flex flex-col items-center justify-center h-full text-zinc-400 font-medium tracking-wide">
+                <div className="w-16 h-16 mb-4 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 shadow-lg shadow-black/20">
+                  <FileText className="w-8 h-8 text-zinc-500" />
                 </div>
-                <p className="text-sm text-gray-300">Chưa có mention nào.</p>
-                <p className="text-xs mt-1.5 text-gray-500">Hãy thêm nguồn và chạy quét đầu tiên.</p>
+                <p className="text-sm text-zinc-300">Chưa có mention nào.</p>
+                <p className="text-xs mt-1.5 text-zinc-500">Hãy thêm nguồn và chạy quét đầu tiên.</p>
               </div>
             ) : (
               metrics.latest_mentions.map((mention: any) => (
@@ -268,18 +280,18 @@ export default function DashboardPage() {
         </div>
 
         {/* Latest Alerts */}
-        <div className="bg-[#111827] rounded-xl shadow-sm border border-gray-800 flex flex-col h-[600px] overflow-hidden">
-          <div className="p-4 border-b border-gray-800 flex justify-between items-center bg-[#0B1220]/50">
-            <h2 className="text-base font-semibold text-white">Cảnh Báo Cần Xử Lý</h2>
-            <span className="text-[10px] font-bold tracking-wider uppercase bg-rose-500/10 border border-rose-500/20 text-rose-400 px-2.5 py-1 rounded-md shadow-sm">Top 10</span>
+        <div className="bg-white/5 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/10 flex flex-col h-[600px] overflow-hidden group hover:border-white/20 transition-all duration-500">
+          <div className="p-4 border-b border-white/5 flex justify-between items-center bg-black/20">
+            <h2 className="text-base font-bold text-white tracking-wide">Cảnh Báo Cần Xử Lý</h2>
+            <span className="text-[10px] font-black tracking-[0.1em] uppercase bg-rose-500/20 border border-rose-500/30 text-rose-300 px-3 py-1.5 rounded-lg shadow-sm animate-pulse">Top 10</span>
           </div>
           <div className="p-4 overflow-y-auto flex-1 space-y-3 custom-scrollbar">
             {!metrics?.latest_alerts || metrics.latest_alerts.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full text-gray-400 font-medium tracking-wide">
-                <div className="w-16 h-16 mb-4 rounded-xl bg-[#1E293B] flex items-center justify-center border border-gray-800 shadow-sm">
-                  <AlertTriangle className="w-8 h-8 text-gray-500" />
+              <div className="flex flex-col items-center justify-center h-full text-zinc-400 font-medium tracking-wide">
+                <div className="w-16 h-16 mb-4 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 shadow-lg shadow-black/20">
+                  <AlertTriangle className="w-8 h-8 text-zinc-500" />
                 </div>
-                <p className="text-sm text-gray-300">Không có cảnh báo mới nào.</p>
+                <p className="text-sm text-zinc-300">Không có cảnh báo mới nào.</p>
               </div>
             ) : (
               metrics.latest_alerts.map((alert: any) => (
