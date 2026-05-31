@@ -364,12 +364,69 @@ export default function SourcesPage() {
                     : 'Chưa crawl'
                   }
                 </p>
-                {(source as any).last_error && (
-                  <div className="text-xs text-rose-400 mt-3 p-2.5 bg-rose-500/5 border border-rose-500/20 rounded-lg" title={(source as any).last_error}>
-                    <span className="font-semibold text-rose-500 block mb-1 uppercase tracking-wider text-[10px]">Lỗi gần nhất</span>
-                    <span className="opacity-90">{(source as any).last_error.substring(0, 100)}{(source as any).last_error.length > 100 ? '...' : ''}</span>
-                  </div>
-                )}
+                {(() => {
+                  const error = (source as any).last_error;
+                  if (!error) return null;
+                  
+                  // Check if invalid RSS feed
+                  const isInvalidRss = error.includes('invalid_rss_feed') || 
+                                       error.includes('Feed parse error') || 
+                                       error.includes('not well-formed') ||
+                                       error.includes('invalid token') ||
+                                       (source.source_type === 'rss' && error.includes('not well-formed'));
+                                       
+                  if (isInvalidRss) {
+                    return (
+                      <div className="text-xs mt-3 p-2.5 bg-rose-500/5 border border-rose-500/20 rounded-lg">
+                        <span className="font-bold text-rose-500 block mb-1 uppercase tracking-wider text-[10px]">
+                          RSS không hợp lệ
+                        </span>
+                        <span className="text-rose-400 opacity-90 block mb-1">
+                          URL này là trang web, không phải RSS feed.
+                        </span>
+                        <span className="text-gray-500 text-[11px] block leading-relaxed">
+                          Hãy đổi loại nguồn sang Website hoặc nhập RSS URL hợp lệ.
+                        </span>
+                      </div>
+                    );
+                  }
+                  
+                  // Check if OpenAI dependency / config issue
+                  const isAiConfigError = error.includes('ai_provider_not_configured') || 
+                                          error.includes('openai_dependency_missing') || 
+                                          error.includes('AI chưa cấu hình') ||
+                                          error.includes('thiếu package openai') ||
+                                          error.includes('openai package not installed');
+                                          
+                  if (isAiConfigError) {
+                    return (
+                      <div className="text-xs mt-3 p-2.5 bg-amber-500/5 border border-amber-500/20 rounded-lg">
+                        <span className="font-bold text-amber-500 block mb-1 uppercase tracking-wider text-[10px]">
+                          AI chưa sẵn sàng
+                        </span>
+                        <span className="text-amber-400 opacity-90">
+                          AI chưa sẵn sàng: thiếu cấu hình hoặc package.
+                        </span>
+                      </div>
+                    );
+                  }
+
+                  // Default clean display
+                  let cleanMsg = error;
+                  if (error.includes(': ')) {
+                    const parts = error.split(': ');
+                    if (parts.length > 1) {
+                      cleanMsg = parts.slice(1).join(': ');
+                    }
+                  }
+                  
+                  return (
+                    <div className="text-xs text-rose-400 mt-3 p-2.5 bg-rose-500/5 border border-rose-500/20 rounded-lg" title={error}>
+                      <span className="font-semibold text-rose-500 block mb-1 uppercase tracking-wider text-[10px]">Lỗi gần nhất</span>
+                      <span className="opacity-90">{cleanMsg.substring(0, 100)}{cleanMsg.length > 100 ? '...' : ''}</span>
+                    </div>
+                  );
+                })()}
               </div>
 
               <div className="flex justify-end pt-4 border-t border-gray-800/50 mt-auto">

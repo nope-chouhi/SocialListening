@@ -259,10 +259,16 @@ def analyze_mention(
 
     try:
         analysis_result = service_analyze_mention(mention.content, mention.title)
-    except ValueError as e:
+    except Exception as e:
+        err_str = str(e)
+        if "ai_provider_not_configured" in err_str or "openai_dependency_missing" in err_str or "API key is missing" in err_str or "not configured" in err_str:
+            raise HTTPException(
+                status_code=400,
+                detail="AI chưa cấu hình, mention đã được lưu nhưng chưa phân tích AI."
+            )
         raise HTTPException(
             status_code=400,
-            detail=f"Không thể thực hiện phân tích: {str(e)}"
+            detail=f"Không thể thực hiện phân tích: {err_str}"
         )
     
     # Get AI provider name for tracking

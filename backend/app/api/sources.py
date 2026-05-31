@@ -253,6 +253,16 @@ def create_source(
         if existing:
             raise HTTPException(status_code=409, detail="Nguồn với URL này đã tồn tại")
 
+        # Validate if RSS
+        if data.get('source_type') == 'rss':
+            from app.services.crawl_service import validate_rss_feed
+            is_rss_valid, error_code, error_msg = validate_rss_feed(data['url'])
+            if not is_rss_valid:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="URL này không phải RSS feed hợp lệ. Hãy đổi loại nguồn sang Website hoặc nhập link RSS hợp lệ."
+                )
+
         source = Source(**data)
         db.add(source)
         db.commit()
@@ -301,10 +311,20 @@ def update_source(
             except Exception:
                 update_dict['crawl_time'] = None
 
-        if 'url' in update_dict:
-            existing = db.execute(select(Source).where(Source.url == update_dict['url'], Source.id != source_id)).scalar_one_or_none()
-            if existing:
-                raise HTTPException(status_code=409, detail="Nguồn với URL này đã tồn tại")
+        if 'url' in update_dict or 'source_type' in update_dict:
+            final_type = update_dict.get('source_type', source.source_type)
+            final_url = update_dict.get('url', source.url)
+            if final_type == 'rss':
+                from app.services.crawl_service import validate_rss_feed
+                is_rss_valid, error_code, error_msg = validate_rss_feed(final_url)
+                if not is_rss_valid:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="URL này không phải RSS feed hợp lệ. Hãy đổi loại nguồn sang Website hoặc nhập link RSS hợp lệ."
+                    )
+            # Clear error when URL or source type changes and passes validation
+            source.last_error = None
+            source.error_count = 0
 
         for field, value in update_dict.items():
             setattr(source, field, value)

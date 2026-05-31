@@ -205,11 +205,10 @@ class OpenAIProvider(AIProvider):
     def __init__(self, api_key: str):
         self.api_key = api_key
         try:
-            import openai
-            self.openai = openai
-            self.openai.api_key = api_key
+            from openai import OpenAI
+            self.client = OpenAI(api_key=api_key)
         except ImportError:
-            raise ImportError("openai package not installed. Run: pip install openai")
+            raise ImportError("openai_dependency_missing: AI chưa sẵn sàng: thiếu package openai.")
     
     def analyze_mention(self, content: str, title: Optional[str] = None) -> Dict:
         start_time = time.time()
@@ -244,7 +243,7 @@ LƯU Ý QUAN TRỌNG:
 Trả về JSON thuần túy, không có markdown:"""
 
         try:
-            response = self.openai.ChatCompletion.create(
+            response = self.client.chat.completions.create(
                 model="gpt-4",
                 messages=[
                     {"role": "system", "content": "Bạn là chuyên gia phân tích social listening. Trả về JSON thuần túy."},
@@ -311,7 +310,7 @@ Bạn phải trả về JSON thuần túy (không markdown) với cấu trúc sa
 Tuyệt đối chỉ trả về JSON, không có code block markdown:"""
 
         try:
-            response = self.openai.ChatCompletion.create(
+            response = self.client.chat.completions.create(
                 model="gpt-4",
                 messages=[
                     {"role": "system", "content": "Bạn là chuyên gia phân tích khủng hoảng và báo cáo cho ban lãnh đạo. Trả về JSON thuần túy."},
@@ -650,7 +649,7 @@ def get_ai_provider() -> AIProvider:
     if provider_name == "openai":
         api_key = settings.OPENAI_API_KEY
         if not api_key:
-            raise ValueError("OpenAI API key is missing. Please configure OPENAI_API_KEY in settings.")
+            raise ValueError("ai_provider_not_configured: AI chưa cấu hình, mention đã được lưu nhưng chưa phân tích AI.")
         return OpenAIProvider(api_key)
     
     elif provider_name == "gemini":
@@ -672,12 +671,12 @@ def get_ai_provider() -> AIProvider:
     
     elif provider_name == "dummy":
         if is_production:
-            raise ValueError("Dummy AI provider is not allowed in production environment.")
+            raise ValueError("ai_provider_not_configured: AI dummy không được phép chạy trong môi trường Production.")
         return DummyAIProvider()
     
     else:
         if is_production:
-            raise ValueError(f"Unknown/dummy AI provider '{provider_name}' is not allowed in production environment.")
+            raise ValueError(f"ai_provider_not_configured: Unknown/dummy AI provider '{provider_name}' is not allowed in production environment.")
         return DummyAIProvider()
 
 
@@ -729,8 +728,8 @@ Yêu cầu:
     
     try:
         provider = get_ai_provider()
-        if hasattr(provider, 'openai'):
-            response = provider.openai.ChatCompletion.create(
+        if hasattr(provider, 'client'):
+            response = provider.client.chat.completions.create(
                 model="gpt-4",
                 messages=[{"role": "user", "content": prompt}],
                 temperature=0.7,
@@ -761,8 +760,8 @@ Yêu cầu:
     
     try:
         provider = get_ai_provider()
-        if hasattr(provider, 'openai'):
-            response = provider.openai.ChatCompletion.create(
+        if hasattr(provider, 'client'):
+            response = provider.client.chat.completions.create(
                 model="gpt-4",
                 messages=[{"role": "user", "content": prompt}],
                 temperature=0.4,
@@ -792,8 +791,8 @@ Yêu cầu:
     
     try:
         provider = get_ai_provider()
-        if hasattr(provider, 'openai'):
-            response = provider.openai.ChatCompletion.create(
+        if hasattr(provider, 'client'):
+            response = provider.client.chat.completions.create(
                 model="gpt-4",
                 messages=[{"role": "user", "content": prompt}],
                 temperature=0.3,
@@ -824,8 +823,8 @@ Yêu cầu:
 
     try:
         provider = get_ai_provider()
-        if hasattr(provider, 'openai'):
-            response = provider.openai.ChatCompletion.create(
+        if hasattr(provider, 'client'):
+            response = provider.client.chat.completions.create(
                 model="gpt-4",
                 messages=[{"role": "user", "content": prompt}],
                 temperature=0.3,

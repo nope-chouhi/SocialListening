@@ -84,8 +84,31 @@ def run_manual_scan_task(job_id: int, source_ids: List[int], keyword_texts: List
                         )
                         db.add(ai_analysis)
                         db.commit()
-                    except ValueError:
-                        # Skip if provider config fails or demo is off
+                    except Exception as e:
+                        db.rollback()
+                        err_str = str(e)
+                        if "ai_provider_not_configured" in err_str or "openai_dependency_missing" in err_str or "API key is missing" in err_str or "not configured" in err_str:
+                            msg = "AI chưa cấu hình, mention đã được lưu nhưng chưa phân tích AI."
+                            prov = "skipped"
+                        else:
+                            msg = f"Lỗi phân tích AI: {err_str}"
+                            prov = "failed"
+                        
+                        ai_analysis = AIAnalysis(
+                            mention_id=mention.id,
+                            sentiment="neutral",
+                            risk_score=0.0,
+                            crisis_level=1,
+                            summary_vi=msg,
+                            suggested_action="monitor",
+                            responsible_department="customer_service",
+                            confidence_score=0.0,
+                            ai_provider=prov,
+                            model_version=model_version,
+                            processing_time_ms=0
+                        )
+                        db.add(ai_analysis)
+                        db.commit()
                         analysis_result = {'risk_score': 0}
                     
                     if analysis_result['risk_score'] >= 70:
@@ -220,15 +243,27 @@ def crawl_source(source: Source, keyword_texts: List[str], keywords: List[Keywor
     mentions = []
     
     try:
-        is_rss = source.source_type == 'rss' or 'rss' in source.url.lower() or 'feed' in source.url.lower()
+        # Check if already marked invalid_rss_feed
+        if source.last_error and source.last_error.startswith("invalid_rss_feed"):
+            raise ValueError(source.last_error)
+
+        is_rss = source.source_type == 'rss'
         
-        if is_rss:
-            feed = feedparser.parse(source.url)
-            if feed.bozo and not feed.entries:
-                is_rss = False  # Fallback to regular web scraping if RSS fails
-                
         # Try RSS first
         if is_rss:
+            from app.services.crawl_service import validate_rss_feed
+            is_rss_valid, error_code, error_msg = validate_rss_feed(source.url)
+            if not is_rss_valid:
+                source.last_error = f"{error_code}: {error_msg}"
+                source.error_count = (source.error_count or 0) + 1
+                db.commit()
+                raise ValueError(f"{error_code}: {error_msg}")
+
+            feed = feedparser.parse(source.url)
+            if feed.bozo and not feed.entries:
+                error_msg = str(feed.bozo_exception) if hasattr(feed, 'bozo_exception') else "XML không hợp lệ"
+                raise ValueError(f"rss_fetch_failed: Lấy dữ liệu RSS feed thất bại: {error_msg}")
+
             for entry in feed.entries[:20]:  # Limit to 20 entries
                 title = entry.get('title', '')
                 content = entry.get('summary', '') or entry.get('description', '')
@@ -258,8 +293,13 @@ def crawl_source(source: Source, keyword_texts: List[str], keywords: List[Keywor
             headers = {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
             }
-            response = requests.get(source.url, headers=headers, timeout=30)
-            response.raise_for_status()
+            try:
+                response = requests.get(source.url, headers=headers, timeout=30)
+                response.raise_for_status()
+            except requests.exceptions.Timeout:
+                raise ValueError("timeout: Kết nối hết hạn (timeout). Vui lòng thử lại sau.")
+            except Exception as e:
+                raise ValueError(f"website_fetch_failed: Lấy dữ liệu trang web thất bại: {str(e)}")
             
             soup = BeautifulSoup(response.content, 'html.parser')
             

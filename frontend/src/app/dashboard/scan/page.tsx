@@ -734,11 +734,45 @@ export default function ScanPage() {
                               )}
                             </div>
                             <div className="text-[10px] text-gray-600 truncate max-w-xs mt-0.5">{source.url}</div>
-                            {source.last_error && (
-                              <div className="text-[10px] text-rose-400 mt-1 truncate max-w-sm" title={source.last_error}>
-                                ⚠ {source.last_error.substring(0, 80)}{source.last_error.length > 80 ? '...' : ''}
-                              </div>
-                            )}
+                            {source.last_error && (() => {
+                              const error = source.last_error;
+                              const isInvalidRss = error.includes('invalid_rss_feed') || 
+                                                   error.includes('Feed parse error') || 
+                                                   error.includes('not well-formed') ||
+                                                   error.includes('invalid token') ||
+                                                   ((source.source_type || '').toLowerCase() === 'rss' && error.includes('not well-formed'));
+                              if (isInvalidRss) {
+                                return (
+                                  <div className="text-[10px] text-rose-400 mt-1 truncate max-w-sm" title={error}>
+                                    ⚠ RSS không hợp lệ: URL hiện tại là trang web.
+                                  </div>
+                                );
+                              }
+                              const isAiConfigError = error.includes('ai_provider_not_configured') || 
+                                                      error.includes('openai_dependency_missing') || 
+                                                      error.includes('AI chưa cấu hình') ||
+                                                      error.includes('thiếu package openai') ||
+                                                      error.includes('openai package not installed');
+                              if (isAiConfigError) {
+                                return (
+                                  <div className="text-[10px] text-amber-400 mt-1 truncate max-w-sm" title={error}>
+                                    ⚠ AI chưa sẵn sàng: thiếu cấu hình hoặc package.
+                                  </div>
+                                );
+                              }
+                              let cleanMsg = error;
+                              if (error.includes(': ')) {
+                                const parts = error.split(': ');
+                                if (parts.length > 1) {
+                                  cleanMsg = parts.slice(1).join(': ');
+                                }
+                              }
+                              return (
+                                <div className="text-[10px] text-rose-400 mt-1 truncate max-w-sm" title={error}>
+                                  ⚠ {cleanMsg}
+                                </div>
+                              );
+                            })()}
                           </div>
                         </div>
                       </td>

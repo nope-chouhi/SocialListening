@@ -72,6 +72,51 @@ def get_all_active_keywords(db: Session) -> List[Keyword]:
         return []
 
 
+def validate_rss_feed(url: str) -> tuple[bool, str, str]:
+    """
+    Validate if a URL is a valid RSS/Atom feed.
+    Returns (is_valid, error_code, error_message_vi).
+    """
+    import requests
+    try:
+        headers = {"User-Agent": USER_AGENT}
+        response = requests.get(url, headers=headers, timeout=15, allow_redirects=True)
+        response.raise_for_status()
+    except requests.exceptions.Timeout:
+        return False, "timeout", "Kết nối hết hạn (timeout). Vui lòng thử lại sau."
+    except Exception as e:
+        return False, "rss_fetch_failed", f"Lấy dữ liệu RSS feed thất bại: {str(e)}"
+
+    content_type = response.headers.get("content-type", "").lower()
+    
+    # Check if content type is html
+    is_html = "text/html" in content_type
+    
+    # Inspect first few bytes/chars
+    try:
+        content_preview = response.content[:2048].decode('utf-8', errors='ignore').strip().lower()
+    except Exception:
+        content_preview = ""
+
+    # If it is HTML or contains HTML tags at start
+    if is_html or content_preview.startswith("<!doctype html") or "<html" in content_preview:
+        return False, "invalid_rss_feed", "URL hiện tại là trang web, không phải RSS feed. Vui lòng đổi loại nguồn sang Website hoặc nhập RSS URL hợp lệ."
+
+    # Inspect first bytes: valid feed should contain <rss, <feed, or XML declaration
+    has_valid_tag = (
+        "<?xml" in content_preview or 
+        "<rss" in content_preview or 
+        "<feed" in content_preview or 
+        "<rdf:rdf" in content_preview or
+        "<channel" in content_preview
+    )
+    
+    if not has_valid_tag:
+        return False, "invalid_rss_feed", "URL hiện tại không phải RSS feed hợp lệ. Vui lòng đổi loại nguồn sang Website hoặc nhập RSS URL hợp lệ."
+
+    return True, "", ""
+
+
 def crawl_rss_feed(url: str) -> Dict:
     """
     Crawl RSS/Atom feed with production error handling.
@@ -162,14 +207,14 @@ def crawl_rss_feed(url: str) -> Dict:
         }
 
     except requests.exceptions.Timeout:
-        return {"success": False, "articles": [], "feed_title": "", "error": f"Timeout after {REQUEST_TIMEOUT}s"}
+        return {"success": False, "articles": [], "feed_title": "", "error": "timeout: Kết nối hết hạn (timeout). Vui lòng thử lại sau."}
     except requests.exceptions.ConnectionError as e:
-        return {"success": False, "articles": [], "feed_title": "", "error": f"Connection error: {e}"}
+        return {"success": False, "articles": [], "feed_title": "", "error": f"rss_fetch_failed: Lấy dữ liệu RSS feed thất bại do lỗi kết nối: {e}"}
     except requests.exceptions.HTTPError as e:
-        return {"success": False, "articles": [], "feed_title": "", "error": f"HTTP error: {e}"}
+        return {"success": False, "articles": [], "feed_title": "", "error": f"rss_fetch_failed: Lấy dữ liệu RSS feed thất bại với mã lỗi HTTP: {e}"}
     except Exception as e:
         logger.error(f"Unexpected error crawling RSS feed {url}: {e}")
-        return {"success": False, "articles": [], "feed_title": "", "error": str(e)}
+        return {"success": False, "articles": [], "feed_title": "", "error": f"rss_fetch_failed: Lấy dữ liệu RSS feed thất bại: {e}"}
 
 
 def crawl_html_page(url: str) -> Dict:
@@ -249,18 +294,35 @@ def crawl_source(db: Session, source_id: int, job_id: int = None) -> Dict:
     if not source.is_active:
         raise ValueError(f"Source {source_id} is not active")
 
+    # If already marked as invalid_rss_feed, skip scan
+    if source.last_error and source.last_error.startswith("invalid_rss_feed"):
+        logger.info(f"Skipping RSS crawl for source {source.id} ({source.url}) because it is marked invalid_rss_feed")
+        return {
+            'mentions_found': 0,
+            'mentions_new': 0,
+            'mentions_duplicate': 0,
+            'error': source.last_error
+        }
+
     # Get all active keywords
     keywords = get_all_active_keywords(db)
 
     # Crawl based on source type
     if source.source_type in ('rss', 'news'):
+        is_rss_valid, error_code, error_msg = validate_rss_feed(source.url)
+        if not is_rss_valid:
+            source.last_error = f"{error_code}: {error_msg}"
+            source.error_count = (source.error_count or 0) + 1
+            source.last_crawled_at = datetime.now(timezone.utc)
+            db.commit()
+            return {
+                'mentions_found': 0,
+                'mentions_new': 0,
+                'mentions_duplicate': 0,
+                'error': f"{error_code}: {error_msg}"
+            }
+        
         result = crawl_rss_feed(source.url)
-        # Fallback to HTML scraping if RSS parsing fails (e.g. user entered HTML page instead of XML feed)
-        if not result["success"]:
-            logger.warning(f"RSS crawl failed for {source.url}, falling back to HTML crawl")
-            html_result = crawl_html_page(source.url)
-            if html_result["success"]:
-                result = html_result
     elif source.source_type in ('website', 'manual_url', 'forum'):
         result = crawl_html_page(source.url)
     else:
@@ -273,7 +335,7 @@ def crawl_source(db: Session, source_id: int, job_id: int = None) -> Dict:
         }
 
     if not result["success"]:
-        raise ValueError(f"Crawl failed: {result['error']}")
+        raise ValueError(result["error"])
 
     articles = result["articles"]
     mentions_found = len(articles)
@@ -364,7 +426,28 @@ def crawl_source(db: Session, source_id: int, job_id: int = None) -> Dict:
 
             except Exception as e:
                 logger.warning(f"AI analysis failed for mention {mention.id}: {e}")
-                # Mention is still saved without AI analysis
+                err_str = str(e)
+                if "ai_provider_not_configured" in err_str or "openai_dependency_missing" in err_str or "API key is missing" in err_str or "not configured" in err_str:
+                    msg = "AI chưa cấu hình, mention đã được lưu nhưng chưa phân tích AI."
+                    prov = "skipped"
+                else:
+                    msg = f"AI analysis failed: {err_str}"
+                    prov = "failed"
+                
+                ai_analysis = AIAnalysis(
+                    mention_id=mention.id,
+                    sentiment="neutral",
+                    risk_score=0.0,
+                    crisis_level=1,
+                    summary_vi=msg,
+                    suggested_action="monitor",
+                    responsible_department="customer_service",
+                    confidence_score=0.0,
+                    ai_provider=prov,
+                    model_version="1.0",
+                    processing_time_ms=0
+                )
+                db.add(ai_analysis)
 
             mentions_new += 1
 

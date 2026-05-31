@@ -88,17 +88,17 @@ class Settings(BaseSettings):
             origins.append(self.FRONTEND_URL)
         return origins
     
-    class Config:
-        env_file = '.env'
-        case_sensitive = True
-        extra = 'ignore'
-
     if SettingsConfigDict:
         model_config = SettingsConfigDict(
             env_file='.env',
             case_sensitive=True,
             extra='ignore'
         )
+    else:
+        class Config:
+            env_file = '.env'
+            case_sensitive = True
+            extra = 'ignore'
 
 settings = Settings()
 
