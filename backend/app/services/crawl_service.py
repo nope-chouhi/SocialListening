@@ -308,7 +308,21 @@ def crawl_source(db: Session, source_id: int, job_id: int = None) -> Dict:
     keywords = get_all_active_keywords(db)
 
     # Crawl based on source type
-    if source.source_type in ('rss', 'news'):
+    if source.source_type == 'global_search':
+        import urllib.parse
+        all_articles = []
+        for kw in keywords:
+            q = urllib.parse.quote(kw.keyword)
+            url = f"https://news.google.com/rss/search?q={q}&hl=vi&gl=VN&ceid=VN:vi"
+            res = crawl_rss_feed(url)
+            if res.get("success"):
+                all_articles.extend(res.get("articles", []))
+        result = {
+            "success": True,
+            "articles": all_articles,
+            "error": None
+        }
+    elif source.source_type in ('rss', 'news'):
         is_rss_valid, error_code, error_msg = validate_rss_feed(source.url)
         if not is_rss_valid:
             source.last_error = f"{error_code}: {error_msg}"

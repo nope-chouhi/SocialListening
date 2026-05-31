@@ -37,7 +37,7 @@ interface CrawlJob {
   completed_at: string | null;
 }
 
-type SourceFilter = 'all' | 'rss' | 'website' | 'active';
+type SourceFilter = 'all' | 'rss' | 'website' | 'global_search' | 'active';
 
 const TEST_SOURCE_PATTERNS = [
   'example.com',
@@ -94,7 +94,10 @@ export default function ScanPage() {
         result = result.filter((s) => (s.source_type || '').toLowerCase() === 'rss');
         break;
       case 'website':
-        result = result.filter((s) => (s.source_type || '').toLowerCase() !== 'rss');
+        result = result.filter((s) => ['website', 'manual_url', 'forum'].includes((s.source_type || '').toLowerCase()));
+        break;
+      case 'global_search':
+        result = result.filter((s) => (s.source_type || '').toLowerCase() === 'global_search');
         break;
       case 'active':
         result = result.filter((s) => s.is_active);
@@ -206,7 +209,7 @@ export default function ScanPage() {
     }
     const validSources = selectedSources.filter(id => {
       const source = sources.find(s => s.id === id);
-      return source && ['rss', 'website'].includes((source.source_type || '').toLowerCase());
+      return source && ['rss', 'website', 'global_search'].includes((source.source_type || '').toLowerCase());
     });
     
     if (validSources.length < selectedSources.length) {
@@ -406,17 +409,17 @@ export default function ScanPage() {
     }
   };
 
-  // ── Source filter tabs ──
   const filterTabs: { key: SourceFilter; label: string; icon: React.ReactNode }[] = [
     { key: 'all', label: 'Tất cả', icon: <Globe className="w-3 h-3" /> },
     { key: 'rss', label: 'RSS', icon: <Rss className="w-3 h-3" /> },
     { key: 'website', label: 'Website', icon: <LinkIcon className="w-3 h-3" /> },
+    { key: 'global_search', label: 'Global Search', icon: <Sparkles className="w-3 h-3" /> },
     { key: 'active', label: 'Active', icon: <CheckCircle className="w-3 h-3" /> },
   ];
 
   // Count of valid selectable sources in filtered view
   const selectableCount = filteredSources.filter(
-    (s) => ['rss', 'website'].includes((s.source_type || '').toLowerCase())
+    (s) => ['rss', 'website', 'global_search'].includes((s.source_type || '').toLowerCase())
   ).length;
 
   // Recent completed job (for quick result display)
@@ -694,7 +697,7 @@ export default function ScanPage() {
               <tbody className="divide-y divide-gray-800/60">
                 {filteredSources.map((source: any) => {
                   const test = isTestSource(source);
-                  const isSupported = ['rss', 'website'].includes((source.source_type || '').toLowerCase());
+                  const isSupported = ['rss', 'website', 'global_search'].includes((source.source_type || '').toLowerCase());
                   const isUnsupported = !isSupported && source.source_type;
                   const isSelected = selectedSources.includes(source.id);
 

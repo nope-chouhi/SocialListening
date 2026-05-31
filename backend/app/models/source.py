@@ -15,6 +15,7 @@ class SourceType(str, Enum):
     RSS = "rss"
     FORUM = "forum"
     MANUAL_URL = "manual_url"
+    GLOBAL_SEARCH = "global_search"
 
 
 class CrawlFrequency(str, Enum):
