@@ -42,6 +42,12 @@ export default function ReportsPage() {
         const html2pdf = (await import('html2pdf.js')).default;
         const element = document.getElementById('report-content');
         
+        if (!element) {
+          toast.error('Không tìm thấy nội dung báo cáo để xuất', { id: 'export-pdf' });
+          setExporting(false);
+          return;
+        }
+        
         const opt: any = {
           margin:       10,
           filename:     `Brand_Report_${new Date().toISOString().split('T')[0]}.pdf`,
