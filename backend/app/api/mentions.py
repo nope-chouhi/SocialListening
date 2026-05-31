@@ -11,7 +11,7 @@ from app.models.user import User
 from app.models.mention import Mention, AIAnalysis
 from app.models.alert import Alert, AlertStatus, AlertSeverity
 from app.models.incident import Incident, IncidentStatus, IncidentLog
-from app.services.ai_service import analyze_mention
+from app.services.ai_service import analyze_mention as service_analyze_mention
 from app.services.notification_service import notify_high_risk_mention
 import os
 from math import ceil
@@ -65,6 +65,7 @@ def list_mentions(
     try:
         from sqlalchemy import or_
         query = select(Mention)
+        has_ai_filter = sentiment or min_risk_score is not None
 
         if source_id:
             query = query.where(Mention.source_id == source_id)
@@ -78,6 +79,13 @@ def list_mentions(
                 )
             )
 
+        if has_ai_filter:
+            query = query.join(AIAnalysis, AIAnalysis.mention_id == Mention.id)
+            if sentiment:
+                query = query.where(AIAnalysis.sentiment == sentiment)
+            if min_risk_score is not None:
+                query = query.where(AIAnalysis.risk_score >= min_risk_score)
+
         try:
             # Count query without subquery to avoid PostgreSQL alias/syntax issues
             count_query = select(func.count()).select_from(Mention)
@@ -90,6 +98,12 @@ def list_mentions(
                         Mention.content.ilike(search_pattern)
                     )
                 )
+            if has_ai_filter:
+                count_query = count_query.join(AIAnalysis, AIAnalysis.mention_id == Mention.id)
+                if sentiment:
+                    count_query = count_query.where(AIAnalysis.sentiment == sentiment)
+                if min_risk_score is not None:
+                    count_query = count_query.where(AIAnalysis.risk_score >= min_risk_score)
             total = db.execute(count_query).scalar() or 0
         except Exception as e:
             db.rollback()
@@ -215,10 +229,17 @@ def analyze_mention(
         select(AIAnalysis).where(AIAnalysis.mention_id == mention_id)
     ).scalar_one_or_none()
 
-    analysis_result = analyze_mention(mention.content, mention.title)
+    try:
+        analysis_result = service_analyze_mention(mention.content, mention.title)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Không thể thực hiện phân tích: {str(e)}"
+        )
     
     # Get AI provider name for tracking
-    ai_provider = os.getenv("AI_PROVIDER", "dummy").lower()
+    from app.core.config import settings
+    ai_provider = settings.AI_PROVIDER.lower()
     model_version = "gpt-4" if ai_provider == "openai" else ("gemini-pro" if ai_provider == "gemini" else "keyword-v1.0")
 
     if existing:

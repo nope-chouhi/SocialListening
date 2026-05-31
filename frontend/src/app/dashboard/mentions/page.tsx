@@ -157,12 +157,12 @@ export default function MentionsPage() {
                           <span className="text-[11px] font-medium text-gray-500 uppercase tracking-wider">
                             Crisis: {mention.ai_analysis.crisis_level}/5
                           </span>
-                          {mention.ai_analysis.ai_provider === 'dummy' && (
+                          {(mention.ai_analysis.ai_provider === 'dummy' || mention.ai_analysis.ai_provider === 'dummy_ai') && (
                             <span className="px-1.5 py-0.5 text-[9px] font-bold tracking-wider uppercase text-orange-400 bg-orange-500/10 rounded border border-orange-500/20">
                               AI: DUMMY
                             </span>
                           )}
-                          {mention.ai_analysis.ai_provider && mention.ai_analysis.ai_provider !== 'dummy' && (
+                          {mention.ai_analysis.ai_provider && mention.ai_analysis.ai_provider !== 'dummy' && mention.ai_analysis.ai_provider !== 'dummy_ai' && (
                             <span className="px-1.5 py-0.5 text-[9px] font-bold tracking-wider uppercase text-indigo-400 bg-indigo-500/10 rounded border border-indigo-500/20">
                               AI: {mention.ai_analysis.ai_provider}
                             </span>

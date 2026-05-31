@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Key, Plus, Copy, Eye, EyeOff, Trash2, Power, PowerOff, Calendar } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { api } from '@/lib/api';
 
 interface APIKey {
   id: number;
@@ -42,15 +43,8 @@ export default function APIWebhooks() {
 
   const loadAPIKeys = async () => {
     try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch('https://social-listening-backend.onrender.com/api/api-keys/', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-
-      if (!response.ok) throw new Error('Failed to load API keys');
-      
-      const data = await response.json();
-      setApiKeys(data);
+      const response = await api.get('/api/api-keys/');
+      setApiKeys(response.data);
     } catch (error) {
       console.error('Error loading API keys:', error);
       toast.error('Không thể tải danh sách API keys');
@@ -63,34 +57,20 @@ export default function APIWebhooks() {
     e.preventDefault();
     
     try {
-      const token = localStorage.getItem('access_token');
       const payload = {
         name: newKeyData.name,
         permissions: newKeyData.permissions,
         expires_at: newKeyData.expires_at || null
       };
 
-      const response = await fetch('https://social-listening-backend.onrender.com/api/api-keys/', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload)
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || 'Failed to create API key');
-      }
-
-      const data: APIKeyCreateResponse = await response.json();
+      const response = await api.post('/api/api-keys/', payload);
+      const data: APIKeyCreateResponse = response.data;
       setCreatedKey(data.full_key);
       toast.success('Tạo API key thành công');
       loadAPIKeys();
     } catch (error: any) {
       console.error('Error creating API key:', error);
-      toast.error(error.message || 'Không thể tạo API key');
+      toast.error(error.response?.data?.detail || 'Không thể tạo API key');
     }
   };
 
@@ -98,14 +78,7 @@ export default function APIWebhooks() {
     if (!confirm('Bạn có chắc muốn thu hồi API key này? Hành động này không thể hoàn tác.')) return;
 
     try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch(`https://social-listening-backend.onrender.com/api/api-keys/${keyId}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-
-      if (!response.ok) throw new Error('Failed to revoke API key');
-
+      await api.delete(`/api/api-keys/${keyId}`);
       toast.success('Thu hồi API key thành công');
       loadAPIKeys();
     } catch (error) {
@@ -116,15 +89,8 @@ export default function APIWebhooks() {
 
   const handleToggleActive = async (keyId: number, currentStatus: boolean) => {
     try {
-      const token = localStorage.getItem('access_token');
       const action = currentStatus ? 'deactivate' : 'activate';
-      const response = await fetch(`https://social-listening-backend.onrender.com/api/api-keys/${keyId}/${action}`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-
-      if (!response.ok) throw new Error(`Failed to ${action} API key`);
-
+      await api.post(`/api/api-keys/${keyId}/${action}`);
       toast.success(currentStatus ? 'Vô hiệu hóa thành công' : 'Kích hoạt thành công');
       loadAPIKeys();
     } catch (error) {

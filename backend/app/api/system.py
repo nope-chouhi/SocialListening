@@ -11,7 +11,8 @@ router = APIRouter()
 
 @router.get("/worker-status")
 def get_worker_status(
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
 ):
     """Get the real-time status of the background worker."""
     status_record = db.query(WorkerStatus).first()

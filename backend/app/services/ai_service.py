@@ -7,6 +7,7 @@ import time
 import json
 from typing import Dict, Optional
 from abc import ABC, abstractmethod
+from app.core.config import settings
 
 
 # ============================================================================
@@ -283,8 +284,10 @@ Trả về JSON thuần túy, không có markdown:"""
             return result
             
         except Exception as e:
-            # Fallback to dummy analysis if OpenAI fails
+            # Fallback to dummy analysis if OpenAI fails and not in production
             print(f"OpenAI analysis failed: {e}")
+            if settings.ENVIRONMENT.lower() == "production":
+                raise ValueError(f"OpenAI analysis failed and dummy fallback is disabled in production: {e}")
             dummy = DummyAIProvider()
             return dummy.analyze_mention(content, title)
 
@@ -429,8 +432,10 @@ Trả về JSON thuần túy, không có markdown:
             return result
             
         except Exception as e:
-            # Fallback to dummy analysis if Gemini fails
+            # Fallback to dummy analysis if Gemini fails and not in production
             print(f"Gemini analysis failed: {e}")
+            if settings.ENVIRONMENT.lower() == "production":
+                raise ValueError(f"Gemini analysis failed and dummy fallback is disabled in production: {e}")
             dummy = DummyAIProvider()
             return dummy.analyze_mention(content, title)
 
@@ -513,6 +518,8 @@ class PhoBERTProvider(AIProvider):
         
         # Fallback nếu PhoBERT không khả dụng
         if not self._available:
+            if settings.ENVIRONMENT.lower() == "production":
+                raise ValueError("PhoBERT model is unavailable and dummy fallback is disabled in production.")
             dummy = DummyAIProvider()
             result = dummy.analyze_mention(content, title)
             result["ai_provider"] = "dummy_fallback"
@@ -617,6 +624,8 @@ class PhoBERTProvider(AIProvider):
             
         except Exception as e:
             print(f"PhoBERT analysis failed: {e}")
+            if settings.ENVIRONMENT.lower() == "production":
+                raise ValueError(f"PhoBERT analysis failed and dummy fallback is disabled in production: {e}")
             dummy = DummyAIProvider()
             result = dummy.analyze_mention(content, title)
             result["ai_provider"] = "dummy_fallback"
@@ -630,30 +639,24 @@ class PhoBERTProvider(AIProvider):
 
 def get_ai_provider() -> AIProvider:
     """
-    Get the configured AI provider based on environment variables
-    
-    Environment Variables:
-        AI_PROVIDER: "openai", "gemini", or "dummy" (default: "dummy")
-        OPENAI_API_KEY: OpenAI API key (required if AI_PROVIDER=openai)
-        GEMINI_API_KEY: Google Gemini API key (required if AI_PROVIDER=gemini)
+    Get the configured AI provider based on settings
     
     Returns:
         AIProvider instance
     """
-    provider_name = os.getenv("AI_PROVIDER", "dummy").lower()
+    provider_name = settings.AI_PROVIDER.lower()
+    is_production = settings.ENVIRONMENT.lower() == "production"
     
     if provider_name == "openai":
-        api_key = os.getenv("OPENAI_API_KEY")
+        api_key = settings.OPENAI_API_KEY
         if not api_key:
-            print("WARNING: OPENAI_API_KEY not set, falling back to dummy AI")
-            return DummyAIProvider()
+            raise ValueError("OpenAI API key is missing. Please configure OPENAI_API_KEY in settings.")
         return OpenAIProvider(api_key)
     
     elif provider_name == "gemini":
-        api_key = os.getenv("GEMINI_API_KEY")
+        api_key = settings.GEMINI_API_KEY
         if not api_key:
-            print("WARNING: GEMINI_API_KEY not set, falling back to dummy AI")
-            return DummyAIProvider()
+            raise ValueError("Gemini API key is missing. Please configure GEMINI_API_KEY in settings.")
         return GeminiProvider(api_key)
     
     elif provider_name == "phobert":
@@ -662,11 +665,19 @@ def get_ai_provider() -> AIProvider:
         provider = PhoBERTProvider()
         if provider._available:
             return provider
+        if is_production:
+            raise ValueError("PhoBERT model is unavailable and dummy fallback is disabled in production.")
         print("WARNING: PhoBERT unavailable, falling back to dummy AI")
         return DummyAIProvider()
     
+    elif provider_name == "dummy":
+        if is_production:
+            raise ValueError("Dummy AI provider is not allowed in production environment.")
+        return DummyAIProvider()
+    
     else:
-        # Default to dummy provider
+        if is_production:
+            raise ValueError(f"Unknown/dummy AI provider '{provider_name}' is not allowed in production environment.")
         return DummyAIProvider()
 
 

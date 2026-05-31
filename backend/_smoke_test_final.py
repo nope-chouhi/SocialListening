@@ -51,7 +51,7 @@ kw_resp = client.post("/api/keywords", json={
     "keyword": "Thế giới", # High chance of hitting VnExpress RSS
     "match_type": "exact"
 }, headers=headers)
-if kw_resp.status_code != 200:
+if kw_resp.status_code not in (200, 201):
     print(f"   FAIL: Keyword create failed: {kw_resp.status_code} {kw_resp.text}")
 kw_id = kw_resp.json()["id"]
 print(f"   Created group ID {kw_group_id}, keyword ID {kw_id}")
@@ -64,7 +64,11 @@ source_resp = client.post("/api/sources", json={
     "source_type": "rss",
     "crawl_frequency": "manual"
 }, headers=headers)
-source_id = source_resp.json()["id"]
+if source_resp.status_code == 409:
+    existing_source = db.execute(select(Source).where(Source.url == "https://vnexpress.net/rss/tin-moi-nhat.rss")).scalars().first()
+    source_id = existing_source.id
+else:
+    source_id = source_resp.json()["id"]
 print(f"   Created source ID {source_id}")
 
 # 3. Run Manual Scan

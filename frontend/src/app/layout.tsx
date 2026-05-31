@@ -9,11 +9,14 @@ export const metadata: Metadata = {
   description: 'Nền tảng giám sát truyền thông, thu thập mentions, phân tích sắc thái và cảnh báo rủi ro.',
   applicationName: 'Nope',
   creator: 'Nope',
-  themeColor: '#111827',
   manifest: '/manifest.json',
   icons: {
     icon: '/favicon.svg',
   },
+}
+
+export const viewport = {
+  themeColor: '#111827',
 }
 
 export default function RootLayout({

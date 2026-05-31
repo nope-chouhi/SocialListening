@@ -88,12 +88,17 @@ class Settings(BaseSettings):
             origins.append(self.FRONTEND_URL)
         return origins
     
-    # Pydantic v2 settings config
-    model_config = SettingsConfigDict(
-        env_file='.env',
-        case_sensitive=True,
-        extra='ignore'
-    ) if SettingsConfigDict else type('Config', (), {'env_file': '.env', 'case_sensitive': True})()
+    class Config:
+        env_file = '.env'
+        case_sensitive = True
+        extra = 'ignore'
+
+    if SettingsConfigDict:
+        model_config = SettingsConfigDict(
+            env_file='.env',
+            case_sensitive=True,
+            extra='ignore'
+        )
 
 
 settings = Settings()

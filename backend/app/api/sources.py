@@ -249,7 +249,7 @@ def create_source(
         )
 
         # Check for duplicate URL
-        existing = db.execute(select(Source).where(Source.url == data['url'])).scalar_one_or_none()
+        existing = db.execute(select(Source).where(Source.url == data['url'])).scalars().first()
         if existing:
             raise HTTPException(status_code=409, detail="Nguồn với URL này đã tồn tại")
 

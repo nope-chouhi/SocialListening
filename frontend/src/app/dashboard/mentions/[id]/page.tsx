@@ -172,12 +172,12 @@ export default function MentionDetailPage() {
             <div className="bg-[#111827] border border-gray-800 rounded-xl shadow-sm p-6">
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-lg font-bold text-white">AI Analysis</h3>
-                {mention.ai_analysis.ai_provider === 'dummy' && (
+                {(mention.ai_analysis.ai_provider === 'dummy' || mention.ai_analysis.ai_provider === 'dummy_ai') && (
                   <span className="px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase text-orange-400 bg-orange-500/10 rounded-md border border-orange-500/20">
                     DUMMY/DEV
                   </span>
                 )}
-                {mention.ai_analysis.ai_provider && mention.ai_analysis.ai_provider !== 'dummy' && (
+                {mention.ai_analysis.ai_provider && mention.ai_analysis.ai_provider !== 'dummy' && mention.ai_analysis.ai_provider !== 'dummy_ai' && (
                   <span className="px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase text-indigo-400 bg-indigo-500/10 rounded-md border border-indigo-500/20">
                     {mention.ai_analysis.ai_provider}
                   </span>

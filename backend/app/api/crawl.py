@@ -12,7 +12,7 @@ from pydantic import BaseModel
 from app.core.database import get_db, SessionLocal
 from app.core.security import get_current_active_user
 from app.models.user import User
-from app.models.source import Source
+from app.models.source import Source, SourceType
 from app.models.keyword import Keyword, KeywordGroup
 from app.models.mention import Mention, AIAnalysis, SentimentScore
 from app.models.alert import Alert, AlertSeverity, AlertStatus
@@ -72,7 +72,7 @@ def run_manual_scan_task(job_id: int, source_ids: List[int], keyword_texts: List
                         suggested_action=analysis_result['suggested_action'],
                         responsible_department=analysis_result['responsible_department'],
                         confidence_score=analysis_result['confidence_score'],
-                        ai_provider="dummy_ai",
+                        ai_provider="dummy",
                         model_version="1.0",
                         processing_time_ms=analysis_result['processing_time_ms']
                     )
@@ -163,7 +163,11 @@ def manual_scan(
         sources_to_scan.append(temp_source)
     elif body.source_ids:
         sources_to_scan = db.execute(
-            select(Source).where(Source.id.in_(body.source_ids), Source.is_active == True)
+            select(Source).where(
+                Source.id.in_(body.source_ids),
+                Source.is_active == True,
+                Source.source_type.in_([SourceType.WEBSITE, SourceType.RSS])
+            )
         ).scalars().all()
     else:
         raise HTTPException(status_code=400, detail="Phải cung cấp source_ids hoặc url")
