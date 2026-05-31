@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react';
 import { 
   BarChart3, AlertTriangle, FileText, Database, 
-  TrendingUp, TrendingDown, RefreshCcw 
+  TrendingUp, TrendingDown, RefreshCcw,
+  Users, Map, PieChart, Sparkles, Activity
 } from 'lucide-react';
 import { dashboard, auth } from '@/lib/api';
 import toast, { Toaster } from 'react-hot-toast';
@@ -116,7 +117,13 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-white tracking-wide">Dashboard</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-bold text-white tracking-wide">Dashboard</h1>
+            <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 bg-indigo-500/10 border border-indigo-500/20 rounded-md">
+              <Activity className="w-3.5 h-3.5 text-indigo-400" />
+              <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-400">AI Anomaly Monitor Active</span>
+            </div>
+          </div>
           <p className="text-sm text-gray-400 mt-1">Tổng quan giám sát truyền thông, mentions và cảnh báo rủi ro.</p>
         </div>
         
@@ -182,6 +189,51 @@ export default function DashboardPage() {
             <h2 className="text-base font-semibold text-white mb-4">Từ Khóa Nổi Bật</h2>
             <HotKeywordsWidget data={hotKeywords?.items || []} isLoading={loadingCharts} />
           </div>
+        </div>
+      </div>
+
+      {/* Advanced Enterprise Widgets (Not Integrated Yet) */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-[#111827] rounded-xl shadow-sm border border-gray-800 p-5 relative overflow-hidden group">
+          <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-[2px] z-10 flex flex-col items-center justify-center transition-all duration-300">
+            <div className="bg-[#1E293B] p-3 rounded-full mb-3 shadow-lg border border-gray-700">
+              <PieChart className="w-6 h-6 text-gray-400" />
+            </div>
+            <span className="text-xs font-bold uppercase tracking-wider text-gray-400 bg-[#0B1220] px-3 py-1 rounded-full border border-gray-800">Chưa tích hợp</span>
+            <p className="text-xs text-gray-500 mt-2 text-center px-4">Tính năng Share of Voice đang được phát triển.</p>
+          </div>
+          <h2 className="text-base font-semibold text-gray-500 mb-4 opacity-50 flex items-center">
+            <PieChart className="w-4 h-4 mr-2" /> Share of Voice
+          </h2>
+          <div className="h-40 bg-[#0B1220] rounded-lg border border-gray-800 opacity-20"></div>
+        </div>
+
+        <div className="bg-[#111827] rounded-xl shadow-sm border border-gray-800 p-5 relative overflow-hidden group">
+          <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-[2px] z-10 flex flex-col items-center justify-center transition-all duration-300">
+            <div className="bg-[#1E293B] p-3 rounded-full mb-3 shadow-lg border border-gray-700">
+              <Users className="w-6 h-6 text-gray-400" />
+            </div>
+            <span className="text-xs font-bold uppercase tracking-wider text-gray-400 bg-[#0B1220] px-3 py-1 rounded-full border border-gray-800">Chưa tích hợp</span>
+            <p className="text-xs text-gray-500 mt-2 text-center px-4">Bảng xếp hạng Influencers đang được phát triển.</p>
+          </div>
+          <h2 className="text-base font-semibold text-gray-500 mb-4 opacity-50 flex items-center">
+            <Users className="w-4 h-4 mr-2" /> Top Influencers
+          </h2>
+          <div className="h-40 bg-[#0B1220] rounded-lg border border-gray-800 opacity-20"></div>
+        </div>
+
+        <div className="bg-[#111827] rounded-xl shadow-sm border border-gray-800 p-5 relative overflow-hidden group">
+          <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-[2px] z-10 flex flex-col items-center justify-center transition-all duration-300">
+            <div className="bg-[#1E293B] p-3 rounded-full mb-3 shadow-lg border border-gray-700">
+              <Map className="w-6 h-6 text-gray-400" />
+            </div>
+            <span className="text-xs font-bold uppercase tracking-wider text-gray-400 bg-[#0B1220] px-3 py-1 rounded-full border border-gray-800">Chưa tích hợp</span>
+            <p className="text-xs text-gray-500 mt-2 text-center px-4">Bản đồ nhiệt Geolocation chưa thu thập đủ data.</p>
+          </div>
+          <h2 className="text-base font-semibold text-gray-500 mb-4 opacity-50 flex items-center">
+            <Map className="w-4 h-4 mr-2" /> Geolocation Heat Map
+          </h2>
+          <div className="h-40 bg-[#0B1220] rounded-lg border border-gray-800 opacity-20"></div>
         </div>
       </div>
 

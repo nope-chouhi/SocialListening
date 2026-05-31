@@ -19,7 +19,11 @@ import {
   X,
   Settings,
   Briefcase,
-  Radar
+  Radar,
+  BarChart,
+  Users,
+  Trophy,
+  Bot
 } from 'lucide-react';
 
 export default function DashboardLayout({
@@ -112,12 +116,16 @@ export default function DashboardLayout({
 
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+    { name: 'AI Assistant', href: '/dashboard/assistant', icon: Bot },
     { name: 'Scan Center', href: '/dashboard/scan', icon: FileText },
     { name: 'Từ khóa', href: '/dashboard/keywords', icon: Key },
     { name: 'Nguồn', href: '/dashboard/sources', icon: Globe },
     { name: 'Mentions', href: '/dashboard/mentions', icon: FileText, badge: badges.unreviewed_mentions },
     { name: 'Cảnh báo', href: '/dashboard/alerts', icon: Bell, badge: badges.new_alerts },
     { name: 'Sự cố', href: '/dashboard/incidents', icon: AlertTriangle, badge: badges.open_incidents },
+    { name: 'Đối thủ', href: '/dashboard/competitors', icon: Radar },
+    { name: 'Influencers', href: '/dashboard/influencers', icon: Trophy },
+    { name: 'Báo cáo', href: '/dashboard/reports', icon: BarChart },
     { name: 'Dịch vụ', href: '/dashboard/services', icon: Briefcase },
     { name: 'Cài đặt', href: '/dashboard/settings', icon: Settings }, // Available to all users
   ];

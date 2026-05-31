@@ -10,7 +10,7 @@ from app.core.database import engine, Base, SessionLocal
 from app.api import (
     auth, keywords, sources, mentions, alerts,
     incidents, reports, dashboard, crawl, takedown, services, admin, users, settings as settings_api,
-    roles, api_keys, branding, audit, monitor, system, ai, evidence
+    roles, api_keys, branding, audit, monitor, system, ai, evidence, ai_chat, competitors, influencers
 )
 from app.api import service_requests
 
@@ -163,7 +163,10 @@ app.include_router(service_requests.router, prefix="/api/service-requests", tags
 app.include_router(monitor.router,          prefix="/api/monitor",           tags=["Monitor"])
 app.include_router(system.router,           prefix="/api/system",            tags=["System"])
 app.include_router(ai.router,               prefix="/api/ai",                tags=["AI"])
+app.include_router(ai_chat.router,          prefix="/api/ai",                tags=["AI Chat"])
 app.include_router(evidence.router,         prefix="/api/evidence",          tags=["Evidence Locker"])
+app.include_router(competitors.router,      prefix="/api/competitors",       tags=["Competitors"])
+app.include_router(influencers.router,      prefix="/api/influencers",       tags=["Influencers"])
 
 @app.get("/")
 def root():

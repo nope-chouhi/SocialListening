@@ -389,6 +389,10 @@ export const incidents = {
 
 // ─── Reports ─────────────────────────────────────────────────────────────────
 export const reports = {
+  summary: async () => {
+    const response = await api.get('/api/reports/summary');
+    return response.data;
+  },
   list: async (params?: any) => {
     const response = await api.get('/api/reports', { params });
     return response.data;
@@ -596,6 +600,30 @@ export const evidence = {
   },
   delete: async (id: number) => {
     const response = await api.delete(`/api/evidence/${id}`);
+    return response.data;
+  },
+};
+
+// ─── AI Chat ──────────────────────────────────────────────────────────────────
+export const aiChat = {
+  chat: async (messages: { role: string; content: string }[]) => {
+    const response = await api.post('/api/ai/chat', messages);
+    return response.data;
+  },
+};
+
+// ─── Competitors ─────────────────────────────────────────────────────────────
+export const competitors = {
+  summary: async () => {
+    const response = await api.get('/api/competitors/summary');
+    return response.data;
+  },
+};
+
+// ─── Influencers ─────────────────────────────────────────────────────────────
+export const influencers = {
+  leaderboard: async () => {
+    const response = await api.get('/api/influencers/leaderboard');
     return response.data;
   },
 };
