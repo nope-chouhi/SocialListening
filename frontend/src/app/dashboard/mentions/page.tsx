@@ -923,6 +923,20 @@ export default function MentionsPage() {
                             className="inline-flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-medium text-gray-500 opacity-50 cursor-not-allowed rounded-lg border border-transparent"
                             title="Chưa tích hợp"
                           >
+                            Tạo sự cố (Chưa tích hợp)
+                          </button>
+                          <button
+                            disabled
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-medium text-gray-500 opacity-50 cursor-not-allowed rounded-lg border border-transparent"
+                            title="Chưa tích hợp"
+                          >
+                            Xử lý danh tiếng (Chưa tích hợp)
+                          </button>
+                          <button
+                            disabled
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-medium text-gray-500 opacity-50 cursor-not-allowed rounded-lg border border-transparent"
+                            title="Chưa tích hợp"
+                          >
                             Gắn thẻ (Chưa tích hợp)
                           </button>
                           <button
