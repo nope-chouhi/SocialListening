@@ -4,10 +4,12 @@ import { useEffect, useState, useMemo } from 'react';
 import {
   Play, Link as LinkIcon, History, AlertTriangle, CheckCircle, XCircle,
   Clock, RefreshCw, Loader2, Activity, Sparkles, Radar, Plus,
-  Filter, Eye, EyeOff, CheckSquare, Square, Rss, Globe, FlaskConical
+  Filter, Eye, EyeOff, CheckSquare, Square, Rss, Globe, FlaskConical,
+  ChevronDown, ChevronUp, ExternalLink,
 } from 'lucide-react';
 import { crawl, keywords as keywordsApi, sources as sourcesApi } from '@/lib/api';
 import toast, { Toaster } from 'react-hot-toast';
+import Link from 'next/link';
 
 interface WorkerStatus {
   scheduler_enabled: boolean;
@@ -72,6 +74,10 @@ export default function ScanPage() {
   // Source filter states
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>('all');
   const [hideTestSources, setHideTestSources] = useState(true);
+
+  // UI state
+  const [showCustomUrl, setShowCustomUrl] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
 
   // Filtered sources
   const filteredSources = useMemo(() => {
@@ -245,6 +251,7 @@ export default function ScanPage() {
       
       setQuickKeyword('');
       setSelectedGroups((prev) => Array.from(new Set([...prev, targetGroupId])));
+      setShowHistory(true);
       fetchCrawlJobs();
       fetchWorkerStatus();
     } catch (error: any) {
@@ -288,6 +295,7 @@ export default function ScanPage() {
       setSelectedGroups([]);
       setSelectedSources([]);
       setCustomUrl('');
+      setShowHistory(true);
       fetchCrawlJobs();
       fetchWorkerStatus();
     } catch (error: any) {
@@ -334,18 +342,26 @@ export default function ScanPage() {
   
   const canScan = selectedGroups.length > 0 && (hasValidSources || isUrlValid);
 
+  // Disable reason text
+  const getDisableReason = () => {
+    if (selectedGroups.length === 0) return 'Chưa chọn nhóm từ khóa';
+    if (selectedSources.length > 0 && validSelectedSources.length === 0) return 'Nguồn đã chọn chưa tích hợp';
+    if (customUrl.length > 0 && !isUrlValid) return 'URL tùy chỉnh không hợp lệ';
+    return 'Chưa chọn nguồn hợp lệ';
+  };
+
   // ── Badge helpers ──
   const getStatusBadge = (status: string) => {
     const map: Record<string, { bg: string; icon: React.ReactNode; label: string }> = {
-      completed: { bg: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20', icon: <CheckCircle className="w-3 h-3 mr-1.5" />, label: 'Hoàn thành' },
-      running: { bg: 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20', icon: <Loader2 className="w-3 h-3 mr-1.5 animate-spin" />, label: 'Đang chạy' },
-      failed: { bg: 'bg-rose-500/10 text-rose-400 border border-rose-500/20', icon: <XCircle className="w-3 h-3 mr-1.5" />, label: 'Thất bại' },
-      pending: { bg: 'bg-amber-500/10 text-amber-400 border border-amber-500/20', icon: <Clock className="w-3 h-3 mr-1.5" />, label: 'Đang chờ' },
-      cancelled: { bg: 'bg-[#1E293B] text-gray-400 border border-gray-700', icon: <XCircle className="w-3 h-3 mr-1.5" />, label: 'Đã hủy' },
+      completed: { bg: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20', icon: <CheckCircle className="w-3 h-3 mr-1" />, label: 'Xong' },
+      running: { bg: 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20', icon: <Loader2 className="w-3 h-3 mr-1 animate-spin" />, label: 'Đang chạy' },
+      failed: { bg: 'bg-rose-500/10 text-rose-400 border border-rose-500/20', icon: <XCircle className="w-3 h-3 mr-1" />, label: 'Thất bại' },
+      pending: { bg: 'bg-amber-500/10 text-amber-400 border border-amber-500/20', icon: <Clock className="w-3 h-3 mr-1" />, label: 'Chờ' },
+      cancelled: { bg: 'bg-[#1E293B] text-gray-400 border border-gray-700', icon: <XCircle className="w-3 h-3 mr-1" />, label: 'Hủy' },
     };
     const s = map[status] || { bg: 'bg-[#1E293B] text-gray-400 border border-gray-700', icon: null, label: status };
     return (
-      <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-bold tracking-wide uppercase shadow-sm ${s.bg}`}>
+      <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold tracking-wide uppercase ${s.bg}`}>
         {s.icon}{s.label}
       </span>
     );
@@ -363,7 +379,7 @@ export default function ScanPage() {
       retry: 'Retry',
     };
     return (
-      <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-bold tracking-wide uppercase shadow-sm ${styles[jobType] || 'bg-[#1E293B] text-gray-400 border border-gray-700'}`}>
+      <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold tracking-wide uppercase ${styles[jobType] || 'bg-[#1E293B] text-gray-400 border border-gray-700'}`}>
         {labels[jobType] || jobType}
       </span>
     );
@@ -380,473 +396,534 @@ export default function ScanPage() {
 
   // ── Source filter tabs ──
   const filterTabs: { key: SourceFilter; label: string; icon: React.ReactNode }[] = [
-    { key: 'all', label: 'Tất cả', icon: <Globe className="w-3.5 h-3.5" /> },
-    { key: 'rss', label: 'RSS', icon: <Rss className="w-3.5 h-3.5" /> },
-    { key: 'website', label: 'Website', icon: <LinkIcon className="w-3.5 h-3.5" /> },
-    { key: 'active', label: 'Active', icon: <CheckCircle className="w-3.5 h-3.5" /> },
+    { key: 'all', label: 'Tất cả', icon: <Globe className="w-3 h-3" /> },
+    { key: 'rss', label: 'RSS', icon: <Rss className="w-3 h-3" /> },
+    { key: 'website', label: 'Website', icon: <LinkIcon className="w-3 h-3" /> },
+    { key: 'active', label: 'Active', icon: <CheckCircle className="w-3 h-3" /> },
   ];
 
+  // Count of valid selectable sources in filtered view
+  const selectableCount = filteredSources.filter(
+    (s) => ['rss', 'website'].includes((s.source_type || '').toLowerCase())
+  ).length;
+
+  // Recent completed job (for quick result display)
+  const latestJob = crawlJobs.length > 0 ? crawlJobs[0] : null;
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 max-w-[1400px]">
       <Toaster position="top-right" />
 
-      {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-2xl font-bold text-white tracking-wide">Scan Center</h1>
-          <p className="text-sm text-gray-400 mt-1">
-            Quét nguồn dữ liệu để thu thập mentions theo nhóm từ khóa.
-          </p>
+      {/* ═══════════════════════════════════════════════════════════════════
+          1. PAGE HEADER — Compact
+         ═══════════════════════════════════════════════════════════════════ */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg shadow-indigo-500/20">
+            <Radar className="w-4 h-4 text-white" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-white tracking-wide leading-tight">Scan Center</h1>
+            <p className="text-xs text-gray-500 mt-0.5">Quét nguồn dữ liệu để thu thập mentions theo nhóm từ khóa.</p>
+          </div>
         </div>
         <button
           onClick={() => { fetchWorkerStatus(); fetchCrawlJobs(); fetchData(); }}
-          className="flex items-center px-4 py-2.5 text-sm text-gray-300 bg-[#0B1220] hover:bg-[#1E293B] border border-gray-800 rounded-lg transition-all duration-200 active:scale-95 shadow-sm"
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-400 bg-[#111827] hover:bg-[#1E293B] border border-gray-800 rounded-lg transition-all hover:text-white"
         >
-          <RefreshCw className={`w-4 h-4 mr-2 ${scanning ? 'animate-spin text-indigo-400' : ''}`} />
+          <RefreshCw className={`w-3.5 h-3.5 ${scanning ? 'animate-spin text-indigo-400' : ''}`} />
           Làm mới
         </button>
       </div>
 
-      {/* ═══ Worker Status Banner ═══ */}
+      {/* ═══════════════════════════════════════════════════════════════════
+          2. WORKER STATUS BAR — Compact horizontal
+         ═══════════════════════════════════════════════════════════════════ */}
       {workerStatus && (
-        <div className={`rounded-xl p-5 border shadow-sm ${
+        <div className={`rounded-lg px-4 py-2.5 border flex flex-wrap items-center gap-x-4 gap-y-1.5 ${
           workerStatus.worker_running
-            ? 'bg-emerald-500/5 border-emerald-500/20'
-            : 'bg-amber-500/5 border-amber-500/20'
+            ? 'bg-emerald-500/5 border-emerald-500/15'
+            : 'bg-amber-500/5 border-amber-500/15'
         }`}>
-          <div className="flex items-start">
+          {/* Status icon + label */}
+          <div className="flex items-center gap-2">
             {workerStatus.worker_running ? (
-              <div className="p-2 bg-emerald-500/10 rounded-lg mr-4 mt-0.5 border border-emerald-500/20">
-                <Activity className="w-5 h-5 text-emerald-400" />
-              </div>
+              <Activity className="w-4 h-4 text-emerald-400 flex-shrink-0" />
             ) : (
-              <div className="p-2 bg-amber-500/10 rounded-lg mr-4 mt-0.5 border border-amber-500/20">
-                <AlertTriangle className="w-5 h-5 text-amber-400" />
-              </div>
+              <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0" />
             )}
-            <div className="flex-1">
-              <h3 className={`text-base font-semibold ${
-                workerStatus.worker_running ? 'text-emerald-400' : 'text-amber-400'
-              }`}>
-                {workerStatus.worker_running
-                  ? (workerStatus.worker_mode === 'embedded'
-                      ? 'Worker đang hoạt động — Embedded Scheduler'
-                      : 'Worker đang hoạt động — Standalone')
-                  : 'Worker không hoạt động'}
-              </h3>
-              {workerStatus.worker_mode === 'embedded' && (
-                <p className="text-sm text-amber-400/80 mt-1.5 flex items-center bg-amber-500/10 inline-flex px-2 py-1 rounded border border-amber-500/20">
-                  <AlertTriangle className="w-3.5 h-3.5 mr-1.5" />
-                  Scheduler chạy chung với Web Service. Nếu Web Service sleep, RSS sẽ không quét 24/7.
-                </p>
-              )}
-              <div className="flex flex-wrap gap-x-6 gap-y-2 mt-3 text-sm">
-                <span className="flex items-center text-gray-400">
-                  <span className="w-1.5 h-1.5 rounded-full bg-gray-500 mr-2"></span>
-                  Nguồn tự động: <strong className="ml-1.5 text-gray-200">{workerStatus.active_sources}</strong>
-                </span>
-                <span className="flex items-center text-gray-400">
-                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500 mr-2"></span>
-                  Đang chờ scan: <strong className="ml-1.5 text-gray-200">{workerStatus.due_sources}</strong>
-                </span>
-                <span className="flex items-center text-gray-400">
-                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 mr-2"></span>
-                  Job đang chạy: <strong className="ml-1.5 text-gray-200">{workerStatus.running_jobs}</strong>
-                </span>
-                {workerStatus.last_worker_heartbeat && (
-                  <span className="flex items-center text-gray-400">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-2"></span>
-                    Heartbeat: <strong className="ml-1.5 text-gray-200">{new Date(workerStatus.last_worker_heartbeat).toLocaleString('vi-VN')}</strong>
-                  </span>
-                )}
-              </div>
-              {workerStatus.last_error && (
-                <p className="text-sm text-rose-400 mt-2 bg-rose-500/10 px-3 py-1.5 rounded border border-rose-500/20 inline-block">
-                  Lỗi gần nhất: {workerStatus.last_error}
-                </p>
-              )}
-            </div>
+            <span className={`text-xs font-semibold ${workerStatus.worker_running ? 'text-emerald-400' : 'text-amber-400'}`}>
+              {workerStatus.worker_running
+                ? (workerStatus.worker_mode === 'embedded' ? 'Worker hoạt động — Embedded' : 'Worker hoạt động')
+                : 'Worker không hoạt động'}
+            </span>
           </div>
+
+          {/* Embedded warning — compact */}
+          {workerStatus.worker_mode === 'embedded' && (
+            <span className="text-[10px] text-amber-400/70 flex items-center gap-1">
+              <AlertTriangle className="w-3 h-3" />
+              Web Service sleep → RSS không quét 24/7
+            </span>
+          )}
+
+          {/* Metrics inline — separated by dot */}
+          <div className="flex items-center gap-3 ml-auto text-[11px] text-gray-500 font-medium">
+            <span>Nguồn: <strong className="text-gray-300">{workerStatus.active_sources}</strong></span>
+            <span className="text-gray-800">|</span>
+            <span>Chờ scan: <strong className="text-gray-300">{workerStatus.due_sources}</strong></span>
+            <span className="text-gray-800">|</span>
+            <span>Job: <strong className="text-gray-300">{workerStatus.running_jobs}</strong></span>
+            {workerStatus.last_worker_heartbeat && (
+              <>
+                <span className="text-gray-800">|</span>
+                <span>Heartbeat: <strong className="text-gray-300">{formatDate(workerStatus.last_worker_heartbeat)}</strong></span>
+              </>
+            )}
+          </div>
+
+          {/* Error line */}
+          {workerStatus.last_error && (
+            <div className="w-full mt-1">
+              <span className="text-[10px] text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded border border-rose-500/15 inline-block truncate max-w-full" title={workerStatus.last_error}>
+                Lỗi: {workerStatus.last_error.substring(0, 120)}{workerStatus.last_error.length > 120 ? '...' : ''}
+              </span>
+            </div>
+          )}
         </div>
       )}
 
-      {/* ═══ Thêm nhanh từ khóa ═══ */}
-      <div className="bg-[#111827] rounded-xl shadow-sm border border-gray-800 p-6">
-        <h2 className="text-lg font-semibold flex items-center mb-5 text-white">
-          <Sparkles className="w-5 h-5 mr-2 text-indigo-400" />
-          Thêm nhanh từ khóa theo dõi
-        </h2>
-        <div className="flex flex-col md:flex-row gap-3">
-          <div className="flex-1">
+      {/* ═══════════════════════════════════════════════════════════════════
+          3. QUICK KEYWORD ADD BAR — Single row
+         ═══════════════════════════════════════════════════════════════════ */}
+      <div className="bg-[#111827] rounded-xl border border-gray-800 px-4 py-3">
+        <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2">
+          <div className="flex items-center gap-2 text-xs font-semibold text-gray-400 flex-shrink-0">
+            <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+            <span className="whitespace-nowrap">Thêm nhanh từ khóa</span>
+          </div>
+          <div className="flex flex-1 flex-col sm:flex-row gap-2">
             <input
+              id="quick-keyword-input"
               type="text"
               value={quickKeyword}
               onChange={(e) => setQuickKeyword(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleQuickAdd()}
               placeholder="Nhập từ khóa (VD: Vinfast, iPhone 16...)"
-              className="w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500"
+              className="flex-1 min-w-0 px-3 py-2 bg-[#1E293B] border border-gray-700 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 text-white text-sm placeholder-gray-500"
             />
-          </div>
-          <div className="md:w-56">
             <select
+              id="quick-keyword-group"
               value={quickGroupId}
               onChange={(e) => setQuickGroupId(e.target.value ? Number(e.target.value) : '')}
-              className="w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white text-sm"
+              className="sm:w-44 px-3 py-2 bg-[#1E293B] border border-gray-700 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 text-white text-xs"
             >
               <option value="">-- Nhóm mặc định --</option>
               {keywordGroups.map((g) => (
                 <option key={g.id} value={g.id}>{g.name}</option>
               ))}
             </select>
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={handleQuickAdd}
-              disabled={addingKeyword || !quickKeyword.trim()}
-              className="px-4 py-2.5 bg-[#1E293B] text-gray-300 border border-gray-700 rounded-lg hover:bg-gray-800 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed flex items-center text-sm font-medium whitespace-nowrap transition-colors"
-            >
-              {addingKeyword ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
-              Thêm vào nhóm
-            </button>
-            <button
-              onClick={handleQuickAddAndScan}
-              disabled={scanning || !quickKeyword.trim()}
-              className="px-4 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center text-sm font-medium whitespace-nowrap transition-colors shadow-sm shadow-indigo-500/20"
-            >
-              {scanning ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Radar className="w-4 h-4 mr-2" />}
-              Thêm và quét
-            </button>
+            <div className="flex gap-2 flex-shrink-0">
+              <button
+                onClick={handleQuickAdd}
+                disabled={addingKeyword || !quickKeyword.trim()}
+                className="px-3 py-2 bg-[#1E293B] text-gray-300 border border-gray-700 rounded-lg hover:bg-gray-800 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed flex items-center text-xs font-medium whitespace-nowrap transition-colors"
+              >
+                {addingKeyword ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : <Plus className="w-3.5 h-3.5 mr-1.5" />}
+                Thêm vào nhóm
+              </button>
+              <button
+                onClick={handleQuickAddAndScan}
+                disabled={scanning || !quickKeyword.trim()}
+                className="px-3 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed flex items-center text-xs font-medium whitespace-nowrap transition-colors shadow-sm shadow-indigo-500/20"
+              >
+                {scanning ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : <Radar className="w-3.5 h-3.5 mr-1.5" />}
+                Thêm và quét
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* ═══ Scan Thủ Công ═══ */}
-      <div className="bg-[#111827] rounded-xl shadow-sm border border-gray-800 p-6 space-y-6">
-        <h2 className="text-lg font-semibold text-white">Scan thủ công</h2>
+      {/* ═══════════════════════════════════════════════════════════════════
+          4. MANUAL SCAN CONTROL PANEL — Compact unified card
+         ═══════════════════════════════════════════════════════════════════ */}
+      <div className="bg-[#111827] rounded-xl border border-gray-800 overflow-hidden">
 
-        {/* Keyword Groups */}
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-3">
-            Chọn Nhóm Từ Khóa <span className="text-rose-500">*</span>
-          </label>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {keywordGroups.map((group) => (
-              <label
-                key={group.id}
-                className={`flex items-center gap-3 px-4 py-3 border rounded-xl cursor-pointer transition-all duration-200 ${
-                  selectedGroups.includes(group.id)
-                    ? 'bg-indigo-500/10 border-indigo-500/30'
-                    : 'bg-[#1E293B] hover:bg-gray-800 border-gray-700'
-                }`}
-              >
-                <input
-                  type="checkbox"
-                  checked={selectedGroups.includes(group.id)}
-                  onChange={(e) => {
-                    if (e.target.checked) {
-                      setSelectedGroups([...selectedGroups, group.id]);
-                    } else {
-                      setSelectedGroups(selectedGroups.filter((id) => id !== group.id));
-                    }
-                  }}
-                  className="rounded border-gray-600 text-indigo-600 focus:ring-indigo-500 bg-gray-800 h-4 w-4"
-                />
-                <span className="font-medium text-sm text-gray-200">{group.name}</span>
-                <span className="text-xs text-gray-500 ml-auto bg-gray-800 px-2 py-0.5 rounded-md">{group.keyword_count} kw</span>
-              </label>
-            ))}
+        {/* ── 4A. Keyword Groups ───────────────────────────────────────── */}
+        <div className="px-4 py-3 border-b border-gray-800/80">
+          <div className="flex items-center justify-between mb-2.5">
+            <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+              Nhóm từ khóa <span className="text-rose-500">*</span>
+            </label>
+            {selectedGroups.length > 0 && (
+              <span className="text-[10px] font-medium text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
+                {selectedGroups.length} nhóm đã chọn
+              </span>
+            )}
           </div>
-          {keywordGroups.length === 0 && (
-            <p className="text-sm text-gray-500 mt-2 bg-gray-800/50 p-3 rounded-lg border border-gray-700">Chưa có nhóm từ khóa. Hãy tạo nhóm từ khóa trước!</p>
+          {keywordGroups.length === 0 ? (
+            <p className="text-xs text-gray-500 bg-gray-800/50 p-2.5 rounded-lg border border-gray-700">
+              Chưa có nhóm từ khóa. Hãy tạo nhóm từ khóa trước!
+            </p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {keywordGroups.map((group) => (
+                <label
+                  key={group.id}
+                  className={`inline-flex items-center gap-2 px-3 py-1.5 border rounded-lg cursor-pointer transition-all text-xs font-medium ${
+                    selectedGroups.includes(group.id)
+                      ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-300'
+                      : 'bg-[#1E293B] hover:bg-gray-800 border-gray-700 text-gray-400 hover:text-gray-200'
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedGroups.includes(group.id)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setSelectedGroups([...selectedGroups, group.id]);
+                      } else {
+                        setSelectedGroups(selectedGroups.filter((id) => id !== group.id));
+                      }
+                    }}
+                    className="rounded border-gray-600 text-indigo-600 focus:ring-indigo-500 bg-gray-800 h-3.5 w-3.5"
+                  />
+                  {group.name}
+                  <span className="text-[10px] text-gray-500 bg-gray-800 px-1.5 py-0.5 rounded">{group.keyword_count || 0} kw</span>
+                </label>
+              ))}
+            </div>
           )}
         </div>
 
-        {/* Source Selection with Filters */}
-        <div>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-3">
-            <label className="block text-sm font-medium text-gray-300">
-              Chọn Nguồn
-              <span className="text-xs text-gray-500 ml-2">
-                ({filteredSources.length} hiển thị / {sources.length} tổng)
-              </span>
-            </label>
+        {/* ── 4B. Source Filters + Quick Actions ─────────────────────── */}
+        <div className="px-4 py-2.5 border-b border-gray-800/80 flex flex-wrap items-center gap-2">
+          {/* Filter tabs */}
+          <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider mr-1">Nguồn:</span>
+          {filterTabs.map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setSourceFilter(tab.key)}
+              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-medium transition-colors ${
+                sourceFilter === tab.key
+                  ? 'bg-indigo-500/15 text-indigo-400 border border-indigo-500/25'
+                  : 'bg-[#0B1220] text-gray-500 hover:text-gray-300 border border-gray-800 hover:border-gray-700'
+              }`}
+            >
+              {tab.icon}
+              {tab.label}
+            </button>
+          ))}
+          <button
+            onClick={() => setHideTestSources(!hideTestSources)}
+            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-medium transition-colors ${
+              hideTestSources
+                ? 'bg-orange-500/10 text-orange-400 border border-orange-500/15'
+                : 'bg-[#0B1220] text-gray-500 hover:text-gray-300 border border-gray-800'
+            }`}
+            title={hideTestSources ? 'Test sources đang ẩn' : 'Hiện tất cả sources'}
+          >
+            {hideTestSources ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+            {hideTestSources ? 'Ẩn test' : 'Hiện test'}
+          </button>
 
-            {/* Filter tabs + toggle */}
-            <div className="flex items-center gap-2 flex-wrap">
-              {filterTabs.map((tab) => (
-                <button
-                  key={tab.key}
-                  onClick={() => setSourceFilter(tab.key)}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                    sourceFilter === tab.key
-                      ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30'
-                      : 'bg-[#1E293B] text-gray-400 hover:text-gray-200 border border-gray-700'
-                  }`}
-                >
-                  {tab.icon}
-                  {tab.label}
-                </button>
-              ))}
-              <button
-                onClick={() => setHideTestSources(!hideTestSources)}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ml-2 ${
-                  hideTestSources
-                    ? 'bg-orange-500/10 text-orange-400 border border-orange-500/20'
-                    : 'bg-[#1E293B] text-gray-400 hover:text-gray-200 border border-gray-700'
-                }`}
-                title={hideTestSources ? 'Test sources đang ẩn' : 'Hiện tất cả sources'}
-              >
-                {hideTestSources ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                {hideTestSources ? 'Ẩn test' : 'Hiện test'}
-              </button>
-            </div>
-          </div>
-
-          {/* Quick actions */}
-          <div className="flex gap-2 mb-4">
+          <div className="ml-auto flex items-center gap-2">
             <button
               onClick={selectAllVisible}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 rounded-md hover:bg-indigo-500/20 transition-colors"
+              className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-indigo-400 hover:text-indigo-300 transition-colors"
             >
-              <CheckSquare className="w-3.5 h-3.5" />
-              Chọn tất cả ({filteredSources.length})
+              <CheckSquare className="w-3 h-3" />
+              Chọn tất cả
             </button>
             <button
               onClick={clearSelection}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-400 bg-[#1E293B] border border-gray-700 rounded-md hover:text-gray-200 transition-colors"
+              className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-gray-500 hover:text-gray-300 transition-colors"
             >
-              <Square className="w-3.5 h-3.5" />
-              Bỏ chọn ({selectedSources.length})
+              <Square className="w-3 h-3" />
+              Bỏ chọn
             </button>
+            <span className="text-[10px] text-gray-600 font-medium border-l border-gray-800 pl-2 ml-1">
+              <span className="text-indigo-400">{validSelectedSources.length}</span>/{selectableCount} nguồn hợp lệ
+            </span>
           </div>
+        </div>
 
-          {/* Source list */}
+        {/* ── 4C. Source Table — scrollable ──────────────────────────── */}
+        <div className="max-h-[340px] overflow-y-auto scrollbar-hide">
           {filteredSources.length === 0 ? (
-            <div className="text-center py-10 bg-[#1E293B]/50 rounded-xl border border-dashed border-gray-700">
-              <div className="w-12 h-12 rounded-full bg-gray-800 mx-auto flex items-center justify-center mb-3">
-                <Globe className="w-6 h-6 text-gray-500" />
-              </div>
-              <p className="text-sm text-gray-400 font-medium">
+            <div className="text-center py-8 px-4">
+              <Globe className="w-8 h-8 text-gray-700 mx-auto mb-2" />
+              <p className="text-xs text-gray-500 font-medium">
                 {realSourceCount === 0
                   ? 'Chưa có nguồn thật để quét. Hãy thêm nguồn RSS/Web trước.'
                   : 'Không có nguồn nào phù hợp bộ lọc.'}
               </p>
             </div>
           ) : (
-            <div className="border border-gray-800 rounded-xl overflow-hidden bg-[#0B1220]/50">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="bg-[#1E293B] text-left text-xs text-gray-400 uppercase tracking-wider">
-                    <th className="px-4 py-3 w-8 font-medium"></th>
-                    <th className="px-4 py-3 font-medium">Nguồn</th>
-                    <th className="px-4 py-3 hidden md:table-cell font-medium">Loại</th>
-                    <th className="px-4 py-3 hidden lg:table-cell font-medium">Trạng thái</th>
-                    <th className="px-4 py-3 hidden lg:table-cell font-medium">Crawl gần nhất</th>
-                    <th className="px-4 py-3 hidden lg:table-cell font-medium">Crawl tiếp</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-800">
-                  {filteredSources.map((source: any) => {
-                    const test = isTestSource(source);
-                    const isSupported = ['rss', 'website'].includes((source.source_type || '').toLowerCase());
-                    const isUnsupported = !isSupported && source.source_type;
-                    
-                    return (
-                      <tr
-                        key={source.id}
-                        className={`transition-colors ${
-                          !isSupported ? 'bg-gray-900/50 opacity-60' : 'hover:bg-[#1E293B]/80 cursor-pointer'
-                        } ${selectedSources.includes(source.id) ? 'bg-indigo-500/5' : ''}`}
-                        onClick={() => {
-                          if (!isSupported) return;
-                          if (selectedSources.includes(source.id)) {
-                            setSelectedSources(selectedSources.filter((id) => id !== source.id));
-                          } else {
-                            setSelectedSources([...selectedSources, source.id]);
-                            setCustomUrl('');
-                          }
-                        }}
-                      >
-                        <td className="px-4 py-3">
-                          <input
-                            type="checkbox"
-                            checked={selectedSources.includes(source.id)}
-                            disabled={!isSupported}
-                            onChange={() => {}}
-                            className="rounded border-gray-600 text-indigo-600 focus:ring-indigo-500 bg-gray-800 pointer-events-none disabled:opacity-50"
-                          />
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-2">
-                            <div className="min-w-0 flex-1">
-                              <div className="font-medium text-gray-200 truncate flex items-center gap-2 flex-wrap">
-                                {source.name}
-                                {test && (
-                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-orange-500/10 text-orange-400 border border-orange-500/20 flex-shrink-0">
-                                    <FlaskConical className="w-3 h-3" />
-                                    test
-                                  </span>
-                                )}
-                                {isUnsupported && (
-                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-rose-500/10 text-rose-400 border border-rose-500/20 flex-shrink-0">
-                                    Chưa tích hợp
-                                  </span>
-                                )}
-                              </div>
-                              <div className="text-xs text-gray-500 truncate max-w-xs mt-0.5">{source.url}</div>
-                              {source.last_error && (
-                                <div className="text-xs text-rose-400 mt-1.5 p-1.5 bg-rose-500/10 rounded border border-rose-500/20" title={source.last_error}>
-                                  Lỗi: {source.last_error.substring(0, 100)}{source.last_error.length > 100 ? '...' : ''}
-                                </div>
+            <table className="w-full text-xs">
+              <thead className="sticky top-0 z-10">
+                <tr className="bg-[#0B1220] text-left text-[10px] text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-2 w-8 font-medium"></th>
+                  <th className="px-3 py-2 font-medium">Nguồn</th>
+                  <th className="px-3 py-2 hidden md:table-cell font-medium w-20">Loại</th>
+                  <th className="px-3 py-2 hidden lg:table-cell font-medium w-16">Status</th>
+                  <th className="px-3 py-2 hidden xl:table-cell font-medium w-24">Crawl gần nhất</th>
+                  <th className="px-3 py-2 hidden xl:table-cell font-medium w-24">Crawl tiếp</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-800/60">
+                {filteredSources.map((source: any) => {
+                  const test = isTestSource(source);
+                  const isSupported = ['rss', 'website'].includes((source.source_type || '').toLowerCase());
+                  const isUnsupported = !isSupported && source.source_type;
+                  const isSelected = selectedSources.includes(source.id);
+
+                  return (
+                    <tr
+                      key={source.id}
+                      className={`transition-colors ${
+                        !isSupported ? 'opacity-50' : 'hover:bg-[#1E293B]/60 cursor-pointer'
+                      } ${isSelected ? 'bg-indigo-500/5' : ''}`}
+                      onClick={() => {
+                        if (!isSupported) return;
+                        if (isSelected) {
+                          setSelectedSources(selectedSources.filter((id) => id !== source.id));
+                        } else {
+                          setSelectedSources([...selectedSources, source.id]);
+                          setCustomUrl('');
+                        }
+                      }}
+                    >
+                      <td className="px-3 py-2">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          disabled={!isSupported}
+                          onChange={() => {}}
+                          className="rounded border-gray-600 text-indigo-600 focus:ring-indigo-500 bg-gray-800 pointer-events-none disabled:opacity-40 h-3.5 w-3.5"
+                        />
+                      </td>
+                      <td className="px-3 py-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div className="min-w-0 flex-1">
+                            <div className="font-medium text-gray-300 truncate flex items-center gap-1.5 flex-wrap text-xs">
+                              {source.name}
+                              {test && (
+                                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-bold tracking-wider uppercase bg-orange-500/10 text-orange-400 border border-orange-500/15 flex-shrink-0">
+                                  <FlaskConical className="w-2.5 h-2.5" />
+                                  test
+                                </span>
+                              )}
+                              {isUnsupported && (
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold tracking-wider uppercase bg-rose-500/10 text-rose-400 border border-rose-500/15 flex-shrink-0">
+                                  Chưa tích hợp
+                                </span>
                               )}
                             </div>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 hidden md:table-cell">
-                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium border ${
-                            (source.source_type || '').toLowerCase() === 'rss'
-                              ? 'bg-orange-500/10 text-orange-400 border-orange-500/20'
-                              : isUnsupported ? 'bg-gray-800 text-gray-400 border-gray-700' : 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20'
-                          }`}>
-                            {(source.source_type || '').toLowerCase() === 'rss' ? (
-                              <Rss className="w-3 h-3" />
-                            ) : (
-                              <Globe className="w-3 h-3" />
+                            <div className="text-[10px] text-gray-600 truncate max-w-xs mt-0.5">{source.url}</div>
+                            {source.last_error && (
+                              <div className="text-[10px] text-rose-400 mt-1 truncate max-w-sm" title={source.last_error}>
+                                ⚠ {source.last_error.substring(0, 80)}{source.last_error.length > 80 ? '...' : ''}
+                              </div>
                             )}
-                            {source.source_type || 'web'}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 hidden lg:table-cell">
-                          <span className="flex items-center">
-                            <span className={`inline-block w-2 h-2 rounded-full ${source.is_active ? 'bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.8)]' : 'bg-gray-600'}`} />
-                            <span className="text-xs text-gray-400 ml-2">{source.is_active ? 'Active' : 'Off'}</span>
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 hidden lg:table-cell text-xs text-gray-500">
-                          {formatDate(source.last_crawled_at)}
-                        </td>
-                        <td className="px-4 py-3 hidden lg:table-cell text-xs text-gray-500">
-                          {formatDate(source.next_crawl_at)}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-3 py-2 hidden md:table-cell">
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium border ${
+                          (source.source_type || '').toLowerCase() === 'rss'
+                            ? 'bg-orange-500/10 text-orange-400 border-orange-500/15'
+                            : isUnsupported ? 'bg-gray-800 text-gray-500 border-gray-700' : 'bg-cyan-500/10 text-cyan-400 border-cyan-500/15'
+                        }`}>
+                          {(source.source_type || '').toLowerCase() === 'rss' ? (
+                            <Rss className="w-2.5 h-2.5" />
+                          ) : (
+                            <Globe className="w-2.5 h-2.5" />
+                          )}
+                          {source.source_type || 'web'}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2 hidden lg:table-cell">
+                        <span className="flex items-center gap-1.5">
+                          <span className={`w-1.5 h-1.5 rounded-full ${source.is_active ? 'bg-emerald-500 shadow-[0_0_4px_rgba(16,185,129,0.6)]' : 'bg-gray-600'}`} />
+                          <span className="text-[10px] text-gray-500">{source.is_active ? 'On' : 'Off'}</span>
+                        </span>
+                      </td>
+                      <td className="px-3 py-2 hidden xl:table-cell text-[10px] text-gray-500">
+                        {formatDate(source.last_crawled_at)}
+                      </td>
+                      <td className="px-3 py-2 hidden xl:table-cell text-[10px] text-gray-500">
+                        {formatDate(source.next_crawl_at)}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           )}
-
-          {/* Custom URL divider */}
-          <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-800"></div>
-            </div>
-            <div className="relative flex justify-center text-xs">
-              <span className="px-4 bg-[#111827] text-gray-500 font-medium tracking-widest uppercase">Hoặc nhập URL tùy chỉnh</span>
-            </div>
-          </div>
-
-          <div className="relative">
-            <LinkIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 w-4 h-4" />
-            <input
-              type="url"
-              value={customUrl}
-              onChange={(e) => {
-                setCustomUrl(e.target.value);
-                if (e.target.value) setSelectedSources([]);
-              }}
-              placeholder="https://example.com hoặc https://example.com/rss"
-              className="w-full pl-11 pr-4 py-3 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white text-sm placeholder-gray-500 transition-shadow"
-            />
-          </div>
         </div>
 
-        {/* Scan Button — right below sources */}
-        <button
-          onClick={handleScan}
-          disabled={scanning || !canScan}
-          className={`w-full flex items-center justify-center px-6 py-3.5 rounded-xl font-semibold transition-all duration-300 shadow-sm ${
-            canScan
-              ? 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-indigo-500/25 hover:shadow-indigo-500/40'
-              : 'bg-gray-800 text-gray-500 cursor-not-allowed border border-gray-700'
-          } disabled:opacity-80`}
-        >
-          {scanning ? (
-            <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-          ) : (
-            <Play className="w-5 h-5 mr-2" />
+        {/* ── 4D. Custom URL — Collapsible ──────────────────────────── */}
+        <div className="px-4 py-2 border-t border-gray-800/80">
+          <button
+            onClick={() => setShowCustomUrl(!showCustomUrl)}
+            className="flex items-center gap-1.5 text-[11px] text-gray-500 hover:text-gray-300 font-medium transition-colors"
+          >
+            {showCustomUrl ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+            <LinkIcon className="w-3 h-3" />
+            Hoặc nhập URL tùy chỉnh
+          </button>
+          {showCustomUrl && (
+            <div className="mt-2 relative animate-fadeIn">
+              <LinkIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-3.5 h-3.5" />
+              <input
+                id="custom-url-input"
+                type="url"
+                value={customUrl}
+                onChange={(e) => {
+                  setCustomUrl(e.target.value);
+                  if (e.target.value) setSelectedSources([]);
+                }}
+                placeholder="https://example.com hoặc https://example.com/rss"
+                className="w-full pl-9 pr-3 py-2 bg-[#0B1220] border border-gray-800 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 text-white text-xs placeholder-gray-500 transition-shadow"
+              />
+            </div>
           )}
-          {scanning
-            ? 'Đang Scan...'
-            : canScan
-              ? `Bắt Đầu Scan (${validSelectedSources.length > 0 ? validSelectedSources.length + ' nguồn' : '1 custom URL'}, ${selectedGroups.length} nhóm)`
-              : selectedGroups.length === 0
-                ? 'Chưa chọn nhóm từ khóa'
-                : selectedSources.length > 0 && validSelectedSources.length === 0
-                  ? 'Nguồn đã chọn chưa tích hợp'
-                  : customUrl.length > 0 && !isUrlValid
-                    ? 'URL tùy chỉnh không hợp lệ'
-                    : 'Chưa chọn nguồn hợp lệ'}
-        </button>
+        </div>
+
+        {/* ── 4E. Start Scan Button ─────────────────────────────────── */}
+        <div className="px-4 py-3 border-t border-gray-800/80 bg-[#0B1220]/50">
+          <button
+            id="start-scan-btn"
+            onClick={handleScan}
+            disabled={scanning || !canScan}
+            className={`w-full flex items-center justify-center px-5 py-3 rounded-xl font-semibold text-sm transition-all duration-200 ${
+              canScan
+                ? 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-md shadow-indigo-500/20 hover:shadow-indigo-500/30 active:scale-[0.98]'
+                : 'bg-gray-800/80 text-gray-500 cursor-not-allowed border border-gray-700/50'
+            }`}
+          >
+            {scanning ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <Play className="w-4 h-4 mr-2" />
+            )}
+            {scanning
+              ? 'Đang Scan...'
+              : canScan
+                ? `Bắt đầu Scan (${validSelectedSources.length > 0 ? validSelectedSources.length + ' nguồn' : '1 URL'}, ${selectedGroups.length} nhóm)`
+                : getDisableReason()
+            }
+          </button>
+        </div>
       </div>
 
-      {/* ═══ Crawl Jobs History ═══ */}
-      <div className="bg-[#111827] rounded-xl shadow-sm border border-gray-800">
-        <div className="p-6 border-b border-gray-800 flex items-center justify-between">
-          <div className="flex items-center">
-            <History className="w-5 h-5 mr-3 text-indigo-400" />
-            <h2 className="text-lg font-bold text-white tracking-wide">Lịch Sử Crawl Jobs</h2>
+      {/* ═══════════════════════════════════════════════════════════════════
+          5. LATEST SCAN RESULT — Compact card (only if exists)
+         ═══════════════════════════════════════════════════════════════════ */}
+      {latestJob && (
+        <div className={`rounded-xl border px-4 py-3 flex flex-wrap items-center gap-3 ${
+          latestJob.status === 'completed' ? 'bg-emerald-500/5 border-emerald-500/15' :
+          latestJob.status === 'failed' ? 'bg-rose-500/5 border-rose-500/15' :
+          latestJob.status === 'running' ? 'bg-indigo-500/5 border-indigo-500/15' :
+          'bg-gray-800/30 border-gray-800'
+        }`}>
+          <div className="flex items-center gap-2">
+            {getStatusBadge(latestJob.status)}
+            {getJobTypeBadge(latestJob.job_type)}
+            <span className="text-[10px] text-gray-500 font-mono">#{latestJob.id}</span>
           </div>
-          <span className="text-sm text-gray-400 font-medium tracking-wide">{crawlJobs.length} jobs</span>
-        </div>
-        <div className="divide-y divide-gray-800/80">
-          {crawlJobs.length === 0 ? (
-            <p className="text-gray-400 text-center py-8 font-medium tracking-wide">Chưa có lịch sử scan</p>
-          ) : (
-            crawlJobs.map((job) => (
-              <div key={job.id} className="p-5 hover:bg-[#1E293B]/50 transition-colors">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    {getJobTypeBadge(job.job_type)}
-                    {getStatusBadge(job.status)}
-                    <span className="text-xs text-gray-500 font-mono tracking-wider ml-2">#{job.id}</span>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <span className="text-sm text-gray-300 font-medium">{job.mentions_found} mentions</span>
-                    {(job.status === 'failed' || job.status === 'cancelled') && (
-                      <button
-                        onClick={() => handleRetry(job.id)}
-                        disabled={retryingJobId === job.id}
-                        className="flex items-center px-3 py-1.5 text-xs font-medium text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-lg hover:bg-amber-500/20 transition-colors shadow-sm disabled:opacity-50"
-                      >
-                        {retryingJobId === job.id ? (
-                          <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-                        ) : (
-                          <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
-                        )}
-                        Retry
-                      </button>
-                    )}
-                  </div>
-                </div>
-                <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-xs font-medium text-gray-400">
-                  <span className="text-gray-300">Nguồn: {job.processed_sources}/{job.total_sources}</span>
-                  {job.status === 'completed' && job.total_sources > job.processed_sources && (
-                    <span className="text-rose-400">Thất bại: {job.total_sources - job.processed_sources} nguồn</span>
-                  )}
-                  {job.created_at && <span>Tạo: {formatDate(job.created_at)}</span>}
-                  {job.completed_at && <span>Xong: {formatDate(job.completed_at)}</span>}
-                  {job.retry_count > 0 && <span className="text-amber-400">Retry #{job.retry_count}</span>}
-                </div>
-                {job.error_message && (
-                  <p className="mt-2 text-xs text-rose-400 bg-rose-500/10 px-3 py-2 rounded-lg border border-rose-500/20 truncate" title={job.error_message}>
-                    ❌ {job.error_message}
-                  </p>
-                )}
-              </div>
-            ))
+          <div className="flex items-center gap-3 text-xs text-gray-400 font-medium">
+            <span>Nguồn: <strong className="text-gray-300">{latestJob.processed_sources}/{latestJob.total_sources}</strong></span>
+            <span>Mentions: <strong className="text-gray-300">{latestJob.mentions_found}</strong></span>
+            {latestJob.completed_at && <span>Xong: {formatDate(latestJob.completed_at)}</span>}
+          </div>
+          {latestJob.mentions_found > 0 && (
+            <Link
+              href="/dashboard/mentions"
+              className="ml-auto inline-flex items-center gap-1 text-[11px] font-medium text-indigo-400 hover:text-indigo-300 transition-colors"
+            >
+              Xem mentions
+              <ExternalLink className="w-3 h-3" />
+            </Link>
+          )}
+          {latestJob.error_message && (
+            <div className="w-full mt-1">
+              <span className="text-[10px] text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded border border-rose-500/15 inline-block truncate max-w-full" title={latestJob.error_message}>
+                ❌ {latestJob.error_message.substring(0, 120)}
+              </span>
+            </div>
           )}
         </div>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════════════
+          6. CRAWL JOBS HISTORY — Collapsible
+         ═══════════════════════════════════════════════════════════════════ */}
+      <div className="bg-[#111827] rounded-xl border border-gray-800 overflow-hidden">
+        <button
+          onClick={() => setShowHistory(!showHistory)}
+          className="w-full px-4 py-3 flex items-center justify-between hover:bg-[#1E293B]/30 transition-colors"
+        >
+          <div className="flex items-center gap-2">
+            <History className="w-4 h-4 text-indigo-400" />
+            <h2 className="text-sm font-semibold text-white">Lịch Sử Crawl Jobs</h2>
+            <span className="text-[10px] text-gray-500 font-medium bg-gray-800 px-2 py-0.5 rounded">{crawlJobs.length}</span>
+          </div>
+          {showHistory ? <ChevronUp className="w-4 h-4 text-gray-500" /> : <ChevronDown className="w-4 h-4 text-gray-500" />}
+        </button>
+
+        {showHistory && (
+          <div className="border-t border-gray-800/80 divide-y divide-gray-800/60 max-h-[340px] overflow-y-auto scrollbar-hide">
+            {crawlJobs.length === 0 ? (
+              <p className="text-gray-500 text-center py-6 text-xs font-medium">Chưa có lịch sử scan</p>
+            ) : (
+              crawlJobs.map((job) => (
+                <div key={job.id} className="px-4 py-3 hover:bg-[#1E293B]/30 transition-colors">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      {getJobTypeBadge(job.job_type)}
+                      {getStatusBadge(job.status)}
+                      <span className="text-[10px] text-gray-600 font-mono">#{job.id}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-gray-300 font-medium">{job.mentions_found} mentions</span>
+                      {(job.status === 'failed' || job.status === 'cancelled') && (
+                        <button
+                          onClick={() => handleRetry(job.id)}
+                          disabled={retryingJobId === job.id}
+                          className="flex items-center px-2 py-1 text-[10px] font-medium text-amber-400 bg-amber-500/10 border border-amber-500/15 rounded-md hover:bg-amber-500/20 transition-colors disabled:opacity-50"
+                        >
+                          {retryingJobId === job.id ? (
+                            <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                          ) : (
+                            <RefreshCw className="w-3 h-3 mr-1" />
+                          )}
+                          Retry
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-[10px] font-medium text-gray-500">
+                    <span>Nguồn: <strong className="text-gray-400">{job.processed_sources}/{job.total_sources}</strong></span>
+                    {job.status === 'completed' && job.total_sources > job.processed_sources && (
+                      <span className="text-rose-400">Thất bại: {job.total_sources - job.processed_sources} nguồn</span>
+                    )}
+                    {job.created_at && <span>Tạo: {formatDate(job.created_at)}</span>}
+                    {job.completed_at && <span>Xong: {formatDate(job.completed_at)}</span>}
+                    {job.retry_count > 0 && <span className="text-amber-400">Retry #{job.retry_count}</span>}
+                  </div>
+                  {job.error_message && (
+                    <p className="mt-1.5 text-[10px] text-rose-400 bg-rose-500/10 px-2 py-1 rounded border border-rose-500/15 truncate" title={job.error_message}>
+                      ❌ {job.error_message}
+                    </p>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
