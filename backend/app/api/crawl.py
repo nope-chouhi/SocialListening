@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
 from sqlalchemy import select, func
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 import hashlib
 import requests
 from bs4 import BeautifulSoup
@@ -17,7 +17,7 @@ from app.models.keyword import Keyword, KeywordGroup
 from app.models.mention import Mention, AIAnalysis, SentimentScore
 from app.models.alert import Alert, AlertSeverity, AlertStatus
 from app.models.crawl import CrawlJob, CrawlJobStatus
-from app.services.ai_service import analyze_mention_with_dummy_ai
+from app.services.ai_service import analyze_mention
 
 router = APIRouter()
 
@@ -62,22 +62,31 @@ def run_manual_scan_task(job_id: int, source_ids: List[int], keyword_texts: List
                     db.commit()
                     db.refresh(mention)
                     
-                    analysis_result = analyze_mention_with_dummy_ai(mention.content, mention.title)
-                    ai_analysis = AIAnalysis(
-                        mention_id=mention.id,
-                        sentiment=analysis_result['sentiment'],
-                        risk_score=analysis_result['risk_score'],
-                        crisis_level=analysis_result['crisis_level'],
-                        summary_vi=analysis_result['summary_vi'],
-                        suggested_action=analysis_result['suggested_action'],
-                        responsible_department=analysis_result['responsible_department'],
-                        confidence_score=analysis_result['confidence_score'],
-                        ai_provider="dummy",
-                        model_version="1.0",
-                        processing_time_ms=analysis_result['processing_time_ms']
-                    )
-                    db.add(ai_analysis)
-                    db.commit()
+                    # Use common AI abstraction instead of forcing dummy
+                    from app.core.config import settings
+                    ai_provider = settings.AI_PROVIDER.lower()
+                    model_version = "gpt-4" if ai_provider == "openai" else ("gemini-pro" if ai_provider == "gemini" else "keyword-v1.0")
+
+                    try:
+                        analysis_result = analyze_mention(mention.content, mention.title)
+                        ai_analysis = AIAnalysis(
+                            mention_id=mention.id,
+                            sentiment=analysis_result['sentiment'],
+                            risk_score=analysis_result['risk_score'],
+                            crisis_level=analysis_result['crisis_level'],
+                            summary_vi=analysis_result['summary_vi'],
+                            suggested_action=analysis_result['suggested_action'],
+                            responsible_department=analysis_result['responsible_department'],
+                            confidence_score=analysis_result['confidence_score'],
+                            ai_provider=ai_provider,
+                            model_version=model_version,
+                            processing_time_ms=analysis_result['processing_time_ms']
+                        )
+                        db.add(ai_analysis)
+                        db.commit()
+                    except ValueError:
+                        # Skip if provider config fails or demo is off
+                        analysis_result = {'risk_score': 0}
                     
                     if analysis_result['risk_score'] >= 70:
                         severity = AlertSeverity.CRITICAL if analysis_result['risk_score'] >= 85 else AlertSeverity.HIGH
@@ -93,8 +102,8 @@ def run_manual_scan_task(job_id: int, source_ids: List[int], keyword_texts: List
                     
                     total_mentions += 1
                 
-                source.last_crawled_at = datetime.utcnow()
-                source.last_success_at = datetime.utcnow()
+                source.last_crawled_at = datetime.now(timezone.utc)
+                source.last_success_at = datetime.now(timezone.utc)
                 source.crawl_count = (source.crawl_count or 0) + 1
                 job.processed_sources = (job.processed_sources or 0) + 1
                 db.commit()
@@ -107,7 +116,7 @@ def run_manual_scan_task(job_id: int, source_ids: List[int], keyword_texts: List
                 continue
         
         job.status = CrawlJobStatus.COMPLETED
-        job.completed_at = datetime.utcnow()
+        job.completed_at = datetime.now(timezone.utc)
         job.mentions_found = total_mentions
         db.commit()
         
@@ -185,7 +194,7 @@ def manual_scan(
         total_sources=len(sources_to_scan),
         processed_sources=0,
         mentions_found=0,
-        started_at=datetime.utcnow()
+        started_at=datetime.now(timezone.utc)
     )
     db.add(job)
     db.commit()
@@ -196,11 +205,10 @@ def manual_scan(
 
     return {
         "success": True,
-        "total_mentions_found": 0,
-        "new_mention_ids": [],
-        "sources_scanned": len(sources_to_scan),
         "job_id": job.id,
-        "message": f"Scan is running in background for {len(sources_to_scan)} sources."
+        "status": "running",
+        "sources_queued": len(sources_to_scan),
+        "message": "Đã tạo job scan. Hệ thống đang quét trong nền."
     }                
 
 
@@ -279,7 +287,7 @@ def crawl_source(source: Source, keyword_texts: List[str], keywords: List[Keywor
                     'content': text[:5000],  # Limit content length
                     'url': source.url,
                     'author': None,
-                    'published_at': datetime.utcnow(),
+                    'published_at': datetime.now(timezone.utc),
                     'matched_keywords': matched
                 })
     
@@ -434,7 +442,7 @@ def retry_crawl_job(
     # Run the scan for each source
     if new_job.source_ids:
         new_job.status = CrawlJobStatus.RUNNING
-        new_job.started_at = datetime.utcnow()
+        new_job.started_at = datetime.now(timezone.utc)
         db.commit()
 
         from app.services.crawl_service import crawl_source as service_crawl_source
@@ -451,7 +459,7 @@ def retry_crawl_job(
                 new_job.processed_sources = (new_job.processed_sources or 0) + 1
 
         new_job.mentions_found = total_new
-        new_job.completed_at = datetime.utcnow()
+        new_job.completed_at = datetime.now(timezone.utc)
         if errors:
             new_job.status = CrawlJobStatus.FAILED
             new_job.error_message = "; ".join(errors)[:2000]

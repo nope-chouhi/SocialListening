@@ -42,7 +42,12 @@ api.interceptors.response.use(
     const url = error.config?.url;
     const method = error.config?.method?.toUpperCase();
     const msg = typeof detail === 'string' ? detail : JSON.stringify(detail);
-    console.error(`[API Error] ${method} ${url} → ${status}:`, msg || error.message);
+    
+    if (process.env.NODE_ENV === 'production') {
+      console.error(`[API Error] ${method} ${url} → ${status}`);
+    } else {
+      console.error(`[API Error] ${method} ${url} → ${status}:`, msg || error.message);
+    }
 
     // Global 401 handler: clear token and redirect to login once.
     // For ALL 401 errors, swallow the rejection so downstream .catch() / toast.error

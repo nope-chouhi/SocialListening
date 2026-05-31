@@ -1,0 +1,830 @@
+[
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "POST",
+    "url": "/api/auth/login",
+    "line": 104
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "POST",
+    "url": "/api/auth/register",
+    "line": 113
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "GET",
+    "url": "/api/auth/me",
+    "line": 120
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "GET",
+    "url": "/api/dashboard/summary",
+    "line": 128
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "GET",
+    "url": "/api/dashboard/trends",
+    "line": 132
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "GET",
+    "url": "/api/dashboard/sentiment-summary",
+    "line": 136
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "GET",
+    "url": "/api/dashboard/hot-keywords",
+    "line": 140
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "GET",
+    "url": "/api/dashboard/sidebar-badges",
+    "line": 144
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "GET",
+    "url": "/api/keywords/groups",
+    "line": 152
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "POST",
+    "url": "/api/keywords/groups",
+    "line": 156
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "PUT",
+    "url": "/api/keywords/groups/${id}",
+    "line": 160
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "DELETE",
+    "url": "/api/keywords/groups/${id}",
+    "line": 164
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "GET",
+    "url": "/api/keywords/groups/${groupId}/keywords",
+    "line": 168
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "POST",
+    "url": "/api/keywords",
+    "line": 172
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "POST",
+    "url": "/api/keywords/bulk",
+    "line": 176
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "PUT",
+    "url": "/api/keywords/${id}",
+    "line": 180
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "DELETE",
+    "url": "/api/keywords/${id}",
+    "line": 184
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "GET",
+    "url": "/api/sources/groups",
+    "line": 193
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "POST",
+    "url": "/api/sources/groups",
+    "line": 197
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "PUT",
+    "url": "/api/sources/groups/${id}",
+    "line": 201
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "DELETE",
+    "url": "/api/sources/groups/${id}",
+    "line": 205
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "GET",
+    "url": "/api/sources",
+    "line": 210
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "GET",
+    "url": "/api/sources/${id}",
+    "line": 214
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "POST",
+    "url": "/api/sources",
+    "line": 224
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "PUT",
+    "url": "/api/sources/${id}",
+    "line": 233
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "DELETE",
+    "url": "/api/sources/${id}",
+    "line": 237
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "POST",
+    "url": "/api/sources/${id}/test",
+    "line": 241
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "POST",
+    "url": "/api/sources/${id}/scan",
+    "line": 245
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "POST",
+    "url": "/api/crawl/manual-scan",
+    "line": 254
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "GET",
+    "url": "/api/crawl/scan-history",
+    "line": 258
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "GET",
+    "url": "/api/crawl/jobs",
+    "line": 262
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "POST",
+    "url": "/api/crawl/jobs/${jobId}/retry",
+    "line": 266
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "GET",
+    "url": "/api/system/worker-status",
+    "line": 270
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "GET",
+    "url": "/api/crawl/scheduler/status",
+    "line": 274
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "POST",
+    "url": "/api/crawl/test-feed",
+    "line": 278
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "GET",
+    "url": "/api/mentions",
+    "line": 286
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "GET",
+    "url": "/api/mentions/${id}",
+    "line": 290
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "DELETE",
+    "url": "/api/mentions/${id}",
+    "line": 294
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "POST",
+    "url": "/api/mentions/${id}/analyze",
+    "line": 298
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "POST",
+    "url": "/api/mentions/${id}/create-alert",
+    "line": 302
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "POST",
+    "url": "/api/mentions/${id}/create-incident",
+    "line": 306
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "POST",
+    "url": "/api/mentions/${id}/mark-reviewed",
+    "line": 310
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "GET",
+    "url": "/api/alerts",
+    "line": 318
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "GET",
+    "url": "/api/alerts/${id}",
+    "line": 322
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "POST",
+    "url": "/api/alerts",
+    "line": 327
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "POST",
+    "url": "/api/alerts/${id}/acknowledge",
+    "line": 331
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "POST",
+    "url": "/api/alerts/${id}/resolve",
+    "line": 335
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "DELETE",
+    "url": "/api/alerts/${id}",
+    "line": 339
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "POST",
+    "url": "/api/alerts/${id}/ignore",
+    "line": 343
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "POST",
+    "url": "/api/alerts/${id}/create-incident",
+    "line": 347
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "GET",
+    "url": "/api/incidents",
+    "line": 355
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "GET",
+    "url": "/api/incidents/${id}",
+    "line": 359
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "POST",
+    "url": "/api/incidents",
+    "line": 364
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "PUT",
+    "url": "/api/incidents/${id}",
+    "line": 369
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "DELETE",
+    "url": "/api/incidents/${id}",
+    "line": 373
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "POST",
+    "url": "/api/incidents/${id}/close",
+    "line": 377
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "GET",
+    "url": "/api/incidents/${id}/logs",
+    "line": 381
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "POST",
+    "url": "/api/incidents/${id}/logs",
+    "line": 385
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "GET",
+    "url": "/api/reports/summary",
+    "line": 393
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "GET",
+    "url": "/api/reports",
+    "line": 397
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "GET",
+    "url": "/api/reports/${id}",
+    "line": 401
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "POST",
+    "url": "/api/reports",
+    "line": 405
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "DELETE",
+    "url": "/api/reports/${id}",
+    "line": 409
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "POST",
+    "url": "/api/takedown/generate-draft",
+    "line": 425
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "POST",
+    "url": "/api/takedown/records",
+    "line": 429
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "GET",
+    "url": "/api/takedown/records",
+    "line": 433
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "PUT",
+    "url": "/api/takedown/records/${record_id}/status",
+    "line": 437
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "GET",
+    "url": "/api/services/categories",
+    "line": 446
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "POST",
+    "url": "/api/services/categories",
+    "line": 450
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "PUT",
+    "url": "/api/services/categories/${id}",
+    "line": 454
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "DELETE",
+    "url": "/api/services/categories/${id}",
+    "line": 458
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "GET",
+    "url": "/api/services",
+    "line": 463
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "GET",
+    "url": "/api/services/${id}",
+    "line": 467
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "POST",
+    "url": "/api/services",
+    "line": 471
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "PUT",
+    "url": "/api/services/${id}",
+    "line": 475
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "DELETE",
+    "url": "/api/services/${id}",
+    "line": 479
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "GET",
+    "url": "/api/services/dashboard-summary",
+    "line": 483
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "GET",
+    "url": "/api/service-requests",
+    "line": 492
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "GET",
+    "url": "/api/service-requests/${id}",
+    "line": 496
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "POST",
+    "url": "/api/service-requests",
+    "line": 500
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "PUT",
+    "url": "/api/service-requests/${id}",
+    "line": 504
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "POST",
+    "url": "/api/service-requests/${id}/submit",
+    "line": 508
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "POST",
+    "url": "/api/service-requests/${id}/approve",
+    "line": 512
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "POST",
+    "url": "/api/service-requests/${id}/reject",
+    "line": 516
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "POST",
+    "url": "/api/service-requests/${id}/complete",
+    "line": 520
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "POST",
+    "url": "/api/service-requests/${id}/cancel",
+    "line": 524
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "GET",
+    "url": "/api/service-requests/${id}/logs",
+    "line": 528
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "POST",
+    "url": "/api/service-requests/${id}/logs",
+    "line": 532
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "GET",
+    "url": "/api/service-requests/${id}/deliverables",
+    "line": 536
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "POST",
+    "url": "/api/service-requests/${id}/deliverables",
+    "line": 540
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "POST",
+    "url": "/api/monitor/start",
+    "line": 552
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "GET",
+    "url": "/api/monitor/dashboard",
+    "line": 561
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "GET",
+    "url": "/api/monitor/ai-analysis",
+    "line": 570
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "POST",
+    "url": "/api/ai/generate-brief",
+    "line": 578
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "GET",
+    "url": "/api/evidence/incident/${incidentId}",
+    "line": 586
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "POST",
+    "url": "/api/evidence/${incidentId}",
+    "line": 598
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "DELETE",
+    "url": "/api/evidence/${id}",
+    "line": 602
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "POST",
+    "url": "/api/ai/chat",
+    "line": 610
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "GET",
+    "url": "/api/competitors/summary",
+    "line": 618
+  },
+  {
+    "path": "frontend/src/lib/api.ts",
+    "method": "GET",
+    "url": "/api/influencers/leaderboard",
+    "line": 626
+  },
+  {
+    "path": "frontend/src/app/register/page.tsx",
+    "method": null,
+    "url": "${API_URL}/api/auth/register",
+    "line": 39
+  },
+  {
+    "path": "frontend/src/app/dashboard/settings/APIWebhooks.tsx",
+    "method": "GET",
+    "url": "/api/api-keys/",
+    "line": 46
+  },
+  {
+    "path": "frontend/src/app/dashboard/settings/APIWebhooks.tsx",
+    "method": "POST",
+    "url": "/api/api-keys/",
+    "line": 66
+  },
+  {
+    "path": "frontend/src/app/dashboard/settings/APIWebhooks.tsx",
+    "method": "DELETE",
+    "url": "/api/api-keys/${keyId}",
+    "line": 81
+  },
+  {
+    "path": "frontend/src/app/dashboard/settings/APIWebhooks.tsx",
+    "method": "POST",
+    "url": "/api/api-keys/${keyId}/${action}",
+    "line": 93
+  },
+  {
+    "path": "frontend/src/app/dashboard/settings/AppearanceSettings.tsx",
+    "method": null,
+    "url": "https://social-listening-backend.onrender.com/api/auth/me/preferences",
+    "line": 24
+  },
+  {
+    "path": "frontend/src/app/dashboard/settings/AppearanceSettings.tsx",
+    "method": null,
+    "url": "https://social-listening-backend.onrender.com/api/auth/me/preferences",
+    "line": 83
+  },
+  {
+    "path": "frontend/src/app/dashboard/settings/AuditLogs.tsx",
+    "method": null,
+    "url": "https://social-listening-backend.onrender.com/api/admin/audit/?${params}",
+    "line": 63
+  },
+  {
+    "path": "frontend/src/app/dashboard/settings/AuditLogs.tsx",
+    "method": null,
+    "url": "https://social-listening-backend.onrender.com/api/admin/audit/stats/summary",
+    "line": 82
+  },
+  {
+    "path": "frontend/src/app/dashboard/settings/BrandingSettings.tsx",
+    "method": null,
+    "url": "https://social-listening-backend.onrender.com/api/branding/",
+    "line": 41
+  },
+  {
+    "path": "frontend/src/app/dashboard/settings/BrandingSettings.tsx",
+    "method": null,
+    "url": "https://social-listening-backend.onrender.com/api/branding/",
+    "line": 72
+  },
+  {
+    "path": "frontend/src/app/dashboard/settings/BrandingSettings.tsx",
+    "method": null,
+    "url": "https://social-listening-backend.onrender.com/api/branding/reset",
+    "line": 99
+  },
+  {
+    "path": "frontend/src/app/dashboard/settings/EmailSettings.tsx",
+    "method": null,
+    "url": "https://social-listening-backend.onrender.com/api/admin/settings/email",
+    "line": 30
+  },
+  {
+    "path": "frontend/src/app/dashboard/settings/EmailSettings.tsx",
+    "method": null,
+    "url": "https://social-listening-backend.onrender.com/api/admin/settings/email",
+    "line": 82
+  },
+  {
+    "path": "frontend/src/app/dashboard/settings/EmailSettings.tsx",
+    "method": null,
+    "url": "https://social-listening-backend.onrender.com/api/admin/settings/email/test",
+    "line": 118
+  },
+  {
+    "path": "frontend/src/app/dashboard/settings/NotificationSettings.tsx",
+    "method": null,
+    "url": "https://social-listening-backend.onrender.com/api/admin/settings/notifications",
+    "line": 32
+  },
+  {
+    "path": "frontend/src/app/dashboard/settings/NotificationSettings.tsx",
+    "method": null,
+    "url": "https://social-listening-backend.onrender.com/api/admin/settings/notifications",
+    "line": 66
+  },
+  {
+    "path": "frontend/src/app/dashboard/settings/NotificationSettings.tsx",
+    "method": null,
+    "url": "https://social-listening-backend.onrender.com/api/admin/settings/notifications/test?channel=${channel}",
+    "line": 105
+  },
+  {
+    "path": "frontend/src/app/dashboard/settings/OrganizationSettings.tsx",
+    "method": null,
+    "url": "https://social-listening-backend.onrender.com/api/admin/settings/organization",
+    "line": 28
+  },
+  {
+    "path": "frontend/src/app/dashboard/settings/OrganizationSettings.tsx",
+    "method": null,
+    "url": "https://social-listening-backend.onrender.com/api/admin/settings/organization",
+    "line": 59
+  },
+  {
+    "path": "frontend/src/app/dashboard/settings/PersonalNotifications.tsx",
+    "method": null,
+    "url": "https://social-listening-backend.onrender.com/api/auth/me/notification-settings",
+    "line": 25
+  },
+  {
+    "path": "frontend/src/app/dashboard/settings/PersonalNotifications.tsx",
+    "method": null,
+    "url": "https://social-listening-backend.onrender.com/api/auth/me/notification-settings",
+    "line": 67
+  },
+  {
+    "path": "frontend/src/app/dashboard/settings/PersonalProfile.tsx",
+    "method": null,
+    "url": "https://social-listening-backend.onrender.com/api/auth/me/profile",
+    "line": 61
+  },
+  {
+    "path": "frontend/src/app/dashboard/settings/PersonalProfile.tsx",
+    "method": null,
+    "url": "https://social-listening-backend.onrender.com/api/auth/me/avatar",
+    "line": 128
+  },
+  {
+    "path": "frontend/src/app/dashboard/settings/RoleManagement.tsx",
+    "method": null,
+    "url": "https://social-listening-backend.onrender.com/api/admin/roles/",
+    "line": 48
+  },
+  {
+    "path": "frontend/src/app/dashboard/settings/RoleManagement.tsx",
+    "method": null,
+    "url": "https://social-listening-backend.onrender.com/api/admin/roles/permissions/available",
+    "line": 67
+  },
+  {
+    "path": "frontend/src/app/dashboard/settings/RoleManagement.tsx",
+    "method": null,
+    "url": "https://social-listening-backend.onrender.com/api/admin/roles/${role.id}",
+    "line": 148
+  },
+  {
+    "path": "frontend/src/app/dashboard/settings/SecuritySettings.tsx",
+    "method": null,
+    "url": "https://social-listening-backend.onrender.com/api/auth/me/change-password",
+    "line": 37
+  },
+  {
+    "path": "frontend/src/app/dashboard/settings/SessionsSettings.tsx",
+    "method": null,
+    "url": "https://social-listening-backend.onrender.com/api/auth/me/sessions",
+    "line": 30
+  },
+  {
+    "path": "frontend/src/app/dashboard/settings/SessionsSettings.tsx",
+    "method": null,
+    "url": "https://social-listening-backend.onrender.com/api/auth/me/sessions/${sessionId}/revoke",
+    "line": 60
+  },
+  {
+    "path": "frontend/src/app/dashboard/settings/SessionsSettings.tsx",
+    "method": null,
+    "url": "https://social-listening-backend.onrender.com/api/auth/me/logout-other-sessions",
+    "line": 88
+  },
+  {
+    "path": "frontend/src/app/dashboard/settings/UserManagement.tsx",
+    "method": null,
+    "url": "${process.env.NEXT_PUBLIC_API_URL}/api/admin/users?${params}",
+    "line": 56
+  },
+  {
+    "path": "frontend/src/app/dashboard/settings/UserManagement.tsx",
+    "method": null,
+    "url": "${process.env.NEXT_PUBLIC_API_URL}/api/admin/users/stats/summary",
+    "line": 77
+  },
+  {
+    "path": "frontend/src/app/dashboard/settings/UserManagement.tsx",
+    "method": null,
+    "url": "${process.env.NEXT_PUBLIC_API_URL}/api/admin/users",
+    "line": 96
+  },
+  {
+    "path": "frontend/src/app/dashboard/settings/UserManagement.tsx",
+    "method": null,
+    "url": "${process.env.NEXT_PUBLIC_API_URL}/api/admin/users/${userId}",
+    "line": 125
+  },
+  {
+    "path": "frontend/src/app/dashboard/settings/UserManagement.tsx",
+    "method": null,
+    "url": "${process.env.NEXT_PUBLIC_API_URL}/api/admin/users/${userId}",
+    "line": 154
+  },
+  {
+    "path": "frontend/src/app/dashboard/settings/UserManagement.tsx",
+    "method": null,
+    "url": "${process.env.NEXT_PUBLIC_API_URL}/api/admin/users/${userId}/toggle-active",
+    "line": 178
+  },
+  {
+    "path": "frontend/src/app/dashboard/settings/UserManagement.tsx",
+    "method": null,
+    "url": "${process.env.NEXT_PUBLIC_API_URL}/api/admin/users/${userId}/reset-password",
+    "line": 202
+  }
+]

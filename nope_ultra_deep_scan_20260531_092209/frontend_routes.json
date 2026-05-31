@@ -1,0 +1,359 @@
+[
+  {
+    "path": "frontend/src/app/layout.tsx",
+    "inferred_route": "/",
+    "has_client": false,
+    "exports_metadata": true,
+    "components_used": []
+  },
+  {
+    "path": "frontend/src/app/page.tsx",
+    "inferred_route": "/",
+    "has_client": true,
+    "exports_metadata": false,
+    "components_used": []
+  },
+  {
+    "path": "frontend/src/app/dashboard/layout.tsx",
+    "inferred_route": "/dashboard",
+    "has_client": true,
+    "exports_metadata": false,
+    "components_used": [
+      "Link",
+      "LoadingSpinner",
+      "LogOut",
+      "Menu",
+      "SidebarBadge",
+      "User",
+      "X"
+    ]
+  },
+  {
+    "path": "frontend/src/app/dashboard/page.tsx",
+    "inferred_route": "/dashboard",
+    "has_client": true,
+    "exports_metadata": false,
+    "components_used": [
+      "Activity",
+      "AlertCard",
+      "AlertTriangle",
+      "DashboardKpiCard",
+      "FileText",
+      "HotKeywordsWidget",
+      "Map",
+      "MentionCard",
+      "PieChart",
+      "RefreshCcw",
+      "SentimentDonutChart",
+      "Toaster",
+      "TrendChart",
+      "Users"
+    ]
+  },
+  {
+    "path": "frontend/src/app/dashboard/alerts/page.tsx",
+    "inferred_route": "/dashboard/alerts",
+    "has_client": true,
+    "exports_metadata": false,
+    "components_used": [
+      "AlertTriangle",
+      "Check",
+      "FileText",
+      "Link",
+      "Plus",
+      "Toaster",
+      "X"
+    ]
+  },
+  {
+    "path": "frontend/src/app/dashboard/assistant/page.tsx",
+    "inferred_route": "/dashboard/assistant",
+    "has_client": true,
+    "exports_metadata": false,
+    "components_used": [
+      "ArrowRight",
+      "Bot",
+      "HTMLDivElement",
+      "Loader2",
+      "Send",
+      "Sparkles",
+      "User"
+    ]
+  },
+  {
+    "path": "frontend/src/app/dashboard/competitors/page.tsx",
+    "inferred_route": "/dashboard/competitors",
+    "has_client": true,
+    "exports_metadata": false,
+    "components_used": [
+      "Bar",
+      "BarChart",
+      "BarChartIcon",
+      "CartesianGrid",
+      "Cell",
+      "Legend",
+      "RefreshCcw",
+      "ResponsiveContainer",
+      "Tooltip",
+      "TrendingUp",
+      "XAxis",
+      "YAxis"
+    ]
+  },
+  {
+    "path": "frontend/src/app/dashboard/incidents/page.tsx",
+    "inferred_route": "/dashboard/incidents",
+    "has_client": true,
+    "exports_metadata": false,
+    "components_used": [
+      "Check",
+      "CrisisWarRoomModal",
+      "EvidenceLockerModal",
+      "Eye",
+      "FileText",
+      "Link",
+      "Plus",
+      "ShieldAlert",
+      "Toaster",
+      "X"
+    ]
+  },
+  {
+    "path": "frontend/src/app/dashboard/influencers/page.tsx",
+    "inferred_route": "/dashboard/influencers",
+    "has_client": true,
+    "exports_metadata": false,
+    "components_used": [
+      "Activity",
+      "RefreshCcw",
+      "Search",
+      "Star",
+      "TrophyIcon"
+    ]
+  },
+  {
+    "path": "frontend/src/app/dashboard/keywords/page.tsx",
+    "inferred_route": "/dashboard/keywords",
+    "has_client": true,
+    "exports_metadata": false,
+    "components_used": [
+      "ChevronDown",
+      "ChevronRight",
+      "ConfirmDialog",
+      "Edit",
+      "Keyword",
+      "KeywordGroup",
+      "Plus",
+      "Record",
+      "Search",
+      "Set",
+      "Toaster",
+      "Trash2"
+    ]
+  },
+  {
+    "path": "frontend/src/app/dashboard/mentions/page.tsx",
+    "inferred_route": "/dashboard/mentions",
+    "has_client": true,
+    "exports_metadata": false,
+    "components_used": [
+      "AlertTriangle",
+      "ArrowUpDown",
+      "Bar",
+      "BarChart",
+      "BarChart3",
+      "BrainCircuit",
+      "CartesianGrid",
+      "Cell",
+      "CheckCircle2",
+      "ChevronDown",
+      "ConfirmDialog",
+      "ExternalLink",
+      "Eye",
+      "Facebook",
+      "FileText",
+      "Filter",
+      "Filters",
+      "Globe",
+      "HTMLDivElement",
+      "Link",
+      "Loader2",
+      "MentionItem",
+      "NodeJS",
+      "Record",
+      "RefreshCw",
+      "ResponsiveContainer",
+      "Rss",
+      "Search",
+      "SentimentDot",
+      "SlidersHorizontal",
+      "SourceIcon",
+      "Toaster",
+      "Tooltip",
+      "Trash2",
+      "X",
+      "XAxis",
+      "YAxis",
+      "Youtube"
+    ]
+  },
+  {
+    "path": "frontend/src/app/dashboard/mentions/[id]/page.tsx",
+    "inferred_route": "/dashboard/mentions/[id]",
+    "has_client": true,
+    "exports_metadata": false,
+    "components_used": [
+      "Activity",
+      "AlertTriangle",
+      "ArrowLeft",
+      "ExecutiveBriefModal",
+      "ExternalLink",
+      "FileText",
+      "Toaster"
+    ]
+  },
+  {
+    "path": "frontend/src/app/dashboard/monitor/page.tsx",
+    "inferred_route": "/dashboard/monitor",
+    "has_client": true,
+    "exports_metadata": false,
+    "components_used": [
+      "Loader2"
+    ]
+  },
+  {
+    "path": "frontend/src/app/dashboard/reports/page.tsx",
+    "inferred_route": "/dashboard/reports",
+    "has_client": true,
+    "exports_metadata": false,
+    "components_used": [
+      "CheckCircle",
+      "Copy",
+      "Download",
+      "RefreshCcw"
+    ]
+  },
+  {
+    "path": "frontend/src/app/dashboard/scan/page.tsx",
+    "inferred_route": "/dashboard/scan",
+    "has_client": true,
+    "exports_metadata": false,
+    "components_used": [
+      "Activity",
+      "AlertTriangle",
+      "CheckCircle",
+      "CheckSquare",
+      "ChevronDown",
+      "ChevronUp",
+      "Clock",
+      "CrawlJob",
+      "ExternalLink",
+      "Eye",
+      "EyeOff",
+      "FlaskConical",
+      "Globe",
+      "History",
+      "Link",
+      "LinkIcon",
+      "Loader2",
+      "Play",
+      "Plus",
+      "Radar",
+      "RefreshCw",
+      "Rss",
+      "SourceFilter",
+      "Sparkles",
+      "Square",
+      "Toaster",
+      "WorkerStatus",
+      "XCircle"
+    ]
+  },
+  {
+    "path": "frontend/src/app/dashboard/services/page.tsx",
+    "inferred_route": "/dashboard/services",
+    "has_client": true,
+    "exports_metadata": false,
+    "components_used": [
+      "AlertTriangle",
+      "CheckCircle",
+      "Clock",
+      "DashboardSummary",
+      "DollarSign",
+      "Eye",
+      "FileText",
+      "Icon",
+      "Plus",
+      "Search",
+      "Service",
+      "ServiceRequest",
+      "Toaster",
+      "XCircle"
+    ]
+  },
+  {
+    "path": "frontend/src/app/dashboard/settings/page.tsx",
+    "inferred_route": "/dashboard/settings",
+    "has_client": true,
+    "exports_metadata": false,
+    "components_used": [
+      "APIWebhooks",
+      "AuditLogs",
+      "BrandingSettings",
+      "EmailSettings",
+      "FileText",
+      "Icon",
+      "LoadingSpinner",
+      "NotificationSettings",
+      "OrganizationSettings",
+      "PersonalNotifications",
+      "PersonalProfile",
+      "RoleManagement",
+      "SecuritySettings",
+      "Settings",
+      "Shield",
+      "TabId",
+      "User",
+      "UserManagement"
+    ]
+  },
+  {
+    "path": "frontend/src/app/dashboard/sources/page.tsx",
+    "inferred_route": "/dashboard/sources",
+    "has_client": true,
+    "exports_metadata": false,
+    "components_used": [
+      "Clock",
+      "ConfirmDialog",
+      "Facebook",
+      "Globe",
+      "Plus",
+      "ScheduleSelector",
+      "Search",
+      "Source",
+      "Toaster",
+      "Trash2",
+      "Youtube"
+    ]
+  },
+  {
+    "path": "frontend/src/app/login/page.tsx",
+    "inferred_route": "/login",
+    "has_client": true,
+    "exports_metadata": false,
+    "components_used": [
+      "LoadingSpinner",
+      "LoginContent",
+      "Suspense"
+    ]
+  },
+  {
+    "path": "frontend/src/app/register/page.tsx",
+    "inferred_route": "/register",
+    "has_client": true,
+    "exports_metadata": false,
+    "components_used": [
+      "Link"
+    ]
+  }
+]

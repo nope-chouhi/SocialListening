@@ -247,7 +247,7 @@ export default function ScanPage() {
       });
       
       toast.dismiss(loadingToast);
-      toast.success(`Scan thành công! Tìm thấy ${result.total_mentions_found} mentions mới`);
+      toast.success(result.message || 'Đã tạo job scan. Hệ thống đang quét trong nền.');
       
       setQuickKeyword('');
       setSelectedGroups((prev) => Array.from(new Set([...prev, targetGroupId])));
@@ -291,7 +291,7 @@ export default function ScanPage() {
         url: customUrl || undefined,
       });
       toast.dismiss(loadingToast);
-      toast.success(`Scan thành công! Tìm thấy ${result.total_mentions_found} mentions mới`);
+      toast.success(result.message || 'Đã tạo job scan. Hệ thống đang quét trong nền.');
       setSelectedGroups([]);
       setSelectedSources([]);
       setCustomUrl('');

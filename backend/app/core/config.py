@@ -9,9 +9,9 @@ import os
 
 class Settings(BaseSettings):
     # App
-    APP_NAME: str = "Social Listening Platform"
+    APP_NAME: str = "Nope"
     ENVIRONMENT: str = "development"
-    DEBUG: bool = True
+    DEBUG: bool = False
     LOG_LEVEL: str = "INFO"
     
     # Frontend URL for CORS
@@ -100,5 +100,12 @@ class Settings(BaseSettings):
             extra='ignore'
         )
 
-
 settings = Settings()
+
+# Post-init production safety checks
+if settings.ENVIRONMENT == "production":
+    if settings.SECRET_KEY == "your-secret-key-change-in-production" or not settings.SECRET_KEY:
+        raise ValueError("CRITICAL: SECRET_KEY must be set to a secure value in production!")
+    
+    if settings.AI_PROVIDER.lower() == "dummy" and os.environ.get("DEMO_MODE", "false").lower() != "true":
+        raise ValueError("CRITICAL: AI_PROVIDER cannot be 'dummy' in production unless DEMO_MODE=true")

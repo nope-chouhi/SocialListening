@@ -19,34 +19,6 @@ from math import ceil
 router = APIRouter()
 
 
-@router.get("/fix-db")
-def fix_database_schema(db: Session = Depends(get_db)):
-    """Emergency endpoint to fix missing columns on production PostgreSQL"""
-    try:
-        stmts = [
-            "ALTER TABLE mentions ADD COLUMN IF NOT EXISTS is_reviewed BOOLEAN DEFAULT FALSE",
-            "ALTER TABLE mentions ADD COLUMN IF NOT EXISTS title TEXT",
-            "ALTER TABLE mentions ADD COLUMN IF NOT EXISTS content_hash VARCHAR(64)",
-            "ALTER TABLE mentions ADD COLUMN IF NOT EXISTS collected_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()",
-            "ALTER TABLE mentions ADD COLUMN IF NOT EXISTS matched_keywords JSON",
-            "ALTER TABLE mentions ADD COLUMN IF NOT EXISTS platform_post_id VARCHAR(255)",
-            "ALTER TABLE mentions ADD COLUMN IF NOT EXISTS meta_data JSON",
-            "ALTER TABLE mentions ADD COLUMN IF NOT EXISTS author VARCHAR(500)",
-            "ALTER TABLE mentions ADD COLUMN IF NOT EXISTS published_at TIMESTAMP WITH TIME ZONE"
-        ]
-        
-        executed = []
-        for stmt in stmts:
-            try:
-                db.execute(text(stmt))
-                db.commit()
-                executed.append(stmt)
-            except Exception as e:
-                db.rollback()
-                
-        return {"status": "success", "message": "Database schema patch executed", "executed": executed}
-    except Exception as e:
-        return {"status": "error", "detail": str(e)}
 
 @router.get("")
 def list_mentions(
@@ -54,10 +26,16 @@ def list_mentions(
     page_size: int = Query(20, ge=1, le=100),
     source_id: Optional[int] = None,
     source_type: Optional[str] = None,
+    source_types: Optional[List[str]] = Query(None),
     sentiment: Optional[str] = None,
+    sentiments: Optional[List[str]] = Query(None),
     min_risk_score: Optional[float] = Query(None, ge=0, le=100),
     search_query: Optional[str] = None,
-    sort_by: Optional[str] = Query("newest", pattern="^(newest|oldest|risk_high|risk_low)$"),
+    author: Optional[str] = None,
+    domain: Optional[str] = None,
+    date_from: Optional[datetime] = None,
+    date_to: Optional[datetime] = None,
+    sort_by: Optional[str] = Query("newest", pattern="^(newest|oldest|risk_high|risk_low|influence_high|engagement_high)$"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
@@ -69,22 +47,39 @@ def list_mentions(
         from app.models.source import Source
 
         query = select(Mention)
-        has_ai_filter = sentiment or min_risk_score is not None
-        need_source_join = bool(source_type)
+        has_ai_filter = sentiment or sentiments or min_risk_score is not None
+        need_source_join = bool(source_type or source_types or domain)
         need_ai_join = has_ai_filter or sort_by in ("risk_high", "risk_low")
 
         if source_id:
             query = query.where(Mention.source_id == source_id)
+            
+        if need_source_join:
+            query = query.join(Source, Source.id == Mention.source_id)
+            if source_type:
+                query = query.where(Source.source_type == source_type)
+            if source_types:
+                query = query.where(Source.source_type.in_(source_types))
+            if domain:
+                query = query.where(Source.url.ilike(f"%{domain}%"))
 
-        if source_type:
-            query = query.join(Source, Source.id == Mention.source_id).where(Source.source_type == source_type)
+        if author:
+            query = query.where(Mention.author.ilike(f"%{author}%"))
+            
+        if date_from:
+            query = query.where(Mention.collected_at >= date_from)
+            
+        if date_to:
+            query = query.where(Mention.collected_at <= date_to)
 
         if search_query:
             search_pattern = f"%{search_query}%"
             query = query.where(
                 or_(
                     Mention.title.ilike(search_pattern),
-                    Mention.content.ilike(search_pattern)
+                    Mention.content.ilike(search_pattern),
+                    Mention.author.ilike(search_pattern),
+                    Mention.url.ilike(search_pattern)
                 )
             )
 
@@ -93,39 +88,22 @@ def list_mentions(
                 query = query.join(AIAnalysis, AIAnalysis.mention_id == Mention.id)
             else:
                 query = query.outerjoin(AIAnalysis, AIAnalysis.mention_id == Mention.id)
+                
             if sentiment:
                 query = query.where(AIAnalysis.sentiment == sentiment)
+            if sentiments:
+                query = query.where(AIAnalysis.sentiment.in_(sentiments))
             if min_risk_score is not None:
                 query = query.where(AIAnalysis.risk_score >= min_risk_score)
 
         try:
-            # Count query
-            count_query = select(func.count()).select_from(Mention)
-            if source_id:
-                count_query = count_query.where(Mention.source_id == source_id)
-            if source_type:
-                count_query = count_query.join(Source, Source.id == Mention.source_id).where(Source.source_type == source_type)
-            if search_query:
-                count_query = count_query.where(
-                    or_(
-                        Mention.title.ilike(search_pattern),
-                        Mention.content.ilike(search_pattern)
-                    )
-                )
-            if has_ai_filter:
-                if not source_type:
-                    count_query = count_query.join(AIAnalysis, AIAnalysis.mention_id == Mention.id)
-                else:
-                    count_query = count_query.join(AIAnalysis, AIAnalysis.mention_id == Mention.id)
-                if sentiment:
-                    count_query = count_query.where(AIAnalysis.sentiment == sentiment)
-                if min_risk_score is not None:
-                    count_query = count_query.where(AIAnalysis.risk_score >= min_risk_score)
+            # Count query (reconstruct cleanly instead of duplicating conditions, or just use subquery)
+            count_query = select(func.count()).select_from(query.subquery())
             total = db.execute(count_query).scalar() or 0
         except Exception as e:
             db.rollback()
             logger.error(f"Error querying total mentions count: {e}")
-            total = 0
+            raise HTTPException(status_code=500, detail="Lỗi khi truy vấn số lượng mentions")
 
         from sqlalchemy import nullslast
         offset = (page - 1) * page_size
@@ -137,6 +115,11 @@ def list_mentions(
             query = query.order_by(nullslast(AIAnalysis.risk_score.desc()), Mention.id.desc())
         elif sort_by == "risk_low":
             query = query.order_by(nullslast(AIAnalysis.risk_score.asc()), Mention.id.asc())
+        elif sort_by == "influence_high":
+            # Just order by collected_at for now if we don't have influence score in DB
+            query = query.order_by(nullslast(Mention.collected_at.desc()), Mention.id.desc())
+        elif sort_by == "engagement_high":
+            query = query.order_by(nullslast(Mention.collected_at.desc()), Mention.id.desc())
         else:
             query = query.order_by(nullslast(Mention.collected_at.desc()), Mention.id.desc())
 
@@ -370,7 +353,7 @@ def create_alert_from_mention(
         else:
             severity = "low"
 
-    alert_title = title or f"Alert tá»« mention: {mention.title or mention.url}"
+    alert_title = title or f"Alert từ mention: {mention.title or mention.url}"
     message = None
     if analysis:
         message = f"Risk score: {analysis.risk_score}, Crisis level: {analysis.crisis_level}"
@@ -412,12 +395,12 @@ def create_incident_from_mention(
     if not mention:
         raise HTTPException(status_code=404, detail="Mention not found")
 
-    incident_title = title or f"Sá»± cá»‘ tá»« mention: {mention.title or mention.url}"
+    incident_title = title or f"Sự cố từ mention: {mention.title or mention.url}"
     incident = Incident(
         mention_id=mention_id,
         owner_id=current_user.id,
         title=incident_title,
-        description=description or f"Sá»± cá»‘ Ä‘Æ°á»£c táº¡o tá»« mention: {mention.url}",
+        description=description or f"Sự cố được tạo từ mention: {mention.url}",
         status=IncidentStatus.NEW
     )
     db.add(incident)
@@ -429,7 +412,7 @@ def create_incident_from_mention(
         user_id=current_user.id,
         action="created",
         new_status=incident.status.value,
-        notes=f"Sá»± cá»‘ Ä‘Æ°á»£c táº¡o tá»« mention #{mention_id}"
+        notes=f"Sự cố được tạo từ mention #{mention_id}"
     )
     db.add(log)
     db.commit()

@@ -24,11 +24,14 @@ async def lifespan(app: FastAPI):
     logger.info("Starting Social Listening Platform...")
 
     # Create tables (fallback if alembic hasn't run)
-    try:
-        Base.metadata.create_all(bind=engine)
-        logger.info("Database tables created/verified")
-    except Exception as e:
-        logger.warning(f"create_all skipped (tables may already exist via alembic): {e}")
+    if settings.ENVIRONMENT != "production" or os.environ.get("AUTO_CREATE_TABLES", "false").lower() == "true":
+        try:
+            Base.metadata.create_all(bind=engine)
+            logger.info("Database tables created/verified")
+        except Exception as e:
+            logger.warning(f"create_all skipped (tables may already exist via alembic): {e}")
+    else:
+        logger.info("Skipped Base.metadata.create_all in production. Relying on migrations.")
 
     # Seed service data
     try:
@@ -73,9 +76,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# ─── CORS ─────────────────────────────────────────────────────────────────────
 # Must be added BEFORE routers and BEFORE any exception handlers
-# allow_origins=["*"] so CORS headers appear even on 500 responses
 _cors_origins = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
@@ -97,10 +98,17 @@ app.add_middleware(
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     logger.error(f"Unhandled exception on {request.method} {request.url}: {traceback.format_exc()}")
-    return JSONResponse(
-        status_code=500,
-        content={"detail": f"Internal server error: {str(exc)}"},
-    )
+    
+    if settings.ENVIRONMENT == "production":
+        return JSONResponse(
+            status_code=500,
+            content={"detail": "Lỗi hệ thống. Vui lòng thử lại sau."},
+        )
+    else:
+        return JSONResponse(
+            status_code=500,
+            content={"detail": f"Internal server error: {str(exc)}"},
+        )
 
 
 # ─── Health ───────────────────────────────────────────────────────────────────

@@ -1,0 +1,19 @@
+{
+  "scanner": "nope_ultra_deep_project_scanner",
+  "version": "2.0",
+  "scan_time": "2026-05-31T09:22:22.064476",
+  "system": {
+    "python": "3.12.0 (tags/v3.12.0:0fb18b0, Oct  2 2023, 13:03:39) [MSC v.1935 64 bit (AMD64)]",
+    "platform": "Windows-11-10.0.26200-SP0"
+  },
+  "root": "C:\\Users\\hongu\\OneDrive\\Máy tính\\SocialListening",
+  "files_indexed": 19154,
+  "files_collected": 260,
+  "frontend_routes": 20,
+  "backend_routes": 334,
+  "api_calls": 138,
+  "risk_findings": 439,
+  "high_risk_findings": 90,
+  "medium_risk_findings": 128,
+  "unmatched_frontend_api_calls": 0
+}

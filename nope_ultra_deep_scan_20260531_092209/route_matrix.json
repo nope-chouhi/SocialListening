@@ -1,0 +1,2511 @@
+{
+  "frontend_calls": [
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "POST",
+      "url": "/api/auth/login",
+      "line": 104,
+      "normalized": "/api/auth/login",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "POST",
+      "url": "/api/auth/register",
+      "line": 113,
+      "normalized": "/api/auth/register",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "GET",
+      "url": "/api/auth/me",
+      "line": 120,
+      "normalized": "/api/auth/me",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "GET",
+      "url": "/api/dashboard/summary",
+      "line": 128,
+      "normalized": "/api/dashboard/summary",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "GET",
+      "url": "/api/dashboard/trends",
+      "line": 132,
+      "normalized": "/api/dashboard/trends",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "GET",
+      "url": "/api/dashboard/sentiment-summary",
+      "line": 136,
+      "normalized": "/api/dashboard/sentiment-summary",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "GET",
+      "url": "/api/dashboard/hot-keywords",
+      "line": 140,
+      "normalized": "/api/dashboard/hot-keywords",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "GET",
+      "url": "/api/dashboard/sidebar-badges",
+      "line": 144,
+      "normalized": "/api/dashboard/sidebar-badges",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "GET",
+      "url": "/api/keywords/groups",
+      "line": 152,
+      "normalized": "/api/keywords/groups",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "POST",
+      "url": "/api/keywords/groups",
+      "line": 156,
+      "normalized": "/api/keywords/groups",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "PUT",
+      "url": "/api/keywords/groups/${id}",
+      "line": 160,
+      "normalized": "/api/keywords/groups/{param}",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "DELETE",
+      "url": "/api/keywords/groups/${id}",
+      "line": 164,
+      "normalized": "/api/keywords/groups/{param}",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "GET",
+      "url": "/api/keywords/groups/${groupId}/keywords",
+      "line": 168,
+      "normalized": "/api/keywords/groups/{param}/keywords",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "POST",
+      "url": "/api/keywords",
+      "line": 172,
+      "normalized": "/api/keywords",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "POST",
+      "url": "/api/keywords/bulk",
+      "line": 176,
+      "normalized": "/api/keywords/bulk",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "PUT",
+      "url": "/api/keywords/${id}",
+      "line": 180,
+      "normalized": "/api/keywords/{param}",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "DELETE",
+      "url": "/api/keywords/${id}",
+      "line": 184,
+      "normalized": "/api/keywords/{param}",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "GET",
+      "url": "/api/sources/groups",
+      "line": 193,
+      "normalized": "/api/sources/groups",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "POST",
+      "url": "/api/sources/groups",
+      "line": 197,
+      "normalized": "/api/sources/groups",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "PUT",
+      "url": "/api/sources/groups/${id}",
+      "line": 201,
+      "normalized": "/api/sources/groups/{param}",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "DELETE",
+      "url": "/api/sources/groups/${id}",
+      "line": 205,
+      "normalized": "/api/sources/groups/{param}",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "GET",
+      "url": "/api/sources",
+      "line": 210,
+      "normalized": "/api/sources",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "GET",
+      "url": "/api/sources/${id}",
+      "line": 214,
+      "normalized": "/api/sources/{param}",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "POST",
+      "url": "/api/sources",
+      "line": 224,
+      "normalized": "/api/sources",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "PUT",
+      "url": "/api/sources/${id}",
+      "line": 233,
+      "normalized": "/api/sources/{param}",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "DELETE",
+      "url": "/api/sources/${id}",
+      "line": 237,
+      "normalized": "/api/sources/{param}",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "POST",
+      "url": "/api/sources/${id}/test",
+      "line": 241,
+      "normalized": "/api/sources/{param}/test",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "POST",
+      "url": "/api/sources/${id}/scan",
+      "line": 245,
+      "normalized": "/api/sources/{param}/scan",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "POST",
+      "url": "/api/crawl/manual-scan",
+      "line": 254,
+      "normalized": "/api/crawl/manual-scan",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "GET",
+      "url": "/api/crawl/scan-history",
+      "line": 258,
+      "normalized": "/api/crawl/scan-history",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "GET",
+      "url": "/api/crawl/jobs",
+      "line": 262,
+      "normalized": "/api/crawl/jobs",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "POST",
+      "url": "/api/crawl/jobs/${jobId}/retry",
+      "line": 266,
+      "normalized": "/api/crawl/jobs/{param}/retry",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "GET",
+      "url": "/api/system/worker-status",
+      "line": 270,
+      "normalized": "/api/system/worker-status",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "GET",
+      "url": "/api/crawl/scheduler/status",
+      "line": 274,
+      "normalized": "/api/crawl/scheduler/status",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "POST",
+      "url": "/api/crawl/test-feed",
+      "line": 278,
+      "normalized": "/api/crawl/test-feed",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "GET",
+      "url": "/api/mentions",
+      "line": 286,
+      "normalized": "/api/mentions",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "GET",
+      "url": "/api/mentions/${id}",
+      "line": 290,
+      "normalized": "/api/mentions/{param}",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "DELETE",
+      "url": "/api/mentions/${id}",
+      "line": 294,
+      "normalized": "/api/mentions/{param}",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "POST",
+      "url": "/api/mentions/${id}/analyze",
+      "line": 298,
+      "normalized": "/api/mentions/{param}/analyze",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "POST",
+      "url": "/api/mentions/${id}/create-alert",
+      "line": 302,
+      "normalized": "/api/mentions/{param}/create-alert",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "POST",
+      "url": "/api/mentions/${id}/create-incident",
+      "line": 306,
+      "normalized": "/api/mentions/{param}/create-incident",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "POST",
+      "url": "/api/mentions/${id}/mark-reviewed",
+      "line": 310,
+      "normalized": "/api/mentions/{param}/mark-reviewed",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "GET",
+      "url": "/api/alerts",
+      "line": 318,
+      "normalized": "/api/alerts",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "GET",
+      "url": "/api/alerts/${id}",
+      "line": 322,
+      "normalized": "/api/alerts/{param}",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "POST",
+      "url": "/api/alerts",
+      "line": 327,
+      "normalized": "/api/alerts",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "POST",
+      "url": "/api/alerts/${id}/acknowledge",
+      "line": 331,
+      "normalized": "/api/alerts/{param}/acknowledge",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "POST",
+      "url": "/api/alerts/${id}/resolve",
+      "line": 335,
+      "normalized": "/api/alerts/{param}/resolve",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "DELETE",
+      "url": "/api/alerts/${id}",
+      "line": 339,
+      "normalized": "/api/alerts/{param}",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "POST",
+      "url": "/api/alerts/${id}/ignore",
+      "line": 343,
+      "normalized": "/api/alerts/{param}/ignore",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "POST",
+      "url": "/api/alerts/${id}/create-incident",
+      "line": 347,
+      "normalized": "/api/alerts/{param}/create-incident",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "GET",
+      "url": "/api/incidents",
+      "line": 355,
+      "normalized": "/api/incidents",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "GET",
+      "url": "/api/incidents/${id}",
+      "line": 359,
+      "normalized": "/api/incidents/{param}",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "POST",
+      "url": "/api/incidents",
+      "line": 364,
+      "normalized": "/api/incidents",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "PUT",
+      "url": "/api/incidents/${id}",
+      "line": 369,
+      "normalized": "/api/incidents/{param}",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "DELETE",
+      "url": "/api/incidents/${id}",
+      "line": 373,
+      "normalized": "/api/incidents/{param}",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "POST",
+      "url": "/api/incidents/${id}/close",
+      "line": 377,
+      "normalized": "/api/incidents/{param}/close",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "GET",
+      "url": "/api/incidents/${id}/logs",
+      "line": 381,
+      "normalized": "/api/incidents/{param}/logs",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "POST",
+      "url": "/api/incidents/${id}/logs",
+      "line": 385,
+      "normalized": "/api/incidents/{param}/logs",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "GET",
+      "url": "/api/reports/summary",
+      "line": 393,
+      "normalized": "/api/reports/summary",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "GET",
+      "url": "/api/reports",
+      "line": 397,
+      "normalized": "/api/reports",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "GET",
+      "url": "/api/reports/${id}",
+      "line": 401,
+      "normalized": "/api/reports/{param}",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "POST",
+      "url": "/api/reports",
+      "line": 405,
+      "normalized": "/api/reports",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "DELETE",
+      "url": "/api/reports/${id}",
+      "line": 409,
+      "normalized": "/api/reports/{param}",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "POST",
+      "url": "/api/takedown/generate-draft",
+      "line": 425,
+      "normalized": "/api/takedown/generate-draft",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "POST",
+      "url": "/api/takedown/records",
+      "line": 429,
+      "normalized": "/api/takedown/records",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "GET",
+      "url": "/api/takedown/records",
+      "line": 433,
+      "normalized": "/api/takedown/records",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "PUT",
+      "url": "/api/takedown/records/${record_id}/status",
+      "line": 437,
+      "normalized": "/api/takedown/records/{param}/status",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "GET",
+      "url": "/api/services/categories",
+      "line": 446,
+      "normalized": "/api/services/categories",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "POST",
+      "url": "/api/services/categories",
+      "line": 450,
+      "normalized": "/api/services/categories",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "PUT",
+      "url": "/api/services/categories/${id}",
+      "line": 454,
+      "normalized": "/api/services/categories/{param}",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "DELETE",
+      "url": "/api/services/categories/${id}",
+      "line": 458,
+      "normalized": "/api/services/categories/{param}",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "GET",
+      "url": "/api/services",
+      "line": 463,
+      "normalized": "/api/services",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "GET",
+      "url": "/api/services/${id}",
+      "line": 467,
+      "normalized": "/api/services/{param}",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "POST",
+      "url": "/api/services",
+      "line": 471,
+      "normalized": "/api/services",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "PUT",
+      "url": "/api/services/${id}",
+      "line": 475,
+      "normalized": "/api/services/{param}",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "DELETE",
+      "url": "/api/services/${id}",
+      "line": 479,
+      "normalized": "/api/services/{param}",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "GET",
+      "url": "/api/services/dashboard-summary",
+      "line": 483,
+      "normalized": "/api/services/dashboard-summary",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "GET",
+      "url": "/api/service-requests",
+      "line": 492,
+      "normalized": "/api/service-requests",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "GET",
+      "url": "/api/service-requests/${id}",
+      "line": 496,
+      "normalized": "/api/service-requests/{param}",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "POST",
+      "url": "/api/service-requests",
+      "line": 500,
+      "normalized": "/api/service-requests",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "PUT",
+      "url": "/api/service-requests/${id}",
+      "line": 504,
+      "normalized": "/api/service-requests/{param}",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "POST",
+      "url": "/api/service-requests/${id}/submit",
+      "line": 508,
+      "normalized": "/api/service-requests/{param}/submit",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "POST",
+      "url": "/api/service-requests/${id}/approve",
+      "line": 512,
+      "normalized": "/api/service-requests/{param}/approve",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "POST",
+      "url": "/api/service-requests/${id}/reject",
+      "line": 516,
+      "normalized": "/api/service-requests/{param}/reject",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "POST",
+      "url": "/api/service-requests/${id}/complete",
+      "line": 520,
+      "normalized": "/api/service-requests/{param}/complete",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "POST",
+      "url": "/api/service-requests/${id}/cancel",
+      "line": 524,
+      "normalized": "/api/service-requests/{param}/cancel",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "GET",
+      "url": "/api/service-requests/${id}/logs",
+      "line": 528,
+      "normalized": "/api/service-requests/{param}/logs",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "POST",
+      "url": "/api/service-requests/${id}/logs",
+      "line": 532,
+      "normalized": "/api/service-requests/{param}/logs",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "GET",
+      "url": "/api/service-requests/${id}/deliverables",
+      "line": 536,
+      "normalized": "/api/service-requests/{param}/deliverables",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "POST",
+      "url": "/api/service-requests/${id}/deliverables",
+      "line": 540,
+      "normalized": "/api/service-requests/{param}/deliverables",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "POST",
+      "url": "/api/monitor/start",
+      "line": 552,
+      "normalized": "/api/monitor/start",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "GET",
+      "url": "/api/monitor/dashboard",
+      "line": 561,
+      "normalized": "/api/monitor/dashboard",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "GET",
+      "url": "/api/monitor/ai-analysis",
+      "line": 570,
+      "normalized": "/api/monitor/ai-analysis",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "POST",
+      "url": "/api/ai/generate-brief",
+      "line": 578,
+      "normalized": "/api/ai/generate-brief",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "GET",
+      "url": "/api/evidence/incident/${incidentId}",
+      "line": 586,
+      "normalized": "/api/evidence/incident/{param}",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "POST",
+      "url": "/api/evidence/${incidentId}",
+      "line": 598,
+      "normalized": "/api/evidence/{param}",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "DELETE",
+      "url": "/api/evidence/${id}",
+      "line": 602,
+      "normalized": "/api/evidence/{param}",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "POST",
+      "url": "/api/ai/chat",
+      "line": 610,
+      "normalized": "/api/ai/chat",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "GET",
+      "url": "/api/competitors/summary",
+      "line": 618,
+      "normalized": "/api/competitors/summary",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/lib/api.ts",
+      "method": "GET",
+      "url": "/api/influencers/leaderboard",
+      "line": 626,
+      "normalized": "/api/influencers/leaderboard",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/app/register/page.tsx",
+      "method": null,
+      "url": "${API_URL}/api/auth/register",
+      "line": 39,
+      "normalized": "/api/auth/register",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/app/dashboard/settings/APIWebhooks.tsx",
+      "method": "GET",
+      "url": "/api/api-keys/",
+      "line": 46,
+      "normalized": "/api/api-keys",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/app/dashboard/settings/APIWebhooks.tsx",
+      "method": "POST",
+      "url": "/api/api-keys/",
+      "line": 66,
+      "normalized": "/api/api-keys",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/app/dashboard/settings/APIWebhooks.tsx",
+      "method": "DELETE",
+      "url": "/api/api-keys/${keyId}",
+      "line": 81,
+      "normalized": "/api/api-keys/{param}",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/app/dashboard/settings/APIWebhooks.tsx",
+      "method": "POST",
+      "url": "/api/api-keys/${keyId}/${action}",
+      "line": 93,
+      "normalized": "/api/api-keys/{param}/{param}",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/app/dashboard/settings/AppearanceSettings.tsx",
+      "method": null,
+      "url": "https://social-listening-backend.onrender.com/api/auth/me/preferences",
+      "line": 24,
+      "normalized": "/api/auth/me/preferences",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/app/dashboard/settings/AppearanceSettings.tsx",
+      "method": null,
+      "url": "https://social-listening-backend.onrender.com/api/auth/me/preferences",
+      "line": 83,
+      "normalized": "/api/auth/me/preferences",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/app/dashboard/settings/AuditLogs.tsx",
+      "method": null,
+      "url": "https://social-listening-backend.onrender.com/api/admin/audit/?${params}",
+      "line": 63,
+      "normalized": "/api/admin/audit",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/app/dashboard/settings/AuditLogs.tsx",
+      "method": null,
+      "url": "https://social-listening-backend.onrender.com/api/admin/audit/stats/summary",
+      "line": 82,
+      "normalized": "/api/admin/audit/stats/summary",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/app/dashboard/settings/BrandingSettings.tsx",
+      "method": null,
+      "url": "https://social-listening-backend.onrender.com/api/branding/",
+      "line": 41,
+      "normalized": "/api/branding",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/app/dashboard/settings/BrandingSettings.tsx",
+      "method": null,
+      "url": "https://social-listening-backend.onrender.com/api/branding/",
+      "line": 72,
+      "normalized": "/api/branding",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/app/dashboard/settings/BrandingSettings.tsx",
+      "method": null,
+      "url": "https://social-listening-backend.onrender.com/api/branding/reset",
+      "line": 99,
+      "normalized": "/api/branding/reset",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/app/dashboard/settings/EmailSettings.tsx",
+      "method": null,
+      "url": "https://social-listening-backend.onrender.com/api/admin/settings/email",
+      "line": 30,
+      "normalized": "/api/admin/settings/email",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/app/dashboard/settings/EmailSettings.tsx",
+      "method": null,
+      "url": "https://social-listening-backend.onrender.com/api/admin/settings/email",
+      "line": 82,
+      "normalized": "/api/admin/settings/email",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/app/dashboard/settings/EmailSettings.tsx",
+      "method": null,
+      "url": "https://social-listening-backend.onrender.com/api/admin/settings/email/test",
+      "line": 118,
+      "normalized": "/api/admin/settings/email/test",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/app/dashboard/settings/NotificationSettings.tsx",
+      "method": null,
+      "url": "https://social-listening-backend.onrender.com/api/admin/settings/notifications",
+      "line": 32,
+      "normalized": "/api/admin/settings/notifications",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/app/dashboard/settings/NotificationSettings.tsx",
+      "method": null,
+      "url": "https://social-listening-backend.onrender.com/api/admin/settings/notifications",
+      "line": 66,
+      "normalized": "/api/admin/settings/notifications",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/app/dashboard/settings/NotificationSettings.tsx",
+      "method": null,
+      "url": "https://social-listening-backend.onrender.com/api/admin/settings/notifications/test?channel=${channel}",
+      "line": 105,
+      "normalized": "/api/admin/settings/notifications/test",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/app/dashboard/settings/OrganizationSettings.tsx",
+      "method": null,
+      "url": "https://social-listening-backend.onrender.com/api/admin/settings/organization",
+      "line": 28,
+      "normalized": "/api/admin/settings/organization",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/app/dashboard/settings/OrganizationSettings.tsx",
+      "method": null,
+      "url": "https://social-listening-backend.onrender.com/api/admin/settings/organization",
+      "line": 59,
+      "normalized": "/api/admin/settings/organization",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/app/dashboard/settings/PersonalNotifications.tsx",
+      "method": null,
+      "url": "https://social-listening-backend.onrender.com/api/auth/me/notification-settings",
+      "line": 25,
+      "normalized": "/api/auth/me/notification-settings",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/app/dashboard/settings/PersonalNotifications.tsx",
+      "method": null,
+      "url": "https://social-listening-backend.onrender.com/api/auth/me/notification-settings",
+      "line": 67,
+      "normalized": "/api/auth/me/notification-settings",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/app/dashboard/settings/PersonalProfile.tsx",
+      "method": null,
+      "url": "https://social-listening-backend.onrender.com/api/auth/me/profile",
+      "line": 61,
+      "normalized": "/api/auth/me/profile",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/app/dashboard/settings/PersonalProfile.tsx",
+      "method": null,
+      "url": "https://social-listening-backend.onrender.com/api/auth/me/avatar",
+      "line": 128,
+      "normalized": "/api/auth/me/avatar",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/app/dashboard/settings/RoleManagement.tsx",
+      "method": null,
+      "url": "https://social-listening-backend.onrender.com/api/admin/roles/",
+      "line": 48,
+      "normalized": "/api/admin/roles",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/app/dashboard/settings/RoleManagement.tsx",
+      "method": null,
+      "url": "https://social-listening-backend.onrender.com/api/admin/roles/permissions/available",
+      "line": 67,
+      "normalized": "/api/admin/roles/permissions/available",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/app/dashboard/settings/RoleManagement.tsx",
+      "method": null,
+      "url": "https://social-listening-backend.onrender.com/api/admin/roles/${role.id}",
+      "line": 148,
+      "normalized": "/api/admin/roles/{param}",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/app/dashboard/settings/SecuritySettings.tsx",
+      "method": null,
+      "url": "https://social-listening-backend.onrender.com/api/auth/me/change-password",
+      "line": 37,
+      "normalized": "/api/auth/me/change-password",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/app/dashboard/settings/SessionsSettings.tsx",
+      "method": null,
+      "url": "https://social-listening-backend.onrender.com/api/auth/me/sessions",
+      "line": 30,
+      "normalized": "/api/auth/me/sessions",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/app/dashboard/settings/SessionsSettings.tsx",
+      "method": null,
+      "url": "https://social-listening-backend.onrender.com/api/auth/me/sessions/${sessionId}/revoke",
+      "line": 60,
+      "normalized": "/api/auth/me/sessions/{param}/revoke",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/app/dashboard/settings/SessionsSettings.tsx",
+      "method": null,
+      "url": "https://social-listening-backend.onrender.com/api/auth/me/logout-other-sessions",
+      "line": 88,
+      "normalized": "/api/auth/me/logout-other-sessions",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/app/dashboard/settings/UserManagement.tsx",
+      "method": null,
+      "url": "${process.env.NEXT_PUBLIC_API_URL}/api/admin/users?${params}",
+      "line": 56,
+      "normalized": "/{param}/api/admin/users",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/app/dashboard/settings/UserManagement.tsx",
+      "method": null,
+      "url": "${process.env.NEXT_PUBLIC_API_URL}/api/admin/users/stats/summary",
+      "line": 77,
+      "normalized": "/{param}/api/admin/users/stats/summary",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/app/dashboard/settings/UserManagement.tsx",
+      "method": null,
+      "url": "${process.env.NEXT_PUBLIC_API_URL}/api/admin/users",
+      "line": 96,
+      "normalized": "/{param}/api/admin/users",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/app/dashboard/settings/UserManagement.tsx",
+      "method": null,
+      "url": "${process.env.NEXT_PUBLIC_API_URL}/api/admin/users/${userId}",
+      "line": 125,
+      "normalized": "/{param}/api/admin/users/{param}",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/app/dashboard/settings/UserManagement.tsx",
+      "method": null,
+      "url": "${process.env.NEXT_PUBLIC_API_URL}/api/admin/users/${userId}",
+      "line": 154,
+      "normalized": "/{param}/api/admin/users/{param}",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/app/dashboard/settings/UserManagement.tsx",
+      "method": null,
+      "url": "${process.env.NEXT_PUBLIC_API_URL}/api/admin/users/${userId}/toggle-active",
+      "line": 178,
+      "normalized": "/{param}/api/admin/users/{param}/toggle-active",
+      "matched_backend": true
+    },
+    {
+      "path": "frontend/src/app/dashboard/settings/UserManagement.tsx",
+      "method": null,
+      "url": "${process.env.NEXT_PUBLIC_API_URL}/api/admin/users/${userId}/reset-password",
+      "line": 202,
+      "normalized": "/{param}/api/admin/users/{param}/reset-password",
+      "matched_backend": true
+    }
+  ],
+  "unmatched_frontend_api_calls": [],
+  "backend_routes_without_detected_frontend_call": [
+    {
+      "path": "backend/app/api/admin.py",
+      "method": "POST",
+      "route": "/add-user-role-column",
+      "function": "add_user_role_column",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/admin.py",
+      "method": "POST",
+      "route": "/add-user-role-column",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/main.py",
+      "method": "GET",
+      "route": "/api/debug/db-tables",
+      "function": "debug_db_tables",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/main.py",
+      "method": "GET",
+      "route": "/api/debug/db-tables",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/main.py",
+      "method": "GET",
+      "route": "/api/debug/routes",
+      "function": "debug_routes",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/main.py",
+      "method": "GET",
+      "route": "/api/debug/routes",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/services.py",
+      "method": "DELETE",
+      "route": "/categories/{category_id}",
+      "function": "delete_service_category",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/services.py",
+      "method": "DELETE",
+      "route": "/categories/{category_id}",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/services.py",
+      "method": "GET",
+      "route": "/categories/{category_id}",
+      "function": "get_service_category",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/services.py",
+      "method": "GET",
+      "route": "/categories/{category_id}",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/services.py",
+      "method": "PUT",
+      "route": "/categories/{category_id}",
+      "function": "update_service_category",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/services.py",
+      "method": "PUT",
+      "route": "/categories/{category_id}",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/admin.py",
+      "method": "GET",
+      "route": "/check-admin-status",
+      "function": "check_admin_status",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/admin.py",
+      "method": "GET",
+      "route": "/check-admin-status",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/audit.py",
+      "method": "DELETE",
+      "route": "/cleanup",
+      "function": "cleanup_old_logs",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/audit.py",
+      "method": "DELETE",
+      "route": "/cleanup",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/services.py",
+      "method": "PUT",
+      "route": "/deliverables/{deliverable_id}",
+      "function": "update_service_deliverable",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/services.py",
+      "method": "PUT",
+      "route": "/deliverables/{deliverable_id}",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/mentions.py",
+      "method": "GET",
+      "route": "/fix-db",
+      "function": "fix_database_schema",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/mentions.py",
+      "method": "GET",
+      "route": "/fix-db",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/keywords.py",
+      "method": "DELETE",
+      "route": "/groups/{group_id}",
+      "function": "delete_keyword_group",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/keywords.py",
+      "method": "DELETE",
+      "route": "/groups/{group_id}",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/sources.py",
+      "method": "DELETE",
+      "route": "/groups/{group_id}",
+      "function": "delete_source_group",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/sources.py",
+      "method": "DELETE",
+      "route": "/groups/{group_id}",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/keywords.py",
+      "method": "GET",
+      "route": "/groups/{group_id}",
+      "function": "get_keyword_group",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/keywords.py",
+      "method": "GET",
+      "route": "/groups/{group_id}",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/sources.py",
+      "method": "GET",
+      "route": "/groups/{group_id}",
+      "function": "get_source_group",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/sources.py",
+      "method": "GET",
+      "route": "/groups/{group_id}",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/keywords.py",
+      "method": "PUT",
+      "route": "/groups/{group_id}",
+      "function": "update_keyword_group",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/keywords.py",
+      "method": "PUT",
+      "route": "/groups/{group_id}",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/sources.py",
+      "method": "PUT",
+      "route": "/groups/{group_id}",
+      "function": "update_source_group",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/sources.py",
+      "method": "PUT",
+      "route": "/groups/{group_id}",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/keywords.py",
+      "method": "DELETE",
+      "route": "/groups/{group_id}/keywords",
+      "function": "delete_all_keywords_in_group",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/keywords.py",
+      "method": "DELETE",
+      "route": "/groups/{group_id}/keywords",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/keywords.py",
+      "method": "GET",
+      "route": "/groups/{group_id}/keywords",
+      "function": "list_keywords_in_group",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/keywords.py",
+      "method": "GET",
+      "route": "/groups/{group_id}/keywords",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/main.py",
+      "method": "GET",
+      "route": "/health",
+      "function": "health_check",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/main.py",
+      "method": "GET",
+      "route": "/health",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/evidence.py",
+      "method": "GET",
+      "route": "/incident/{incident_id}",
+      "function": "list_evidence",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/evidence.py",
+      "method": "GET",
+      "route": "/incident/{incident_id}",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/crawl.py",
+      "method": "POST",
+      "route": "/jobs/{job_id}/retry",
+      "function": "retry_crawl_job",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/crawl.py",
+      "method": "POST",
+      "route": "/jobs/{job_id}/retry",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/dashboard.py",
+      "method": "GET",
+      "route": "/latest-alerts",
+      "function": "get_latest_alerts",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/dashboard.py",
+      "method": "GET",
+      "route": "/latest-alerts",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/dashboard.py",
+      "method": "GET",
+      "route": "/latest-mentions",
+      "function": "get_latest_mentions",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/dashboard.py",
+      "method": "GET",
+      "route": "/latest-mentions",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/auth.py",
+      "method": "POST",
+      "route": "/me/sessions/{session_id}/revoke",
+      "function": "revoke_session",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/auth.py",
+      "method": "POST",
+      "route": "/me/sessions/{session_id}/revoke",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/takedown.py",
+      "method": "PUT",
+      "route": "/records/{record_id}/status",
+      "function": "update_takedown_status",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/takedown.py",
+      "method": "PUT",
+      "route": "/records/{record_id}/status",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/services.py",
+      "method": "GET",
+      "route": "/requests",
+      "function": "list_service_requests",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/services.py",
+      "method": "GET",
+      "route": "/requests",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/services.py",
+      "method": "POST",
+      "route": "/requests",
+      "function": "create_service_request",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/services.py",
+      "method": "POST",
+      "route": "/requests",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/services.py",
+      "method": "GET",
+      "route": "/requests/{request_id}",
+      "function": "get_service_request",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/services.py",
+      "method": "GET",
+      "route": "/requests/{request_id}",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/services.py",
+      "method": "PUT",
+      "route": "/requests/{request_id}",
+      "function": "update_service_request",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/services.py",
+      "method": "PUT",
+      "route": "/requests/{request_id}",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/services.py",
+      "method": "POST",
+      "route": "/requests/{request_id}/approve",
+      "function": "approve_service_request",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/services.py",
+      "method": "POST",
+      "route": "/requests/{request_id}/approve",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/services.py",
+      "method": "POST",
+      "route": "/requests/{request_id}/cancel",
+      "function": "cancel_service_request",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/services.py",
+      "method": "POST",
+      "route": "/requests/{request_id}/cancel",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/services.py",
+      "method": "POST",
+      "route": "/requests/{request_id}/complete",
+      "function": "complete_service_request",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/services.py",
+      "method": "POST",
+      "route": "/requests/{request_id}/complete",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/services.py",
+      "method": "GET",
+      "route": "/requests/{request_id}/deliverables",
+      "function": "get_service_deliverables",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/services.py",
+      "method": "GET",
+      "route": "/requests/{request_id}/deliverables",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/services.py",
+      "method": "POST",
+      "route": "/requests/{request_id}/deliverables",
+      "function": "create_service_deliverable",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/services.py",
+      "method": "POST",
+      "route": "/requests/{request_id}/deliverables",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/services.py",
+      "method": "GET",
+      "route": "/requests/{request_id}/logs",
+      "function": "get_service_request_logs",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/services.py",
+      "method": "GET",
+      "route": "/requests/{request_id}/logs",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/services.py",
+      "method": "POST",
+      "route": "/requests/{request_id}/logs",
+      "function": "create_service_request_log",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/services.py",
+      "method": "POST",
+      "route": "/requests/{request_id}/logs",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/services.py",
+      "method": "POST",
+      "route": "/requests/{request_id}/reject",
+      "function": "reject_service_request",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/services.py",
+      "method": "POST",
+      "route": "/requests/{request_id}/reject",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/services.py",
+      "method": "POST",
+      "route": "/requests/{request_id}/submit",
+      "function": "submit_service_request",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/services.py",
+      "method": "POST",
+      "route": "/requests/{request_id}/submit",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/admin.py",
+      "method": "POST",
+      "route": "/run-migrations",
+      "function": "run_migrations",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/admin.py",
+      "method": "POST",
+      "route": "/run-migrations",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/admin.py",
+      "method": "POST",
+      "route": "/run-schedule-migration",
+      "function": "run_schedule_migration",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/admin.py",
+      "method": "POST",
+      "route": "/run-schedule-migration",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/admin.py",
+      "method": "POST",
+      "route": "/seed-services",
+      "function": "seed_services_data",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/admin.py",
+      "method": "POST",
+      "route": "/seed-services",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/admin.py",
+      "method": "GET",
+      "route": "/service-catalog-status",
+      "function": "get_service_catalog_status",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/admin.py",
+      "method": "GET",
+      "route": "/service-catalog-status",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/roles.py",
+      "method": "POST",
+      "route": "/users/assign",
+      "function": "assign_role_to_user",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/roles.py",
+      "method": "POST",
+      "route": "/users/assign",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/users.py",
+      "method": "DELETE",
+      "route": "/users/{user_id}",
+      "function": "delete_user",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/users.py",
+      "method": "DELETE",
+      "route": "/users/{user_id}",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/users.py",
+      "method": "GET",
+      "route": "/users/{user_id}",
+      "function": "get_user",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/users.py",
+      "method": "GET",
+      "route": "/users/{user_id}",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/users.py",
+      "method": "PUT",
+      "route": "/users/{user_id}",
+      "function": "update_user",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/users.py",
+      "method": "PUT",
+      "route": "/users/{user_id}",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/users.py",
+      "method": "POST",
+      "route": "/users/{user_id}/reset-password",
+      "function": "reset_user_password",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/users.py",
+      "method": "POST",
+      "route": "/users/{user_id}/reset-password",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/roles.py",
+      "method": "GET",
+      "route": "/users/{user_id}/roles",
+      "function": "get_user_roles",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/roles.py",
+      "method": "GET",
+      "route": "/users/{user_id}/roles",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/roles.py",
+      "method": "DELETE",
+      "route": "/users/{user_id}/roles/{role_id}",
+      "function": "remove_role_from_user",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/roles.py",
+      "method": "DELETE",
+      "route": "/users/{user_id}/roles/{role_id}",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/users.py",
+      "method": "POST",
+      "route": "/users/{user_id}/toggle-active",
+      "function": "toggle_user_active",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/users.py",
+      "method": "POST",
+      "route": "/users/{user_id}/toggle-active",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/alerts.py",
+      "method": "DELETE",
+      "route": "/{alert_id}",
+      "function": "delete_alert",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/alerts.py",
+      "method": "DELETE",
+      "route": "/{alert_id}",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/alerts.py",
+      "method": "GET",
+      "route": "/{alert_id}",
+      "function": "get_alert",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/alerts.py",
+      "method": "GET",
+      "route": "/{alert_id}",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/alerts.py",
+      "method": "POST",
+      "route": "/{alert_id}/acknowledge",
+      "function": "acknowledge_alert",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/alerts.py",
+      "method": "POST",
+      "route": "/{alert_id}/acknowledge",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/alerts.py",
+      "method": "POST",
+      "route": "/{alert_id}/create-incident",
+      "function": "create_incident_from_alert",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/alerts.py",
+      "method": "POST",
+      "route": "/{alert_id}/create-incident",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/alerts.py",
+      "method": "POST",
+      "route": "/{alert_id}/ignore",
+      "function": "ignore_alert",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/alerts.py",
+      "method": "POST",
+      "route": "/{alert_id}/ignore",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/alerts.py",
+      "method": "POST",
+      "route": "/{alert_id}/resolve",
+      "function": "resolve_alert",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/alerts.py",
+      "method": "POST",
+      "route": "/{alert_id}/resolve",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/evidence.py",
+      "method": "DELETE",
+      "route": "/{evidence_id}",
+      "function": "delete_evidence",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/evidence.py",
+      "method": "DELETE",
+      "route": "/{evidence_id}",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/incidents.py",
+      "method": "DELETE",
+      "route": "/{incident_id}",
+      "function": "delete_incident",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/incidents.py",
+      "method": "DELETE",
+      "route": "/{incident_id}",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/incidents.py",
+      "method": "GET",
+      "route": "/{incident_id}",
+      "function": "get_incident",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/incidents.py",
+      "method": "GET",
+      "route": "/{incident_id}",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/evidence.py",
+      "method": "POST",
+      "route": "/{incident_id}",
+      "function": "create_evidence",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/evidence.py",
+      "method": "POST",
+      "route": "/{incident_id}",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/incidents.py",
+      "method": "PUT",
+      "route": "/{incident_id}",
+      "function": "update_incident",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/incidents.py",
+      "method": "PUT",
+      "route": "/{incident_id}",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/incidents.py",
+      "method": "POST",
+      "route": "/{incident_id}/close",
+      "function": "close_incident",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/incidents.py",
+      "method": "POST",
+      "route": "/{incident_id}/close",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/incidents.py",
+      "method": "GET",
+      "route": "/{incident_id}/logs",
+      "function": "get_incident_logs",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/incidents.py",
+      "method": "GET",
+      "route": "/{incident_id}/logs",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/incidents.py",
+      "method": "POST",
+      "route": "/{incident_id}/logs",
+      "function": "add_incident_log",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/incidents.py",
+      "method": "POST",
+      "route": "/{incident_id}/logs",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/api_keys.py",
+      "method": "DELETE",
+      "route": "/{key_id}",
+      "function": "revoke_api_key",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/api_keys.py",
+      "method": "DELETE",
+      "route": "/{key_id}",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/api_keys.py",
+      "method": "GET",
+      "route": "/{key_id}",
+      "function": "get_api_key",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/api_keys.py",
+      "method": "GET",
+      "route": "/{key_id}",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/api_keys.py",
+      "method": "PUT",
+      "route": "/{key_id}",
+      "function": "update_api_key",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/api_keys.py",
+      "method": "PUT",
+      "route": "/{key_id}",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/api_keys.py",
+      "method": "POST",
+      "route": "/{key_id}/activate",
+      "function": "activate_api_key",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/api_keys.py",
+      "method": "POST",
+      "route": "/{key_id}/activate",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/api_keys.py",
+      "method": "POST",
+      "route": "/{key_id}/deactivate",
+      "function": "deactivate_api_key",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/api_keys.py",
+      "method": "POST",
+      "route": "/{key_id}/deactivate",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/keywords.py",
+      "method": "DELETE",
+      "route": "/{keyword_id}",
+      "function": "delete_keyword",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/keywords.py",
+      "method": "DELETE",
+      "route": "/{keyword_id}",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/keywords.py",
+      "method": "GET",
+      "route": "/{keyword_id}",
+      "function": "get_keyword",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/keywords.py",
+      "method": "GET",
+      "route": "/{keyword_id}",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/keywords.py",
+      "method": "PUT",
+      "route": "/{keyword_id}",
+      "function": "update_keyword",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/keywords.py",
+      "method": "PUT",
+      "route": "/{keyword_id}",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/audit.py",
+      "method": "GET",
+      "route": "/{log_id}",
+      "function": "get_audit_log",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/audit.py",
+      "method": "GET",
+      "route": "/{log_id}",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/mentions.py",
+      "method": "DELETE",
+      "route": "/{mention_id}",
+      "function": "delete_mention",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/mentions.py",
+      "method": "DELETE",
+      "route": "/{mention_id}",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/mentions.py",
+      "method": "GET",
+      "route": "/{mention_id}",
+      "function": "get_mention",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/mentions.py",
+      "method": "GET",
+      "route": "/{mention_id}",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/mentions.py",
+      "method": "POST",
+      "route": "/{mention_id}/analyze",
+      "function": "analyze_mention",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/mentions.py",
+      "method": "POST",
+      "route": "/{mention_id}/analyze",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/mentions.py",
+      "method": "POST",
+      "route": "/{mention_id}/create-alert",
+      "function": "create_alert_from_mention",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/mentions.py",
+      "method": "POST",
+      "route": "/{mention_id}/create-alert",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/mentions.py",
+      "method": "POST",
+      "route": "/{mention_id}/create-incident",
+      "function": "create_incident_from_mention",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/mentions.py",
+      "method": "POST",
+      "route": "/{mention_id}/create-incident",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/mentions.py",
+      "method": "POST",
+      "route": "/{mention_id}/mark-reviewed",
+      "function": "mark_mention_reviewed",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/mentions.py",
+      "method": "POST",
+      "route": "/{mention_id}/mark-reviewed",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/reports.py",
+      "method": "DELETE",
+      "route": "/{report_id}",
+      "function": "delete_report",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/reports.py",
+      "method": "DELETE",
+      "route": "/{report_id}",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/reports.py",
+      "method": "GET",
+      "route": "/{report_id}",
+      "function": "get_report",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/reports.py",
+      "method": "GET",
+      "route": "/{report_id}",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/service_requests.py",
+      "method": "GET",
+      "route": "/{request_id}",
+      "function": "get_service_request",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/service_requests.py",
+      "method": "GET",
+      "route": "/{request_id}",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/service_requests.py",
+      "method": "PUT",
+      "route": "/{request_id}",
+      "function": "update_service_request",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/service_requests.py",
+      "method": "PUT",
+      "route": "/{request_id}",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/service_requests.py",
+      "method": "POST",
+      "route": "/{request_id}/approve",
+      "function": "approve_service_request",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/service_requests.py",
+      "method": "POST",
+      "route": "/{request_id}/approve",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/service_requests.py",
+      "method": "POST",
+      "route": "/{request_id}/cancel",
+      "function": "cancel_service_request",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/service_requests.py",
+      "method": "POST",
+      "route": "/{request_id}/cancel",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/service_requests.py",
+      "method": "POST",
+      "route": "/{request_id}/complete",
+      "function": "complete_service_request",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/service_requests.py",
+      "method": "POST",
+      "route": "/{request_id}/complete",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/service_requests.py",
+      "method": "GET",
+      "route": "/{request_id}/deliverables",
+      "function": "get_service_deliverables",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/service_requests.py",
+      "method": "GET",
+      "route": "/{request_id}/deliverables",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/service_requests.py",
+      "method": "POST",
+      "route": "/{request_id}/deliverables",
+      "function": "create_service_deliverable",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/service_requests.py",
+      "method": "POST",
+      "route": "/{request_id}/deliverables",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/service_requests.py",
+      "method": "GET",
+      "route": "/{request_id}/logs",
+      "function": "get_service_request_logs",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/service_requests.py",
+      "method": "GET",
+      "route": "/{request_id}/logs",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/service_requests.py",
+      "method": "POST",
+      "route": "/{request_id}/logs",
+      "function": "create_service_request_log",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/service_requests.py",
+      "method": "POST",
+      "route": "/{request_id}/logs",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/service_requests.py",
+      "method": "POST",
+      "route": "/{request_id}/reject",
+      "function": "reject_service_request",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/service_requests.py",
+      "method": "POST",
+      "route": "/{request_id}/reject",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/service_requests.py",
+      "method": "POST",
+      "route": "/{request_id}/submit",
+      "function": "submit_service_request",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/service_requests.py",
+      "method": "POST",
+      "route": "/{request_id}/submit",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/roles.py",
+      "method": "DELETE",
+      "route": "/{role_id}",
+      "function": "delete_role",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/roles.py",
+      "method": "DELETE",
+      "route": "/{role_id}",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/roles.py",
+      "method": "GET",
+      "route": "/{role_id}",
+      "function": "get_role",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/roles.py",
+      "method": "GET",
+      "route": "/{role_id}",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/roles.py",
+      "method": "PUT",
+      "route": "/{role_id}",
+      "function": "update_role",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/roles.py",
+      "method": "PUT",
+      "route": "/{role_id}",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/services.py",
+      "method": "DELETE",
+      "route": "/{service_id}",
+      "function": "delete_service",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/services.py",
+      "method": "DELETE",
+      "route": "/{service_id}",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/services.py",
+      "method": "GET",
+      "route": "/{service_id}",
+      "function": "get_service",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/services.py",
+      "method": "GET",
+      "route": "/{service_id}",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/services.py",
+      "method": "PUT",
+      "route": "/{service_id}",
+      "function": "update_service",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/services.py",
+      "method": "PUT",
+      "route": "/{service_id}",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/sources.py",
+      "method": "DELETE",
+      "route": "/{source_id}",
+      "function": "delete_source",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/sources.py",
+      "method": "DELETE",
+      "route": "/{source_id}",
+      "function": null,
+      "framework": "express"
+    },
+    {
+      "path": "backend/app/api/sources.py",
+      "method": "GET",
+      "route": "/{source_id}",
+      "function": "get_source",
+      "framework": "fastapi"
+    },
+    {
+      "path": "backend/app/api/sources.py",
+      "method": "GET",
+      "route": "/{source_id}",
+      "function": null,
+      "framework": "express"
+    }
+  ]
+}

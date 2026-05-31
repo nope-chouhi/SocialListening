@@ -1,0 +1,161 @@
+[
+  {
+    "path": "backend/.env",
+    "keys_detected": [
+      "ACCESS_TOKEN_EXPIRE_MINUTES",
+      "AI_PROVIDER",
+      "ANTHROPIC_API_KEY",
+      "DATABASE_URL",
+      "ENVIRONMENT",
+      "FACEBOOK_ACCESS_TOKEN",
+      "FACEBOOK_APP_SECRET",
+      "FRONTEND_URL",
+      "JWT",
+      "MEILISEARCH_MASTER_KEY",
+      "MEILISEARCH_URL",
+      "OPENAI_API_KEY",
+      "REDIS_URL",
+      "SCHEDULER_ENABLED",
+      "SECRET_KEY",
+      "SMTP_HOST",
+      "SMTP_PASSWORD",
+      "SMTP_PORT",
+      "SMTP_USER",
+      "TELEGRAM_BOT_TOKEN",
+      "TWILIO_AUTH_TOKEN",
+      "URL",
+      "YOUTUBE_API_KEY",
+      "ZALO_ACCESS_TOKEN"
+    ]
+  },
+  {
+    "path": "backend/.env.example",
+    "keys_detected": [
+      "ACCESS_TOKEN_EXPIRE_MINUTES",
+      "AI_PROVIDER",
+      "ANTHROPIC_API_KEY",
+      "DATABASE_URL",
+      "ENVIRONMENT",
+      "FACEBOOK_ACCESS_TOKEN",
+      "FACEBOOK_APP_SECRET",
+      "FRONTEND_URL",
+      "GEMINI_API_KEY",
+      "JWT",
+      "MEILISEARCH_MASTER_KEY",
+      "MEILISEARCH_URL",
+      "OPENAI_API_KEY",
+      "REDIS_URL",
+      "SCHEDULER_ENABLED",
+      "SECRET_KEY",
+      "SMTP_HOST",
+      "SMTP_PASSWORD",
+      "SMTP_PORT",
+      "SMTP_USER",
+      "TELEGRAM_BOT_TOKEN",
+      "TWILIO_AUTH_TOKEN",
+      "URL",
+      "YOUTUBE_API_KEY",
+      "ZALO_ACCESS_TOKEN"
+    ]
+  },
+  {
+    "path": "frontend/.env.example",
+    "keys_detected": [
+      "NEXT_PUBLIC_API_URL"
+    ]
+  },
+  {
+    "path": "frontend/next.config.js",
+    "keys_detected": [
+      "NEXT_PUBLIC_API_URL"
+    ]
+  },
+  {
+    "path": "scripts/audit_settings_complete.py",
+    "keys_detected": [
+      "BASE_URL",
+      "SMTP",
+      "URL"
+    ]
+  },
+  {
+    "path": "backend/app/api/settings.py",
+    "keys_detected": [
+      "SMTP"
+    ]
+  },
+  {
+    "path": "backend/app/core/config.py",
+    "keys_detected": [
+      "ACCESS_TOKEN_EXPIRE_MINUTES",
+      "AI_PROVIDER",
+      "ANTHROPIC_API_KEY",
+      "DATABASE_URL",
+      "DEEPSEEK_API_KEY",
+      "ENVIRONMENT",
+      "FACEBOOK_ACCESS_TOKEN",
+      "FACEBOOK_APP_SECRET",
+      "FRONTEND_URL",
+      "GEMINI_API_KEY",
+      "JWT",
+      "MEILISEARCH_MASTER_KEY",
+      "MEILISEARCH_URL",
+      "OPENAI_API_KEY",
+      "REDIS_URL",
+      "SCREENSHOT_SERVICE_URL",
+      "SECRET_KEY",
+      "SMTP_FROM",
+      "SMTP_HOST",
+      "SMTP_PASSWORD",
+      "SMTP_PORT",
+      "SMTP_USER",
+      "TELEGRAM_BOT_TOKEN",
+      "TWILIO_AUTH_TOKEN",
+      "URL",
+      "YOUTUBE_API_KEY",
+      "ZALO_ACCESS_TOKEN"
+    ]
+  },
+  {
+    "path": "backend/app/models/system_settings.py",
+    "keys_detected": [
+      "SMTP"
+    ]
+  },
+  {
+    "path": "backend/app/models/user_settings.py",
+    "keys_detected": [
+      "JWT"
+    ]
+  },
+  {
+    "path": "frontend/src/app/dashboard/settings/BrandingSettings.tsx",
+    "keys_detected": [
+      "URL"
+    ]
+  },
+  {
+    "path": "frontend/src/app/dashboard/settings/EmailSettings.tsx",
+    "keys_detected": [
+      "SMTP"
+    ]
+  },
+  {
+    "path": "frontend/src/app/dashboard/settings/NotificationSettings.tsx",
+    "keys_detected": [
+      "URL"
+    ]
+  },
+  {
+    "path": "frontend/src/app/dashboard/settings/page.tsx",
+    "keys_detected": [
+      "SMTP"
+    ]
+  },
+  {
+    "path": "frontend/src/app/dashboard/settings/UserManagement.tsx",
+    "keys_detected": [
+      "NEXT_PUBLIC_API_URL"
+    ]
+  }
+]

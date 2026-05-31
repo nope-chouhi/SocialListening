@@ -1,0 +1,111 @@
+# NOPE ULTRA DEEP SCAN REPORT
+
+- Scan time: 2026-05-31T09:22:22.064476
+- Root: C:\Users\hongu\OneDrive\Máy tính\SocialListening
+- Files indexed: 19154
+- Files collected: 260
+- Frontend routes: 20
+- Backend routes: 334
+- Frontend API calls: 138
+- Risk findings: 439 (high=90, medium=128)
+
+## Feature detection
+
+- auth: YES | files=30 routes=24 calls=14
+- dashboard: YES | files=30 routes=26 calls=30
+- scan_center: YES | files=30 routes=18 calls=8
+- keywords: YES | files=30 routes=24 calls=10
+- sources: YES | files=30 routes=20 calls=11
+- mentions: YES | files=30 routes=20 calls=9
+- alerts: YES | files=30 routes=14 calls=8
+- incidents: YES | files=30 routes=12 calls=8
+- reports: YES | files=30 routes=6 calls=5
+- ai: YES | files=30 routes=2 calls=1
+- rbac: YES | files=30 routes=30 calls=20
+- settings: YES | files=30 routes=26 calls=30
+- realtime: YES | files=30 routes=0 calls=3
+
+## High/Medium risk findings preview
+
+- [high] security_backend `nope_ultra_deep_project_scanner.py:87` — r"allow_origins=\[\"?\*\"?\]", r"CORSMiddleware", r"debug=True", r"print\([^)]*(token|secret|password|env)",
+- [high] security_backend `nope_ultra_deep_project_scanner.py:87` — r"allow_origins=\[\"?\*\"?\]", r"CORSMiddleware", r"debug=True", r"print\([^)]*(token|secret|password|env)",
+- [high] security_backend `nope_ultra_deep_project_scanner.py:88` — r"execute\(\s*f[\"']", r"raw\s*\(", r"literal_column", r"text\(\s*f[\"']"
+- [high] destructive `nope_ultra_deep_project_scanner.py:95` — r"drop_all", r"DROP TABLE", r"TRUNCATE", r"deleteMany\(\s*{}\s*\)", r"rm\s+-rf",
+- [high] destructive `nope_ultra_deep_project_scanner.py:96` — r"Base\.metadata\.drop_all"
+- [high] destructive `nope_ultra_deep_project_scanner.py:95` — r"drop_all", r"DROP TABLE", r"TRUNCATE", r"deleteMany\(\s*{}\s*\)", r"rm\s+-rf",
+- [high] destructive `nope_ultra_deep_project_scanner.py:95` — r"drop_all", r"DROP TABLE", r"TRUNCATE", r"deleteMany\(\s*{}\s*\)", r"rm\s+-rf",
+- [high] destructive `project_scanner.py:89` — truncated = len(data) > max_bytes
+- [high] destructive `project_scanner.py:90` — if truncated:
+- [high] destructive `project_scanner.py:94` — return text, ("TRUNCATED" if truncated else None)
+- [high] destructive `project_scanner.py:114` — lines.append("... tree truncated ...")
+- [high] security_backend `backend/.env:4` — DEBUG=True
+- [high] security_backend `backend/.env.example:4` — DEBUG=True
+- [high] security_backend `backend/add_columns.py:23` — cursor.execute(f"ALTER TABLE ai_analysis ADD COLUMN {col_name} {col_type}")
+- [high] security_backend `docs/DEPLOYMENT.md:182` — DEBUG=True
+- [high] security_backend `docs/DEPLOYMENT.md:546` — DEBUG=True
+- [high] security_backend `docs/DEPLOYMENT.md:454` — - Generate a strong `SECRET_KEY`: `python -c "import secrets; print(secrets.token_urlsafe(32))"`
+- [high] security_backend `docs/PRODUCTION_CHECKLIST.md:122` — python -c "import secrets; print(secrets.token_urlsafe(32))"
+- [high] security_backend `scripts/audit_settings_complete.py:535` — print("❌ Cannot proceed without admin token")
+- [high] security_backend `scripts/change_tthgroup_to_viewer.py:63` — print("   Password=***REDACTED***")
+- [high] security_backend `scripts/check_who_am_i.py:15` — print("3. Type: localStorage.getItem('access_token')")
+- [high] security_backend `scripts/check_who_am_i.py:16` — print("4. Copy the token (without quotes)")
+- [high] security_backend `scripts/clean_and_reseed.py:49` — cursor.execute(f"DELETE FROM {table}")
+- [high] security_backend `scripts/create_admin_remote.py:15` — print(f"Password=***REDACTED***'password']}")
+- [high] security_backend `scripts/create_admin_remote.py:25` — print(f"Password=***REDACTED***'password']}")
+- [high] security_backend `scripts/create_admin_remote.py:31` — print(f"Password=***REDACTED***'password']}")
+- [high] security_backend `scripts/create_admin_simple.py:24` — print(f"   Password=***REDACTED***}")
+- [high] security_backend `scripts/create_admin_simple.py:28` — print(f"\n🔐 Hashing password...")
+- [high] security_backend `scripts/create_admin_simple.py:30` — print(f"✅ Password hashed!")
+- [high] security_backend `scripts/create_admin_simple.py:63` — print(f"   Password=***REDACTED***")
+- [high] security_backend `scripts/create_admin_simple.py:108` — print(f"   Password=***REDACTED***}")
+- [high] security_backend `scripts/create_admin_via_api.py:22` — print(f"   Password=***REDACTED***}")
+- [high] security_backend `scripts/create_admin_via_api.py:119` — print(f"   Token=***REDACTED***}...")
+- [high] security_backend `scripts/create_admin_via_api.py:146` — print(f"   Password=***REDACTED***}")
+- [high] security_backend `scripts/create_new_admin.py:67` — print(f"\n🔑 Updating password...")
+- [high] security_backend `scripts/create_new_admin.py:70` — print(f"✅ Password updated!")
+- [high] security_backend `scripts/create_new_admin.py:133` — print(f"   Token=***REDACTED***}...")
+- [high] security_backend `scripts/create_new_admin.py:178` — print(f"   Password=***REDACTED***")
+- [high] security_backend `scripts/debug_auth_endpoint.py:37` — print(f"Token=***REDACTED***}...")
+- [high] security_backend `scripts/fix_database_direct.py:34` — print('   $env:DATABASE_URL=***REDACTED***"')
+- [high] security_backend `scripts/fix_enum_case.py:177` — cursor.execute(f"""
+- [high] security_backend `scripts/rbac_summary.py:77` — print("   • POST   /api/admin/users/{id}/reset-password")
+- [high] security_backend `backend/app/main.py:78` — # allow_origins=["*"] so CORS headers appear even on 500 responses
+- [high] security_backend `backend/app/main.py:4` — from fastapi.middleware.cors import CORSMiddleware
+- [high] security_backend `backend/app/main.py:88` — CORSMiddleware,
+- [high] destructive `backend/alembic/versions/003_add_service_catalog.py:195` — # Drop tables
+- [high] security_backend `backend/alembic/versions/012_fix_app_wide_missing_columns.py:28` — op.get_bind().execute(sa.text(f"CREATE TABLE {table_name} (id SERIAL PRIMARY KEY)"))
+- [high] security_backend `backend/alembic/versions/012_fix_app_wide_missing_columns.py:38` — op.get_bind().execute(sa.text(f"CREATE INDEX IF NOT EXISTS {name} ON {table_name} ({column_name})"))
+- [high] security_backend `backend/alembic/versions/012_fix_app_wide_missing_columns.py:137` — bind.execute(sa.text(f"UPDATE {table_name} SET {column_name} = 0 WHERE {column_name} IS NULL"))
+- [high] destructive `backend/alembic/versions/019_fix_roles_table_schema.py:24` — op.execute("DROP TABLE IF EXISTS user_roles CASCADE")
+- [high] destructive `backend/alembic/versions/019_fix_roles_table_schema.py:25` — op.execute("DROP TABLE IF EXISTS roles CASCADE")
+- [high] security_backend `backend/app/scripts/create_admin.py:47` — print(f"   Password=***REDACTED***")
+- [high] security_backend `backend/app/scripts/create_admin.py:49` — print("\n⚠️  Please change the password after first login!")
+- [high] destructive `backend/app/services/ai_service.py:529` — # Truncate cho PhoBERT (max 256 tokens)
+- [high] destructive `backend/app/services/crawl_service.py:128` — # Truncate
+- [high] destructive `frontend/src/app/dashboard/layout.tsx:189` — <span className="truncate">{item.name}</span>
+- [high] destructive `frontend/src/app/dashboard/layout.tsx:208` — <p className="text-sm font-medium text-gray-200 truncate">
+- [high] destructive `frontend/src/app/dashboard/layout.tsx:211` — <p className="text-xs text-gray-500 truncate mt-0.5 capitalize">
+- [high] destructive `frontend/src/app/dashboard/alerts/page.tsx:174` — <h3 className="font-bold text-white truncate">{alert.title}</h3>
+- [high] destructive `frontend/src/app/dashboard/incidents/page.tsx:432` — <h2 className="text-xl font-bold text-white truncate pr-4">
+- [high] destructive `frontend/src/app/dashboard/keywords/page.tsx:381` — <h3 className="text-base font-semibold text-white tracking-wide truncate">{group.name}</h3>
+- [high] destructive `frontend/src/app/dashboard/mentions/page.tsx:432` — <p className="text-[11px] text-gray-500 font-medium uppercase tracking-wider truncate">{stat.label}</p>
+- [high] destructive `frontend/src/app/dashboard/mentions/page.tsx:752` — <span className="text-xs font-semibold text-indigo-400 tracking-wide truncate">{mention.source_name}</span>
+- [high] destructive `frontend/src/app/dashboard/mentions/page.tsx:758` — <span className="text-[11px] text-gray-500 truncate">{mention.author}</span>
+- [high] destructive `frontend/src/app/dashboard/scan/page.tsx:488` — <span className="text-[10px] text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded border border-rose-500/15 inline-block truncate max-w-full" title={workerStatus.last_error}>
+- [high] destructive `frontend/src/app/dashboard/scan/page.tsx:710` — <div className="font-medium text-gray-300 truncate flex items-center gap-1.5 flex-wrap text-xs">
+- [high] destructive `frontend/src/app/dashboard/scan/page.tsx:724` — <div className="text-[10px] text-gray-600 truncate max-w-xs mt-0.5">{source.url}</div>
+- [high] destructive `frontend/src/app/dashboard/scan/page.tsx:726` — <div className="text-[10px] text-rose-400 mt-1 truncate max-w-sm" title={source.last_error}>
+- [high] destructive `frontend/src/app/dashboard/scan/page.tsx:853` — <span className="text-[10px] text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded border border-rose-500/15 inline-block truncate max-w-full" title={latestJob.error_message}>
+- [high] destructive `frontend/src/app/dashboard/scan/page.tsx:918` — <p className="mt-1.5 text-[10px] text-rose-400 bg-rose-500/10 px-2 py-1 rounded border border-rose-500/15 truncate" title={job.error_message}>
+- [high] destructive `frontend/src/app/dashboard/services/page.tsx:439` — <div className="text-sm text-gray-400 truncate max-w-xs mt-0.5">{service.description}</div>
+- [high] destructive `frontend/src/app/dashboard/sources/page.tsx:313` — <h3 className="font-semibold text-white tracking-wide truncate max-w-[150px]" title={source.name}>{source.name}</h3>
+- [high] destructive `frontend/src/app/dashboard/sources/page.tsx:341` — <p className="text-sm text-gray-400 truncate bg-[#0B1220] p-2.5 rounded-lg border border-gray-800" title={source.url}>
+- [high] destructive `frontend/src/app/dashboard/sources/page.tsx:348` — <div className="flex-1 truncate" title={getScheduleDescription(source)}>
+- [high] destructive `frontend/src/app/dashboard/sources/page.tsx:354` — <p className="text-xs text-gray-500 px-1 truncate">
+- [high] destructive `frontend/src/app/dashboard/sources/page.tsx:360` — <p className="text-xs text-gray-500 px-1 truncate">
+- [high] destructive `frontend/src/components/dashboard/AlertCard.tsx:54` — <h3 className="font-semibold text-white tracking-wide truncate pr-2">
+- [high] destructive `frontend/src/components/dashboard/EvidenceLockerModal.tsx:202` — <span className="truncate max-w-xs">{item.original_url}</span>
+- [high] destructive `pgsql/share/information_schema.sql:1285` — OR has_table_privilege(c.oid, 'INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER')
+- [high] destructive `pgsql/share/information_schema.sql:1865` — OR has_table_privilege(r.oid, 'INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER')
+
+## API mismatch preview

@@ -1,0 +1,2340 @@
+[
+  {
+    "path": "backend/app/main.py",
+    "method": "GET",
+    "route": "/",
+    "function": "root",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/main.py",
+    "method": "GET",
+    "route": "/",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/api_keys.py",
+    "method": "GET",
+    "route": "/",
+    "function": "list_api_keys",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/api_keys.py",
+    "method": "GET",
+    "route": "/",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/audit.py",
+    "method": "GET",
+    "route": "/",
+    "function": "list_audit_logs",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/audit.py",
+    "method": "GET",
+    "route": "/",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/branding.py",
+    "method": "GET",
+    "route": "/",
+    "function": "get_branding_settings",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/branding.py",
+    "method": "GET",
+    "route": "/",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/roles.py",
+    "method": "GET",
+    "route": "/",
+    "function": "list_roles",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/roles.py",
+    "method": "GET",
+    "route": "/",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/api_keys.py",
+    "method": "POST",
+    "route": "/",
+    "function": "create_api_key",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/api_keys.py",
+    "method": "POST",
+    "route": "/",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/roles.py",
+    "method": "POST",
+    "route": "/",
+    "function": "create_role",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/roles.py",
+    "method": "POST",
+    "route": "/",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/branding.py",
+    "method": "PUT",
+    "route": "/",
+    "function": "update_branding_settings",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/branding.py",
+    "method": "PUT",
+    "route": "/",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/admin.py",
+    "method": "POST",
+    "route": "/add-user-role-column",
+    "function": "add_user_role_column",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/admin.py",
+    "method": "POST",
+    "route": "/add-user-role-column",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/monitor.py",
+    "method": "GET",
+    "route": "/ai-analysis",
+    "function": "get_ai_analysis",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/monitor.py",
+    "method": "GET",
+    "route": "/ai-analysis",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/main.py",
+    "method": "GET",
+    "route": "/api/debug/db-tables",
+    "function": "debug_db_tables",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/main.py",
+    "method": "GET",
+    "route": "/api/debug/db-tables",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/main.py",
+    "method": "GET",
+    "route": "/api/debug/routes",
+    "function": "debug_routes",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/main.py",
+    "method": "GET",
+    "route": "/api/debug/routes",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/keywords.py",
+    "method": "POST",
+    "route": "/bulk",
+    "function": "create_keywords_bulk",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/keywords.py",
+    "method": "POST",
+    "route": "/bulk",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/services.py",
+    "method": "GET",
+    "route": "/categories",
+    "function": "list_service_categories",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/services.py",
+    "method": "GET",
+    "route": "/categories",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/services.py",
+    "method": "POST",
+    "route": "/categories",
+    "function": "create_service_category",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/services.py",
+    "method": "POST",
+    "route": "/categories",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/services.py",
+    "method": "DELETE",
+    "route": "/categories/{category_id}",
+    "function": "delete_service_category",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/services.py",
+    "method": "DELETE",
+    "route": "/categories/{category_id}",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/services.py",
+    "method": "GET",
+    "route": "/categories/{category_id}",
+    "function": "get_service_category",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/services.py",
+    "method": "GET",
+    "route": "/categories/{category_id}",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/services.py",
+    "method": "PUT",
+    "route": "/categories/{category_id}",
+    "function": "update_service_category",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/services.py",
+    "method": "PUT",
+    "route": "/categories/{category_id}",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/ai_chat.py",
+    "method": "POST",
+    "route": "/chat",
+    "function": "chat_with_brand_assistant",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/ai_chat.py",
+    "method": "POST",
+    "route": "/chat",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/admin.py",
+    "method": "GET",
+    "route": "/check-admin-status",
+    "function": "check_admin_status",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/admin.py",
+    "method": "GET",
+    "route": "/check-admin-status",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/audit.py",
+    "method": "DELETE",
+    "route": "/cleanup",
+    "function": "cleanup_old_logs",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/audit.py",
+    "method": "DELETE",
+    "route": "/cleanup",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/monitor.py",
+    "method": "GET",
+    "route": "/dashboard",
+    "function": "get_monitor_dashboard",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/monitor.py",
+    "method": "GET",
+    "route": "/dashboard",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/services.py",
+    "method": "GET",
+    "route": "/dashboard-summary",
+    "function": "get_service_dashboard_summary",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/services.py",
+    "method": "GET",
+    "route": "/dashboard-summary",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/services.py",
+    "method": "PUT",
+    "route": "/deliverables/{deliverable_id}",
+    "function": "update_service_deliverable",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/services.py",
+    "method": "PUT",
+    "route": "/deliverables/{deliverable_id}",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/settings.py",
+    "method": "GET",
+    "route": "/email",
+    "function": "get_email_settings",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/settings.py",
+    "method": "GET",
+    "route": "/email",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/settings.py",
+    "method": "PUT",
+    "route": "/email",
+    "function": "update_email_settings",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/settings.py",
+    "method": "PUT",
+    "route": "/email",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/settings.py",
+    "method": "POST",
+    "route": "/email/test",
+    "function": "test_email_settings",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/settings.py",
+    "method": "POST",
+    "route": "/email/test",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/mentions.py",
+    "method": "GET",
+    "route": "/fix-db",
+    "function": "fix_database_schema",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/mentions.py",
+    "method": "GET",
+    "route": "/fix-db",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/ai.py",
+    "method": "POST",
+    "route": "/generate-brief",
+    "function": "generate_executive_brief",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/ai.py",
+    "method": "POST",
+    "route": "/generate-brief",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/takedown.py",
+    "method": "POST",
+    "route": "/generate-draft",
+    "function": "generate_legal_draft",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/takedown.py",
+    "method": "POST",
+    "route": "/generate-draft",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/keywords.py",
+    "method": "GET",
+    "route": "/groups",
+    "function": "list_keyword_groups",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/keywords.py",
+    "method": "GET",
+    "route": "/groups",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/sources.py",
+    "method": "GET",
+    "route": "/groups",
+    "function": "list_source_groups",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/sources.py",
+    "method": "GET",
+    "route": "/groups",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/keywords.py",
+    "method": "POST",
+    "route": "/groups",
+    "function": "create_keyword_group",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/keywords.py",
+    "method": "POST",
+    "route": "/groups",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/sources.py",
+    "method": "POST",
+    "route": "/groups",
+    "function": "create_source_group",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/sources.py",
+    "method": "POST",
+    "route": "/groups",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/keywords.py",
+    "method": "DELETE",
+    "route": "/groups/{group_id}",
+    "function": "delete_keyword_group",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/keywords.py",
+    "method": "DELETE",
+    "route": "/groups/{group_id}",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/sources.py",
+    "method": "DELETE",
+    "route": "/groups/{group_id}",
+    "function": "delete_source_group",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/sources.py",
+    "method": "DELETE",
+    "route": "/groups/{group_id}",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/keywords.py",
+    "method": "GET",
+    "route": "/groups/{group_id}",
+    "function": "get_keyword_group",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/keywords.py",
+    "method": "GET",
+    "route": "/groups/{group_id}",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/sources.py",
+    "method": "GET",
+    "route": "/groups/{group_id}",
+    "function": "get_source_group",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/sources.py",
+    "method": "GET",
+    "route": "/groups/{group_id}",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/keywords.py",
+    "method": "PUT",
+    "route": "/groups/{group_id}",
+    "function": "update_keyword_group",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/keywords.py",
+    "method": "PUT",
+    "route": "/groups/{group_id}",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/sources.py",
+    "method": "PUT",
+    "route": "/groups/{group_id}",
+    "function": "update_source_group",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/sources.py",
+    "method": "PUT",
+    "route": "/groups/{group_id}",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/keywords.py",
+    "method": "DELETE",
+    "route": "/groups/{group_id}/keywords",
+    "function": "delete_all_keywords_in_group",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/keywords.py",
+    "method": "DELETE",
+    "route": "/groups/{group_id}/keywords",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/keywords.py",
+    "method": "GET",
+    "route": "/groups/{group_id}/keywords",
+    "function": "list_keywords_in_group",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/keywords.py",
+    "method": "GET",
+    "route": "/groups/{group_id}/keywords",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/main.py",
+    "method": "GET",
+    "route": "/health",
+    "function": "health_check",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/main.py",
+    "method": "GET",
+    "route": "/health",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/dashboard.py",
+    "method": "GET",
+    "route": "/hot-keywords",
+    "function": "get_hot_keywords",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/dashboard.py",
+    "method": "GET",
+    "route": "/hot-keywords",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/evidence.py",
+    "method": "GET",
+    "route": "/incident/{incident_id}",
+    "function": "list_evidence",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/evidence.py",
+    "method": "GET",
+    "route": "/incident/{incident_id}",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/crawl.py",
+    "method": "GET",
+    "route": "/jobs",
+    "function": "get_crawl_jobs",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/crawl.py",
+    "method": "GET",
+    "route": "/jobs",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/crawl.py",
+    "method": "POST",
+    "route": "/jobs/{job_id}/retry",
+    "function": "retry_crawl_job",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/crawl.py",
+    "method": "POST",
+    "route": "/jobs/{job_id}/retry",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/dashboard.py",
+    "method": "GET",
+    "route": "/latest-alerts",
+    "function": "get_latest_alerts",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/dashboard.py",
+    "method": "GET",
+    "route": "/latest-alerts",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/dashboard.py",
+    "method": "GET",
+    "route": "/latest-mentions",
+    "function": "get_latest_mentions",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/dashboard.py",
+    "method": "GET",
+    "route": "/latest-mentions",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/influencers.py",
+    "method": "GET",
+    "route": "/leaderboard",
+    "function": "get_influencers_leaderboard",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/influencers.py",
+    "method": "GET",
+    "route": "/leaderboard",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/auth.py",
+    "method": "POST",
+    "route": "/login",
+    "function": "login",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/auth.py",
+    "method": "POST",
+    "route": "/login",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/crawl.py",
+    "method": "POST",
+    "route": "/manual-scan",
+    "function": "manual_scan",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/crawl.py",
+    "method": "POST",
+    "route": "/manual-scan",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/auth.py",
+    "method": "GET",
+    "route": "/me",
+    "function": "get_current_user_info",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/auth.py",
+    "method": "GET",
+    "route": "/me",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/auth.py",
+    "method": "POST",
+    "route": "/me/change-password",
+    "function": "change_my_password",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/auth.py",
+    "method": "POST",
+    "route": "/me/change-password",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/auth.py",
+    "method": "POST",
+    "route": "/me/logout-other-sessions",
+    "function": "logout_other_sessions",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/auth.py",
+    "method": "POST",
+    "route": "/me/logout-other-sessions",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/auth.py",
+    "method": "GET",
+    "route": "/me/notification-settings",
+    "function": "get_my_notification_settings",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/auth.py",
+    "method": "GET",
+    "route": "/me/notification-settings",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/auth.py",
+    "method": "PUT",
+    "route": "/me/notification-settings",
+    "function": "update_my_notification_settings",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/auth.py",
+    "method": "PUT",
+    "route": "/me/notification-settings",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/auth.py",
+    "method": "GET",
+    "route": "/me/preferences",
+    "function": "get_my_preferences",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/auth.py",
+    "method": "GET",
+    "route": "/me/preferences",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/auth.py",
+    "method": "PUT",
+    "route": "/me/preferences",
+    "function": "update_my_preferences",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/auth.py",
+    "method": "PUT",
+    "route": "/me/preferences",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/auth.py",
+    "method": "PUT",
+    "route": "/me/profile",
+    "function": "update_my_profile",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/auth.py",
+    "method": "PUT",
+    "route": "/me/profile",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/auth.py",
+    "method": "GET",
+    "route": "/me/sessions",
+    "function": "get_my_sessions",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/auth.py",
+    "method": "GET",
+    "route": "/me/sessions",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/auth.py",
+    "method": "POST",
+    "route": "/me/sessions/{session_id}/revoke",
+    "function": "revoke_session",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/auth.py",
+    "method": "POST",
+    "route": "/me/sessions/{session_id}/revoke",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/settings.py",
+    "method": "GET",
+    "route": "/notifications",
+    "function": "get_system_notification_settings",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/settings.py",
+    "method": "GET",
+    "route": "/notifications",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/settings.py",
+    "method": "PUT",
+    "route": "/notifications",
+    "function": "update_system_notification_settings",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/settings.py",
+    "method": "PUT",
+    "route": "/notifications",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/settings.py",
+    "method": "POST",
+    "route": "/notifications/test",
+    "function": "test_notification_settings",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/settings.py",
+    "method": "POST",
+    "route": "/notifications/test",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/settings.py",
+    "method": "GET",
+    "route": "/organization",
+    "function": "get_organization_settings",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/settings.py",
+    "method": "GET",
+    "route": "/organization",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/settings.py",
+    "method": "PUT",
+    "route": "/organization",
+    "function": "update_organization_settings",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/settings.py",
+    "method": "PUT",
+    "route": "/organization",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/roles.py",
+    "method": "GET",
+    "route": "/permissions/available",
+    "function": "list_available_permissions",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/roles.py",
+    "method": "GET",
+    "route": "/permissions/available",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/takedown.py",
+    "method": "GET",
+    "route": "/records",
+    "function": "list_takedown_records",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/takedown.py",
+    "method": "GET",
+    "route": "/records",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/takedown.py",
+    "method": "POST",
+    "route": "/records",
+    "function": "create_takedown_record",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/takedown.py",
+    "method": "POST",
+    "route": "/records",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/takedown.py",
+    "method": "PUT",
+    "route": "/records/{record_id}/status",
+    "function": "update_takedown_status",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/takedown.py",
+    "method": "PUT",
+    "route": "/records/{record_id}/status",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/auth.py",
+    "method": "POST",
+    "route": "/register",
+    "function": "register",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/auth.py",
+    "method": "POST",
+    "route": "/register",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/services.py",
+    "method": "GET",
+    "route": "/requests",
+    "function": "list_service_requests",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/services.py",
+    "method": "GET",
+    "route": "/requests",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/services.py",
+    "method": "POST",
+    "route": "/requests",
+    "function": "create_service_request",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/services.py",
+    "method": "POST",
+    "route": "/requests",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/services.py",
+    "method": "GET",
+    "route": "/requests/{request_id}",
+    "function": "get_service_request",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/services.py",
+    "method": "GET",
+    "route": "/requests/{request_id}",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/services.py",
+    "method": "PUT",
+    "route": "/requests/{request_id}",
+    "function": "update_service_request",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/services.py",
+    "method": "PUT",
+    "route": "/requests/{request_id}",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/services.py",
+    "method": "POST",
+    "route": "/requests/{request_id}/approve",
+    "function": "approve_service_request",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/services.py",
+    "method": "POST",
+    "route": "/requests/{request_id}/approve",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/services.py",
+    "method": "POST",
+    "route": "/requests/{request_id}/cancel",
+    "function": "cancel_service_request",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/services.py",
+    "method": "POST",
+    "route": "/requests/{request_id}/cancel",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/services.py",
+    "method": "POST",
+    "route": "/requests/{request_id}/complete",
+    "function": "complete_service_request",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/services.py",
+    "method": "POST",
+    "route": "/requests/{request_id}/complete",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/services.py",
+    "method": "GET",
+    "route": "/requests/{request_id}/deliverables",
+    "function": "get_service_deliverables",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/services.py",
+    "method": "GET",
+    "route": "/requests/{request_id}/deliverables",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/services.py",
+    "method": "POST",
+    "route": "/requests/{request_id}/deliverables",
+    "function": "create_service_deliverable",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/services.py",
+    "method": "POST",
+    "route": "/requests/{request_id}/deliverables",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/services.py",
+    "method": "GET",
+    "route": "/requests/{request_id}/logs",
+    "function": "get_service_request_logs",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/services.py",
+    "method": "GET",
+    "route": "/requests/{request_id}/logs",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/services.py",
+    "method": "POST",
+    "route": "/requests/{request_id}/logs",
+    "function": "create_service_request_log",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/services.py",
+    "method": "POST",
+    "route": "/requests/{request_id}/logs",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/services.py",
+    "method": "POST",
+    "route": "/requests/{request_id}/reject",
+    "function": "reject_service_request",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/services.py",
+    "method": "POST",
+    "route": "/requests/{request_id}/reject",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/services.py",
+    "method": "POST",
+    "route": "/requests/{request_id}/submit",
+    "function": "submit_service_request",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/services.py",
+    "method": "POST",
+    "route": "/requests/{request_id}/submit",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/branding.py",
+    "method": "POST",
+    "route": "/reset",
+    "function": "reset_branding_settings",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/branding.py",
+    "method": "POST",
+    "route": "/reset",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/admin.py",
+    "method": "POST",
+    "route": "/run-migrations",
+    "function": "run_migrations",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/admin.py",
+    "method": "POST",
+    "route": "/run-migrations",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/admin.py",
+    "method": "POST",
+    "route": "/run-schedule-migration",
+    "function": "run_schedule_migration",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/admin.py",
+    "method": "POST",
+    "route": "/run-schedule-migration",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/crawl.py",
+    "method": "GET",
+    "route": "/scan-history",
+    "function": "get_scan_history",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/crawl.py",
+    "method": "GET",
+    "route": "/scan-history",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/crawl.py",
+    "method": "GET",
+    "route": "/scheduler/status",
+    "function": "get_scheduler_status_endpoint",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/crawl.py",
+    "method": "GET",
+    "route": "/scheduler/status",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/admin.py",
+    "method": "POST",
+    "route": "/seed-services",
+    "function": "seed_services_data",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/admin.py",
+    "method": "POST",
+    "route": "/seed-services",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/dashboard.py",
+    "method": "GET",
+    "route": "/sentiment-summary",
+    "function": "get_sentiment_summary",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/dashboard.py",
+    "method": "GET",
+    "route": "/sentiment-summary",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/admin.py",
+    "method": "GET",
+    "route": "/service-catalog-status",
+    "function": "get_service_catalog_status",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/admin.py",
+    "method": "GET",
+    "route": "/service-catalog-status",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/dashboard.py",
+    "method": "GET",
+    "route": "/sidebar-badges",
+    "function": "get_sidebar_badges",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/dashboard.py",
+    "method": "GET",
+    "route": "/sidebar-badges",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/monitor.py",
+    "method": "POST",
+    "route": "/start",
+    "function": "start_monitoring",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/monitor.py",
+    "method": "POST",
+    "route": "/start",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/audit.py",
+    "method": "GET",
+    "route": "/stats/summary",
+    "function": "get_audit_stats",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/audit.py",
+    "method": "GET",
+    "route": "/stats/summary",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/competitors.py",
+    "method": "GET",
+    "route": "/summary",
+    "function": "get_competitors_summary",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/competitors.py",
+    "method": "GET",
+    "route": "/summary",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/dashboard.py",
+    "method": "GET",
+    "route": "/summary",
+    "function": "get_dashboard_summary",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/dashboard.py",
+    "method": "GET",
+    "route": "/summary",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/reports.py",
+    "method": "GET",
+    "route": "/summary",
+    "function": "get_reports_summary",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/reports.py",
+    "method": "GET",
+    "route": "/summary",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/crawl.py",
+    "method": "POST",
+    "route": "/test-feed",
+    "function": "test_rss_feed",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/crawl.py",
+    "method": "POST",
+    "route": "/test-feed",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/dashboard.py",
+    "method": "GET",
+    "route": "/trends",
+    "function": "get_dashboard_trends",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/dashboard.py",
+    "method": "GET",
+    "route": "/trends",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/users.py",
+    "method": "GET",
+    "route": "/users",
+    "function": "list_users",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/users.py",
+    "method": "GET",
+    "route": "/users",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/users.py",
+    "method": "POST",
+    "route": "/users",
+    "function": "create_user",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/users.py",
+    "method": "POST",
+    "route": "/users",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/roles.py",
+    "method": "POST",
+    "route": "/users/assign",
+    "function": "assign_role_to_user",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/roles.py",
+    "method": "POST",
+    "route": "/users/assign",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/users.py",
+    "method": "GET",
+    "route": "/users/stats/summary",
+    "function": "get_users_stats",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/users.py",
+    "method": "GET",
+    "route": "/users/stats/summary",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/users.py",
+    "method": "DELETE",
+    "route": "/users/{user_id}",
+    "function": "delete_user",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/users.py",
+    "method": "DELETE",
+    "route": "/users/{user_id}",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/users.py",
+    "method": "GET",
+    "route": "/users/{user_id}",
+    "function": "get_user",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/users.py",
+    "method": "GET",
+    "route": "/users/{user_id}",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/users.py",
+    "method": "PUT",
+    "route": "/users/{user_id}",
+    "function": "update_user",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/users.py",
+    "method": "PUT",
+    "route": "/users/{user_id}",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/users.py",
+    "method": "POST",
+    "route": "/users/{user_id}/reset-password",
+    "function": "reset_user_password",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/users.py",
+    "method": "POST",
+    "route": "/users/{user_id}/reset-password",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/roles.py",
+    "method": "GET",
+    "route": "/users/{user_id}/roles",
+    "function": "get_user_roles",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/roles.py",
+    "method": "GET",
+    "route": "/users/{user_id}/roles",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/roles.py",
+    "method": "DELETE",
+    "route": "/users/{user_id}/roles/{role_id}",
+    "function": "remove_role_from_user",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/roles.py",
+    "method": "DELETE",
+    "route": "/users/{user_id}/roles/{role_id}",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/users.py",
+    "method": "POST",
+    "route": "/users/{user_id}/toggle-active",
+    "function": "toggle_user_active",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/users.py",
+    "method": "POST",
+    "route": "/users/{user_id}/toggle-active",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/crawl.py",
+    "method": "GET",
+    "route": "/worker-status",
+    "function": "get_worker_status",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/crawl.py",
+    "method": "GET",
+    "route": "/worker-status",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/system.py",
+    "method": "GET",
+    "route": "/worker-status",
+    "function": "get_worker_status",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/system.py",
+    "method": "GET",
+    "route": "/worker-status",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/alerts.py",
+    "method": "DELETE",
+    "route": "/{alert_id}",
+    "function": "delete_alert",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/alerts.py",
+    "method": "DELETE",
+    "route": "/{alert_id}",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/alerts.py",
+    "method": "GET",
+    "route": "/{alert_id}",
+    "function": "get_alert",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/alerts.py",
+    "method": "GET",
+    "route": "/{alert_id}",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/alerts.py",
+    "method": "POST",
+    "route": "/{alert_id}/acknowledge",
+    "function": "acknowledge_alert",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/alerts.py",
+    "method": "POST",
+    "route": "/{alert_id}/acknowledge",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/alerts.py",
+    "method": "POST",
+    "route": "/{alert_id}/create-incident",
+    "function": "create_incident_from_alert",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/alerts.py",
+    "method": "POST",
+    "route": "/{alert_id}/create-incident",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/alerts.py",
+    "method": "POST",
+    "route": "/{alert_id}/ignore",
+    "function": "ignore_alert",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/alerts.py",
+    "method": "POST",
+    "route": "/{alert_id}/ignore",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/alerts.py",
+    "method": "POST",
+    "route": "/{alert_id}/resolve",
+    "function": "resolve_alert",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/alerts.py",
+    "method": "POST",
+    "route": "/{alert_id}/resolve",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/evidence.py",
+    "method": "DELETE",
+    "route": "/{evidence_id}",
+    "function": "delete_evidence",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/evidence.py",
+    "method": "DELETE",
+    "route": "/{evidence_id}",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/incidents.py",
+    "method": "DELETE",
+    "route": "/{incident_id}",
+    "function": "delete_incident",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/incidents.py",
+    "method": "DELETE",
+    "route": "/{incident_id}",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/incidents.py",
+    "method": "GET",
+    "route": "/{incident_id}",
+    "function": "get_incident",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/incidents.py",
+    "method": "GET",
+    "route": "/{incident_id}",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/evidence.py",
+    "method": "POST",
+    "route": "/{incident_id}",
+    "function": "create_evidence",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/evidence.py",
+    "method": "POST",
+    "route": "/{incident_id}",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/incidents.py",
+    "method": "PUT",
+    "route": "/{incident_id}",
+    "function": "update_incident",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/incidents.py",
+    "method": "PUT",
+    "route": "/{incident_id}",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/incidents.py",
+    "method": "POST",
+    "route": "/{incident_id}/close",
+    "function": "close_incident",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/incidents.py",
+    "method": "POST",
+    "route": "/{incident_id}/close",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/incidents.py",
+    "method": "GET",
+    "route": "/{incident_id}/logs",
+    "function": "get_incident_logs",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/incidents.py",
+    "method": "GET",
+    "route": "/{incident_id}/logs",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/incidents.py",
+    "method": "POST",
+    "route": "/{incident_id}/logs",
+    "function": "add_incident_log",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/incidents.py",
+    "method": "POST",
+    "route": "/{incident_id}/logs",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/api_keys.py",
+    "method": "DELETE",
+    "route": "/{key_id}",
+    "function": "revoke_api_key",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/api_keys.py",
+    "method": "DELETE",
+    "route": "/{key_id}",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/api_keys.py",
+    "method": "GET",
+    "route": "/{key_id}",
+    "function": "get_api_key",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/api_keys.py",
+    "method": "GET",
+    "route": "/{key_id}",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/api_keys.py",
+    "method": "PUT",
+    "route": "/{key_id}",
+    "function": "update_api_key",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/api_keys.py",
+    "method": "PUT",
+    "route": "/{key_id}",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/api_keys.py",
+    "method": "POST",
+    "route": "/{key_id}/activate",
+    "function": "activate_api_key",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/api_keys.py",
+    "method": "POST",
+    "route": "/{key_id}/activate",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/api_keys.py",
+    "method": "POST",
+    "route": "/{key_id}/deactivate",
+    "function": "deactivate_api_key",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/api_keys.py",
+    "method": "POST",
+    "route": "/{key_id}/deactivate",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/keywords.py",
+    "method": "DELETE",
+    "route": "/{keyword_id}",
+    "function": "delete_keyword",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/keywords.py",
+    "method": "DELETE",
+    "route": "/{keyword_id}",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/keywords.py",
+    "method": "GET",
+    "route": "/{keyword_id}",
+    "function": "get_keyword",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/keywords.py",
+    "method": "GET",
+    "route": "/{keyword_id}",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/keywords.py",
+    "method": "PUT",
+    "route": "/{keyword_id}",
+    "function": "update_keyword",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/keywords.py",
+    "method": "PUT",
+    "route": "/{keyword_id}",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/audit.py",
+    "method": "GET",
+    "route": "/{log_id}",
+    "function": "get_audit_log",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/audit.py",
+    "method": "GET",
+    "route": "/{log_id}",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/mentions.py",
+    "method": "DELETE",
+    "route": "/{mention_id}",
+    "function": "delete_mention",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/mentions.py",
+    "method": "DELETE",
+    "route": "/{mention_id}",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/mentions.py",
+    "method": "GET",
+    "route": "/{mention_id}",
+    "function": "get_mention",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/mentions.py",
+    "method": "GET",
+    "route": "/{mention_id}",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/mentions.py",
+    "method": "POST",
+    "route": "/{mention_id}/analyze",
+    "function": "analyze_mention",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/mentions.py",
+    "method": "POST",
+    "route": "/{mention_id}/analyze",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/mentions.py",
+    "method": "POST",
+    "route": "/{mention_id}/create-alert",
+    "function": "create_alert_from_mention",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/mentions.py",
+    "method": "POST",
+    "route": "/{mention_id}/create-alert",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/mentions.py",
+    "method": "POST",
+    "route": "/{mention_id}/create-incident",
+    "function": "create_incident_from_mention",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/mentions.py",
+    "method": "POST",
+    "route": "/{mention_id}/create-incident",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/mentions.py",
+    "method": "POST",
+    "route": "/{mention_id}/mark-reviewed",
+    "function": "mark_mention_reviewed",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/mentions.py",
+    "method": "POST",
+    "route": "/{mention_id}/mark-reviewed",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/reports.py",
+    "method": "DELETE",
+    "route": "/{report_id}",
+    "function": "delete_report",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/reports.py",
+    "method": "DELETE",
+    "route": "/{report_id}",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/reports.py",
+    "method": "GET",
+    "route": "/{report_id}",
+    "function": "get_report",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/reports.py",
+    "method": "GET",
+    "route": "/{report_id}",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/service_requests.py",
+    "method": "GET",
+    "route": "/{request_id}",
+    "function": "get_service_request",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/service_requests.py",
+    "method": "GET",
+    "route": "/{request_id}",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/service_requests.py",
+    "method": "PUT",
+    "route": "/{request_id}",
+    "function": "update_service_request",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/service_requests.py",
+    "method": "PUT",
+    "route": "/{request_id}",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/service_requests.py",
+    "method": "POST",
+    "route": "/{request_id}/approve",
+    "function": "approve_service_request",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/service_requests.py",
+    "method": "POST",
+    "route": "/{request_id}/approve",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/service_requests.py",
+    "method": "POST",
+    "route": "/{request_id}/cancel",
+    "function": "cancel_service_request",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/service_requests.py",
+    "method": "POST",
+    "route": "/{request_id}/cancel",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/service_requests.py",
+    "method": "POST",
+    "route": "/{request_id}/complete",
+    "function": "complete_service_request",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/service_requests.py",
+    "method": "POST",
+    "route": "/{request_id}/complete",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/service_requests.py",
+    "method": "GET",
+    "route": "/{request_id}/deliverables",
+    "function": "get_service_deliverables",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/service_requests.py",
+    "method": "GET",
+    "route": "/{request_id}/deliverables",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/service_requests.py",
+    "method": "POST",
+    "route": "/{request_id}/deliverables",
+    "function": "create_service_deliverable",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/service_requests.py",
+    "method": "POST",
+    "route": "/{request_id}/deliverables",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/service_requests.py",
+    "method": "GET",
+    "route": "/{request_id}/logs",
+    "function": "get_service_request_logs",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/service_requests.py",
+    "method": "GET",
+    "route": "/{request_id}/logs",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/service_requests.py",
+    "method": "POST",
+    "route": "/{request_id}/logs",
+    "function": "create_service_request_log",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/service_requests.py",
+    "method": "POST",
+    "route": "/{request_id}/logs",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/service_requests.py",
+    "method": "POST",
+    "route": "/{request_id}/reject",
+    "function": "reject_service_request",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/service_requests.py",
+    "method": "POST",
+    "route": "/{request_id}/reject",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/service_requests.py",
+    "method": "POST",
+    "route": "/{request_id}/submit",
+    "function": "submit_service_request",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/service_requests.py",
+    "method": "POST",
+    "route": "/{request_id}/submit",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/roles.py",
+    "method": "DELETE",
+    "route": "/{role_id}",
+    "function": "delete_role",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/roles.py",
+    "method": "DELETE",
+    "route": "/{role_id}",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/roles.py",
+    "method": "GET",
+    "route": "/{role_id}",
+    "function": "get_role",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/roles.py",
+    "method": "GET",
+    "route": "/{role_id}",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/roles.py",
+    "method": "PUT",
+    "route": "/{role_id}",
+    "function": "update_role",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/roles.py",
+    "method": "PUT",
+    "route": "/{role_id}",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/services.py",
+    "method": "DELETE",
+    "route": "/{service_id}",
+    "function": "delete_service",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/services.py",
+    "method": "DELETE",
+    "route": "/{service_id}",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/services.py",
+    "method": "GET",
+    "route": "/{service_id}",
+    "function": "get_service",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/services.py",
+    "method": "GET",
+    "route": "/{service_id}",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/services.py",
+    "method": "PUT",
+    "route": "/{service_id}",
+    "function": "update_service",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/services.py",
+    "method": "PUT",
+    "route": "/{service_id}",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/sources.py",
+    "method": "DELETE",
+    "route": "/{source_id}",
+    "function": "delete_source",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/sources.py",
+    "method": "DELETE",
+    "route": "/{source_id}",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/sources.py",
+    "method": "GET",
+    "route": "/{source_id}",
+    "function": "get_source",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/sources.py",
+    "method": "GET",
+    "route": "/{source_id}",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/sources.py",
+    "method": "PUT",
+    "route": "/{source_id}",
+    "function": "update_source",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/sources.py",
+    "method": "PUT",
+    "route": "/{source_id}",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/sources.py",
+    "method": "POST",
+    "route": "/{source_id}/scan",
+    "function": "scan_source",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/sources.py",
+    "method": "POST",
+    "route": "/{source_id}/scan",
+    "function": null,
+    "framework": "express"
+  },
+  {
+    "path": "backend/app/api/sources.py",
+    "method": "POST",
+    "route": "/{source_id}/test",
+    "function": "test_source",
+    "framework": "fastapi"
+  },
+  {
+    "path": "backend/app/api/sources.py",
+    "method": "POST",
+    "route": "/{source_id}/test",
+    "function": null,
+    "framework": "express"
+  }
+]

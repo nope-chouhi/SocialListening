@@ -1,0 +1,3514 @@
+[
+  {
+    "category": "fake_mock_demo",
+    "path": "FEATURE_STATUS.md",
+    "line": 172,
+    "pattern": "\\bfake\\b",
+    "snippet": "1. **AI Analysis is Fake**",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "FEATURE_STATUS.md",
+    "line": 314,
+    "pattern": "\\bfake\\b",
+    "snippet": "- ✅ No fake data is used in Dashboard; all widgets pull real analytics via API",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "FEATURE_STATUS.md",
+    "line": 326,
+    "pattern": "\\bfake\\b",
+    "snippet": "- ✅ Removed fake UI from Settings",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "FEATURE_STATUS.md",
+    "line": 11,
+    "pattern": "\\bdummy\\b",
+    "snippet": "- ⚠️ **PARTIAL**: Backend exists but UI incomplete, or uses dummy/placeholder data",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "FEATURE_STATUS.md",
+    "line": 102,
+    "pattern": "\\bdummy\\b",
+    "snippet": "| **ai_analysis** | ✅ DONE | AI analysis results (dummy data) |",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "FEATURE_STATUS.md",
+    "line": 158,
+    "pattern": "\\bdummy\\b",
+    "snippet": "| **5. AI Analysis** | ⚠️ PARTIAL | **Uses dummy AI, not real AI** |",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "FEATURE_STATUS.md",
+    "line": 245,
+    "pattern": "\\bdummy\\b",
+    "snippet": "### ⚠️ TESTED BUT USES DUMMY DATA",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "FEATURE_STATUS.md",
+    "line": 294,
+    "pattern": "\\bdemo\\b",
+    "snippet": "- **Current State**: 83% complete, suitable for **demo/testing**",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "FEATURE_STATUS.md",
+    "line": 11,
+    "pattern": "placeholder",
+    "snippet": "- ⚠️ **PARTIAL**: Backend exists but UI incomplete, or uses dummy/placeholder data",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "FEATURE_STATUS.md",
+    "line": 203,
+    "pattern": "placeholder",
+    "snippet": "- **Issue**: Shows \"Chưa tích hợp\" placeholder",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "FEATURE_STATUS.md",
+    "line": 248,
+    "pattern": "placeholder",
+    "snippet": "- Report generation (placeholder)",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "FEATURE_STATUS.md",
+    "line": 12,
+    "pattern": "not implemented",
+    "snippet": "- ❌ **DISABLED_PENDING**: Not implemented, marked clearly in UI as \"Chưa tích hợp\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "FEATURE_STATUS.md",
+    "line": 60,
+    "pattern": "not implemented",
+    "snippet": "| **Báo cáo** | ❌ DISABLED_PENDING | Report templates | Not implemented |",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "FEATURE_STATUS.md",
+    "line": 61,
+    "pattern": "not implemented",
+    "snippet": "| **Tích hợp** | ❌ DISABLED_PENDING | Third-party integrations | Not implemented |",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "FEATURE_STATUS.md",
+    "line": 62,
+    "pattern": "not implemented",
+    "snippet": "| **Sao lưu** | ❌ DISABLED_PENDING | Database backup | Not implemented |",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "FEATURE_STATUS.md",
+    "line": 185,
+    "pattern": "not implemented",
+    "snippet": "- **Location**: Email/webhook sending not implemented",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "FEATURE_STATUS.md",
+    "line": 251,
+    "pattern": "not implemented",
+    "snippet": "### ❌ NOT TESTED (Not Implemented)",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "FEATURE_STATUS.md",
+    "line": 290,
+    "pattern": "not implemented",
+    "snippet": "- **Not Implemented**: 3 (3%)",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "FEATURE_STATUS.md",
+    "line": 215,
+    "pattern": "coming soon",
+    "snippet": "- **Issue**: API exists but UI shows \"Coming Soon\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "FEATURE_STATUS.md",
+    "line": 219,
+    "pattern": "coming soon",
+    "snippet": "- **Issue**: API exists but UI shows \"Coming Soon\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "FEATURE_STATUS.md",
+    "line": 223,
+    "pattern": "coming soon",
+    "snippet": "- **Issue**: API exists but UI shows \"Coming Soon\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "FEATURE_STATUS.md",
+    "line": 12,
+    "pattern": "Chưa tích hợp",
+    "snippet": "- ❌ **DISABLED_PENDING**: Not implemented, marked clearly in UI as \"Chưa tích hợp\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "FEATURE_STATUS.md",
+    "line": 203,
+    "pattern": "Chưa tích hợp",
+    "snippet": "- **Issue**: Shows \"Chưa tích hợp\" placeholder",
+    "severity": "low"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "HUONG_DAN_NHANH.txt",
+    "line": 10,
+    "pattern": "\\bmock\\b",
+    "snippet": "- Cho nao co mock/fake/dummy/demo/hardcoded/TODO",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "HUONG_DAN_NHANH.txt",
+    "line": 10,
+    "pattern": "\\bfake\\b",
+    "snippet": "- Cho nao co mock/fake/dummy/demo/hardcoded/TODO",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "HUONG_DAN_NHANH.txt",
+    "line": 10,
+    "pattern": "\\bdummy\\b",
+    "snippet": "- Cho nao co mock/fake/dummy/demo/hardcoded/TODO",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "HUONG_DAN_NHANH.txt",
+    "line": 10,
+    "pattern": "\\bdemo\\b",
+    "snippet": "- Cho nao co mock/fake/dummy/demo/hardcoded/TODO",
+    "severity": "medium"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "HUONG_DAN_NHANH.txt",
+    "line": 10,
+    "pattern": "TODO",
+    "snippet": "- Cho nao co mock/fake/dummy/demo/hardcoded/TODO",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "HUONG_DAN_NHANH.txt",
+    "line": 10,
+    "pattern": "hardcoded",
+    "snippet": "- Cho nao co mock/fake/dummy/demo/hardcoded/TODO",
+    "severity": "low"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "nope_ultra_deep_project_scanner.py",
+    "line": 13,
+    "pattern": "\\bmock\\b",
+    "snippet": "- fake/mock/dummy/demo hardcoded risk",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "nope_ultra_deep_project_scanner.py",
+    "line": 392,
+    "pattern": "\\bmock\\b",
+    "snippet": "if re.search(r\"dummy|fake|mock|Math\\.random\", line, re.I): return \"medium\"",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "nope_ultra_deep_project_scanner.py",
+    "line": 13,
+    "pattern": "\\bfake\\b",
+    "snippet": "- fake/mock/dummy/demo hardcoded risk",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "nope_ultra_deep_project_scanner.py",
+    "line": 392,
+    "pattern": "\\bfake\\b",
+    "snippet": "if re.search(r\"dummy|fake|mock|Math\\.random\", line, re.I): return \"medium\"",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "nope_ultra_deep_project_scanner.py",
+    "line": 13,
+    "pattern": "\\bdummy\\b",
+    "snippet": "- fake/mock/dummy/demo hardcoded risk",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "nope_ultra_deep_project_scanner.py",
+    "line": 110,
+    "pattern": "\\bdummy\\b",
+    "snippet": "\"ai\": [\"AI_PROVIDER\", \"openai\", \"gemini\", \"dummy\", \"sentiment\", \"emotion\", \"intent\", \"rag\"],",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "nope_ultra_deep_project_scanner.py",
+    "line": 392,
+    "pattern": "\\bdummy\\b",
+    "snippet": "if re.search(r\"dummy|fake|mock|Math\\.random\", line, re.I): return \"medium\"",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "nope_ultra_deep_project_scanner.py",
+    "line": 13,
+    "pattern": "\\bdemo\\b",
+    "snippet": "- fake/mock/dummy/demo hardcoded risk",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "nope_ultra_deep_project_scanner.py",
+    "line": 75,
+    "pattern": "sampleData",
+    "snippet": "r\"\\bmock\\b\", r\"\\bfake\\b\", r\"\\bdummy\\b\", r\"\\bdemo\\b\", r\"sampleData\", r\"sample_data\",",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "nope_ultra_deep_project_scanner.py",
+    "line": 75,
+    "pattern": "sample_data",
+    "snippet": "r\"\\bmock\\b\", r\"\\bfake\\b\", r\"\\bdummy\\b\", r\"\\bdemo\\b\", r\"sampleData\", r\"sample_data\",",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "nope_ultra_deep_project_scanner.py",
+    "line": 76,
+    "pattern": "generateMock",
+    "snippet": "r\"generateMock\", r\"mockData\", r\"setTimeout\\s*\\(\", r\"Math\\.random\\s*\\(\"",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "nope_ultra_deep_project_scanner.py",
+    "line": 76,
+    "pattern": "mockData",
+    "snippet": "r\"generateMock\", r\"mockData\", r\"setTimeout\\s*\\(\", r\"Math\\.random\\s*\\(\"",
+    "severity": "medium"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "nope_ultra_deep_project_scanner.py",
+    "line": 78,
+    "pattern": "TODO",
+    "snippet": "\"todo_placeholder\": [",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "nope_ultra_deep_project_scanner.py",
+    "line": 79,
+    "pattern": "TODO",
+    "snippet": "r\"TODO\", r\"FIXME\", r\"placeholder\", r\"not implemented\", r\"coming soon\",",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "nope_ultra_deep_project_scanner.py",
+    "line": 79,
+    "pattern": "FIXME",
+    "snippet": "r\"TODO\", r\"FIXME\", r\"placeholder\", r\"not implemented\", r\"coming soon\",",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "nope_ultra_deep_project_scanner.py",
+    "line": 78,
+    "pattern": "placeholder",
+    "snippet": "\"todo_placeholder\": [",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "nope_ultra_deep_project_scanner.py",
+    "line": 79,
+    "pattern": "placeholder",
+    "snippet": "r\"TODO\", r\"FIXME\", r\"placeholder\", r\"not implemented\", r\"coming soon\",",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "nope_ultra_deep_project_scanner.py",
+    "line": 79,
+    "pattern": "not implemented",
+    "snippet": "r\"TODO\", r\"FIXME\", r\"placeholder\", r\"not implemented\", r\"coming soon\",",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "nope_ultra_deep_project_scanner.py",
+    "line": 79,
+    "pattern": "coming soon",
+    "snippet": "r\"TODO\", r\"FIXME\", r\"placeholder\", r\"not implemented\", r\"coming soon\",",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "nope_ultra_deep_project_scanner.py",
+    "line": 80,
+    "pattern": "Chưa tích hợp",
+    "snippet": "r\"Chưa tích hợp\", r\"Chưa cấu hình\", r\"tạm thời\", r\"hardcoded\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "nope_ultra_deep_project_scanner.py",
+    "line": 80,
+    "pattern": "Chưa cấu hình",
+    "snippet": "r\"Chưa tích hợp\", r\"Chưa cấu hình\", r\"tạm thời\", r\"hardcoded\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "nope_ultra_deep_project_scanner.py",
+    "line": 80,
+    "pattern": "tạm thời",
+    "snippet": "r\"Chưa tích hợp\", r\"Chưa cấu hình\", r\"tạm thời\", r\"hardcoded\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "nope_ultra_deep_project_scanner.py",
+    "line": 13,
+    "pattern": "hardcoded",
+    "snippet": "- fake/mock/dummy/demo hardcoded risk",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "nope_ultra_deep_project_scanner.py",
+    "line": 80,
+    "pattern": "hardcoded",
+    "snippet": "r\"Chưa tích hợp\", r\"Chưa cấu hình\", r\"tạm thời\", r\"hardcoded\"",
+    "severity": "low"
+  },
+  {
+    "category": "unsafe_frontend",
+    "path": "nope_ultra_deep_project_scanner.py",
+    "line": 83,
+    "pattern": "dangerouslySetInnerHTML",
+    "snippet": "r\"dangerouslySetInnerHTML\", r\"innerHTML\\s*=\", r\"eval\\s*\\(\", r\"new Function\\s*\\(\",",
+    "severity": "medium"
+  },
+  {
+    "category": "security_backend",
+    "path": "nope_ultra_deep_project_scanner.py",
+    "line": 87,
+    "pattern": "CORSMiddleware",
+    "snippet": "r\"allow_origins=\\[\\\"?\\*\\\"?\\]\", r\"CORSMiddleware\", r\"debug=True\", r\"print\\([^)]*(token|secret|password|env)\",",
+    "severity": "high"
+  },
+  {
+    "category": "security_backend",
+    "path": "nope_ultra_deep_project_scanner.py",
+    "line": 87,
+    "pattern": "debug=True",
+    "snippet": "r\"allow_origins=\\[\\\"?\\*\\\"?\\]\", r\"CORSMiddleware\", r\"debug=True\", r\"print\\([^)]*(token|secret|password|env)\",",
+    "severity": "high"
+  },
+  {
+    "category": "security_backend",
+    "path": "nope_ultra_deep_project_scanner.py",
+    "line": 88,
+    "pattern": "literal_column",
+    "snippet": "r\"execute\\(\\s*f[\\\"']\", r\"raw\\s*\\(\", r\"literal_column\", r\"text\\(\\s*f[\\\"']\"",
+    "severity": "high"
+  },
+  {
+    "category": "silent_errors",
+    "path": "nope_ultra_deep_project_scanner.py",
+    "line": 480,
+    "pattern": "except\\s+Exception\\s*:\\s*pass",
+    "snippet": "except Exception: pass",
+    "severity": "medium"
+  },
+  {
+    "category": "destructive",
+    "path": "nope_ultra_deep_project_scanner.py",
+    "line": 95,
+    "pattern": "drop_all",
+    "snippet": "r\"drop_all\", r\"DROP TABLE\", r\"TRUNCATE\", r\"deleteMany\\(\\s*{}\\s*\\)\", r\"rm\\s+-rf\",",
+    "severity": "high"
+  },
+  {
+    "category": "destructive",
+    "path": "nope_ultra_deep_project_scanner.py",
+    "line": 96,
+    "pattern": "drop_all",
+    "snippet": "r\"Base\\.metadata\\.drop_all\"",
+    "severity": "high"
+  },
+  {
+    "category": "destructive",
+    "path": "nope_ultra_deep_project_scanner.py",
+    "line": 95,
+    "pattern": "DROP TABLE",
+    "snippet": "r\"drop_all\", r\"DROP TABLE\", r\"TRUNCATE\", r\"deleteMany\\(\\s*{}\\s*\\)\", r\"rm\\s+-rf\",",
+    "severity": "high"
+  },
+  {
+    "category": "destructive",
+    "path": "nope_ultra_deep_project_scanner.py",
+    "line": 95,
+    "pattern": "TRUNCATE",
+    "snippet": "r\"drop_all\", r\"DROP TABLE\", r\"TRUNCATE\", r\"deleteMany\\(\\s*{}\\s*\\)\", r\"rm\\s+-rf\",",
+    "severity": "high"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "PRODUCTION_READINESS_REPORT.md",
+    "line": 13,
+    "pattern": "\\bfake\\b",
+    "snippet": "1. ✅ Fake UI Removal",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "PRODUCTION_READINESS_REPORT.md",
+    "line": 23,
+    "pattern": "\\bfake\\b",
+    "snippet": "- **No fake UI** - all features are real or clearly marked as pending",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "PRODUCTION_READINESS_REPORT.md",
+    "line": 30,
+    "pattern": "\\bfake\\b",
+    "snippet": "## 1. FAKE UI REMOVAL ✅ COMPLETE",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "PRODUCTION_READINESS_REPORT.md",
+    "line": 32,
+    "pattern": "\\bfake\\b",
+    "snippet": "### Status: ✅ ALL FAKE UI REMOVED OR MARKED",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "PRODUCTION_READINESS_REPORT.md",
+    "line": 38,
+    "pattern": "\\bfake\\b",
+    "snippet": "4. Removed all fake success toasts",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "PRODUCTION_READINESS_REPORT.md",
+    "line": 39,
+    "pattern": "\\bfake\\b",
+    "snippet": "5. Removed all setTimeout() fake saves",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "PRODUCTION_READINESS_REPORT.md",
+    "line": 179,
+    "pattern": "\\bfake\\b",
+    "snippet": "- ✅ All pending tabs clearly marked (no fake UI)",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "PRODUCTION_READINESS_REPORT.md",
+    "line": 466,
+    "pattern": "\\bfake\\b",
+    "snippet": "- No fake UI",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "PRODUCTION_READINESS_REPORT.md",
+    "line": 526,
+    "pattern": "\\bfake\\b",
+    "snippet": "The Social Listening Web App is **87% complete** (up from 83%) and **ready for demo/testing**. The codebase is clean, well-structured, and has no fake UI. All core features are functional with real backend APIs and database persistence.",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "PRODUCTION_READINESS_REPORT.md",
+    "line": 536,
+    "pattern": "\\bfake\\b",
+    "snippet": "- ✅ No fake UI",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "PRODUCTION_READINESS_REPORT.md",
+    "line": 18,
+    "pattern": "\\bdummy\\b",
+    "snippet": "6. ⚠️ Core Workflow (AI uses dummy data)",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "PRODUCTION_READINESS_REPORT.md",
+    "line": 46,
+    "pattern": "\\bdummy\\b",
+    "snippet": "- ✅ Mentions: Real CRUD (AI analysis uses dummy data - marked in FEATURE_STATUS.md)",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "PRODUCTION_READINESS_REPORT.md",
+    "line": 139,
+    "pattern": "\\bdummy\\b",
+    "snippet": "| **Mentions** | ✅ WORKING | `GET /api/mentions/` | CRUD working, AI uses dummy data |",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "PRODUCTION_READINESS_REPORT.md",
+    "line": 210,
+    "pattern": "\\bdummy\\b",
+    "snippet": "- Added AI provider abstraction (Dummy, OpenAI, Gemini)",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "PRODUCTION_READINESS_REPORT.md",
+    "line": 218,
+    "pattern": "\\bdummy\\b",
+    "snippet": "AI_PROVIDER=openai  # or gemini, or dummy",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "PRODUCTION_READINESS_REPORT.md",
+    "line": 284,
+    "pattern": "\\bdummy\\b",
+    "snippet": "| 1 | ~~AI analysis uses dummy data~~ | 🔴 CRITICAL | **✅ FIXED** | Phase 3 complete - Real AI integrated |",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "PRODUCTION_READINESS_REPORT.md",
+    "line": 443,
+    "pattern": "\\bdummy\\b",
+    "snippet": "1. 🔴 ~~AI analysis uses dummy data~~ - **✅ FIXED (Phase 3)**",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "PRODUCTION_READINESS_REPORT.md",
+    "line": 528,
+    "pattern": "\\bdummy\\b",
+    "snippet": "**Phase 3 Achievement**: Real AI analysis is now implemented with OpenAI GPT-4 and Google Gemini Pro support, replacing the previous dummy keyword-based system.",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "PRODUCTION_READINESS_REPORT.md",
+    "line": 540,
+    "pattern": "\\bdummy\\b",
+    "snippet": "- ❌ ~~AI uses dummy data~~ - **FIXED**",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "PRODUCTION_READINESS_REPORT.md",
+    "line": 5,
+    "pattern": "\\bdemo\\b",
+    "snippet": "**Overall Status**: 87% Complete, **READY FOR DEMO**, needs 2 critical fixes for production",
+    "severity": "low"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "PRODUCTION_READINESS_REPORT.md",
+    "line": 464,
+    "pattern": "\\bdemo\\b",
+    "snippet": "**✅ Ready for DEMO/TESTING**:",
+    "severity": "low"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "PRODUCTION_READINESS_REPORT.md",
+    "line": 526,
+    "pattern": "\\bdemo\\b",
+    "snippet": "The Social Listening Web App is **87% complete** (up from 83%) and **ready for demo/testing**. The codebase is clean, well-structured, and has no fake UI. All core features are functional with real backend APIs and database persistence.",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "PRODUCTION_READINESS_REPORT.md",
+    "line": 546,
+    "pattern": "\\bdemo\\b",
+    "snippet": "**Current Recommendation**: **APPROVED FOR DEMO**, **NOT APPROVED FOR PRODUCTION** until critical fixes are implemented.",
+    "severity": "low"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "PRODUCTION_READINESS_REPORT.md",
+    "line": 39,
+    "pattern": "setTimeout\\s*\\(",
+    "snippet": "5. Removed all setTimeout() fake saves",
+    "severity": "medium"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "PRODUCTION_READINESS_REPORT.md",
+    "line": 254,
+    "pattern": "not implemented",
+    "snippet": "- **Location**: Email/webhook sending not implemented",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "PRODUCTION_READINESS_REPORT.md",
+    "line": 36,
+    "pattern": "Chưa tích hợp",
+    "snippet": "2. Audited all Settings tabs - 9/16 working, 7/16 clearly marked as \"Chưa tích hợp\"",
+    "severity": "low"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "project_scanner.py",
+    "line": 56,
+    "pattern": "\\bdummy\\b",
+    "snippet": "\"auth\", \"settings\", \"ai\", \"openai\", \"gemini\", \"dummy\", \"sentiment\"",
+    "severity": "medium"
+  },
+  {
+    "category": "destructive",
+    "path": "project_scanner.py",
+    "line": 89,
+    "pattern": "TRUNCATE",
+    "snippet": "truncated = len(data) > max_bytes",
+    "severity": "high"
+  },
+  {
+    "category": "destructive",
+    "path": "project_scanner.py",
+    "line": 90,
+    "pattern": "TRUNCATE",
+    "snippet": "if truncated:",
+    "severity": "high"
+  },
+  {
+    "category": "destructive",
+    "path": "project_scanner.py",
+    "line": 94,
+    "pattern": "TRUNCATE",
+    "snippet": "return text, (\"TRUNCATED\" if truncated else None)",
+    "severity": "high"
+  },
+  {
+    "category": "destructive",
+    "path": "project_scanner.py",
+    "line": 114,
+    "pattern": "TRUNCATE",
+    "snippet": "lines.append(\"... tree truncated ...\")",
+    "severity": "high"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "backend/.env",
+    "line": 25,
+    "pattern": "\\bdummy\\b",
+    "snippet": "# AI Provider (openai, gemini, anthropic, deepseek, or dummy)",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "backend/.env",
+    "line": 26,
+    "pattern": "\\bdummy\\b",
+    "snippet": "AI_PROVIDER=dummy",
+    "severity": "medium"
+  },
+  {
+    "category": "security_backend",
+    "path": "backend/.env",
+    "line": 4,
+    "pattern": "debug=True",
+    "snippet": "DEBUG=True",
+    "severity": "high"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "backend/.env.example",
+    "line": 26,
+    "pattern": "\\bdummy\\b",
+    "snippet": "# Supported providers: dummy, openai, gemini",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "backend/.env.example",
+    "line": 27,
+    "pattern": "\\bdummy\\b",
+    "snippet": "# - dummy: Keyword-based analysis (for testing, no API key required)",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "backend/.env.example",
+    "line": 30,
+    "pattern": "\\bdummy\\b",
+    "snippet": "AI_PROVIDER=dummy",
+    "severity": "medium"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "backend/.env.example",
+    "line": 36,
+    "pattern": "not implemented",
+    "snippet": "GEMINI_API_KEY=***REDACTED*** Deprecated AI providers (not implemented yet)",
+    "severity": "low"
+  },
+  {
+    "category": "security_backend",
+    "path": "backend/.env.example",
+    "line": 4,
+    "pattern": "debug=True",
+    "snippet": "DEBUG=True",
+    "severity": "high"
+  },
+  {
+    "category": "security_backend",
+    "path": "backend/add_columns.py",
+    "line": 23,
+    "pattern": "execute\\(\\s*f[\\\"']",
+    "snippet": "cursor.execute(f\"ALTER TABLE ai_analysis ADD COLUMN {col_name} {col_type}\")",
+    "severity": "high"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "backend/test_scheduler.py",
+    "line": 15,
+    "pattern": "\\bdummy\\b",
+    "snippet": "# Add a dummy source",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "backend/test_schema.py",
+    "line": 6,
+    "pattern": "\\bdummy\\b",
+    "snippet": "# Create dummy group",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "backend/_smoke_test.py",
+    "line": 129,
+    "pattern": "\\bfake\\b",
+    "snippet": "# Check for fake words in responses",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "backend/_smoke_test.py",
+    "line": 130,
+    "pattern": "\\bfake\\b",
+    "snippet": "print(\"Checking for fake/simulated content...\")",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "backend/_smoke_test.py",
+    "line": 135,
+    "pattern": "\\bfake\\b",
+    "snippet": "for word in [\"giả lập\", \"simulated\", \"fake mention\", \"demo mention\"]:",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "backend/_smoke_test.py",
+    "line": 141,
+    "pattern": "\\bfake\\b",
+    "snippet": "print(\"  No fake/simulated content detected\")",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "backend/_smoke_test.py",
+    "line": 121,
+    "pattern": "\\bdummy\\b",
+    "snippet": "ai_provider = os.getenv(\"AI_PROVIDER\", \"dummy\")",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "backend/_smoke_test.py",
+    "line": 135,
+    "pattern": "\\bdemo\\b",
+    "snippet": "for word in [\"giả lập\", \"simulated\", \"fake mention\", \"demo mention\"]:",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "backend/_smoke_test_final.py",
+    "line": 117,
+    "pattern": "\\bfake\\b",
+    "snippet": "print(\"7. Checking for fake content...\")",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "backend/_smoke_test_final.py",
+    "line": 122,
+    "pattern": "\\bfake\\b",
+    "snippet": "for word in [\"giả lập\", \"simulated\", \"fake\", \"demo\"]:",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "backend/_smoke_test_final.py",
+    "line": 127,
+    "pattern": "\\bfake\\b",
+    "snippet": "print(\"   PASS: No fake content found in any mentions.\")",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "backend/_smoke_test_final.py",
+    "line": 122,
+    "pattern": "\\bdemo\\b",
+    "snippet": "for word in [\"giả lập\", \"simulated\", \"fake\", \"demo\"]:",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "data/parsed_excel_summary.json",
+    "line": 37,
+    "pattern": "sample_data",
+    "snippet": "\"sample_data\": {",
+    "severity": "low"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "data/parsed_excel_summary.json",
+    "line": 254,
+    "pattern": "sample_data",
+    "snippet": "\"sample_data\": {",
+    "severity": "low"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "docs/DEPLOYMENT.md",
+    "line": 36,
+    "pattern": "\\bdummy\\b",
+    "snippet": "- AI: Pluggable providers (OpenAI, Gemini, DeepSeek, Dummy)",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "docs/DEPLOYMENT.md",
+    "line": 196,
+    "pattern": "\\bdummy\\b",
+    "snippet": "# AI Provider (dummy for local testing)",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "docs/DEPLOYMENT.md",
+    "line": 197,
+    "pattern": "\\bdummy\\b",
+    "snippet": "AI_PROVIDER=dummy",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "docs/DEPLOYMENT.md",
+    "line": 447,
+    "pattern": "\\bdummy\\b",
+    "snippet": "AI_PROVIDER=dummy",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "docs/DEPLOYMENT.md",
+    "line": 550,
+    "pattern": "\\bdummy\\b",
+    "snippet": "AI_PROVIDER=dummy",
+    "severity": "medium"
+  },
+  {
+    "category": "security_backend",
+    "path": "docs/DEPLOYMENT.md",
+    "line": 182,
+    "pattern": "debug=True",
+    "snippet": "DEBUG=True",
+    "severity": "high"
+  },
+  {
+    "category": "security_backend",
+    "path": "docs/DEPLOYMENT.md",
+    "line": 546,
+    "pattern": "debug=True",
+    "snippet": "DEBUG=True",
+    "severity": "high"
+  },
+  {
+    "category": "security_backend",
+    "path": "docs/DEPLOYMENT.md",
+    "line": 454,
+    "pattern": "print\\([^)]*(token|secret|password|env)",
+    "snippet": "- Generate a strong `SECRET_KEY`: `python -c \"import secrets; print(secrets.token_urlsafe(32))\"`",
+    "severity": "high"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "docs/DEPLOYMENT_READY.md",
+    "line": 16,
+    "pattern": "\\bdummy\\b",
+    "snippet": "- **AI Integration**: Pluggable provider system (OpenAI, Gemini, DeepSeek, Dummy)",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "docs/DEPLOYMENT_READY.md",
+    "line": 101,
+    "pattern": "\\bdummy\\b",
+    "snippet": "AI_PROVIDER=dummy",
+    "severity": "medium"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "docs/DEPLOYMENT_READY.md",
+    "line": 265,
+    "pattern": "not implemented",
+    "snippet": "3. **File Upload**: Evidence files not implemented (needs storage)",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "docs/DEPLOYMENT_READY.md",
+    "line": 33,
+    "pattern": "hardcoded",
+    "snippet": "- No hardcoded secrets",
+    "severity": "low"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "docs/PRODUCTION_CHECKLIST.md",
+    "line": 112,
+    "pattern": "\\bdummy\\b",
+    "snippet": "AI_PROVIDER=dummy",
+    "severity": "medium"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "docs/PRODUCTION_CHECKLIST.md",
+    "line": 10,
+    "pattern": "hardcoded",
+    "snippet": "- [ ] No hardcoded secrets or API keys",
+    "severity": "low"
+  },
+  {
+    "category": "security_backend",
+    "path": "docs/PRODUCTION_CHECKLIST.md",
+    "line": 122,
+    "pattern": "print\\([^)]*(token|secret|password|env)",
+    "snippet": "python -c \"import secrets; print(secrets.token_urlsafe(32))\"",
+    "severity": "high"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "docs/SCHEDULE_DEMO.md",
+    "line": 1,
+    "pattern": "\\bdemo\\b",
+    "snippet": "# Demo Tính Năng Lập Lịch Quét",
+    "severity": "low"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "pgsql/schema_reference.sql",
+    "line": 146,
+    "pattern": "\\bdummy\\b",
+    "snippet": "ai_provider     VARCHAR(50),                -- dummy, openai, gemini, phobert",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "scripts/analyze_excel.py",
+    "line": 55,
+    "pattern": "sample_data",
+    "snippet": "'sample_data': [],",
+    "severity": "low"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "scripts/analyze_excel.py",
+    "line": 76,
+    "pattern": "sample_data",
+    "snippet": "analysis['sample_data'].append(row_data)",
+    "severity": "low"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "scripts/analyze_excel.py",
+    "line": 160,
+    "pattern": "sample_data",
+    "snippet": "'sample_data': {",
+    "severity": "low"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "scripts/analyze_excel.py",
+    "line": 162,
+    "pattern": "sample_data",
+    "snippet": "'rows': sheet_data['sample_data']",
+    "severity": "low"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "scripts/analyze_excel.py",
+    "line": 199,
+    "pattern": "sample_data",
+    "snippet": "if sheet_data['sample_data']:",
+    "severity": "low"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "scripts/analyze_excel.py",
+    "line": 204,
+    "pattern": "sample_data",
+    "snippet": "for row in sheet_data['sample_data'][:3]:  # Show first 3 rows",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "scripts/audit_settings_complete.py",
+    "line": 112,
+    "pattern": "not implemented",
+    "snippet": "\"Frontend preview only, backend endpoint not implemented\")",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "scripts/audit_settings_complete.py",
+    "line": 355,
+    "pattern": "not implemented",
+    "snippet": "\"Config UI exists, actual sending not implemented\")",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "scripts/audit_settings_complete.py",
+    "line": 384,
+    "pattern": "not implemented",
+    "snippet": "\"Config UI exists, actual sending not implemented\")",
+    "severity": "low"
+  },
+  {
+    "category": "security_backend",
+    "path": "scripts/audit_settings_complete.py",
+    "line": 535,
+    "pattern": "print\\([^)]*(token|secret|password|env)",
+    "snippet": "print(\"❌ Cannot proceed without admin token\")",
+    "severity": "high"
+  },
+  {
+    "category": "security_backend",
+    "path": "scripts/change_tthgroup_to_viewer.py",
+    "line": 63,
+    "pattern": "print\\([^)]*(token|secret|password|env)",
+    "snippet": "print(\"   Password=***REDACTED***\")",
+    "severity": "high"
+  },
+  {
+    "category": "security_backend",
+    "path": "scripts/check_who_am_i.py",
+    "line": 15,
+    "pattern": "print\\([^)]*(token|secret|password|env)",
+    "snippet": "print(\"3. Type: localStorage.getItem('access_token')\")",
+    "severity": "high"
+  },
+  {
+    "category": "security_backend",
+    "path": "scripts/check_who_am_i.py",
+    "line": 16,
+    "pattern": "print\\([^)]*(token|secret|password|env)",
+    "snippet": "print(\"4. Copy the token (without quotes)\")",
+    "severity": "high"
+  },
+  {
+    "category": "security_backend",
+    "path": "scripts/clean_and_reseed.py",
+    "line": 49,
+    "pattern": "execute\\(\\s*f[\\\"']",
+    "snippet": "cursor.execute(f\"DELETE FROM {table}\")",
+    "severity": "high"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "scripts/comprehensive_test.py",
+    "line": 3,
+    "pattern": "\\bfake\\b",
+    "snippet": "Tests all pages, APIs, and features to identify fake UI and broken functionality",
+    "severity": "medium"
+  },
+  {
+    "category": "security_backend",
+    "path": "scripts/create_admin_remote.py",
+    "line": 15,
+    "pattern": "print\\([^)]*(token|secret|password|env)",
+    "snippet": "print(f\"Password=***REDACTED***'password']}\")",
+    "severity": "high"
+  },
+  {
+    "category": "security_backend",
+    "path": "scripts/create_admin_remote.py",
+    "line": 25,
+    "pattern": "print\\([^)]*(token|secret|password|env)",
+    "snippet": "print(f\"Password=***REDACTED***'password']}\")",
+    "severity": "high"
+  },
+  {
+    "category": "security_backend",
+    "path": "scripts/create_admin_remote.py",
+    "line": 31,
+    "pattern": "print\\([^)]*(token|secret|password|env)",
+    "snippet": "print(f\"Password=***REDACTED***'password']}\")",
+    "severity": "high"
+  },
+  {
+    "category": "security_backend",
+    "path": "scripts/create_admin_simple.py",
+    "line": 24,
+    "pattern": "print\\([^)]*(token|secret|password|env)",
+    "snippet": "print(f\"   Password=***REDACTED***}\")",
+    "severity": "high"
+  },
+  {
+    "category": "security_backend",
+    "path": "scripts/create_admin_simple.py",
+    "line": 28,
+    "pattern": "print\\([^)]*(token|secret|password|env)",
+    "snippet": "print(f\"\\n🔐 Hashing password...\")",
+    "severity": "high"
+  },
+  {
+    "category": "security_backend",
+    "path": "scripts/create_admin_simple.py",
+    "line": 30,
+    "pattern": "print\\([^)]*(token|secret|password|env)",
+    "snippet": "print(f\"✅ Password hashed!\")",
+    "severity": "high"
+  },
+  {
+    "category": "security_backend",
+    "path": "scripts/create_admin_simple.py",
+    "line": 63,
+    "pattern": "print\\([^)]*(token|secret|password|env)",
+    "snippet": "print(f\"   Password=***REDACTED***\")",
+    "severity": "high"
+  },
+  {
+    "category": "security_backend",
+    "path": "scripts/create_admin_simple.py",
+    "line": 108,
+    "pattern": "print\\([^)]*(token|secret|password|env)",
+    "snippet": "print(f\"   Password=***REDACTED***}\")",
+    "severity": "high"
+  },
+  {
+    "category": "security_backend",
+    "path": "scripts/create_admin_via_api.py",
+    "line": 22,
+    "pattern": "print\\([^)]*(token|secret|password|env)",
+    "snippet": "print(f\"   Password=***REDACTED***}\")",
+    "severity": "high"
+  },
+  {
+    "category": "security_backend",
+    "path": "scripts/create_admin_via_api.py",
+    "line": 119,
+    "pattern": "print\\([^)]*(token|secret|password|env)",
+    "snippet": "print(f\"   Token=***REDACTED***}...\")",
+    "severity": "high"
+  },
+  {
+    "category": "security_backend",
+    "path": "scripts/create_admin_via_api.py",
+    "line": 146,
+    "pattern": "print\\([^)]*(token|secret|password|env)",
+    "snippet": "print(f\"   Password=***REDACTED***}\")",
+    "severity": "high"
+  },
+  {
+    "category": "security_backend",
+    "path": "scripts/create_new_admin.py",
+    "line": 67,
+    "pattern": "print\\([^)]*(token|secret|password|env)",
+    "snippet": "print(f\"\\n🔑 Updating password...\")",
+    "severity": "high"
+  },
+  {
+    "category": "security_backend",
+    "path": "scripts/create_new_admin.py",
+    "line": 70,
+    "pattern": "print\\([^)]*(token|secret|password|env)",
+    "snippet": "print(f\"✅ Password updated!\")",
+    "severity": "high"
+  },
+  {
+    "category": "security_backend",
+    "path": "scripts/create_new_admin.py",
+    "line": 133,
+    "pattern": "print\\([^)]*(token|secret|password|env)",
+    "snippet": "print(f\"   Token=***REDACTED***}...\")",
+    "severity": "high"
+  },
+  {
+    "category": "security_backend",
+    "path": "scripts/create_new_admin.py",
+    "line": 178,
+    "pattern": "print\\([^)]*(token|secret|password|env)",
+    "snippet": "print(f\"   Password=***REDACTED***\")",
+    "severity": "high"
+  },
+  {
+    "category": "security_backend",
+    "path": "scripts/debug_auth_endpoint.py",
+    "line": 37,
+    "pattern": "print\\([^)]*(token|secret|password|env)",
+    "snippet": "print(f\"Token=***REDACTED***}...\")",
+    "severity": "high"
+  },
+  {
+    "category": "security_backend",
+    "path": "scripts/fix_database_direct.py",
+    "line": 34,
+    "pattern": "print\\([^)]*(token|secret|password|env)",
+    "snippet": "print('   $env:DATABASE_URL=***REDACTED***\"')",
+    "severity": "high"
+  },
+  {
+    "category": "security_backend",
+    "path": "scripts/fix_enum_case.py",
+    "line": 177,
+    "pattern": "execute\\(\\s*f[\\\"']",
+    "snippet": "cursor.execute(f\"\"\"",
+    "severity": "high"
+  },
+  {
+    "category": "security_backend",
+    "path": "scripts/rbac_summary.py",
+    "line": 77,
+    "pattern": "print\\([^)]*(token|secret|password|env)",
+    "snippet": "print(\"   • POST   /api/admin/users/{id}/reset-password\")",
+    "severity": "high"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": ".kiro/specs/social-listening/design.md",
+    "line": 71,
+    "pattern": "\\bdummy\\b",
+    "snippet": "- Dummy (for testing)",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": ".kiro/specs/social-listening/requirements.md",
+    "line": 63,
+    "pattern": "\\bdummy\\b",
+    "snippet": "- **Pluggable_AI_Provider**: An AI service configured via environment variables (dummy, OpenAI, Gemini, DeepSeek, Claude)",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": ".kiro/specs/social-listening/requirements.md",
+    "line": 211,
+    "pattern": "\\bdummy\\b",
+    "snippet": "10. THE Platform SHALL support Pluggable_AI_Provider selection (dummy, OpenAI, Gemini, DeepSeek, Claude) configured via environment variables",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": ".kiro/specs/social-listening/requirements.md",
+    "line": 356,
+    "pattern": "\\bdummy\\b",
+    "snippet": "1. THE Platform SHALL allow Admins to configure Pluggable_AI_Provider selection (dummy, OpenAI, Gemini, DeepSeek, Claude) via environment variables",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": ".kiro/specs/social-listening/requirements.md",
+    "line": 480,
+    "pattern": "\\bdummy\\b",
+    "snippet": "16. THE Platform SHALL support Pluggable_AI_Provider architecture (dummy, OpenAI, Gemini, DeepSeek, Claude) configured via environment variables",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": ".kiro/specs/social-listening/tasks.md",
+    "line": 170,
+    "pattern": "\\bdummy\\b",
+    "snippet": "- ✅ Implement dummy provider",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": ".kiro/specs/social-listening/tasks.md",
+    "line": 534,
+    "pattern": "\\bdummy\\b",
+    "snippet": "- ✅ AI analysis (dummy provider)",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": ".kiro/specs/social-listening/tasks.md",
+    "line": 556,
+    "pattern": "\\bdummy\\b",
+    "snippet": "- ✅ Dummy AI provider for testing",
+    "severity": "medium"
+  },
+  {
+    "category": "security_backend",
+    "path": "backend/app/main.py",
+    "line": 78,
+    "pattern": "allow_origins=\\[\\\"?\\*\\\"?\\]",
+    "snippet": "# allow_origins=[\"*\"] so CORS headers appear even on 500 responses",
+    "severity": "high"
+  },
+  {
+    "category": "security_backend",
+    "path": "backend/app/main.py",
+    "line": 4,
+    "pattern": "CORSMiddleware",
+    "snippet": "from fastapi.middleware.cors import CORSMiddleware",
+    "severity": "high"
+  },
+  {
+    "category": "security_backend",
+    "path": "backend/app/main.py",
+    "line": 88,
+    "pattern": "CORSMiddleware",
+    "snippet": "CORSMiddleware,",
+    "severity": "high"
+  },
+  {
+    "category": "destructive",
+    "path": "backend/alembic/versions/003_add_service_catalog.py",
+    "line": 195,
+    "pattern": "DROP TABLE",
+    "snippet": "# Drop tables",
+    "severity": "high"
+  },
+  {
+    "category": "security_backend",
+    "path": "backend/alembic/versions/012_fix_app_wide_missing_columns.py",
+    "line": 28,
+    "pattern": "text\\(\\s*f[\\\"']",
+    "snippet": "op.get_bind().execute(sa.text(f\"CREATE TABLE {table_name} (id SERIAL PRIMARY KEY)\"))",
+    "severity": "high"
+  },
+  {
+    "category": "security_backend",
+    "path": "backend/alembic/versions/012_fix_app_wide_missing_columns.py",
+    "line": 38,
+    "pattern": "text\\(\\s*f[\\\"']",
+    "snippet": "op.get_bind().execute(sa.text(f\"CREATE INDEX IF NOT EXISTS {name} ON {table_name} ({column_name})\"))",
+    "severity": "high"
+  },
+  {
+    "category": "security_backend",
+    "path": "backend/alembic/versions/012_fix_app_wide_missing_columns.py",
+    "line": 137,
+    "pattern": "text\\(\\s*f[\\\"']",
+    "snippet": "bind.execute(sa.text(f\"UPDATE {table_name} SET {column_name} = 0 WHERE {column_name} IS NULL\"))",
+    "severity": "high"
+  },
+  {
+    "category": "destructive",
+    "path": "backend/alembic/versions/019_fix_roles_table_schema.py",
+    "line": 24,
+    "pattern": "DROP TABLE",
+    "snippet": "op.execute(\"DROP TABLE IF EXISTS user_roles CASCADE\")",
+    "severity": "high"
+  },
+  {
+    "category": "destructive",
+    "path": "backend/alembic/versions/019_fix_roles_table_schema.py",
+    "line": 25,
+    "pattern": "DROP TABLE",
+    "snippet": "op.execute(\"DROP TABLE IF EXISTS roles CASCADE\")",
+    "severity": "high"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "backend/app/api/ai.py",
+    "line": 65,
+    "pattern": "\\bdummy\\b",
+    "snippet": "# For now, let's check if provider is Dummy",
+    "severity": "medium"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "backend/app/api/auth.py",
+    "line": 119,
+    "pattern": "TODO",
+    "snippet": "ip_address=None,  # TODO: Get from request",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "backend/app/api/auth.py",
+    "line": 120,
+    "pattern": "TODO",
+    "snippet": "user_agent=None,  # TODO: Get from request",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "backend/app/api/auth.py",
+    "line": 349,
+    "pattern": "TODO",
+    "snippet": "# TODO: Get current JTI from token and exclude it",
+    "severity": "low"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "backend/app/api/competitors.py",
+    "line": 43,
+    "pattern": "\\bmock\\b",
+    "snippet": "# Let's use simple wildcard matching on the content for this mock API since matched_keywords is JSON string.",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "backend/app/api/crawl.py",
+    "line": 75,
+    "pattern": "\\bdummy\\b",
+    "snippet": "ai_provider=\"dummy\",",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "backend/app/api/monitor.py",
+    "line": 5,
+    "pattern": "\\bmock\\b",
+    "snippet": "Không sử dụng mock data / fake mentions / giả lập.",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "backend/app/api/monitor.py",
+    "line": 5,
+    "pattern": "\\bfake\\b",
+    "snippet": "Không sử dụng mock data / fake mentions / giả lập.",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "backend/app/api/monitor.py",
+    "line": 76,
+    "pattern": "\\bfake\\b",
+    "snippet": "4. Nếu không có nguồn → trả về cảnh báo, KHÔNG tạo fake data",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "backend/app/api/monitor.py",
+    "line": 878,
+    "pattern": "\\bfake\\b",
+    "snippet": "\"Lừa đảo / Gian lận\": [\"lừa đảo\", \"scam\", \"fake\", \"giả\", \"fraud\"],",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "backend/app/core/config.py",
+    "line": 36,
+    "pattern": "\\bdummy\\b",
+    "snippet": "AI_PROVIDER: str = \"dummy\"  # dummy, openai, gemini, anthropic, deepseek",
+    "severity": "medium"
+  },
+  {
+    "category": "security_backend",
+    "path": "backend/app/scripts/create_admin.py",
+    "line": 47,
+    "pattern": "print\\([^)]*(token|secret|password|env)",
+    "snippet": "print(f\"   Password=***REDACTED***\")",
+    "severity": "high"
+  },
+  {
+    "category": "security_backend",
+    "path": "backend/app/scripts/create_admin.py",
+    "line": 49,
+    "pattern": "print\\([^)]*(token|secret|password|env)",
+    "snippet": "print(\"\\n⚠️  Please change the password after first login!\")",
+    "severity": "high"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "backend/app/services/ai_service.py",
+    "line": 84,
+    "pattern": "\\bfake\\b",
+    "snippet": "'tệ', 'kém', 'dở', 'tồi', 'lừa đảo', 'scam', 'fake', 'giả mạo',",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "backend/app/services/ai_service.py",
+    "line": 3,
+    "pattern": "\\bdummy\\b",
+    "snippet": "Supports multiple AI providers: OpenAI, Gemini, and Dummy (for testing)",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "backend/app/services/ai_service.py",
+    "line": 66,
+    "pattern": "\\bdummy\\b",
+    "snippet": "# DUMMY AI PROVIDER (FOR TESTING)",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "backend/app/services/ai_service.py",
+    "line": 71,
+    "pattern": "\\bdummy\\b",
+    "snippet": "Dummy AI provider using keyword matching",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "backend/app/services/ai_service.py",
+    "line": 287,
+    "pattern": "\\bdummy\\b",
+    "snippet": "# Fallback to dummy analysis if OpenAI fails and not in production",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "backend/app/services/ai_service.py",
+    "line": 290,
+    "pattern": "\\bdummy\\b",
+    "snippet": "raise ValueError(f\"OpenAI analysis failed and dummy fallback is disabled in production: {e}\")",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "backend/app/services/ai_service.py",
+    "line": 291,
+    "pattern": "\\bdummy\\b",
+    "snippet": "dummy = DummyAIProvider()",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "backend/app/services/ai_service.py",
+    "line": 292,
+    "pattern": "\\bdummy\\b",
+    "snippet": "return dummy.analyze_mention(content, title)",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "backend/app/services/ai_service.py",
+    "line": 435,
+    "pattern": "\\bdummy\\b",
+    "snippet": "# Fallback to dummy analysis if Gemini fails and not in production",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "backend/app/services/ai_service.py",
+    "line": 438,
+    "pattern": "\\bdummy\\b",
+    "snippet": "raise ValueError(f\"Gemini analysis failed and dummy fallback is disabled in production: {e}\")",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "backend/app/services/ai_service.py",
+    "line": 439,
+    "pattern": "\\bdummy\\b",
+    "snippet": "dummy = DummyAIProvider()",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "backend/app/services/ai_service.py",
+    "line": 440,
+    "pattern": "\\bdummy\\b",
+    "snippet": "return dummy.analyze_mention(content, title)",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "backend/app/services/ai_service.py",
+    "line": 522,
+    "pattern": "\\bdummy\\b",
+    "snippet": "raise ValueError(\"PhoBERT model is unavailable and dummy fallback is disabled in production.\")",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "backend/app/services/ai_service.py",
+    "line": 523,
+    "pattern": "\\bdummy\\b",
+    "snippet": "dummy = DummyAIProvider()",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "backend/app/services/ai_service.py",
+    "line": 524,
+    "pattern": "\\bdummy\\b",
+    "snippet": "result = dummy.analyze_mention(content, title)",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "backend/app/services/ai_service.py",
+    "line": 628,
+    "pattern": "\\bdummy\\b",
+    "snippet": "raise ValueError(f\"PhoBERT analysis failed and dummy fallback is disabled in production: {e}\")",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "backend/app/services/ai_service.py",
+    "line": 629,
+    "pattern": "\\bdummy\\b",
+    "snippet": "dummy = DummyAIProvider()",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "backend/app/services/ai_service.py",
+    "line": 630,
+    "pattern": "\\bdummy\\b",
+    "snippet": "result = dummy.analyze_mention(content, title)",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "backend/app/services/ai_service.py",
+    "line": 667,
+    "pattern": "\\bdummy\\b",
+    "snippet": "raise ValueError(\"PhoBERT model is unavailable and dummy fallback is disabled in production.\")",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "backend/app/services/ai_service.py",
+    "line": 668,
+    "pattern": "\\bdummy\\b",
+    "snippet": "print(\"WARNING: PhoBERT unavailable, falling back to dummy AI\")",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "backend/app/services/ai_service.py",
+    "line": 671,
+    "pattern": "\\bdummy\\b",
+    "snippet": "elif provider_name == \"dummy\":",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "backend/app/services/ai_service.py",
+    "line": 673,
+    "pattern": "\\bdummy\\b",
+    "snippet": "raise ValueError(\"Dummy AI provider is not allowed in production environment.\")",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "backend/app/services/ai_service.py",
+    "line": 678,
+    "pattern": "\\bdummy\\b",
+    "snippet": "raise ValueError(f\"Unknown/dummy AI provider '{provider_name}' is not allowed in production environment.\")",
+    "severity": "medium"
+  },
+  {
+    "category": "destructive",
+    "path": "backend/app/services/ai_service.py",
+    "line": 529,
+    "pattern": "TRUNCATE",
+    "snippet": "# Truncate cho PhoBERT (max 256 tokens)",
+    "severity": "high"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "backend/app/services/crawl_service.py",
+    "line": 341,
+    "pattern": "\\bdummy\\b",
+    "snippet": "ai_provider=analysis_result.get('ai_provider', 'dummy'),",
+    "severity": "medium"
+  },
+  {
+    "category": "silent_errors",
+    "path": "backend/app/services/crawl_service.py",
+    "line": 72,
+    "pattern": "return\\s+\\[\\]",
+    "snippet": "return []",
+    "severity": "medium"
+  },
+  {
+    "category": "destructive",
+    "path": "backend/app/services/crawl_service.py",
+    "line": 128,
+    "pattern": "TRUNCATE",
+    "snippet": "# Truncate",
+    "severity": "high"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "backend/app/workers/tasks.py",
+    "line": 215,
+    "pattern": "\\bmock\\b",
+    "snippet": "ai_provider=\"mock\",  # Will be updated when real AI is integrated",
+    "severity": "medium"
+  },
+  {
+    "category": "unsafe_frontend",
+    "path": "frontend/src/lib/api.ts",
+    "line": 108,
+    "pattern": "localStorage\\.setItem\\([^)]*token",
+    "snippet": "localStorage.setItem('access_token', response.data.access_token);",
+    "severity": "medium"
+  },
+  {
+    "category": "unsafe_frontend",
+    "path": "frontend/src/app/dashboard/layout.tsx",
+    "line": 51,
+    "pattern": "console\\.log\\([^)]*(token|secret|password|env)",
+    "snippet": "console.log('No token, redirecting to login');",
+    "severity": "medium"
+  },
+  {
+    "category": "destructive",
+    "path": "frontend/src/app/dashboard/layout.tsx",
+    "line": 189,
+    "pattern": "TRUNCATE",
+    "snippet": "<span className=\"truncate\">{item.name}</span>",
+    "severity": "high"
+  },
+  {
+    "category": "destructive",
+    "path": "frontend/src/app/dashboard/layout.tsx",
+    "line": 208,
+    "pattern": "TRUNCATE",
+    "snippet": "<p className=\"text-sm font-medium text-gray-200 truncate\">",
+    "severity": "high"
+  },
+  {
+    "category": "destructive",
+    "path": "frontend/src/app/dashboard/layout.tsx",
+    "line": 211,
+    "pattern": "TRUNCATE",
+    "snippet": "<p className=\"text-xs text-gray-500 truncate mt-0.5 capitalize\">",
+    "severity": "high"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/page.tsx",
+    "line": 202,
+    "pattern": "Chưa tích hợp",
+    "snippet": "<span className=\"text-xs font-bold uppercase tracking-wider text-gray-400 bg-[#0B1220] px-3 py-1 rounded-full border border-gray-800\">Chưa tích hợp</span>",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/page.tsx",
+    "line": 216,
+    "pattern": "Chưa tích hợp",
+    "snippet": "<span className=\"text-xs font-bold uppercase tracking-wider text-gray-400 bg-[#0B1220] px-3 py-1 rounded-full border border-gray-800\">Chưa tích hợp</span>",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/page.tsx",
+    "line": 230,
+    "pattern": "Chưa tích hợp",
+    "snippet": "<span className=\"text-xs font-bold uppercase tracking-wider text-gray-400 bg-[#0B1220] px-3 py-1 rounded-full border border-gray-800\">Chưa tích hợp</span>",
+    "severity": "low"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "frontend/src/app/login/page.tsx",
+    "line": 34,
+    "pattern": "setTimeout\\s*\\(",
+    "snippet": "setTimeout(() => {",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/login/page.tsx",
+    "line": 80,
+    "pattern": "placeholder",
+    "snippet": "placeholder=\"admin@example.com\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/login/page.tsx",
+    "line": 95,
+    "pattern": "placeholder",
+    "snippet": "placeholder=\"••••••••\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/register/page.tsx",
+    "line": 99,
+    "pattern": "placeholder",
+    "snippet": "className=\"appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/register/page.tsx",
+    "line": 100,
+    "pattern": "placeholder",
+    "snippet": "placeholder=\"Nguyễn Văn A\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/register/page.tsx",
+    "line": 116,
+    "pattern": "placeholder",
+    "snippet": "className=\"appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/register/page.tsx",
+    "line": 117,
+    "pattern": "placeholder",
+    "snippet": "placeholder=\"email@example.com\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/register/page.tsx",
+    "line": 133,
+    "pattern": "placeholder",
+    "snippet": "className=\"appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/register/page.tsx",
+    "line": 134,
+    "pattern": "placeholder",
+    "snippet": "placeholder=\"Ít nhất 6 ký tự\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/register/page.tsx",
+    "line": 150,
+    "pattern": "placeholder",
+    "snippet": "className=\"appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/register/page.tsx",
+    "line": 151,
+    "pattern": "placeholder",
+    "snippet": "placeholder=\"Nhập lại mật khẩu\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/alerts/page.tsx",
+    "line": 248,
+    "pattern": "placeholder",
+    "snippet": "placeholder=\"Nhập tiêu đề cảnh báo...\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/alerts/page.tsx",
+    "line": 249,
+    "pattern": "placeholder",
+    "snippet": "className=\"w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/alerts/page.tsx",
+    "line": 276,
+    "pattern": "placeholder",
+    "snippet": "placeholder=\"Mô tả chi tiết cảnh báo...\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/alerts/page.tsx",
+    "line": 277,
+    "pattern": "placeholder",
+    "snippet": "className=\"w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500 resize-none\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/alerts/page.tsx",
+    "line": 289,
+    "pattern": "placeholder",
+    "snippet": "placeholder=\"Nhập ID mention liên quan...\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/alerts/page.tsx",
+    "line": 290,
+    "pattern": "placeholder",
+    "snippet": "className=\"w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500\"",
+    "severity": "low"
+  },
+  {
+    "category": "destructive",
+    "path": "frontend/src/app/dashboard/alerts/page.tsx",
+    "line": 174,
+    "pattern": "TRUNCATE",
+    "snippet": "<h3 className=\"font-bold text-white truncate\">{alert.title}</h3>",
+    "severity": "high"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/assistant/page.tsx",
+    "line": 132,
+    "pattern": "placeholder",
+    "snippet": "placeholder=\"Nhập câu hỏi để phân tích dữ liệu...\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/assistant/page.tsx",
+    "line": 133,
+    "pattern": "placeholder",
+    "snippet": "className=\"w-full pl-5 pr-14 py-4 bg-[#1E293B] border border-gray-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500/50 text-white placeholder-gray-500 shadow-inner\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/competitors/page.tsx",
+    "line": 56,
+    "pattern": "Chưa cấu hình",
+    "snippet": "<h2 className=\"text-2xl font-bold text-white tracking-wide mb-2\">Chưa cấu hình Từ Khóa Đối Thủ</h2>",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/incidents/page.tsx",
+    "line": 316,
+    "pattern": "placeholder",
+    "snippet": "placeholder=\"Nhập tiêu đề sự cố...\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/incidents/page.tsx",
+    "line": 317,
+    "pattern": "placeholder",
+    "snippet": "className=\"w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/incidents/page.tsx",
+    "line": 326,
+    "pattern": "placeholder",
+    "snippet": "placeholder=\"Mô tả chi tiết sự cố...\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/incidents/page.tsx",
+    "line": 327,
+    "pattern": "placeholder",
+    "snippet": "className=\"w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500 resize-none\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/incidents/page.tsx",
+    "line": 347,
+    "pattern": "placeholder",
+    "snippet": "placeholder=\"Nhập ID mention...\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/incidents/page.tsx",
+    "line": 348,
+    "pattern": "placeholder",
+    "snippet": "className=\"w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/incidents/page.tsx",
+    "line": 404,
+    "pattern": "placeholder",
+    "snippet": "placeholder=\"Ghi chú về cách xử lý sự cố...\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/incidents/page.tsx",
+    "line": 405,
+    "pattern": "placeholder",
+    "snippet": "className=\"w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500 resize-none\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/incidents/page.tsx",
+    "line": 465,
+    "pattern": "placeholder",
+    "snippet": "placeholder=\"Thêm ghi chú...\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/incidents/page.tsx",
+    "line": 466,
+    "pattern": "placeholder",
+    "snippet": "className=\"flex-1 px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500 text-sm\"",
+    "severity": "low"
+  },
+  {
+    "category": "destructive",
+    "path": "frontend/src/app/dashboard/incidents/page.tsx",
+    "line": 432,
+    "pattern": "TRUNCATE",
+    "snippet": "<h2 className=\"text-xl font-bold text-white truncate pr-4\">",
+    "severity": "high"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/influencers/page.tsx",
+    "line": 101,
+    "pattern": "placeholder",
+    "snippet": "placeholder=\"Tìm kiếm tác giả...\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/keywords/page.tsx",
+    "line": 346,
+    "pattern": "placeholder",
+    "snippet": "placeholder=\"Tìm kiếm nhóm từ khóa hoặc từ khóa...\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/keywords/page.tsx",
+    "line": 349,
+    "pattern": "placeholder",
+    "snippet": "className=\"w-full pl-11 pr-4 py-3 bg-[#111827] border border-gray-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500 shadow-sm transition-shadow\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/keywords/page.tsx",
+    "line": 514,
+    "pattern": "placeholder",
+    "snippet": "className=\"w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/keywords/page.tsx",
+    "line": 515,
+    "pattern": "placeholder",
+    "snippet": "placeholder=\"Ví dụ: Chất lượng sản phẩm\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/keywords/page.tsx",
+    "line": 527,
+    "pattern": "placeholder",
+    "snippet": "className=\"w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/keywords/page.tsx",
+    "line": 528,
+    "pattern": "placeholder",
+    "snippet": "placeholder=\"Mô tả về nhóm từ khóa này...\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/keywords/page.tsx",
+    "line": 607,
+    "pattern": "placeholder",
+    "snippet": "className=\"w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/keywords/page.tsx",
+    "line": 608,
+    "pattern": "placeholder",
+    "snippet": "placeholder=\"Nhập từ khóa...\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/keywords/page.tsx",
+    "line": 664,
+    "pattern": "placeholder",
+    "snippet": "className=\"w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500 custom-scrollbar\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/keywords/page.tsx",
+    "line": 665,
+    "pattern": "placeholder",
+    "snippet": "placeholder=\"Ví dụ:&#10;TTH&#10;TTH Group&#10;Bệnh viện TTH\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/keywords/page.tsx",
+    "line": 723,
+    "pattern": "placeholder",
+    "snippet": "className=\"w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/keywords/page.tsx",
+    "line": 724,
+    "pattern": "placeholder",
+    "snippet": "placeholder=\"Nhập từ khóa...\"",
+    "severity": "low"
+  },
+  {
+    "category": "destructive",
+    "path": "frontend/src/app/dashboard/keywords/page.tsx",
+    "line": 381,
+    "pattern": "TRUNCATE",
+    "snippet": "<h3 className=\"text-base font-semibold text-white tracking-wide truncate\">{group.name}</h3>",
+    "severity": "high"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "frontend/src/app/dashboard/mentions/page.tsx",
+    "line": 733,
+    "pattern": "\\bdummy\\b",
+    "snippet": "const isDummy = analysis?.ai_provider === 'dummy' || analysis?.ai_provider === 'dummy_ai';",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "frontend/src/app/dashboard/mentions/page.tsx",
+    "line": 769,
+    "pattern": "\\bdummy\\b",
+    "snippet": "DUMMY",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "frontend/src/app/dashboard/mentions/page.tsx",
+    "line": 257,
+    "pattern": "setTimeout\\s*\\(",
+    "snippet": "searchTimeout.current = setTimeout(() => {",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/mentions/page.tsx",
+    "line": 357,
+    "pattern": "placeholder",
+    "snippet": "placeholder=\"Tìm kiếm mentions theo tiêu đề, nội dung...\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/mentions/page.tsx",
+    "line": 360,
+    "pattern": "placeholder",
+    "snippet": "className=\"w-full pl-12 pr-12 py-3.5 bg-[#111827] border border-gray-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 text-white placeholder-gray-500 shadow-sm transition-all text-sm\"",
+    "severity": "low"
+  },
+  {
+    "category": "destructive",
+    "path": "frontend/src/app/dashboard/mentions/page.tsx",
+    "line": 432,
+    "pattern": "TRUNCATE",
+    "snippet": "<p className=\"text-[11px] text-gray-500 font-medium uppercase tracking-wider truncate\">{stat.label}</p>",
+    "severity": "high"
+  },
+  {
+    "category": "destructive",
+    "path": "frontend/src/app/dashboard/mentions/page.tsx",
+    "line": 752,
+    "pattern": "TRUNCATE",
+    "snippet": "<span className=\"text-xs font-semibold text-indigo-400 tracking-wide truncate\">{mention.source_name}</span>",
+    "severity": "high"
+  },
+  {
+    "category": "destructive",
+    "path": "frontend/src/app/dashboard/mentions/page.tsx",
+    "line": 758,
+    "pattern": "TRUNCATE",
+    "snippet": "<span className=\"text-[11px] text-gray-500 truncate\">{mention.author}</span>",
+    "severity": "high"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "frontend/src/app/dashboard/reports/page.tsx",
+    "line": 34,
+    "pattern": "setTimeout\\s*\\(",
+    "snippet": "setTimeout(() => setCopied(false), 2000);",
+    "severity": "low"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "frontend/src/app/dashboard/reports/page.tsx",
+    "line": 40,
+    "pattern": "setTimeout\\s*\\(",
+    "snippet": "setTimeout(() => {",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/scan/page.tsx",
+    "line": 512,
+    "pattern": "placeholder",
+    "snippet": "placeholder=\"Nhập từ khóa (VD: Vinfast, iPhone 16...)\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/scan/page.tsx",
+    "line": 513,
+    "pattern": "placeholder",
+    "snippet": "className=\"flex-1 min-w-0 px-3 py-2 bg-[#1E293B] border border-gray-700 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 text-white text-sm placeholder-gray-500\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/scan/page.tsx",
+    "line": 788,
+    "pattern": "placeholder",
+    "snippet": "placeholder=\"https://example.com hoặc https://example.com/rss\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/scan/page.tsx",
+    "line": 789,
+    "pattern": "placeholder",
+    "snippet": "className=\"w-full pl-9 pr-3 py-2 bg-[#0B1220] border border-gray-800 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 text-white text-xs placeholder-gray-500 transition-shadow\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/scan/page.tsx",
+    "line": 201,
+    "pattern": "Chưa tích hợp",
+    "snippet": "toast('Đã bỏ qua nguồn chưa tích hợp.', { icon: 'ℹ️' });",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/scan/page.tsx",
+    "line": 277,
+    "pattern": "Chưa tích hợp",
+    "snippet": "toast('Đã bỏ qua nguồn chưa tích hợp.', { icon: 'ℹ️' });",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/scan/page.tsx",
+    "line": 348,
+    "pattern": "Chưa tích hợp",
+    "snippet": "if (selectedSources.length > 0 && validSelectedSources.length === 0) return 'Nguồn đã chọn chưa tích hợp';",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/scan/page.tsx",
+    "line": 720,
+    "pattern": "Chưa tích hợp",
+    "snippet": "Chưa tích hợp",
+    "severity": "low"
+  },
+  {
+    "category": "destructive",
+    "path": "frontend/src/app/dashboard/scan/page.tsx",
+    "line": 488,
+    "pattern": "TRUNCATE",
+    "snippet": "<span className=\"text-[10px] text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded border border-rose-500/15 inline-block truncate max-w-full\" title={workerStatus.last_error}>",
+    "severity": "high"
+  },
+  {
+    "category": "destructive",
+    "path": "frontend/src/app/dashboard/scan/page.tsx",
+    "line": 710,
+    "pattern": "TRUNCATE",
+    "snippet": "<div className=\"font-medium text-gray-300 truncate flex items-center gap-1.5 flex-wrap text-xs\">",
+    "severity": "high"
+  },
+  {
+    "category": "destructive",
+    "path": "frontend/src/app/dashboard/scan/page.tsx",
+    "line": 724,
+    "pattern": "TRUNCATE",
+    "snippet": "<div className=\"text-[10px] text-gray-600 truncate max-w-xs mt-0.5\">{source.url}</div>",
+    "severity": "high"
+  },
+  {
+    "category": "destructive",
+    "path": "frontend/src/app/dashboard/scan/page.tsx",
+    "line": 726,
+    "pattern": "TRUNCATE",
+    "snippet": "<div className=\"text-[10px] text-rose-400 mt-1 truncate max-w-sm\" title={source.last_error}>",
+    "severity": "high"
+  },
+  {
+    "category": "destructive",
+    "path": "frontend/src/app/dashboard/scan/page.tsx",
+    "line": 853,
+    "pattern": "TRUNCATE",
+    "snippet": "<span className=\"text-[10px] text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded border border-rose-500/15 inline-block truncate max-w-full\" title={latestJob.error_message}>",
+    "severity": "high"
+  },
+  {
+    "category": "destructive",
+    "path": "frontend/src/app/dashboard/scan/page.tsx",
+    "line": 918,
+    "pattern": "TRUNCATE",
+    "snippet": "<p className=\"mt-1.5 text-[10px] text-rose-400 bg-rose-500/10 px-2 py-1 rounded border border-rose-500/15 truncate\" title={job.error_message}>",
+    "severity": "high"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/services/page.tsx",
+    "line": 394,
+    "pattern": "placeholder",
+    "snippet": "placeholder=\"Tìm kiếm dịch vụ...\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/services/page.tsx",
+    "line": 397,
+    "pattern": "placeholder",
+    "snippet": "className=\"w-full pl-11 pr-4 py-3 bg-[#111827] border border-gray-800 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/services/page.tsx",
+    "line": 975,
+    "pattern": "placeholder",
+    "snippet": "placeholder=\"Mô tả lý do cần dịch vụ này...\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/services/page.tsx",
+    "line": 976,
+    "pattern": "placeholder",
+    "snippet": "className=\"w-full px-4 py-3 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500 resize-none\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/services/page.tsx",
+    "line": 989,
+    "pattern": "placeholder",
+    "snippet": "placeholder=\"Tóm tắt các bằng chứng, mentions, alerts liên quan...\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/services/page.tsx",
+    "line": 990,
+    "pattern": "placeholder",
+    "snippet": "className=\"w-full px-4 py-3 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500 resize-none\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/services/page.tsx",
+    "line": 1003,
+    "pattern": "placeholder",
+    "snippet": "placeholder=\"Mô tả kết quả mong muốn từ dịch vụ này...\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/services/page.tsx",
+    "line": 1004,
+    "pattern": "placeholder",
+    "snippet": "className=\"w-full px-4 py-3 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500 resize-none\"",
+    "severity": "low"
+  },
+  {
+    "category": "destructive",
+    "path": "frontend/src/app/dashboard/services/page.tsx",
+    "line": 439,
+    "pattern": "TRUNCATE",
+    "snippet": "<div className=\"text-sm text-gray-400 truncate max-w-xs mt-0.5\">{service.description}</div>",
+    "severity": "high"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/APIWebhooks.tsx",
+    "line": 298,
+    "pattern": "placeholder",
+    "snippet": "className=\"w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none text-white placeholder-gray-500\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/APIWebhooks.tsx",
+    "line": 299,
+    "pattern": "placeholder",
+    "snippet": "placeholder=\"e.g., Production API Key\"",
+    "severity": "low"
+  },
+  {
+    "category": "unsafe_frontend",
+    "path": "frontend/src/app/dashboard/settings/AppearanceSettings.tsx",
+    "line": 73,
+    "pattern": "console\\.log\\([^)]*(token|secret|password|env)",
+    "snippet": "console.log('🔵 [AppearanceSettings] Token:', token ? 'exists' : 'missing');",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "frontend/src/app/dashboard/settings/AuditLogs.tsx",
+    "line": 110,
+    "pattern": "setTimeout\\s*\\(",
+    "snippet": "setTimeout(() => {",
+    "severity": "low"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "frontend/src/app/dashboard/settings/AuditLogs.tsx",
+    "line": 354,
+    "pattern": "setTimeout\\s*\\(",
+    "snippet": "setTimeout(loadLogs, 100);",
+    "severity": "low"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "frontend/src/app/dashboard/settings/AuditLogs.tsx",
+    "line": 364,
+    "pattern": "setTimeout\\s*\\(",
+    "snippet": "setTimeout(loadLogs, 100);",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/AuditLogs.tsx",
+    "line": 205,
+    "pattern": "placeholder",
+    "snippet": "className=\"w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500 transition-shadow\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/AuditLogs.tsx",
+    "line": 206,
+    "pattern": "placeholder",
+    "snippet": "placeholder=\"ID người dùng\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/AuditLogs.tsx",
+    "line": 216,
+    "pattern": "placeholder",
+    "snippet": "className=\"w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500 transition-shadow\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/AuditLogs.tsx",
+    "line": 217,
+    "pattern": "placeholder",
+    "snippet": "placeholder=\"e.g., user.create\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/AuditLogs.tsx",
+    "line": 227,
+    "pattern": "placeholder",
+    "snippet": "className=\"w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500 transition-shadow\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/AuditLogs.tsx",
+    "line": 228,
+    "pattern": "placeholder",
+    "snippet": "placeholder=\"e.g., user, source\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/BrandingSettings.tsx",
+    "line": 172,
+    "pattern": "placeholder",
+    "snippet": "placeholder=\"#3B82F6\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/BrandingSettings.tsx",
+    "line": 196,
+    "pattern": "placeholder",
+    "snippet": "placeholder=\"#10B981\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/BrandingSettings.tsx",
+    "line": 217,
+    "pattern": "placeholder",
+    "snippet": "className=\"w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/BrandingSettings.tsx",
+    "line": 218,
+    "pattern": "placeholder",
+    "snippet": "placeholder=\"https://example.com/logo-light.png\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/BrandingSettings.tsx",
+    "line": 231,
+    "pattern": "placeholder",
+    "snippet": "className=\"w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/BrandingSettings.tsx",
+    "line": 232,
+    "pattern": "placeholder",
+    "snippet": "placeholder=\"https://example.com/logo-dark.png\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/BrandingSettings.tsx",
+    "line": 245,
+    "pattern": "placeholder",
+    "snippet": "className=\"w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/BrandingSettings.tsx",
+    "line": 246,
+    "pattern": "placeholder",
+    "snippet": "placeholder=\"https://example.com/favicon.ico\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/BrandingSettings.tsx",
+    "line": 259,
+    "pattern": "placeholder",
+    "snippet": "className=\"w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/BrandingSettings.tsx",
+    "line": 260,
+    "pattern": "placeholder",
+    "snippet": "placeholder=\"https://example.com/login-bg.jpg\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/BrandingSettings.tsx",
+    "line": 278,
+    "pattern": "placeholder",
+    "snippet": "className=\"w-full px-4 py-3 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white font-mono text-sm placeholder-gray-500 resize-y\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/BrandingSettings.tsx",
+    "line": 280,
+    "pattern": "placeholder",
+    "snippet": "placeholder=\".custom-class { color: red; }\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/EmailSettings.tsx",
+    "line": 181,
+    "pattern": "placeholder",
+    "snippet": "className=\"w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500 transition-shadow\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/EmailSettings.tsx",
+    "line": 182,
+    "pattern": "placeholder",
+    "snippet": "placeholder=\"smtp.gmail.com\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/EmailSettings.tsx",
+    "line": 194,
+    "pattern": "placeholder",
+    "snippet": "className=\"w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500 transition-shadow\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/EmailSettings.tsx",
+    "line": 195,
+    "pattern": "placeholder",
+    "snippet": "placeholder=\"587\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/EmailSettings.tsx",
+    "line": 207,
+    "pattern": "placeholder",
+    "snippet": "className=\"w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500 transition-shadow\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/EmailSettings.tsx",
+    "line": 208,
+    "pattern": "placeholder",
+    "snippet": "placeholder=\"your-email@gmail.com\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/EmailSettings.tsx",
+    "line": 220,
+    "pattern": "placeholder",
+    "snippet": "className=\"w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500 transition-shadow\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/EmailSettings.tsx",
+    "line": 221,
+    "pattern": "placeholder",
+    "snippet": "placeholder={isConfigured ? '••••••••' : 'Mật khẩu SMTP'}",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/EmailSettings.tsx",
+    "line": 233,
+    "pattern": "placeholder",
+    "snippet": "className=\"w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500 transition-shadow\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/EmailSettings.tsx",
+    "line": 234,
+    "pattern": "placeholder",
+    "snippet": "placeholder=\"noreply@company.com\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/EmailSettings.tsx",
+    "line": 246,
+    "pattern": "placeholder",
+    "snippet": "className=\"w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500 transition-shadow\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/EmailSettings.tsx",
+    "line": 247,
+    "pattern": "placeholder",
+    "snippet": "placeholder=\"Nope\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/NotificationSettings.tsx",
+    "line": 212,
+    "pattern": "placeholder",
+    "snippet": "className=\"flex-1 px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500 transition-shadow\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/NotificationSettings.tsx",
+    "line": 213,
+    "pattern": "placeholder",
+    "snippet": "placeholder=\"https://your-webhook-url.com\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/NotificationSettings.tsx",
+    "line": 236,
+    "pattern": "placeholder",
+    "snippet": "className=\"flex-1 px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500 transition-shadow\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/NotificationSettings.tsx",
+    "line": 237,
+    "pattern": "placeholder",
+    "snippet": "placeholder=\"https://api.telegram.org/bot...\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/NotificationSettings.tsx",
+    "line": 260,
+    "pattern": "placeholder",
+    "snippet": "className=\"flex-1 px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500 transition-shadow\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/NotificationSettings.tsx",
+    "line": 261,
+    "pattern": "placeholder",
+    "snippet": "placeholder=\"https://hooks.slack.com/services/...\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/NotificationSettings.tsx",
+    "line": 284,
+    "pattern": "placeholder",
+    "snippet": "className=\"flex-1 px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500 transition-shadow\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/NotificationSettings.tsx",
+    "line": 285,
+    "pattern": "placeholder",
+    "snippet": "placeholder=\"https://discord.com/api/webhooks/...\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/OrganizationSettings.tsx",
+    "line": 139,
+    "pattern": "placeholder",
+    "snippet": "className=\"w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/OrganizationSettings.tsx",
+    "line": 140,
+    "pattern": "placeholder",
+    "snippet": "placeholder=\"Ví dụ: Công ty TNHH ABC\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/OrganizationSettings.tsx",
+    "line": 152,
+    "pattern": "placeholder",
+    "snippet": "className=\"w-full px-4 py-3 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500 resize-none\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/OrganizationSettings.tsx",
+    "line": 153,
+    "pattern": "placeholder",
+    "snippet": "placeholder=\"Địa chỉ văn phòng\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/OrganizationSettings.tsx",
+    "line": 165,
+    "pattern": "placeholder",
+    "snippet": "className=\"w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/OrganizationSettings.tsx",
+    "line": 166,
+    "pattern": "placeholder",
+    "snippet": "placeholder=\"contact@company.com\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/OrganizationSettings.tsx",
+    "line": 178,
+    "pattern": "placeholder",
+    "snippet": "className=\"w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/OrganizationSettings.tsx",
+    "line": 179,
+    "pattern": "placeholder",
+    "snippet": "placeholder=\"1900 xxxx\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/OrganizationSettings.tsx",
+    "line": 191,
+    "pattern": "placeholder",
+    "snippet": "className=\"w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/OrganizationSettings.tsx",
+    "line": 192,
+    "pattern": "placeholder",
+    "snippet": "placeholder=\"https://company.com\"",
+    "severity": "low"
+  },
+  {
+    "category": "unsafe_frontend",
+    "path": "frontend/src/app/dashboard/settings/PersonalNotifications.tsx",
+    "line": 56,
+    "pattern": "console\\.log\\([^)]*(token|secret|password|env)",
+    "snippet": "console.log('🔵 [PersonalNotifications] Token:', token ? 'exists' : 'missing');",
+    "severity": "medium"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/PersonalProfile.tsx",
+    "line": 118,
+    "pattern": "TODO",
+    "snippet": "// TODO: Upload to server when avatar endpoint is ready",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/PersonalProfile.tsx",
+    "line": 206,
+    "pattern": "placeholder",
+    "snippet": "className=\"w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/PersonalProfile.tsx",
+    "line": 231,
+    "pattern": "placeholder",
+    "snippet": "className=\"w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/PersonalProfile.tsx",
+    "line": 232,
+    "pattern": "placeholder",
+    "snippet": "placeholder=\"+84 xxx xxx xxx\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/PersonalProfile.tsx",
+    "line": 244,
+    "pattern": "placeholder",
+    "snippet": "className=\"w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/PersonalProfile.tsx",
+    "line": 245,
+    "pattern": "placeholder",
+    "snippet": "placeholder=\"Ví dụ: Marketing\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/RoleManagement.tsx",
+    "line": 295,
+    "pattern": "placeholder",
+    "snippet": "className=\"w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none text-white placeholder-gray-500\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/RoleManagement.tsx",
+    "line": 296,
+    "pattern": "placeholder",
+    "snippet": "placeholder=\"e.g., content_moderator\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/RoleManagement.tsx",
+    "line": 310,
+    "pattern": "placeholder",
+    "snippet": "className=\"w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none text-white placeholder-gray-500\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/RoleManagement.tsx",
+    "line": 311,
+    "pattern": "placeholder",
+    "snippet": "placeholder=\"e.g., Người kiểm duyệt nội dung\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/RoleManagement.tsx",
+    "line": 321,
+    "pattern": "placeholder",
+    "snippet": "className=\"w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none text-white placeholder-gray-500\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/RoleManagement.tsx",
+    "line": 323,
+    "pattern": "placeholder",
+    "snippet": "placeholder=\"Mô tả vai trò này...\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/SecuritySettings.tsx",
+    "line": 89,
+    "pattern": "placeholder",
+    "snippet": "className=\"w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/SecuritySettings.tsx",
+    "line": 90,
+    "pattern": "placeholder",
+    "snippet": "placeholder=\"••••••••\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/SecuritySettings.tsx",
+    "line": 102,
+    "pattern": "placeholder",
+    "snippet": "className=\"w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/SecuritySettings.tsx",
+    "line": 103,
+    "pattern": "placeholder",
+    "snippet": "placeholder=\"••••••••\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/SecuritySettings.tsx",
+    "line": 116,
+    "pattern": "placeholder",
+    "snippet": "className=\"w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/SecuritySettings.tsx",
+    "line": 117,
+    "pattern": "placeholder",
+    "snippet": "placeholder=\"••••••••\"",
+    "severity": "low"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "frontend/src/app/dashboard/settings/test-interactive.tsx",
+    "line": 40,
+    "pattern": "setTimeout\\s*\\(",
+    "snippet": "await new Promise(resolve => setTimeout(resolve, 1000));",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/test-interactive.tsx",
+    "line": 99,
+    "pattern": "placeholder",
+    "snippet": "placeholder=\"Type something...\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/UserManagement.tsx",
+    "line": 256,
+    "pattern": "placeholder",
+    "snippet": "placeholder=\"Tìm kiếm theo email hoặc tên...\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/UserManagement.tsx",
+    "line": 259,
+    "pattern": "placeholder",
+    "snippet": "className=\"w-full pl-10 pr-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none text-white placeholder-gray-500 transition-shadow\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/UserManagement.tsx",
+    "line": 539,
+    "pattern": "placeholder",
+    "snippet": "className=\"w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none text-white placeholder-gray-500\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/UserManagement.tsx",
+    "line": 553,
+    "pattern": "placeholder",
+    "snippet": "className=\"w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none text-white placeholder-gray-500\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/UserManagement.tsx",
+    "line": 566,
+    "pattern": "placeholder",
+    "snippet": "className=\"w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none text-white placeholder-gray-500\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/UserManagement.tsx",
+    "line": 666,
+    "pattern": "placeholder",
+    "snippet": "className=\"w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none text-white placeholder-gray-500\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/settings/UserManagement.tsx",
+    "line": 679,
+    "pattern": "placeholder",
+    "snippet": "className=\"w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none text-white placeholder-gray-500\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/sources/page.tsx",
+    "line": 269,
+    "pattern": "placeholder",
+    "snippet": "placeholder=\"Tìm kiếm nguồn...\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/sources/page.tsx",
+    "line": 272,
+    "pattern": "placeholder",
+    "snippet": "className=\"w-full pl-11 pr-4 py-3 bg-[#111827] border border-gray-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500 shadow-sm transition-shadow\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/sources/page.tsx",
+    "line": 419,
+    "pattern": "placeholder",
+    "snippet": "className=\"w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/sources/page.tsx",
+    "line": 420,
+    "pattern": "placeholder",
+    "snippet": "placeholder=\"Ví dụ: VnExpress\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/sources/page.tsx",
+    "line": 433,
+    "pattern": "placeholder",
+    "snippet": "className=\"w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/sources/page.tsx",
+    "line": 434,
+    "pattern": "placeholder",
+    "snippet": "placeholder=\"https://example.com\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/sources/page.tsx",
+    "line": 482,
+    "pattern": "placeholder",
+    "snippet": "placeholder=\"email@example.com\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/sources/page.tsx",
+    "line": 483,
+    "pattern": "placeholder",
+    "snippet": "className=\"w-full px-3 py-2 bg-[#1E293B] border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 text-white placeholder-gray-500\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/sources/page.tsx",
+    "line": 492,
+    "pattern": "placeholder",
+    "snippet": "placeholder=\"••••••••\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/sources/page.tsx",
+    "line": 493,
+    "pattern": "placeholder",
+    "snippet": "className=\"w-full px-3 py-2 bg-[#1E293B] border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 text-white placeholder-gray-500\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/sources/page.tsx",
+    "line": 524,
+    "pattern": "placeholder",
+    "snippet": "placeholder=\"AIzaSy...\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/sources/page.tsx",
+    "line": 525,
+    "pattern": "placeholder",
+    "snippet": "className=\"w-full px-3 py-2 bg-[#1E293B] border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500 text-white placeholder-gray-500\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/sources/page.tsx",
+    "line": 546,
+    "pattern": "placeholder",
+    "snippet": "placeholder=\"https://example.com/feed.xml\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/app/dashboard/sources/page.tsx",
+    "line": 547,
+    "pattern": "placeholder",
+    "snippet": "className=\"w-full px-3 py-2 bg-[#1E293B] border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-white placeholder-gray-500\"",
+    "severity": "low"
+  },
+  {
+    "category": "destructive",
+    "path": "frontend/src/app/dashboard/sources/page.tsx",
+    "line": 313,
+    "pattern": "TRUNCATE",
+    "snippet": "<h3 className=\"font-semibold text-white tracking-wide truncate max-w-[150px]\" title={source.name}>{source.name}</h3>",
+    "severity": "high"
+  },
+  {
+    "category": "destructive",
+    "path": "frontend/src/app/dashboard/sources/page.tsx",
+    "line": 341,
+    "pattern": "TRUNCATE",
+    "snippet": "<p className=\"text-sm text-gray-400 truncate bg-[#0B1220] p-2.5 rounded-lg border border-gray-800\" title={source.url}>",
+    "severity": "high"
+  },
+  {
+    "category": "destructive",
+    "path": "frontend/src/app/dashboard/sources/page.tsx",
+    "line": 348,
+    "pattern": "TRUNCATE",
+    "snippet": "<div className=\"flex-1 truncate\" title={getScheduleDescription(source)}>",
+    "severity": "high"
+  },
+  {
+    "category": "destructive",
+    "path": "frontend/src/app/dashboard/sources/page.tsx",
+    "line": 354,
+    "pattern": "TRUNCATE",
+    "snippet": "<p className=\"text-xs text-gray-500 px-1 truncate\">",
+    "severity": "high"
+  },
+  {
+    "category": "destructive",
+    "path": "frontend/src/app/dashboard/sources/page.tsx",
+    "line": 360,
+    "pattern": "TRUNCATE",
+    "snippet": "<p className=\"text-xs text-gray-500 px-1 truncate\">",
+    "severity": "high"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "frontend/src/app/dashboard/mentions/[id]/page.tsx",
+    "line": 176,
+    "pattern": "\\bdummy\\b",
+    "snippet": "{(mention.ai_analysis.ai_provider === 'dummy' || mention.ai_analysis.ai_provider === 'dummy_ai') && (",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "frontend/src/app/dashboard/mentions/[id]/page.tsx",
+    "line": 178,
+    "pattern": "\\bdummy\\b",
+    "snippet": "DUMMY/DEV",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "frontend/src/app/dashboard/mentions/[id]/page.tsx",
+    "line": 181,
+    "pattern": "\\bdummy\\b",
+    "snippet": "{mention.ai_analysis.ai_provider && mention.ai_analysis.ai_provider !== 'dummy' && mention.ai_analysis.ai_provider !== 'dummy_ai' && (",
+    "severity": "medium"
+  },
+  {
+    "category": "destructive",
+    "path": "frontend/src/components/dashboard/AlertCard.tsx",
+    "line": 54,
+    "pattern": "TRUNCATE",
+    "snippet": "<h3 className=\"font-semibold text-white tracking-wide truncate pr-2\">",
+    "severity": "high"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/components/dashboard/EvidenceLockerModal.tsx",
+    "line": 144,
+    "pattern": "placeholder",
+    "snippet": "className=\"w-full bg-[#0B1220] border border-gray-700 text-white text-sm rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all placeholder:text-gray-600\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/components/dashboard/EvidenceLockerModal.tsx",
+    "line": 145,
+    "pattern": "placeholder",
+    "snippet": "placeholder=\"https://facebook.com/...\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/components/dashboard/EvidenceLockerModal.tsx",
+    "line": 154,
+    "pattern": "placeholder",
+    "snippet": "className=\"w-full bg-[#0B1220] border border-gray-700 text-white text-sm rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all placeholder:text-gray-600 resize-none\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/components/dashboard/EvidenceLockerModal.tsx",
+    "line": 155,
+    "pattern": "placeholder",
+    "snippet": "placeholder=\"Người đăng nhắc đến...\"",
+    "severity": "low"
+  },
+  {
+    "category": "todo_placeholder",
+    "path": "frontend/src/components/dashboard/EvidenceLockerModal.tsx",
+    "line": 115,
+    "pattern": "Chưa tích hợp",
+    "snippet": "<h4 className=\"text-sm font-bold text-indigo-400\">Chưa tích hợp chụp ảnh màn hình tự động (Screenshot)</h4>",
+    "severity": "low"
+  },
+  {
+    "category": "destructive",
+    "path": "frontend/src/components/dashboard/EvidenceLockerModal.tsx",
+    "line": 202,
+    "pattern": "TRUNCATE",
+    "snippet": "<span className=\"truncate max-w-xs\">{item.original_url}</span>",
+    "severity": "high"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "frontend/src/components/dashboard/ExecutiveBriefModal.tsx",
+    "line": 46,
+    "pattern": "setTimeout\\s*\\(",
+    "snippet": "setTimeout(() => setCopied(null), 2000);",
+    "severity": "low"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "frontend/src/components/dashboard/MentionCard.tsx",
+    "line": 65,
+    "pattern": "\\bdummy\\b",
+    "snippet": "{(mention.ai_provider === 'dummy' || mention.ai_provider === 'dummy_ai') && (",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "frontend/src/components/dashboard/MentionCard.tsx",
+    "line": 67,
+    "pattern": "\\bdummy\\b",
+    "snippet": "DUMMY AI",
+    "severity": "medium"
+  },
+  {
+    "category": "fake_mock_demo",
+    "path": "frontend/src/components/dashboard/MentionCard.tsx",
+    "line": 70,
+    "pattern": "\\bdummy\\b",
+    "snippet": "{mention.ai_provider && mention.ai_provider !== 'dummy' && mention.ai_provider !== 'dummy_ai' && (",
+    "severity": "medium"
+  },
+  {
+    "category": "destructive",
+    "path": "pgsql/share/information_schema.sql",
+    "line": 1285,
+    "pattern": "TRUNCATE",
+    "snippet": "OR has_table_privilege(c.oid, 'INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER')",
+    "severity": "high"
+  },
+  {
+    "category": "destructive",
+    "path": "pgsql/share/information_schema.sql",
+    "line": 1865,
+    "pattern": "TRUNCATE",
+    "snippet": "OR has_table_privilege(r.oid, 'INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER')",
+    "severity": "high"
+  },
+  {
+    "category": "destructive",
+    "path": "pgsql/share/information_schema.sql",
+    "line": 1914,
+    "pattern": "TRUNCATE",
+    "snippet": "AND c.prtype IN ('INSERT', 'SELECT', 'UPDATE', 'DELETE', 'TRUNCATE', 'REFERENCES', 'TRIGGER')",
+    "severity": "high"
+  },
+  {
+    "category": "destructive",
+    "path": "pgsql/share/information_schema.sql",
+    "line": 1983,
+    "pattern": "TRUNCATE",
+    "snippet": "OR has_table_privilege(c.oid, 'SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER')",
+    "severity": "high"
+  },
+  {
+    "category": "destructive",
+    "path": "pgsql/share/information_schema.sql",
+    "line": 2160,
+    "pattern": "TRUNCATE",
+    "snippet": "-- TRIGGER_TYPE_UPDATE; we intentionally omit TRIGGER_TYPE_TRUNCATE",
+    "severity": "high"
+  },
+  {
+    "category": "destructive",
+    "path": "pgsql/share/information_schema.sql",
+    "line": 2172,
+    "pattern": "TRUNCATE",
+    "snippet": "OR has_table_privilege(c.oid, 'INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER')",
+    "severity": "high"
+  },
+  {
+    "category": "destructive",
+    "path": "pgsql/share/information_schema.sql",
+    "line": 2654,
+    "pattern": "TRUNCATE",
+    "snippet": "OR has_table_privilege(c.oid, 'SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER')",
+    "severity": "high"
+  },
+  {
+    "category": "destructive",
+    "path": "pgsql/share/information_schema.sql",
+    "line": 2928,
+    "pattern": "TRUNCATE",
+    "snippet": "OR has_table_privilege(c.oid, 'SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER')",
+    "severity": "high"
+  },
+  {
+    "category": "destructive",
+    "path": "pgsql/share/sql_features.txt",
+    "line": 164,
+    "pattern": "DROP TABLE",
+    "snippet": "F031\tBasic schema manipulation\t13\tDROP TABLE statement: RESTRICT clause\tYES",
+    "severity": "high"
+  },
+  {
+    "category": "destructive",
+    "path": "pgsql/share/sql_features.txt",
+    "line": 213,
+    "pattern": "TRUNCATE",
+    "snippet": "F200\tTRUNCATE TABLE statement\t\t\tYES",
+    "severity": "high"
+  },
+  {
+    "category": "destructive",
+    "path": "pgsql/share/sql_features.txt",
+    "line": 215,
+    "pattern": "TRUNCATE",
+    "snippet": "F202\tTRUNCATE TABLE: identity column restart option\t\t\tYES",
+    "severity": "high"
+  },
+  {
+    "category": "destructive",
+    "path": "pgsql/share/system_views.sql",
+    "line": 941,
+    "pattern": "TRUNCATE",
+    "snippet": "s.truncates,",
+    "severity": "high"
+  }
+]
