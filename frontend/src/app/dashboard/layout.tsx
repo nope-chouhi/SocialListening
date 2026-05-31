@@ -23,7 +23,12 @@ import {
   BarChart,
   Users,
   Trophy,
-  Bot
+  Bot,
+  PieChart,
+  MessageSquareText,
+  ScanSearch,
+  ShieldAlert,
+  ClipboardList
 } from 'lucide-react';
 
 export default function DashboardLayout({
@@ -114,20 +119,51 @@ export default function DashboardLayout({
     );
   }
 
-  const navigation = [
-    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-    { name: 'AI Assistant', href: '/dashboard/assistant', icon: Bot },
-    { name: 'Scan Center', href: '/dashboard/scan', icon: FileText },
-    { name: 'Từ khóa', href: '/dashboard/keywords', icon: Key },
-    { name: 'Nguồn', href: '/dashboard/sources', icon: Globe },
-    { name: 'Mentions', href: '/dashboard/mentions', icon: FileText, badge: badges.unreviewed_mentions },
-    { name: 'Cảnh báo', href: '/dashboard/alerts', icon: Bell, badge: badges.new_alerts },
-    { name: 'Sự cố', href: '/dashboard/incidents', icon: AlertTriangle, badge: badges.open_incidents },
-    { name: 'Đối thủ', href: '/dashboard/competitors', icon: Radar },
-    { name: 'Influencers', href: '/dashboard/influencers', icon: Trophy },
-    { name: 'Báo cáo', href: '/dashboard/reports', icon: BarChart },
-    { name: 'Dịch vụ', href: '/dashboard/services', icon: Briefcase },
-    { name: 'Cài đặt', href: '/dashboard/settings', icon: Settings }, // Available to all users
+  const navigationGroups = [
+    {
+      group: 'TỔNG QUAN',
+      items: [
+        { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+        { name: 'Lượt đề cập', href: '/dashboard/mentions', icon: MessageSquareText, badge: badges.unreviewed_mentions },
+        { name: 'Phân tích', href: '/dashboard/analysis', icon: PieChart, disabled: true },
+      ]
+    },
+    {
+      group: 'THU THẬP DỮ LIỆU',
+      items: [
+        { name: 'Trung tâm quét', href: '/dashboard/scan', icon: ScanSearch },
+        { name: 'Từ khóa', href: '/dashboard/keywords', icon: Key },
+        { name: 'Nguồn', href: '/dashboard/sources', icon: Globe },
+      ]
+    },
+    {
+      group: 'CẢNH BÁO & XỬ LÝ',
+      items: [
+        { name: 'Cảnh báo', href: '/dashboard/alerts', icon: Bell, badge: badges.new_alerts },
+        { name: 'Sự cố', href: '/dashboard/incidents', icon: AlertTriangle, badge: badges.open_incidents },
+        { name: 'Xử lý truyền thông', href: '/dashboard/services', icon: ShieldAlert },
+      ]
+    },
+    {
+      group: 'TRÍ TUỆ AI',
+      items: [
+        { name: 'Trợ lý AI', href: '/dashboard/assistant', icon: Bot },
+        { name: 'Đối thủ', href: '/dashboard/competitors', icon: Users },
+        { name: 'Người ảnh hưởng', href: '/dashboard/influencers', icon: Trophy },
+      ]
+    },
+    {
+      group: 'BÁO CÁO',
+      items: [
+        { name: 'Báo cáo', href: '/dashboard/reports', icon: ClipboardList },
+      ]
+    },
+    {
+      group: 'HỆ THỐNG',
+      items: [
+        { name: 'Cài đặt', href: '/dashboard/settings', icon: Settings },
+      ]
+    }
   ];
 
   return (
@@ -164,37 +200,54 @@ export default function DashboardLayout({
           </div>
 
           {/* Navigation with refined active/hover states */}
-          <nav className="flex-1 px-3 py-6 space-y-1.5 overflow-y-auto scrollbar-hide">
-            <div className="px-3 mb-2 text-xs font-semibold tracking-wider text-gray-500 uppercase">
-              Menu
-            </div>
-            {navigation.map((item) => {
-              const isActive = pathname === item.href;
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={`group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ${
-                    isActive
-                      ? 'sidebar-item-active text-white'
-                      : 'text-gray-400 sidebar-item-hover hover:text-gray-100'
-                  }`}
-                  onClick={() => setSidebarOpen(false)}
-                >
-                  <item.icon 
-                    className={`w-5 h-5 mr-3 flex-shrink-0 transition-colors duration-200 ${
-                      isActive ? 'text-indigo-400' : 'text-gray-500 group-hover:text-gray-300'
-                    }`} 
-                  />
-                  <span className="truncate">{item.name}</span>
-                  {(item as any).badge ? (
-                    <SidebarBadge count={(item as any).badge} />
-                  ) : isActive ? (
-                    <div className="ml-auto w-1.5 h-1.5 bg-indigo-400 rounded-full shadow-[0_0_8px_rgba(129,140,248,0.8)]"></div>
-                  ) : null}
-                </Link>
-              );
-            })}
+          <nav className="flex-1 px-3 py-6 space-y-5 overflow-y-auto scrollbar-hide">
+            {navigationGroups.map((group) => (
+              <div key={group.group} className="space-y-1.5">
+                <div className="px-3 mb-2 text-[10px] font-bold tracking-widest text-gray-500 uppercase">
+                  {group.group}
+                </div>
+                {group.items.map((item) => {
+                  const isActive = pathname === item.href;
+                  if (item.disabled) {
+                    return (
+                      <div
+                        key={item.name}
+                        className="group flex items-center px-3 py-2 text-sm font-medium rounded-lg text-gray-600 cursor-not-allowed bg-transparent"
+                        title="Chưa tích hợp"
+                      >
+                        <item.icon className="w-5 h-5 mr-3 flex-shrink-0 text-gray-700" />
+                        <span className="truncate flex-1">{item.name}</span>
+                        <span className="text-[9px] uppercase font-bold text-gray-500 bg-gray-800/40 px-1.5 py-0.5 rounded border border-gray-700/50">Chưa có</span>
+                      </div>
+                    );
+                  }
+                  return (
+                    <Link
+                      key={item.name}
+                      href={item.href}
+                      className={`group flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
+                        isActive
+                          ? 'sidebar-item-active text-white bg-[#1E293B]/80 shadow-sm border border-gray-700/50'
+                          : 'text-gray-400 sidebar-item-hover hover:text-gray-100 hover:bg-gray-800/50'
+                      }`}
+                      onClick={() => setSidebarOpen(false)}
+                    >
+                      <item.icon 
+                        className={`w-5 h-5 mr-3 flex-shrink-0 transition-colors duration-200 ${
+                          isActive ? 'text-indigo-400' : 'text-gray-500 group-hover:text-gray-300'
+                        }`} 
+                      />
+                      <span className="truncate">{item.name}</span>
+                      {(item as any).badge ? (
+                        <SidebarBadge count={(item as any).badge} />
+                      ) : isActive ? (
+                        <div className="ml-auto w-1.5 h-1.5 bg-indigo-400 rounded-full shadow-[0_0_8px_rgba(129,140,248,0.8)]"></div>
+                      ) : null}
+                    </Link>
+                  );
+                })}
+              </div>
+            ))}
           </nav>
 
           {/* Premium User Profile Bottom */}
