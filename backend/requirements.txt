@@ -31,10 +31,9 @@ python-dateutil==2.8.2
 APScheduler==3.10.4
 
 # AI Providers (optional - install only if using real AI)
-# For OpenAI:  pip install openai
+openai==0.28.0
 # For Gemini:  pip install google-generativeai
 # For PhoBERT: pip install transformers torch  (~2GB, Vietnamese sentiment)
-# openai==1.12.0
 # google-generativeai==0.3.2
 # transformers==4.38.0
 # torch==2.2.0
