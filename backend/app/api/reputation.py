@@ -198,9 +198,22 @@ def update_action(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
+    from app.core.security import can_access_admin
+    
     action = db.query(ReputationAction).filter(ReputationAction.id == action_id).first()
     if not action:
         raise HTTPException(status_code=404, detail="Action not found")
+        
+    # Check permissions if transitioning to APPROVED or REJECTED or EXECUTED
+    if action_in.status in [ReputationActionStatus.APPROVED, ReputationActionStatus.REJECTED]:
+        if action.requires_approval and not can_access_admin(current_user):
+            raise HTTPException(
+                status_code=403,
+                detail="Chỉ có Quản trị viên mới được phép phê duyệt hành động này."
+            )
+        # Record approver
+        action.approved_by_user_id = current_user.id
+        action.approved_at = datetime.now(timezone.utc)
         
     update_data = action_in.dict(exclude_unset=True)
     for field, value in update_data.items():

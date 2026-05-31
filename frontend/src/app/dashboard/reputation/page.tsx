@@ -13,6 +13,7 @@ export default function ReputationPage() {
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedCaseId, setSelectedCaseId] = useState<number | null>(null);
   const [selectedCase, setSelectedCase] = useState<any>(null);
+  const [userRole, setUserRole] = useState<string>('');
   
   // Stats
   const stats = [
@@ -24,7 +25,20 @@ export default function ReputationPage() {
 
   useEffect(() => {
     fetchCases();
+    fetchUserRole();
   }, []);
+
+  const fetchUserRole = async () => {
+    try {
+      const { auth } = await import('@/lib/api');
+      const user = await auth.getCurrentUser();
+      if (user && user.role) {
+        setUserRole(user.role);
+      }
+    } catch (error) {
+      console.error('Failed to fetch user role', error);
+    }
+  };
 
   const fetchCases = async () => {
     setIsLoading(true);
@@ -274,7 +288,7 @@ export default function ReputationPage() {
                                 <button 
                                   onClick={async () => {
                                     try {
-                                      await reputation.updateAction(action.id, { status: 'waiting_approval' });
+                                      await reputation.updateAction(action.id, { status: 'pending_approval' });
                                       toast.success('Đã trình phê duyệt thành công');
                                       fetchCaseDetail(selectedCase.id);
                                     } catch (e) {
@@ -286,10 +300,54 @@ export default function ReputationPage() {
                                 </button>
                               </div>
                             )}
-                            {action.status === 'waiting_approval' && (
-                              <div className="mt-4 flex gap-2">
+                            {action.status === 'pending_approval' && (
+                              <div className="mt-4 flex gap-2 items-center">
                                 <span className="px-3 py-1.5 bg-amber-500/20 text-amber-300 text-xs font-medium rounded-lg border border-amber-500/20">
                                   Đang chờ phê duyệt
+                                </span>
+                                {(userRole === 'admin' || userRole === 'super_admin') && (
+                                  <>
+                                    <button 
+                                      onClick={async () => {
+                                        try {
+                                          await reputation.updateAction(action.id, { status: 'approved' });
+                                          toast.success('Đã phê duyệt hành động');
+                                          fetchCaseDetail(selectedCase.id);
+                                        } catch (e) {
+                                          toast.error('Lỗi khi phê duyệt');
+                                        }
+                                      }}
+                                      className="px-3 py-1.5 bg-emerald-500 text-white text-xs font-medium rounded-lg hover:bg-emerald-600">
+                                      Phê duyệt
+                                    </button>
+                                    <button 
+                                      onClick={async () => {
+                                        try {
+                                          await reputation.updateAction(action.id, { status: 'rejected' });
+                                          toast.success('Đã từ chối hành động');
+                                          fetchCaseDetail(selectedCase.id);
+                                        } catch (e) {
+                                          toast.error('Lỗi khi từ chối');
+                                        }
+                                      }}
+                                      className="px-3 py-1.5 bg-red-500 text-white text-xs font-medium rounded-lg hover:bg-red-600">
+                                      Từ chối
+                                    </button>
+                                  </>
+                                )}
+                              </div>
+                            )}
+                            {action.status === 'approved' && (
+                              <div className="mt-4 flex gap-2">
+                                <span className="px-3 py-1.5 bg-emerald-500/20 text-emerald-300 text-xs font-medium rounded-lg border border-emerald-500/20">
+                                  Đã phê duyệt
+                                </span>
+                              </div>
+                            )}
+                            {action.status === 'rejected' && (
+                              <div className="mt-4 flex gap-2">
+                                <span className="px-3 py-1.5 bg-red-500/20 text-red-300 text-xs font-medium rounded-lg border border-red-500/20">
+                                  Đã từ chối
                                 </span>
                               </div>
                             )}

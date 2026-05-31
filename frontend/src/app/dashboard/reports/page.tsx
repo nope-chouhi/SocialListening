@@ -34,13 +34,33 @@ export default function ReportsPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleExport = (format: string) => {
-    setExporting(true);
-    toast.success(`Đang xuất file ${format}...`);
-    setTimeout(() => {
-      setExporting(false);
-      toast.success(`Tải xuống ${format} thành công!`);
-    }, 1500);
+  const handleExport = async (format: string) => {
+    if (format === 'PDF') {
+      setExporting(true);
+      toast.loading('Đang xuất PDF...', { id: 'export-pdf' });
+      try {
+        const html2pdf = (await import('html2pdf.js')).default;
+        const element = document.getElementById('report-content');
+        
+        const opt = {
+          margin:       10,
+          filename:     `Brand_Report_${new Date().toISOString().split('T')[0]}.pdf`,
+          image:        { type: 'jpeg', quality: 0.98 },
+          html2canvas:  { scale: 2, useCORS: true },
+          jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+
+        await html2pdf().set(opt).from(element).save();
+        toast.success('Xuất PDF thành công!', { id: 'export-pdf' });
+      } catch (e) {
+        console.error('Lỗi khi xuất PDF', e);
+        toast.error('Lỗi khi xuất PDF', { id: 'export-pdf' });
+      } finally {
+        setExporting(false);
+      }
+    } else {
+      toast.error(`Xuất ${format} chưa được tích hợp (Đang phát triển)`);
+    }
   };
 
   if (loading && !data) {
@@ -88,7 +108,7 @@ export default function ReportsPage() {
       </div>
 
       {/* Preview */}
-      <div className="bg-white rounded-lg shadow-2xl p-8 max-w-4xl mx-auto min-h-[800px] border border-gray-200">
+      <div id="report-content" className="bg-white rounded-lg shadow-2xl p-8 max-w-4xl mx-auto min-h-[800px] border border-gray-200">
         <div className="border-b-2 border-gray-100 pb-6 mb-8 flex justify-between items-start">
           <div>
             <h2 className="text-3xl font-black text-gray-900 tracking-tight">BRAND REPORT</h2>

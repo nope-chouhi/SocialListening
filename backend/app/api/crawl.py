@@ -105,6 +105,8 @@ def run_manual_scan_task(job_id: int, source_ids: List[int], keyword_texts: List
                 source.last_crawled_at = datetime.now(timezone.utc)
                 source.last_success_at = datetime.now(timezone.utc)
                 source.crawl_count = (source.crawl_count or 0) + 1
+                source.last_error = None
+                source.error_count = 0
                 job.processed_sources = (job.processed_sources or 0) + 1
                 db.commit()
                 
@@ -218,10 +220,15 @@ def crawl_source(source: Source, keyword_texts: List[str], keywords: List[Keywor
     mentions = []
     
     try:
-        # Try RSS first
-        if source.source_type == 'rss' or 'rss' in source.url.lower() or 'feed' in source.url.lower():
+        is_rss = source.source_type == 'rss' or 'rss' in source.url.lower() or 'feed' in source.url.lower()
+        
+        if is_rss:
             feed = feedparser.parse(source.url)
-            
+            if feed.bozo and not feed.entries:
+                is_rss = False  # Fallback to regular web scraping if RSS fails
+                
+        # Try RSS first
+        if is_rss:
             for entry in feed.entries[:20]:  # Limit to 20 entries
                 title = entry.get('title', '')
                 content = entry.get('summary', '') or entry.get('description', '')

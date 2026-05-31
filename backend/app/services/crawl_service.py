@@ -255,6 +255,12 @@ def crawl_source(db: Session, source_id: int, job_id: int = None) -> Dict:
     # Crawl based on source type
     if source.source_type in ('rss', 'news'):
         result = crawl_rss_feed(source.url)
+        # Fallback to HTML scraping if RSS parsing fails (e.g. user entered HTML page instead of XML feed)
+        if not result["success"]:
+            logger.warning(f"RSS crawl failed for {source.url}, falling back to HTML crawl")
+            html_result = crawl_html_page(source.url)
+            if html_result["success"]:
+                result = html_result
     elif source.source_type in ('website', 'manual_url', 'forum'):
         result = crawl_html_page(source.url)
     else:
