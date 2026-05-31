@@ -84,11 +84,12 @@ export default function SourcesPage() {
         return;
       }
       const rssUrl = newSource.rss_url.trim().toLowerCase();
-      // Extremely basic heuristic to detect a pure homepage URL instead of RSS feed
-      // If it ends with just a slash and doesn't have common rss extensions
-      const isLikelyHomepage = rssUrl.match(/^https?:\/\/[^\/]+\/?$/) && !rssUrl.match(/(\.xml|\/feed|\/rss|rss\.|\.rss)/i);
-      if (isLikelyHomepage) {
-        toast.error('URL này là trang web, không phải RSS feed hợp lệ.');
+      const isHtmlPage = rssUrl.match(/\.(htm|html|php|asp|aspx)($|\?)/i);
+      const hasRssKeywords = rssUrl.match(/(\.xml|\/feed|\/rss|rss\.|\.rss|atom|syndication)/i);
+      const isRootDomain = rssUrl.match(/^https?:\/\/[^\/]+\/?$/);
+      
+      if (isHtmlPage || (!hasRssKeywords && isRootDomain)) {
+        toast.error('Đây là link trang web/bài viết, không phải RSS feed. Hãy chọn loại nguồn Website hoặc nhập link RSS hợp lệ.');
         return;
       }
     } else {
