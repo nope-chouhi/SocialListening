@@ -37,6 +37,7 @@ export default function SourcesPage() {
   const [newSource, setNewSource] = useState({
     name: '',
     url: '',
+    rss_url: '',
     source_type: 'website',
     crawl_frequency: 'manual' as 'manual' | 'daily' | 'weekly' | 'monthly' | 'yearly',
     schedule: {
@@ -72,15 +73,35 @@ export default function SourcesPage() {
   };
 
   const handleAddSource = async () => {
-    if (!newSource.name.trim() || !newSource.url.trim()) {
-      toast.error('Vui lòng nhập đầy đủ thông tin');
+    if (!newSource.name.trim()) {
+      toast.error('Vui lòng nhập tên nguồn');
       return;
+    }
+
+    if (newSource.source_type === 'rss') {
+      if (!newSource.rss_url?.trim()) {
+        toast.error('Vui lòng nhập RSS Feed URL');
+        return;
+      }
+      const rssUrl = newSource.rss_url.trim().toLowerCase();
+      // Extremely basic heuristic to detect a pure homepage URL instead of RSS feed
+      // If it ends with just a slash and doesn't have common rss extensions
+      const isLikelyHomepage = rssUrl.match(/^https?:\/\/[^\/]+\/?$/) && !rssUrl.match(/(\.xml|\/feed|\/rss|rss\.|\.rss)/i);
+      if (isLikelyHomepage) {
+        toast.error('URL này là trang web, không phải RSS feed hợp lệ.');
+        return;
+      }
+    } else {
+      if (!newSource.url?.trim()) {
+        toast.error('Vui lòng nhập URL');
+        return;
+      }
     }
 
     try {
       const payload: any = {
         name: newSource.name,
-        url: newSource.url,
+        url: newSource.source_type === 'rss' ? newSource.rss_url : newSource.url,
         source_type: newSource.source_type,
         is_active: true,
         crawl_frequency: newSource.crawl_frequency
@@ -122,7 +143,8 @@ export default function SourcesPage() {
       setShowAddModal(false);
       setNewSource({ 
         name: '', 
-        url: '', 
+        url: '',
+        rss_url: '',
         source_type: 'website',
         crawl_frequency: 'manual',
         schedule: {
@@ -552,18 +574,35 @@ export default function SourcesPage() {
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  URL *
-                </label>
-                <input
-                  type="url"
-                  value={newSource.url}
-                  onChange={(e) => setNewSource({ ...newSource, url: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500"
-                  placeholder="https://example.com"
-                />
-              </div>
+              {newSource.source_type !== 'rss' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    URL *
+                  </label>
+                  <input
+                    type="url"
+                    value={newSource.url}
+                    onChange={(e) => setNewSource({ ...newSource, url: e.target.value })}
+                    className="w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500"
+                    placeholder="https://example.com"
+                  />
+                </div>
+              )}
+              
+              {newSource.source_type === 'rss' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Website gốc (tuỳ chọn)
+                  </label>
+                  <input
+                    type="url"
+                    value={newSource.url}
+                    onChange={(e) => setNewSource({ ...newSource, url: e.target.value })}
+                    className="w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500"
+                    placeholder="https://example.com"
+                  />
+                </div>
+              )}
 
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
@@ -669,13 +708,18 @@ export default function SourcesPage() {
                   </p>
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-1.5">
-                      RSS Feed URL
+                      RSS Feed URL *
                     </label>
                     <input
                       type="url"
+                      value={newSource.rss_url || ''}
+                      onChange={(e) => setNewSource({ ...newSource, rss_url: e.target.value })}
                       placeholder="https://example.com/feed.xml"
                       className="w-full px-3 py-2 bg-[#1E293B] border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-white placeholder-gray-500"
                     />
+                    <p className="text-xs text-orange-300/80 mt-1.5">
+                      RSS Feed URL phải là link XML/RSS thật, không phải trang chủ website.
+                    </p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-1.5">
