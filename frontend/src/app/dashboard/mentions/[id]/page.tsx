@@ -75,7 +75,7 @@ export default function MentionDetailPage() {
       const newCase = await reputation.createFromMention(mention.id);
       toast.success('Tạo hồ sơ xử lý thành công!', { id: toastId });
       // Redirect to the new case
-      router.push(`/dashboard/services`);
+      router.push(`/dashboard/reputation`);
     } catch (error: any) {
       console.error('Error creating reputation case:', error);
       toast.error('Lỗi khi tạo hồ sơ xử lý', { id: toastId });

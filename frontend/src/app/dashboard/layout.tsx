@@ -141,15 +141,13 @@ export default function DashboardLayout({
       items: [
         { name: 'Cảnh báo', href: '/dashboard/alerts', icon: Bell, badge: badges.new_alerts },
         { name: 'Sự cố', href: '/dashboard/incidents', icon: AlertTriangle, badge: badges.open_incidents },
-        { name: 'Xử lý truyền thông', href: '/dashboard/services', icon: ShieldAlert },
+        { name: 'Xử lý danh tiếng', href: '/dashboard/reputation', icon: ShieldAlert },
       ]
     },
     {
-      group: 'TRÍ TUỆ AI',
+      group: 'DỊCH VỤ',
       items: [
-        { name: 'Trợ lý AI', href: '/dashboard/assistant', icon: Bot },
-        { name: 'Đối thủ', href: '/dashboard/competitors', icon: Users },
-        { name: 'Người ảnh hưởng', href: '/dashboard/influencers', icon: Trophy },
+        { name: 'Dịch vụ', href: '/dashboard/services', icon: Briefcase },
       ]
     },
     {
