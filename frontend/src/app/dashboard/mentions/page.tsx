@@ -137,15 +137,18 @@ function highlightKeywords(text: string, keywords: any[] | null) {
     .filter(Boolean);
   if (kwStrings.length === 0) return text;
   const escaped = kwStrings.map((s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-  const regex = new RegExp(`(${escaped.join('|')})`, 'gi');
-  const parts = text.split(regex);
-  return parts.map((part, i) =>
-    regex.test(part) ? (
+  const pattern = `(${escaped.join('|')})`;
+  const splitRegex = new RegExp(pattern, 'gi');
+  const parts = text.split(splitRegex);
+  return parts.map((part, i) => {
+    // Use a fresh regex per test to avoid lastIndex statefulness
+    const testRegex = new RegExp(pattern, 'i');
+    return testRegex.test(part) ? (
       <mark key={i} className="bg-indigo-500/20 text-indigo-300 rounded px-0.5">{part}</mark>
     ) : (
       <span key={i}>{part}</span>
-    )
-  );
+    );
+  });
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════

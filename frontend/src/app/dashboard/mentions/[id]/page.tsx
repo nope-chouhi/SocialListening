@@ -27,7 +27,8 @@ export default function MentionDetailPage() {
       setMention(data);
     } catch (error: any) {
       console.error('Error fetching mention:', error);
-      toast.error('Lỗi khi tải chi tiết mention');
+      // Don't toast here — we redirect back immediately, and the toast
+      // would linger on the list page, confusing the user.
       router.push('/dashboard/mentions');
     } finally {
       setLoading(false);
