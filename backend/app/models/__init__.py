@@ -50,6 +50,15 @@ from app.models.user_settings import UserPreferences, UserNotificationSettings, 
 # System settings models
 from app.models.system_settings import OrganizationSettings, EmailSettings, SystemNotificationSettings
 
+# Discovery models
+from app.models.discovery import (
+    DiscoveryJob, DiscoveryJobStatus, DiscoveredSource, DiscoveredSourceStatus,
+    BlockedDomain, RecommendedMonitoringType
+)
+
+# Integration models
+from app.models.integration import SocialIntegration, SocialIntegrationAccount, OAuthState
+
 __all__ = [
     "Base",
     "User",
@@ -68,5 +77,9 @@ __all__ = [
     "OrganizationSettings", "EmailSettings", "SystemNotificationSettings",
     "ReputationCase", "ReputationEvidence", "ReputationAction",
     "ReputationCaseType", "ReputationCaseStatus",
-    "ReputationActionType", "ReputationActionStatus"
+    "ReputationActionType", "ReputationActionStatus",
+    "DiscoveryJob", "DiscoveryJobStatus", "DiscoveredSource", "DiscoveredSourceStatus",
+    "BlockedDomain", "RecommendedMonitoringType",
+    "SocialIntegration", "SocialIntegrationAccount", "OAuthState",
 ]
+

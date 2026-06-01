@@ -6,7 +6,7 @@ import {
   ArrowUpDown, ChevronDown, ChevronUp, Filter, BarChart3,
   Globe, Rss, TrendingUp, TrendingDown, Minus,
   AlertTriangle, CheckCircle2, BrainCircuit, Loader2,
-  Facebook, Youtube, RefreshCw, SlidersHorizontal,
+  Facebook, Youtube, RefreshCw, SlidersHorizontal, Sparkles,
 } from 'lucide-react';
 import { mentions as mentionsApi, dashboard } from '@/lib/api';
 import toast, { Toaster } from 'react-hot-toast';
@@ -45,6 +45,11 @@ interface MentionItem {
     sarcasm_possible: boolean | null;
     complaint_type: string | null;
     sensitive_signal: boolean | null;
+  } | null;
+  metadata: {
+    source_type?: string;
+    discovery_job_id?: number;
+    [key: string]: any;
   } | null;
 }
 
@@ -789,6 +794,12 @@ export default function MentionsPage() {
                           {analysis?.ai_provider && !isDummy && (
                             <span className="px-2 py-0.5 text-[9px] font-bold tracking-wider text-indigo-400 bg-indigo-500/10 rounded-md border border-indigo-500/20">
                               {analysis.ai_provider.toUpperCase()}
+                            </span>
+                          )}
+                          {mention.metadata?.source_type === 'auto_discovered' && (
+                            <span className="inline-flex items-center gap-0.5 px-2 py-0.5 text-[9px] font-bold tracking-wider text-fuchsia-400 bg-fuchsia-500/10 rounded-md border border-fuchsia-500/20" title="Được tìm thấy qua Tự động tìm nguồn">
+                              <Sparkles className="w-2.5 h-2.5" />
+                              AUTO-DISCOVERED
                             </span>
                           )}
                           {sentimentOpt && (

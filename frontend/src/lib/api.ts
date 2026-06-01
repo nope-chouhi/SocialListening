@@ -254,7 +254,11 @@ export const sources = {
 
 // ─── Crawl / Scan ─────────────────────────────────────────────────────────────
 export const crawl = {
-  manualScan: async (data: { keyword_group_ids: number[]; source_ids?: number[]; url?: string }) => {
+  getCapabilities: async () => {
+    const response = await api.get('/api/crawl/capabilities');
+    return response.data;
+  },
+  manualScan: async (data: { keyword_group_ids?: number[]; keywords?: string[]; source_ids?: number[]; url?: string; mode?: string }) => {
     // Sent as a single JSON object — backend expects ManualScanRequest body
     const response = await api.post('/api/crawl/manual-scan', data);
     return response.data;
@@ -689,6 +693,66 @@ export const reputation = {
   },
   draftExecutiveBrief: async (caseId: number) => {
     const response = await api.post(`/api/reputation/cases/${caseId}/executive-brief`);
+    return response.data;
+  },
+};
+
+// ─── Auto Discovery ───────────────────────────────────────────────────────────
+export const discovery = {
+  createJob: async (data: {
+    keywords: string[];
+    keyword_group_id?: number;
+    exclude_keywords?: string[];
+    language?: string;
+    country?: string;
+    limit?: number;
+    date_range?: string;
+  }) => {
+    const response = await api.post('/api/discovery/jobs', data);
+    return response.data;
+  },
+  listJobs: async (page: number = 1, page_size: number = 20) => {
+    const response = await api.get('/api/discovery/jobs', { params: { page, page_size } });
+    return response.data;
+  },
+  getJob: async (id: number) => {
+    const response = await api.get(`/api/discovery/jobs/${id}`);
+    return response.data;
+  },
+  connectorStatus: async () => {
+    const response = await api.get('/api/discovery/connector-status');
+    return response.data;
+  },
+};
+
+// ─── Discovered Sources ───────────────────────────────────────────────────────
+export const discoveredSources = {
+  list: async (params?: any) => {
+    const response = await api.get('/api/discovery/sources', { params });
+    return response.data;
+  },
+  get: async (id: number) => {
+    const response = await api.get(`/api/discovery/sources/${id}`);
+    return response.data;
+  },
+  approveRss: async (id: number, data?: { name?: string }) => {
+    const response = await api.post(`/api/discovery/sources/${id}/approve-rss`, data || {});
+    return response.data;
+  },
+  approveWebsite: async (id: number, data?: { name?: string }) => {
+    const response = await api.post(`/api/discovery/sources/${id}/approve-website`, data || {});
+    return response.data;
+  },
+  reject: async (id: number) => {
+    const response = await api.post(`/api/discovery/sources/${id}/reject`);
+    return response.data;
+  },
+  block: async (id: number, data?: { reason?: string }) => {
+    const response = await api.post(`/api/discovery/sources/${id}/block`, data || {});
+    return response.data;
+  },
+  refreshRss: async (id: number) => {
+    const response = await api.post(`/api/discovery/sources/${id}/refresh-rss-discovery`);
     return response.data;
   },
 };

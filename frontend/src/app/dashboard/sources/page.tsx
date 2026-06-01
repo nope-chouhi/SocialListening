@@ -1,11 +1,17 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Plus, Trash2, Search, Globe, Facebook, Youtube, Clock } from 'lucide-react';
-import { sources as sourcesApi, getErrorMessage, getUserFacingErrorMessage } from '@/lib/api';
+import {
+  Plus, Trash2, Search, Globe, Facebook, Youtube, Clock,
+  Radar, CheckCircle, XCircle, Ban, Rss, ExternalLink, RefreshCw,
+  Loader2, Plug, Wifi, WifiOff, Sparkles,
+} from 'lucide-react';
+import { sources as sourcesApi, discoveredSources as dsApi, discovery as discoveryApi, getErrorMessage, getUserFacingErrorMessage } from '@/lib/api';
 import toast, { Toaster } from 'react-hot-toast';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import ScheduleSelector from '@/components/ScheduleSelector';
+
+type SourceTab = 'active' | 'discovered' | 'connectors';
 
 interface Source {
   id: number;
@@ -24,6 +30,7 @@ interface Source {
 }
 
 export default function SourcesPage() {
+  const [activeTab, setActiveTab] = useState<SourceTab>('active');
   const [sources, setSources] = useState<Source[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -49,9 +56,80 @@ export default function SourcesPage() {
     }
   });
 
+  // Discovered sources state
+  const [discoveredSources, setDiscoveredSources] = useState<any[]>([]);
+  const [dsLoading, setDsLoading] = useState(false);
+  const [dsFilter, setDsFilter] = useState('candidate');
+  const [dsActionLoading, setDsActionLoading] = useState<number | null>(null);
+
+  // Connector state
+  const [connectors, setConnectors] = useState<any[]>([]);
+  const [connectorsLoading, setConnectorsLoading] = useState(false);
+
   useEffect(() => {
     fetchSources();
   }, []);
+
+  useEffect(() => {
+    if (activeTab === 'discovered') fetchDiscoveredSources();
+    if (activeTab === 'connectors') fetchConnectors();
+  }, [activeTab, dsFilter]);
+
+  const fetchDiscoveredSources = async () => {
+    try {
+      setDsLoading(true);
+      const data = await dsApi.list({ status: dsFilter || undefined, page_size: 100 });
+      setDiscoveredSources(data.items || []);
+    } catch (error: any) {
+      if (error?.response?.status !== 401) console.error('Error fetching discovered sources:', error);
+    } finally {
+      setDsLoading(false);
+    }
+  };
+
+  const fetchConnectors = async () => {
+    try {
+      setConnectorsLoading(true);
+      const data = await discoveryApi.connectorStatus();
+      setConnectors(data.connectors || []);
+    } catch (error: any) {
+      if (error?.response?.status !== 401) console.error('Error fetching connectors:', error);
+    } finally {
+      setConnectorsLoading(false);
+    }
+  };
+
+  const handleDsAction = async (id: number, action: 'approve-rss' | 'approve-website' | 'reject' | 'block') => {
+    try {
+      setDsActionLoading(id);
+      switch (action) {
+        case 'approve-rss': await dsApi.approveRss(id); toast.success('Đã thêm nguồn RSS.'); break;
+        case 'approve-website': await dsApi.approveWebsite(id); toast.success('Đã thêm nguồn Website.'); break;
+        case 'reject': await dsApi.reject(id); toast.success('Đã từ chối nguồn.'); break;
+        case 'block': await dsApi.block(id); toast.success('Đã chặn domain.'); break;
+      }
+      fetchDiscoveredSources();
+      if (action === 'approve-rss' || action === 'approve-website') fetchSources();
+    } catch (error: any) {
+      if (error?.response?.status === 409) { toast('Nguồn đã tồn tại.', { icon: 'ℹ️' }); }
+      else { toast.error(getErrorMessage(error)); }
+    } finally {
+      setDsActionLoading(null);
+    }
+  };
+
+  const handleRefreshRss = async (id: number) => {
+    try {
+      setDsActionLoading(id);
+      const result = await dsApi.refreshRss(id);
+      toast.success(result.message || 'Đã kiểm tra RSS.');
+      fetchDiscoveredSources();
+    } catch (error: any) {
+      toast.error(getErrorMessage(error));
+    } finally {
+      setDsActionLoading(null);
+    }
+  };
 
   const fetchSources = async () => {
     try {
@@ -262,27 +340,76 @@ export default function SourcesPage() {
     );
   }
 
+  const tabItems: { key: SourceTab; label: string; icon: React.ReactNode }[] = [
+    { key: 'active', label: 'Nguồn đang theo dõi', icon: <Globe className="w-4 h-4" /> },
+    { key: 'discovered', label: 'Nguồn phát hiện tự động', icon: <Radar className="w-4 h-4" /> },
+    { key: 'connectors', label: 'Kết nối nền tảng', icon: <Plug className="w-4 h-4" /> },
+  ];
+
   return (
     <div className="space-y-6">
       <Toaster position="top-right" />
       
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2">
         <div>
           <h1 className="text-2xl font-bold text-white tracking-wide">Quản lý nguồn</h1>
           <p className="text-sm text-gray-400 mt-1">
             Quản lý các nguồn dữ liệu để thu thập thông tin
           </p>
         </div>
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="flex items-center px-4 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all duration-200 shadow-sm shadow-indigo-500/20 font-medium"
-        >
-          <Plus className="w-5 h-5 mr-2" />
-          Thêm nguồn
-        </button>
+        {activeTab === 'active' && (
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="flex items-center px-4 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all duration-200 shadow-sm shadow-indigo-500/20 font-medium"
+          >
+            <Plus className="w-5 h-5 mr-2" />
+            Thêm nguồn
+          </button>
+        )}
       </div>
 
+      {/* Meta Banner */}
+      <div className="bg-gradient-to-r from-blue-600/20 to-indigo-600/20 border border-blue-500/30 rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg backdrop-blur-sm">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-blue-500/20 rounded-lg">
+            <Globe className="w-5 h-5 text-blue-400" />
+          </div>
+          <div>
+            <h3 className="text-white font-medium">Khám phá sức mạnh của Meta</h3>
+            <p className="text-sm text-blue-200 mt-0.5">Kết nối Facebook & Instagram để thu thập thêm đề cập từ các tài khoản được cấp quyền.</p>
+          </div>
+        </div>
+        <a 
+          href="/dashboard/integrations/meta"
+          className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-medium rounded-lg text-sm transition-colors whitespace-nowrap shadow-lg shadow-blue-600/20"
+        >
+          Kết nối Meta
+        </a>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex items-center gap-1 bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl p-1 shadow-xl mb-4">
+        {tabItems.map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
+            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-all duration-300 flex-1 justify-center ${
+              activeTab === tab.key
+                ? 'bg-white/10 text-white shadow-[0_2px_10px_rgba(255,255,255,0.1)] border border-white/10'
+                : 'text-zinc-500 hover:text-zinc-300 hover:bg-white/5 border border-transparent'
+            }`}
+          >
+            {tab.icon}
+            <span className="hidden sm:inline">{tab.label}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* ════════════════════════════════════════════════════════════════
+          TAB 1: ACTIVE SOURCES
+         ════════════════════════════════════════════════════════════════ */}
+      {activeTab === 'active' && (<>
       {/* Search */}
       <div className="flex flex-col sm:flex-row items-center gap-4 mb-6">
         <div className="relative flex-1 w-full">
@@ -551,6 +678,245 @@ export default function SourcesPage() {
         cancelText="Hủy"
         type="danger"
       />
+      </>)}
+
+      {/* ════════════════════════════════════════════════════════════════
+          TAB 2: DISCOVERED SOURCES
+         ════════════════════════════════════════════════════════════════ */}
+      {activeTab === 'discovered' && (
+        <div className="space-y-4">
+          {/* Filter */}
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Trạng thái:</span>
+            {[
+              { key: 'candidate', label: 'Chờ duyệt', color: 'amber' },
+              { key: 'approved', label: 'Đã duyệt', color: 'emerald' },
+              { key: 'rejected', label: 'Đã từ chối', color: 'rose' },
+              { key: 'blocked', label: 'Đã chặn', color: 'red' },
+              { key: '', label: 'Tất cả', color: 'gray' },
+            ].map((f) => (
+              <button
+                key={f.key}
+                onClick={() => setDsFilter(f.key)}
+                className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all border ${
+                  dsFilter === f.key
+                    ? `bg-${f.color}-500/15 text-${f.color}-400 border-${f.color}-500/25`
+                    : 'bg-white/5 text-gray-500 hover:text-gray-300 border-white/10 hover:border-white/20'
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+
+          {dsLoading ? (
+            <div className="flex items-center justify-center h-40">
+              <Loader2 className="w-6 h-6 text-indigo-400 animate-spin" />
+            </div>
+          ) : discoveredSources.length === 0 ? (
+            <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-10 text-center">
+              <Radar className="w-10 h-10 text-gray-600 mx-auto mb-3" />
+              <p className="text-sm text-gray-400 font-medium">Chưa có nguồn nào được phát hiện tự động.</p>
+              <p className="text-xs text-gray-500 mt-1">Hãy vào Trung tâm quét → "Tự động tìm nguồn" để bắt đầu.</p>
+            </div>
+          ) : (
+            <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-black/30 text-left text-[10px] text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-3 font-medium">Nguồn</th>
+                      <th className="px-4 py-3 font-medium hidden md:table-cell">Loại</th>
+                      <th className="px-4 py-3 font-medium hidden lg:table-cell">RSS</th>
+                      <th className="px-4 py-3 font-medium hidden lg:table-cell">Mentions</th>
+                      <th className="px-4 py-3 font-medium hidden xl:table-cell">Từ khóa khớp</th>
+                      <th className="px-4 py-3 font-medium">Điểm</th>
+                      <th className="px-4 py-3 font-medium">Trạng thái</th>
+                      <th className="px-4 py-3 font-medium text-right">Hành động</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {discoveredSources.map((ds: any) => (
+                      <tr key={ds.id} className="hover:bg-white/5 transition-colors">
+                        <td className="px-4 py-3">
+                          <div className="font-medium text-white text-sm truncate max-w-[200px]" title={ds.source_name}>{ds.source_name || ds.domain}</div>
+                          <div className="text-[11px] text-gray-500 truncate max-w-[200px]">{ds.domain}</div>
+                        </td>
+                        <td className="px-4 py-3 hidden md:table-cell">
+                          <span className="text-xs text-gray-400 capitalize">{ds.source_type || '—'}</span>
+                        </td>
+                        <td className="px-4 py-3 hidden lg:table-cell">
+                          {ds.rss_valid ? (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                              <Rss className="w-3 h-3" /> Có RSS
+                            </span>
+                          ) : (
+                            <span className="text-[10px] text-gray-500">Không</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 hidden lg:table-cell">
+                          <span className="text-xs text-gray-300 font-medium">{ds.sample_mentions_count || 0}</span>
+                        </td>
+                        <td className="px-4 py-3 hidden xl:table-cell">
+                          <div className="flex flex-wrap gap-1 max-w-[160px]">
+                            {(ds.matched_keywords_json || []).slice(0, 3).map((kw: string, i: number) => (
+                              <span key={i} className="text-[10px] px-1.5 py-0.5 bg-indigo-500/10 text-indigo-400 rounded border border-indigo-500/20 truncate max-w-[80px]">{kw}</span>
+                            ))}
+                            {(ds.matched_keywords_json || []).length > 3 && (
+                              <span className="text-[10px] text-gray-500">+{(ds.matched_keywords_json || []).length - 3}</span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-1.5">
+                            <div className="w-12 h-1.5 bg-gray-800 rounded-full overflow-hidden">
+                              <div
+                                className={`h-full rounded-full transition-all ${
+                                  (ds.relevance_score || 0) >= 50 ? 'bg-emerald-500' : (ds.relevance_score || 0) >= 25 ? 'bg-amber-500' : 'bg-gray-600'
+                                }`}
+                                style={{ width: `${Math.min(ds.relevance_score || 0, 100)}%` }}
+                              />
+                            </div>
+                            <span className="text-[10px] text-gray-400 font-medium w-7">{Math.round(ds.relevance_score || 0)}</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          {ds.status === 'candidate' && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-amber-500/10 text-amber-400 border border-amber-500/20">Chờ duyệt</span>
+                          )}
+                          {ds.status === 'approved' && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Đã duyệt</span>
+                          )}
+                          {ds.status === 'rejected' && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-rose-500/10 text-rose-400 border border-rose-500/20">Từ chối</span>
+                          )}
+                          {ds.status === 'blocked' && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-red-500/10 text-red-400 border border-red-500/20">Chặn</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          {ds.status === 'candidate' && (
+                            <div className="flex items-center justify-end gap-1">
+                              {ds.rss_valid && (
+                                <button
+                                  onClick={() => handleDsAction(ds.id, 'approve-rss')}
+                                  disabled={dsActionLoading === ds.id}
+                                  className="p-1.5 text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-colors border border-transparent hover:border-emerald-500/20" title="Duyệt RSS"
+                                >
+                                  {dsActionLoading === ds.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Rss className="w-3.5 h-3.5" />}
+                                </button>
+                              )}
+                              <button
+                                onClick={() => handleDsAction(ds.id, 'approve-website')}
+                                disabled={dsActionLoading === ds.id}
+                                className="p-1.5 text-indigo-400 hover:bg-indigo-500/10 rounded-lg transition-colors border border-transparent hover:border-indigo-500/20" title="Duyệt Website"
+                              >
+                                {dsActionLoading === ds.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle className="w-3.5 h-3.5" />}
+                              </button>
+                              <button
+                                onClick={() => handleDsAction(ds.id, 'reject')}
+                                disabled={dsActionLoading === ds.id}
+                                className="p-1.5 text-gray-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors border border-transparent hover:border-rose-500/20" title="Từ chối"
+                              >
+                                <XCircle className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => handleDsAction(ds.id, 'block')}
+                                disabled={dsActionLoading === ds.id}
+                                className="p-1.5 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors border border-transparent hover:border-red-500/20" title="Chặn domain"
+                              >
+                                <Ban className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => handleRefreshRss(ds.id)}
+                                disabled={dsActionLoading === ds.id}
+                                className="p-1.5 text-gray-500 hover:text-cyan-400 hover:bg-cyan-500/10 rounded-lg transition-colors border border-transparent hover:border-cyan-500/20" title="Kiểm tra lại RSS"
+                              >
+                                <RefreshCw className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          )}
+                          {ds.status === 'approved' && ds.approved_source_id && (
+                            <span className="text-[10px] text-emerald-400">Source #{ds.approved_source_id}</span>
+                          )}
+                          {ds.status === 'blocked' && (
+                            <span className="text-[10px] text-gray-500 truncate max-w-[100px]" title={ds.blocked_reason}>{ds.blocked_reason || 'Đã chặn'}</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ════════════════════════════════════════════════════════════════
+          TAB 3: CONNECTORS
+         ════════════════════════════════════════════════════════════════ */}
+      {activeTab === 'connectors' && (
+        <div className="space-y-4">
+          {connectorsLoading ? (
+            <div className="flex items-center justify-center h-40">
+              <Loader2 className="w-6 h-6 text-indigo-400 animate-spin" />
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {connectors.map((c: any) => (
+                <div key={c.key} className={`bg-white/5 backdrop-blur-xl rounded-2xl border p-5 transition-all duration-300 hover:-translate-y-0.5 flex flex-col h-full ${
+                  c.status === 'active' || c.status === 'limited' ? 'border-emerald-500/20 hover:border-emerald-500/40 hover:shadow-[0_0_20px_rgba(16,185,129,0.1)]'
+                    : c.status === 'config_required' ? 'border-amber-500/20 hover:border-amber-500/40'
+                    : 'border-white/10 hover:border-white/20'
+                }`}>
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <div className={`p-2.5 rounded-xl border shadow-inner ${
+                        c.status === 'active' || c.status === 'limited' ? 'bg-emerald-500/10 border-emerald-500/20' 
+                          : c.status === 'config_required' ? 'bg-amber-500/10 border-amber-500/20'
+                          : 'bg-white/5 border-white/10'
+                      }`}>
+                        {c.status === 'active' || c.status === 'limited' ? <Wifi className="w-5 h-5 text-emerald-400" />
+                          : c.status === 'config_required' ? <Sparkles className="w-5 h-5 text-amber-400" />
+                          : <WifiOff className="w-5 h-5 text-gray-500" />}
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-white text-sm">{c.name}</h3>
+                      </div>
+                    </div>
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider text-right max-w-[120px] ${
+                      c.status === 'active' || c.status === 'limited' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                        : c.status === 'config_required' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                        : 'bg-gray-500/10 text-gray-400 border border-gray-500/20'
+                    }`}>{c.status_label}</span>
+                  </div>
+                  <p className="text-xs text-gray-400 leading-relaxed flex-1 mb-4">{c.description}</p>
+                  
+                  {c.limitations && (
+                    <div className="mb-4 text-[11px] p-2 bg-indigo-500/10 border border-indigo-500/20 rounded-lg text-indigo-300">
+                      💡 {c.limitations}
+                    </div>
+                  )}
+
+                  <div className="mt-auto">
+                    {c.status === 'oauth_required' && (
+                      <a href="/dashboard/integrations/meta" className="w-full bg-blue-600 hover:bg-blue-500 text-white font-medium py-2 rounded-lg text-sm transition-colors flex items-center justify-center">
+                          <Plug className="w-4 h-4 mr-2" /> Cấu hình Meta
+                      </a>
+                    )}
+                    {c.status === 'limited' && (
+                      <a href="/dashboard/integrations/meta" className="w-full bg-indigo-500/10 border border-indigo-500/20 hover:bg-indigo-500/20 text-indigo-400 font-medium py-2 rounded-lg text-sm transition-colors block text-center">
+                          Quản lý tài khoản
+                      </a>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Add Modal */}
       {showAddModal && (

@@ -3,7 +3,7 @@ try:
 except ImportError:
     from pydantic import BaseSettings
     SettingsConfigDict = None
-from typing import List
+from typing import List, Optional
 import os
 
 
@@ -39,10 +39,14 @@ class Settings(BaseSettings):
     ANTHROPIC_API_KEY: str = ""
     DEEPSEEK_API_KEY: str = ""
     
-    # Facebook
+    # Facebook / Meta
     FACEBOOK_ACCESS_TOKEN: str = ""
     FACEBOOK_APP_ID: str = ""
     FACEBOOK_APP_SECRET: str = ""
+    META_APP_ID: str = ""
+    META_APP_SECRET: Optional[str] = None
+    META_REDIRECT_URI: Optional[str] = None
+    TOKEN_ENCRYPTION_KEY: Optional[str] = None
     
     # YouTube
     YOUTUBE_API_KEY: str = ""
@@ -72,6 +76,13 @@ class Settings(BaseSettings):
     CRAWL_TIMEOUT: int = 30
     CRAWL_MAX_RETRIES: int = 3
     CRAWL_USER_AGENT: str = "Mozilla/5.0 (compatible; SocialListeningBot/1.0)"
+    
+    # Auto Discovery / Web Search
+    WEB_SEARCH_PROVIDER: str = "serpapi"  # serpapi, none
+    SERPAPI_API_KEY: str = ""  # Server-side only — never expose to frontend
+    AUTO_DISCOVERY_ENABLED: bool = True
+    YOUTUBE_API_KEY: str = ""
+    FACEBOOK_ACCESS_TOKEN: str = ""
     
     # Screenshot
     SCREENSHOT_SERVICE_URL: str = "http://localhost:3001"

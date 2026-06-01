@@ -1,4 +1,4 @@
-﻿from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field
 from datetime import datetime
 from typing import Optional, List, Dict, Any
 from app.models.crawl import CrawlJobStatus
@@ -7,8 +7,9 @@ from app.models.crawl import CrawlJobStatus
 # Crawl Job Schemas
 class CrawlJobBase(BaseModel):
     job_type: str = Field(..., pattern="^(manual|scheduled)$")
-    source_ids: Optional[List[int]] = None
+    source_ids: Optional[List[int]] = []
     keyword_group_ids: Optional[List[int]] = None
+    mode: Optional[str] = "HYBRID"
 
 
 class CrawlJobCreate(CrawlJobBase):
@@ -82,3 +83,15 @@ class ScanScheduleResponse(ScanScheduleBase):
     class Config:
         orm_mode = True
 
+class CapabilityStatus(BaseModel):
+    enabled: bool
+    configured: bool
+    status: str
+    message: Optional[str] = None
+
+class WebSearchCapabilityStatus(CapabilityStatus):
+    provider: str
+
+class ScanCapabilitiesResponse(BaseModel):
+    web_search: WebSearchCapabilityStatus
+    auto_discovery: CapabilityStatus

@@ -146,6 +146,21 @@ def get_dashboard_summary(
         except Exception as e:
             logger.error(f"Error querying latest alerts: {e}")
             latest_alerts_data = []
+        # Discovery stats
+        discovered_sources_count = 0
+        candidate_sources_count = 0
+        approved_sources_count = 0
+        try:
+            from app.models.discovery import DiscoveredSource, DiscoveredSourceStatus
+            discovered_sources_count = db.execute(select(func.count(DiscoveredSource.id))).scalar() or 0
+            candidate_sources_count = db.execute(
+                select(func.count(DiscoveredSource.id)).where(DiscoveredSource.status == DiscoveredSourceStatus.CANDIDATE)
+            ).scalar() or 0
+            approved_sources_count = db.execute(
+                select(func.count(DiscoveredSource.id)).where(DiscoveredSource.status == DiscoveredSourceStatus.APPROVED)
+            ).scalar() or 0
+        except Exception as e:
+            logger.warning(f"Discovery stats query failed (table may not exist yet): {e}")
         
         return {
             "total_mentions": total_mentions,
@@ -154,6 +169,9 @@ def get_dashboard_summary(
             "alerts_count": total_alerts,
             "incidents_count": total_incidents,
             "active_sources": total_sources,
+            "discovered_sources_count": discovered_sources_count,
+            "candidate_sources_count": candidate_sources_count,
+            "approved_sources_count": approved_sources_count,
             "latest_mentions": latest_mentions_data,
             "latest_alerts": latest_alerts_data
         }
@@ -166,6 +184,9 @@ def get_dashboard_summary(
             "alerts_count": 0,
             "incidents_count": 0,
             "active_sources": 0,
+            "discovered_sources_count": 0,
+            "candidate_sources_count": 0,
+            "approved_sources_count": 0,
             "latest_mentions": [],
             "latest_alerts": []
         }

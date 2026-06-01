@@ -18,13 +18,19 @@ from app.models.mention import Mention, AIAnalysis, SentimentScore
 from app.models.alert import Alert, AlertSeverity, AlertStatus
 from app.models.crawl import CrawlJob, CrawlJobStatus
 from app.services.ai_service import analyze_mention
+from app.schemas.crawl import (
+    CrawlJobCreate, CrawlJobResponse, CrawlJobListResponse,
+    ScanScheduleCreate, ScanScheduleUpdate, ScanScheduleResponse, ScanCapabilitiesResponse
+)
 
 router = APIRouter()
 
 class ManualScanRequest(BaseModel):
-    keyword_group_ids: List[int]
-    source_ids: Optional[List[int]] = None
+    keyword_group_ids: Optional[List[int]] = []
+    keywords: Optional[List[str]] = []
+    source_ids: Optional[List[int]] = []
     url: Optional[str] = None
+    mode: Optional[str] = "HYBRID"
 
 def run_manual_scan_task(job_id: int, source_ids: List[int], keyword_texts: List[str], keyword_ids: List[int]):
     db = SessionLocal()
@@ -148,6 +154,38 @@ def run_manual_scan_task(job_id: int, source_ids: List[int], keyword_texts: List
     finally:
         db.close()
 
+def _run_discovery_bg(job_id: int):
+    db = SessionLocal()
+    try:
+        from app.services.discovery_service import run_discovery_job
+        run_discovery_job(db, job_id)
+    except Exception as e:
+        print(f"Discovery background task failed: {e}")
+    finally:
+        db.close()
+
+@router.get("/capabilities", response_model=ScanCapabilitiesResponse)
+def get_capabilities(
+    current_user: User = Depends(get_current_active_user)
+):
+    from app.core.config import settings
+    has_serpapi = bool(settings.SERPAPI_API_KEY)
+    
+    return {
+        "web_search": {
+            "enabled": True,
+            "provider": "serpapi",
+            "configured": has_serpapi,
+            "status": "READY" if has_serpapi else "CONFIG_REQUIRED",
+            "message": None if has_serpapi else "Chưa cấu hình Web Search provider"
+        },
+        "auto_discovery": {
+            "enabled": True,
+            "configured": has_serpapi,
+            "status": "READY" if has_serpapi else "CONFIG_REQUIRED",
+            "message": None if has_serpapi else "Chưa cấu hình SerpAPI"
+        }
+    }
 
 @router.post("/manual-scan")
 def manual_scan(
@@ -162,25 +200,41 @@ def manual_scan(
     - Enters a custom URL to scan
     """
     
-    keyword_groups = db.execute(
-        select(KeywordGroup).where(KeywordGroup.id.in_(body.keyword_group_ids))
-    ).scalars().all()
-
-    if not keyword_groups:
-        raise HTTPException(status_code=404, detail="Không tìm thấy nhóm từ khóa")
+    keyword_groups = []
+    if body.keyword_group_ids:
+        keyword_groups = db.execute(
+            select(KeywordGroup).where(KeywordGroup.id.in_(body.keyword_group_ids))
+        ).scalars().all()
 
     all_keywords = []
     for group in keyword_groups:
-        keywords = db.execute(
+        keywords_in_group = db.execute(
             select(Keyword).where(Keyword.group_id == group.id, Keyword.is_active == True)
         ).scalars().all()
-        all_keywords.extend(keywords)
-
-    if not all_keywords:
-        raise HTTPException(status_code=400, detail="Không có từ khóa hoạt động trong nhóm đã chọn")
+        all_keywords.extend(keywords_in_group)
 
     keyword_texts = [kw.keyword.lower() for kw in all_keywords]
     keyword_ids = [kw.id for kw in all_keywords]
+
+    if body.keywords:
+        for kw in body.keywords:
+            kw_lower = kw.lower().strip()
+            if kw_lower and kw_lower not in keyword_texts:
+                keyword_texts.append(kw_lower)
+
+    if not keyword_texts:
+        raise HTTPException(status_code=400, detail="Vui lòng cung cấp ít nhất một từ khóa (qua keyword_group_ids hoặc keywords)")
+
+    mode = getattr(body, "mode", "HYBRID") or "HYBRID"
+    run_discovery = mode in ("AUTO_DISCOVERY", "HYBRID")
+
+    if run_discovery:
+        from app.core.config import settings
+        if not settings.SERPAPI_API_KEY:
+            if mode == "AUTO_DISCOVERY":
+                raise HTTPException(status_code=400, detail="CONFIG_REQUIRED: Chưa cấu hình Web Search provider (SerpAPI).")
+            else:
+                run_discovery = False
 
     sources_to_scan = []
 
@@ -195,7 +249,14 @@ def manual_scan(
         db.commit()
         db.refresh(temp_source)
         sources_to_scan.append(temp_source)
-    elif body.source_ids:
+    elif mode == "ALL_ACTIVE_SOURCES":
+        sources_to_scan = db.execute(
+            select(Source).where(
+                Source.is_active == True,
+                Source.source_type.in_([SourceType.WEBSITE, SourceType.RSS])
+            )
+        ).scalars().all()
+    elif mode in ("SELECTED_SOURCES", "HYBRID") and body.source_ids:
         sources_to_scan = db.execute(
             select(Source).where(
                 Source.id.in_(body.source_ids),
@@ -203,37 +264,54 @@ def manual_scan(
                 Source.source_type.in_([SourceType.WEBSITE, SourceType.RSS])
             )
         ).scalars().all()
-    else:
-        raise HTTPException(status_code=400, detail="Phải cung cấp source_ids hoặc url")
 
-    if not sources_to_scan:
-        raise HTTPException(status_code=404, detail="Không tìm thấy nguồn hoạt động")
-    
-    source_ids = [s.id for s in sources_to_scan]
-    
-    job = CrawlJob(
-        source_ids=source_ids,
-        keyword_group_ids=body.keyword_group_ids,
-        job_type='manual',
-        status=CrawlJobStatus.RUNNING,
-        total_sources=len(sources_to_scan),
-        processed_sources=0,
-        mentions_found=0,
-        started_at=datetime.now(timezone.utc)
-    )
-    db.add(job)
-    db.commit()
-    db.refresh(job)
+    if not sources_to_scan and mode == "SELECTED_SOURCES":
+        raise HTTPException(status_code=400, detail="Phải cung cấp source_ids cho chế độ SELECTED_SOURCES")
 
-    # Queue background task to prevent Vercel timeout
-    background_tasks.add_task(run_manual_scan_task, job.id, source_ids, keyword_texts, keyword_ids)
+    if not sources_to_scan and not run_discovery and not body.url:
+        raise HTTPException(status_code=404, detail="Không tìm thấy nguồn hoạt động và không thể chạy Auto Discovery")
 
+    job_id = None
+    if sources_to_scan:
+        source_ids = [s.id for s in sources_to_scan]
+        job = CrawlJob(
+            source_ids=source_ids,
+            keyword_group_ids=body.keyword_group_ids,
+            job_type='manual',
+            status=CrawlJobStatus.RUNNING,
+            total_sources=len(sources_to_scan),
+            processed_sources=0,
+            mentions_found=0,
+            started_at=datetime.now(timezone.utc)
+        )
+        db.add(job)
+        db.commit()
+        db.refresh(job)
+        job_id = job.id
+        background_tasks.add_task(run_manual_scan_task, job.id, source_ids, keyword_texts, keyword_ids)
+
+    if run_discovery:
+        from app.services.discovery_service import create_discovery_job
+        request_data = {
+            "keyword_group_id": body.keyword_group_ids[0] if body.keyword_group_ids else None,
+            "keywords": keyword_texts,
+        }
+        discovery_job = create_discovery_job(db, current_user.id, request_data)
+        db.commit()
+        background_tasks.add_task(_run_discovery_bg, discovery_job.id)
+
+    msg_parts = []
+    if sources_to_scan:
+        msg_parts.append(f"quét {len(sources_to_scan)} nguồn")
+    if run_discovery:
+        msg_parts.append("tìm nguồn mới (SerpAPI)")
+        
     return {
         "success": True,
-        "job_id": job.id,
+        "job_id": job_id,
         "status": "running",
         "sources_queued": len(sources_to_scan),
-        "message": "Đã tạo job scan. Hệ thống đang quét trong nền."
+        "message": f"Đã khởi tạo scan: {' và '.join(msg_parts)}."
     }                
 
 

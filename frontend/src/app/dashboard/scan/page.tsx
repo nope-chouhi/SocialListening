@@ -5,9 +5,9 @@ import {
   Play, Link as LinkIcon, History, AlertTriangle, CheckCircle, XCircle,
   Clock, RefreshCw, Loader2, Activity, Sparkles, Radar, Plus,
   Filter, Eye, EyeOff, CheckSquare, Square, Rss, Globe, FlaskConical,
-  ChevronDown, ChevronUp, ExternalLink,
+  ChevronDown, ChevronUp, ExternalLink, Search, Globe2, Network,
 } from 'lucide-react';
-import { crawl, keywords as keywordsApi, sources as sourcesApi } from '@/lib/api';
+import { crawl, keywords as keywordsApi, sources as sourcesApi, discovery as discoveryApi, getErrorMessage } from '@/lib/api';
 import toast, { Toaster } from 'react-hot-toast';
 import Link from 'next/link';
 
@@ -61,10 +61,20 @@ export default function ScanPage() {
   const [selectedGroups, setSelectedGroups] = useState<number[]>([]);
   const [selectedSources, setSelectedSources] = useState<number[]>([]);
   const [customUrl, setCustomUrl] = useState('');
+  const [scanMode, setScanMode] = useState<string>('AUTO_DISCOVERY');
+  const [scanCapabilities, setScanCapabilities] = useState<any>(null);
   const [scanning, setScanning] = useState(false);
   const [workerStatus, setWorkerStatus] = useState<WorkerStatus | null>(null);
   const [crawlJobs, setCrawlJobs] = useState<CrawlJob[]>([]);
   const [retryingJobId, setRetryingJobId] = useState<number | null>(null);
+
+  // Auto Discovery state
+  const [discoveryLimit, setDiscoveryLimit] = useState(20);
+  const [discoveryDateRange, setDiscoveryDateRange] = useState('last_30_days');
+  const [discoveryLanguage, setDiscoveryLanguage] = useState('vi');
+  const [discoveryCountry, setDiscoveryCountry] = useState('vn');
+  const [discoveryLoading, setDiscoveryLoading] = useState(false);
+  const [discoveryResult, setDiscoveryResult] = useState<any>(null);
 
   // Quick keyword states
   const [quickKeyword, setQuickKeyword] = useState('');
@@ -132,12 +142,14 @@ export default function ScanPage() {
 
   const fetchData = async () => {
     try {
-      const [groupsData, sourcesData] = await Promise.all([
+      const [groupsData, sourcesData, capsData] = await Promise.all([
         keywordsApi.listGroups(),
         sourcesApi.list(),
+        crawl.getCapabilities(),
       ]);
       setKeywordGroups(groupsData);
       setSources(sourcesData);
+      setScanCapabilities(capsData);
     } catch (error) {
       console.error('Error fetching data:', error);
     }
@@ -201,12 +213,14 @@ export default function ScanPage() {
     }
   };
 
-  // ── Quick Add + Scan ──
-  const handleQuickAddAndScan = async () => {
-    if (!quickKeyword.trim()) {
-      toast.error('Vui lòng nhập từ khóa');
+  // ── Unified Scan Handler ──
+  const handleScanSubmit = async () => {
+    const hasKeyword = quickKeyword.trim().length > 0 || selectedGroups.length > 0;
+    if (!hasKeyword) {
+      toast.error('Vui lòng nhập hoặc chọn ít nhất 1 từ khóa.');
       return;
     }
+
     const validSources = selectedSources.filter(id => {
       const source = sources.find(s => s.id === id);
       return source && ['rss', 'website', 'global_search'].includes((source.source_type || '').toLowerCase());
@@ -217,105 +231,68 @@ export default function ScanPage() {
       setSelectedSources(validSources);
     }
 
-    if (validSources.length === 0 && !customUrl) {
-      toast.error('Vui lòng chọn ít nhất 1 nguồn hợp lệ để quét.');
+    if (scanMode === 'SELECTED_SOURCES' && validSources.length === 0 && !customUrl) {
+      toast.error('Vui lòng chọn ít nhất 1 nguồn để quét.');
       return;
     }
     
     try {
       setScanning(true);
-      const loadingToast = toast.loading('Đang xử lý từ khóa và scan...');
-      let targetGroupId = quickGroupId as number;
+      const loadingToast = toast.loading('Đang xử lý và quét dữ liệu...');
       
-      if (!targetGroupId) {
-        if (keywordGroups.length > 0) {
-          targetGroupId = keywordGroups[0].id;
-        } else {
-          const newGroup = await keywordsApi.createGroup({
-            name: 'Nhóm Mặc Định',
-            description: 'Tự động tạo từ Scan Center',
-          });
-          targetGroupId = newGroup.id;
+      let finalKeywordGroups = [...selectedGroups];
+      let finalKeywords = [];
+
+      if (quickKeyword.trim()) {
+        finalKeywords.push(quickKeyword.trim());
+        if (quickGroupId) {
+          try {
+            await keywordsApi.createKeyword({
+              keyword: quickKeyword.trim(),
+              group_id: quickGroupId as number,
+              keyword_type: 'general',
+            });
+            if (!finalKeywordGroups.includes(quickGroupId as number)) {
+              finalKeywordGroups.push(quickGroupId as number);
+            }
+          } catch (error: any) {
+            if (error.response?.status !== 409) {
+              console.error('Error creating quick keyword:', error);
+            }
+          }
         }
       }
 
-      try {
-        await keywordsApi.createKeyword({
-          keyword: quickKeyword,
-          group_id: targetGroupId,
-          keyword_type: 'general',
-        });
-      } catch (error: any) {
-        if (error.response?.status === 409) {
-          toast('Từ khóa đã tồn tại, sử dụng từ khóa hiện có.', { icon: 'ℹ️' });
-        } else {
-          throw error;
-        }
-      }
-      
       await fetchData();
       
-      const result = await crawl.manualScan({
-        keyword_group_ids: [targetGroupId],
-        source_ids: validSources.length > 0 ? validSources : undefined,
-        url: customUrl || undefined,
-      });
+      const payload: any = {
+        keyword_group_ids: finalKeywordGroups,
+        mode: scanMode,
+      };
+
+      if (finalKeywords.length > 0) {
+        payload.keywords = finalKeywords;
+      }
+      
+      if (validSources.length > 0) {
+        payload.source_ids = validSources;
+      }
+      if (customUrl) {
+        payload.url = customUrl;
+      }
+      
+      const result = await crawl.manualScan(payload);
       
       toast.dismiss(loadingToast);
       toast.success(result.message || 'Đã tạo job scan. Hệ thống đang quét trong nền.');
       
       setQuickKeyword('');
-      setSelectedGroups((prev) => Array.from(new Set([...prev, targetGroupId])));
       setShowHistory(true);
       fetchCrawlJobs();
       fetchWorkerStatus();
     } catch (error: any) {
       toast.dismiss();
       toast.error('Lỗi: ' + (error.response?.data?.detail || error.message));
-    } finally {
-      setScanning(false);
-    }
-  };
-
-  // ── Manual Scan ──
-  const handleScan = async () => {
-    if (selectedGroups.length === 0) {
-      toast.error('Vui lòng chọn ít nhất 1 nhóm từ khóa');
-      return;
-    }
-    const validSources = selectedSources.filter(id => {
-      const source = sources.find(s => s.id === id);
-      return source && ['rss', 'website'].includes((source.source_type || '').toLowerCase());
-    });
-
-    if (validSources.length < selectedSources.length) {
-      toast('Đã bỏ qua nguồn chưa tích hợp.', { icon: 'ℹ️' });
-      setSelectedSources(validSources);
-    }
-
-    if (validSources.length === 0 && !customUrl) {
-      toast.error('Vui lòng chọn nguồn hoặc nhập URL');
-      return;
-    }
-    try {
-      setScanning(true);
-      const loadingToast = toast.loading('Đang scan...');
-      const result = await crawl.manualScan({
-        keyword_group_ids: selectedGroups,
-        source_ids: validSources.length > 0 ? validSources : undefined,
-        url: customUrl || undefined,
-      });
-      toast.dismiss(loadingToast);
-      toast.success(result.message || 'Đã tạo job scan. Hệ thống đang quét trong nền.');
-      setSelectedGroups([]);
-      setSelectedSources([]);
-      setCustomUrl('');
-      setShowHistory(true);
-      fetchCrawlJobs();
-      fetchWorkerStatus();
-    } catch (error: any) {
-      toast.dismiss();
-      toast.error('Lỗi khi scan: ' + (error.response?.data?.detail || error.message));
     } finally {
       setScanning(false);
     }
@@ -332,6 +309,57 @@ export default function ScanPage() {
       toast.error('Retry thất bại: ' + (error.response?.data?.detail || error.message));
     } finally {
       setRetryingJobId(null);
+    }
+  };
+
+  // ── Auto Discovery ──
+  const handleAutoDiscovery = async () => {
+    let targetGroupId = selectedGroups[0] || (quickGroupId as number);
+    let kws = [];
+
+    if (quickKeyword.trim()) {
+      kws = [quickKeyword.trim()];
+    } else if (targetGroupId) {
+      const group = keywordGroups.find(g => g.id === targetGroupId);
+      if (group && group.keywords) {
+        kws = group.keywords.map((k: any) => k.keyword);
+      }
+    }
+
+    if (kws.length === 0) {
+      toast.error('Vui lòng nhập từ khóa mới hoặc chọn 1 nhóm từ khóa có sẵn từ khóa.');
+      return;
+    }
+
+    try {
+      setDiscoveryLoading(true);
+      const loadingToast = toast.loading('Đang tự động tìm nguồn qua SerpAPI...');
+      
+      const payload = {
+        keyword_group_id: targetGroupId || undefined,
+        keywords: kws,
+        exclude_keywords: [],
+        language: discoveryLanguage,
+        country: discoveryCountry,
+        limit: discoveryLimit,
+        date_range: discoveryDateRange
+      };
+
+      const result = await discoveryApi.createJob(payload);
+      
+      toast.dismiss(loadingToast);
+      if (result.success) {
+        toast.success(result.message);
+      } else {
+        toast.error(result.message);
+      }
+      setDiscoveryResult(result);
+      fetchData(); // to update counts if any
+    } catch (error: any) {
+      toast.dismiss();
+      toast.error('Lỗi khi tìm nguồn: ' + getErrorMessage(error));
+    } finally {
+      setDiscoveryLoading(false);
     }
   };
 
@@ -354,16 +382,40 @@ export default function ScanPage() {
   
   const hasValidSources = validSelectedSources.length > 0;
   const isUrlValid = customUrl.trim().length > 0;
+  const isAutoDiscoveryConfigured = scanCapabilities?.auto_discovery?.configured;
   
-  const canScan = selectedGroups.length > 0 && (hasValidSources || isUrlValid);
+  const hasKeyword = quickKeyword.trim().length > 0 || selectedGroups.length > 0;
+
+  const canScan = hasKeyword && 
+    (scanMode !== 'SELECTED_SOURCES' || hasValidSources || isUrlValid) && 
+    (scanMode !== 'AUTO_DISCOVERY' || isAutoDiscoveryConfigured);
 
   // Disable reason text
   const getDisableReason = () => {
-    if (selectedGroups.length === 0) return 'Chưa chọn nhóm từ khóa';
-    if (selectedSources.length > 0 && validSelectedSources.length === 0) return 'Nguồn đã chọn chưa tích hợp';
-    if (customUrl.length > 0 && !isUrlValid) return 'URL tùy chỉnh không hợp lệ';
-    return 'Chưa chọn nguồn hợp lệ';
+    if (!hasKeyword) return 'Vui lòng nhập hoặc chọn ít nhất 1 từ khóa';
+    if (scanMode === 'AUTO_DISCOVERY' && !isAutoDiscoveryConfigured) return 'Cần cấu hình SERPAPI_API_KEY để tự tìm nguồn';
+    if (scanMode === 'SELECTED_SOURCES') {
+      if (selectedSources.length > 0 && validSelectedSources.length === 0) return 'Nguồn đã chọn chưa tích hợp';
+      if (customUrl.length > 0 && !isUrlValid) return 'URL tùy chỉnh không hợp lệ';
+      return 'Vui lòng chọn ít nhất 1 nguồn để quét';
+    }
+    return '';
   };
+
+  // Update scanMode when selectedSources change
+  useEffect(() => {
+    if (selectedSources.length > 0 && scanMode === 'AUTO_DISCOVERY') {
+      setScanMode('HYBRID');
+    } else if (selectedSources.length === 0 && scanMode === 'HYBRID') {
+      setScanMode(isAutoDiscoveryConfigured === false ? 'ALL_ACTIVE_SOURCES' : 'AUTO_DISCOVERY');
+    }
+  }, [selectedSources, isAutoDiscoveryConfigured]);
+
+  useEffect(() => {
+    if (isAutoDiscoveryConfigured === false && scanMode === 'AUTO_DISCOVERY') {
+      setScanMode('ALL_ACTIVE_SOURCES');
+    }
+  }, [isAutoDiscoveryConfigured]);
 
   // ── Badge helpers ──
   const getStatusBadge = (status: string) => {
@@ -430,32 +482,35 @@ export default function ScanPage() {
       <Toaster position="top-right" />
 
       {/* ═══════════════════════════════════════════════════════════════════
-          1. PAGE HEADER — Terminal / Radar Theme
+          1. PAGE HEADER
          ═══════════════════════════════════════════════════════════════════ */}
-      <div className="flex items-center justify-between border-b border-[#0f2e24] pb-4 mb-4">
+      <div className="flex items-center justify-between border-b border-gray-800 pb-4 mb-4">
         <div className="flex items-center gap-4">
           <div className="relative flex items-center justify-center w-12 h-12">
-            <div className="absolute inset-0 border-2 border-emerald-500/30 rounded-full animate-ping" />
-            <div className="absolute inset-1 border border-emerald-500/60 rounded-full animate-[spin_3s_linear_infinite]" />
             <div className="absolute inset-0 bg-emerald-500/10 rounded-full blur-md" />
-            <Radar className="w-5 h-5 text-emerald-400 relative z-10" />
+            <Radar className="w-6 h-6 text-emerald-400 relative z-10" />
           </div>
           <div>
-            <h1 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400 tracking-wider font-mono">
-              RADAR SCAN CENTER
+            <h1 className="text-xl font-bold text-gray-100 tracking-wide">
+              Trung tâm quét dữ liệu
             </h1>
-            <p className="text-xs text-emerald-500/60 font-mono mt-1 uppercase tracking-widest">
-              [SYSTEM_READY] • DATA ACQUISITION PROTOCOL
+            <p className="text-xs text-gray-400 mt-1">
+              Quét theo từ khóa, tự tìm nguồn hoặc quét các nguồn đã cấu hình
             </p>
           </div>
         </div>
-        <button
-          onClick={() => { fetchWorkerStatus(); fetchCrawlJobs(); fetchData(); }}
-          className="group relative flex items-center gap-2 px-4 py-2 text-xs font-bold font-mono text-emerald-400 bg-[#051510] border border-emerald-500/30 rounded transition-all hover:bg-emerald-950 hover:border-emerald-400 hover:shadow-[0_0_15px_rgba(52,211,153,0.3)]"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${scanning ? 'animate-spin text-emerald-300' : 'group-hover:rotate-180 transition-transform duration-500'}`} />
-          {scanning ? 'SCANNING...' : 'SYNC'}
-        </button>
+        <div className="flex items-center gap-4">
+          <span className={`px-3 py-1 rounded text-xs font-medium border ${isAutoDiscoveryConfigured ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border-rose-500/20'}`} title={!isAutoDiscoveryConfigured ? 'Cần cấu hình SERPAPI_API_KEY' : undefined}>
+            Tự tìm nguồn: {isAutoDiscoveryConfigured ? 'Sẵn sàng' : 'Chưa cấu hình'}
+          </span>
+          <button
+            onClick={() => { fetchWorkerStatus(); fetchCrawlJobs(); fetchData(); }}
+            className="group relative flex items-center gap-2 px-4 py-2 text-xs font-medium text-emerald-400 bg-gray-900 border border-emerald-500/30 rounded-lg transition-all hover:bg-emerald-900 hover:border-emerald-400"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${scanning ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-500'}`} />
+            Đồng bộ
+          </button>
+        </div>
       </div>
 
       {/* ═══════════════════════════════════════════════════════════════════
@@ -516,107 +571,119 @@ export default function ScanPage() {
       )}
 
       {/* ═══════════════════════════════════════════════════════════════════
-          3. QUICK KEYWORD ADD BAR — Single row
+          3. MAIN SCAN INPUT CARD
          ═══════════════════════════════════════════════════════════════════ */}
-      <div className="bg-[#040C12] rounded border border-cyan-900/40 px-4 py-3 shadow-[0_0_15px_rgba(8,145,178,0.05)]">
-        <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2">
-          <div className="flex items-center gap-2 text-xs font-mono font-bold text-cyan-500 flex-shrink-0">
-            <Sparkles className="w-4 h-4 text-cyan-400 animate-pulse" />
-            <span className="whitespace-nowrap tracking-wider">INPUT_TARGET</span>
-          </div>
-          <div className="flex flex-1 flex-col sm:flex-row gap-2">
-            <input
-              id="quick-keyword-input"
-              type="text"
-              value={quickKeyword}
-              onChange={(e) => setQuickKeyword(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleQuickAdd()}
-              placeholder="ENTER TRACKING KEYWORD (E.G., VINFAST, IPHONE)"
-              className="flex-1 min-w-0 px-3 py-2 bg-[#02060A] border border-cyan-900 focus:border-cyan-400 rounded-sm focus:outline-none focus:ring-1 focus:ring-cyan-500 font-mono text-cyan-100 text-xs placeholder-cyan-900/60 transition-colors uppercase"
-            />
-            <select
-              id="quick-keyword-group"
-              value={quickGroupId}
-              onChange={(e) => setQuickGroupId(e.target.value ? Number(e.target.value) : '')}
-              className="sm:w-44 px-3 py-2 bg-[#02060A] border border-cyan-900 focus:border-cyan-400 rounded-sm focus:outline-none focus:ring-1 focus:ring-cyan-500 font-mono text-cyan-400 text-xs uppercase"
-            >
-              <option value="">-- DEFAULT_GROUP --</option>
-              {keywordGroups.map((g) => (
-                <option key={g.id} value={g.id}>{g.name}</option>
-              ))}
-            </select>
-            <div className="flex gap-2 flex-shrink-0">
-              <button
-                onClick={handleQuickAdd}
-                disabled={addingKeyword || !quickKeyword.trim()}
-                className="px-4 py-2 bg-[#02060A] text-cyan-500 border border-cyan-900 rounded-sm hover:bg-cyan-950 hover:text-cyan-300 hover:border-cyan-500 disabled:opacity-40 disabled:cursor-not-allowed flex items-center text-xs font-mono font-bold whitespace-nowrap transition-all uppercase tracking-wider"
-              >
-                {addingKeyword ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : <Plus className="w-3.5 h-3.5 mr-1.5" />}
-                ADD_ONLY
-              </button>
-              <button
-                onClick={handleQuickAddAndScan}
-                disabled={scanning || !quickKeyword.trim()}
-                className="px-4 py-2 bg-cyan-950 text-cyan-400 border border-cyan-500 rounded-sm hover:bg-cyan-900 disabled:opacity-40 disabled:cursor-not-allowed flex items-center text-xs font-mono font-bold whitespace-nowrap transition-all shadow-[0_0_10px_rgba(8,145,178,0.2)] hover:shadow-[0_0_15px_rgba(8,145,178,0.4)] uppercase tracking-wider"
-              >
-                {scanning ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : <Radar className="w-3.5 h-3.5 mr-1.5 animate-pulse" />}
-                ADD_AND_SCAN
-              </button>
+      <div className="bg-[#0f172a] rounded-xl border border-gray-800 p-6 shadow-lg mb-6 mt-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div className="lg:col-span-8 flex flex-col gap-5">
+            <div>
+              <label className="text-sm font-medium text-gray-300 mb-2 block">
+                Từ khóa cần quét
+              </label>
+              <div className="flex gap-3">
+                <input
+                  id="quick-keyword-input"
+                  type="text"
+                  value={quickKeyword}
+                  onChange={(e) => setQuickKeyword(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleScanSubmit()}
+                  placeholder="Nhập từ khóa cần theo dõi, ví dụ: Bệnh viện TTH"
+                  className="flex-1 bg-[#1e293b] border border-gray-700 rounded-lg px-4 py-2.5 text-sm text-gray-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-colors"
+                />
+                <select
+                  id="quick-keyword-group"
+                  value={quickGroupId}
+                  onChange={(e) => setQuickGroupId(e.target.value ? Number(e.target.value) : '')}
+                  className="w-48 bg-[#1e293b] border border-gray-700 rounded-lg px-3 py-2.5 text-sm text-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                >
+                  <option value="">-- Dự án / Nhãn hiệu --</option>
+                  {keywordGroups.map((g) => (
+                    <option key={g.id} value={g.id}>{g.name}</option>
+                  ))}
+                </select>
+              </div>
             </div>
+
+            <div>
+              <label className="text-sm font-medium text-gray-300 mb-2 block">Chế độ quét</label>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { id: 'AUTO_DISCOVERY', label: 'Tự tìm nguồn', disabled: !isAutoDiscoveryConfigured },
+                  { id: 'HYBRID', label: 'Kết hợp' },
+                  { id: 'SELECTED_SOURCES', label: 'Nguồn đã chọn' },
+                  { id: 'ALL_ACTIVE_SOURCES', label: 'Tất cả nguồn đang bật' }
+                ].map(mode => (
+                  <div key={mode.id} className="group relative">
+                    <label
+                      className={`inline-flex items-center gap-2 px-4 py-2 border rounded-lg transition-all text-sm font-medium ${
+                        mode.disabled
+                          ? 'bg-gray-900/50 border-gray-800 text-gray-600 cursor-not-allowed'
+                          : scanMode === mode.id
+                            ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300 cursor-pointer'
+                            : 'bg-[#1e293b] hover:bg-gray-800 border-gray-700 text-gray-400 hover:text-gray-200 cursor-pointer'
+                      }`}
+                      title={mode.disabled ? "Chưa cấu hình Web Search provider" : undefined}
+                    >
+                      <input
+                        type="radio"
+                        name="scanMode"
+                        value={mode.id}
+                        checked={scanMode === mode.id}
+                        onChange={() => {
+                          if (!mode.disabled) setScanMode(mode.id);
+                        }}
+                        disabled={mode.disabled}
+                        className={`rounded-full border-gray-600 focus:ring-emerald-500 bg-gray-800 h-4 w-4 ${mode.disabled ? 'opacity-50 cursor-not-allowed' : 'text-emerald-500'}`}
+                      />
+                      {mode.label}
+                    </label>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+          
+          <div className="lg:col-span-4 flex flex-col justify-end gap-3 lg:border-l lg:border-gray-800 lg:pl-6">
+            <div className="mb-auto">
+               <p className="text-xs text-gray-400 leading-relaxed">
+                 {getDisableReason() ? (
+                   <span className="text-rose-400 flex items-center gap-1.5"><AlertTriangle className="w-4 h-4"/> {getDisableReason()}</span>
+                 ) : (
+                   <span className="text-emerald-400 flex items-center gap-1.5"><CheckCircle className="w-4 h-4"/> Sẵn sàng quét</span>
+                 )}
+               </p>
+            </div>
+            <button
+              onClick={handleScanSubmit}
+              disabled={scanning || !canScan}
+              className="w-full px-6 py-3 bg-emerald-600 text-white font-medium rounded-lg hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-emerald-900/20 transition-all"
+            >
+              {scanning ? <Loader2 className="w-5 h-5 animate-spin" /> : <Radar className="w-5 h-5" />}
+              Bắt đầu quét
+            </button>
+            <button
+              onClick={handleQuickAdd}
+              disabled={addingKeyword || !quickKeyword.trim()}
+              className="w-full px-6 py-2.5 bg-gray-800 text-gray-300 font-medium rounded-lg hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 border border-gray-700 transition-all"
+            >
+              {addingKeyword ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+              Chỉ thêm từ khóa
+            </button>
           </div>
         </div>
       </div>
 
       {/* ═══════════════════════════════════════════════════════════════════
-          4. MANUAL SCAN CONTROL PANEL — Terminal card
+          4. SOURCE SELECTION CARD (Optional)
          ═══════════════════════════════════════════════════════════════════ */}
-      <div className="bg-[#02060A] border border-emerald-900/50 shadow-[0_0_20px_rgba(16,185,129,0.03)] rounded font-mono">
-
-        {/* ── 4A. Keyword Groups ───────────────────────────────────────── */}
-        <div className="px-4 py-3 border-b border-gray-800/80">
-          <div className="flex items-center justify-between mb-2.5">
-            <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
-              Nhóm từ khóa <span className="text-rose-500">*</span>
-            </label>
-            {selectedGroups.length > 0 && (
-              <span className="text-[10px] font-medium text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
-                {selectedGroups.length} nhóm đã chọn
-              </span>
-            )}
-          </div>
-          {keywordGroups.length === 0 ? (
-            <p className="text-xs text-gray-500 bg-gray-800/50 p-2.5 rounded-lg border border-gray-700">
-              Chưa có nhóm từ khóa. Hãy tạo nhóm từ khóa trước!
-            </p>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              {keywordGroups.map((group) => (
-                <label
-                  key={group.id}
-                  className={`inline-flex items-center gap-2 px-3 py-1.5 border rounded-lg cursor-pointer transition-all text-xs font-medium ${
-                    selectedGroups.includes(group.id)
-                      ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-300'
-                      : 'bg-[#1E293B] hover:bg-gray-800 border-gray-700 text-gray-400 hover:text-gray-200'
-                  }`}
-                >
-                  <input
-                    type="checkbox"
-                    checked={selectedGroups.includes(group.id)}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setSelectedGroups([...selectedGroups, group.id]);
-                      } else {
-                        setSelectedGroups(selectedGroups.filter((id) => id !== group.id));
-                      }
-                    }}
-                    className="rounded border-gray-600 text-indigo-600 focus:ring-indigo-500 bg-gray-800 h-3.5 w-3.5"
-                  />
-                  {group.name}
-                  <span className="text-[10px] text-gray-500 bg-gray-800 px-1.5 py-0.5 rounded">{group.keyword_count || 0} kw</span>
-                </label>
-              ))}
-            </div>
-          )}
+      <div className="bg-[#0f172a] border border-gray-800 rounded-xl mb-6">
+        <div className="px-6 py-4 border-b border-gray-800">
+          <h2 className="text-base font-semibold text-gray-100 flex items-center gap-2">
+            Nguồn tùy chọn
+          </h2>
+          <p className="text-xs text-gray-400 mt-1">
+            Chỉ cần chọn nguồn khi muốn giới hạn phạm vi quét. Nếu không chọn, hệ thống sẽ tự tìm nguồn theo từ khóa.
+          </p>
         </div>
 
         {/* ── 4B. Source Filters + Quick Actions ─────────────────────── */}
@@ -931,30 +998,94 @@ export default function ScanPage() {
             </div>
           )}
         </div>
+      </div>
 
-        {/* ── 4E. Start Scan Button ─────────────────────────────────── */}
-        <div className="px-4 py-3 border-t border-gray-800/80 bg-[#0B1220]/50">
-          <button
-            id="start-scan-btn"
-            onClick={handleScan}
-            disabled={scanning || !canScan}
-            className={`w-full flex items-center justify-center px-5 py-3 rounded-xl font-semibold text-sm transition-all duration-200 ${
-              canScan
-                ? 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-md shadow-indigo-500/20 hover:shadow-indigo-500/30 active:scale-[0.98]'
-                : 'bg-gray-800/80 text-gray-500 cursor-not-allowed border border-gray-700/50'
-            }`}
-          >
-            {scanning ? (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            ) : (
-              <Play className="w-4 h-4 mr-2" />
+
+
+      {/* ═══════════════════════════════════════════════════════════════════
+          5. AUTO DISCOVERY CONTROL PANEL 
+         ═══════════════════════════════════════════════════════════════════ */}
+      <div className="bg-[#0A0515] border border-fuchsia-900/50 shadow-[0_0_20px_rgba(217,70,239,0.03)] rounded font-mono mt-6">
+        <div className="px-4 py-3 border-b border-fuchsia-900/30 bg-gradient-to-r from-fuchsia-500/10 to-transparent">
+          <h2 className="text-sm font-bold text-fuchsia-400 flex items-center gap-2 tracking-wider">
+            <Globe2 className="w-4 h-4" /> AUTO_DISCOVERY // TỰ ĐỘNG TÌM NGUỒN (SERPAPI)
+          </h2>
+          <p className="text-[10px] text-fuchsia-500/70 mt-1 uppercase tracking-wide">
+            Tìm kiếm web công khai, tự động duyệt URL, phát hiện RSS và thêm Mentions.
+          </p>
+        </div>
+        
+        <div className="p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+          <div>
+            <label className="block text-[10px] font-semibold text-gray-500 uppercase mb-1.5">Ngôn ngữ</label>
+            <select
+              value={discoveryLanguage}
+              onChange={(e) => setDiscoveryLanguage(e.target.value)}
+              className="w-full px-3 py-2 bg-[#02060A] border border-fuchsia-900/50 focus:border-fuchsia-500 rounded text-xs text-fuchsia-100"
+            >
+              <option value="vi">Tiếng Việt</option>
+              <option value="en">English</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-[10px] font-semibold text-gray-500 uppercase mb-1.5">Quốc gia</label>
+            <select
+              value={discoveryCountry}
+              onChange={(e) => setDiscoveryCountry(e.target.value)}
+              className="w-full px-3 py-2 bg-[#02060A] border border-fuchsia-900/50 focus:border-fuchsia-500 rounded text-xs text-fuchsia-100"
+            >
+              <option value="vn">Việt Nam</option>
+              <option value="us">United States</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-[10px] font-semibold text-gray-500 uppercase mb-1.5">Thời gian</label>
+            <select
+              value={discoveryDateRange}
+              onChange={(e) => setDiscoveryDateRange(e.target.value)}
+              className="w-full px-3 py-2 bg-[#02060A] border border-fuchsia-900/50 focus:border-fuchsia-500 rounded text-xs text-fuchsia-100"
+            >
+              <option value="last_24_hours">24 giờ qua</option>
+              <option value="last_7_days">7 ngày qua</option>
+              <option value="last_30_days">30 ngày qua</option>
+              <option value="last_year">1 năm qua</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-[10px] font-semibold text-gray-500 uppercase mb-1.5">Số kết quả (max)</label>
+            <input
+              type="number"
+              min={1} max={100}
+              value={discoveryLimit}
+              onChange={(e) => setDiscoveryLimit(parseInt(e.target.value) || 20)}
+              className="w-full px-3 py-2 bg-[#02060A] border border-fuchsia-900/50 focus:border-fuchsia-500 rounded text-xs text-fuchsia-100"
+            />
+          </div>
+        </div>
+        
+        {discoveryResult && (
+          <div className={`mx-4 mb-4 px-4 py-3 rounded-lg border text-xs ${
+            discoveryResult.success ? 'bg-fuchsia-500/10 border-fuchsia-500/20 text-fuchsia-300' : 'bg-rose-500/10 border-rose-500/20 text-rose-300'
+          }`}>
+            <strong className="block mb-1">{discoveryResult.success ? '✓ Hoàn tất tìm kiếm' : '❌ Lỗi tìm kiếm'}</strong>
+            <p>{discoveryResult.message}</p>
+            {discoveryResult.success && (
+              <div className="mt-2 flex gap-3">
+                <Link href="/dashboard/mentions" className="text-fuchsia-400 hover:text-fuchsia-300 underline flex items-center gap-1">Xem Mentions mới <ExternalLink className="w-3 h-3"/></Link>
+                <Link href="/dashboard/sources?tab=discovered" className="text-fuchsia-400 hover:text-fuchsia-300 underline flex items-center gap-1">Duyệt nguồn tìm được <ExternalLink className="w-3 h-3"/></Link>
+              </div>
             )}
-            {scanning
-              ? 'Đang Scan...'
-              : canScan
-                ? `Bắt đầu Scan (${validSelectedSources.length > 0 ? validSelectedSources.length + ' nguồn' : '1 URL'}, ${selectedGroups.length} nhóm)`
-                : getDisableReason()
-            }
+          </div>
+        )}
+
+        <div className="px-4 py-3 border-t border-fuchsia-900/30 bg-[#0A0515]/50">
+          <button
+            onClick={handleAutoDiscovery}
+            disabled={discoveryLoading || (!quickKeyword.trim() && selectedGroups.length === 0)}
+            className="w-full flex items-center justify-center px-5 py-3 rounded-xl font-semibold text-sm transition-all duration-200 bg-fuchsia-600 text-white hover:bg-fuchsia-500 shadow-md shadow-fuchsia-500/20 hover:shadow-fuchsia-500/30 active:scale-[0.98] disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed"
+          >
+            {discoveryLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Network className="w-4 h-4 mr-2" />}
+            {discoveryLoading ? 'ĐANG TÌM KIẾM & QUÉT...' : 'TỰ ĐỘNG TÌM NGUỒN & QUÉT'}
           </button>
         </div>
       </div>
