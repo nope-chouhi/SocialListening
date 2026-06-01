@@ -86,6 +86,10 @@ export function getErrorMessage(error: any, fallback = 'Lỗi không xác địn
     return `Không kết nối được backend (Network Error). Vui lòng kiểm tra Render backend (https://social-listening-backend.onrender.com) hoặc CORS config. URL gọi: ${error?.config?.url}`;
   }
 
+  if (status === 401 || status === 403) {
+    return 'Phiên đăng nhập chưa hợp lệ hoặc đã hết hạn. Vui lòng đăng nhập lại.';
+  }
+
   if (typeof detail === 'string' && detail) {
     msg = detail;
   } else if (Array.isArray(detail) && detail.length > 0) {

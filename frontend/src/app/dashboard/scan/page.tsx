@@ -290,7 +290,7 @@ export default function ScanPage() {
       fetchWorkerStatus();
     } catch (error: any) {
       toast.dismiss();
-      toast.error('Lỗi: ' + (error.response?.data?.detail || error.message));
+      toast.error('Lỗi: ' + getErrorMessage(error));
     } finally {
       setScanning(false);
     }

@@ -4,16 +4,15 @@ echo   Deploying to GitHub...
 echo ========================================
 echo.
 
-git add .
-git commit -m "feat: update service catalog module"
-git push origin main
+echo Syncing with remote before pushing...
+git pull origin main --rebase
 
-if errorlevel 1 (
-    echo.
-    echo Syncing with remote...
-    git pull origin main --rebase
-    git push origin main
-)
+echo.
+git add .
+git commit -m "auto-deploy update"
+
+echo.
+git push origin main
 
 echo.
 echo ========================================

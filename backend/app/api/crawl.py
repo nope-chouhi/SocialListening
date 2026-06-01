@@ -165,9 +165,7 @@ def _run_discovery_bg(job_id: int):
         db.close()
 
 @router.get("/capabilities", response_model=ScanCapabilitiesResponse)
-def get_capabilities(
-    current_user: User = Depends(get_current_active_user)
-):
+def get_capabilities():
     from app.core.config import settings
     has_serpapi = bool(settings.SERPAPI_API_KEY)
     
