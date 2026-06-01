@@ -353,6 +353,18 @@ export const mentions = {
     const response = await api.post(`/api/mentions/${id}/mark-reviewed`);
     return response.data;
   },
+  updateTags: async (id: number, tags: string[]) => {
+    const response = await api.put(`/api/mentions/${id}/tags`, { tags });
+    return response.data;
+  },
+  updateMute: async (id: number, is_muted: boolean) => {
+    const response = await api.put(`/api/mentions/${id}/mute`, { is_muted });
+    return response.data;
+  },
+  updateSentiment: async (id: number, sentiment: string) => {
+    const response = await api.put(`/api/mentions/${id}/sentiment`, { sentiment });
+    return response.data;
+  },
 };
 
 // ─── Alerts ───────────────────────────────────────────────────────────────────

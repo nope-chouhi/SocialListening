@@ -610,26 +610,46 @@ def run_discovery_job(db: Session, job_id: int) -> DiscoveryJob:
                 for mk in match_result["matched_keywords"]
             ]
 
+            source_type = sr.get("source_type") or _guess_source_type(domain, crawl_result.get("title", ""))
+            platform = sr.get("platform") or "web"
+            if sr.get("is_social_video"):
+                source_type = "video"
+                platform = "youtube"
+
             mention = Mention(
-                source_id=0,  # Auto-discovered — no active source yet
+                job_id=job.id,
+                source_id=None,  # Nullable for auto-discovered
+                keyword_text=keywords[0] if keywords else None,
+                source_type=source_type,
+                platform=platform,
+                domain=domain,
                 title=(crawl_result.get("title") or sr.get("title", ""))[:500] if (crawl_result.get("title") or sr.get("title")) else None,
                 content=mention_content[:10000],
+                snippet=match_result.get("match_context", "")[:1000] if match_result.get("match_context") else sr.get("snippet", "")[:1000],
                 content_hash=content_hash or _generate_content_hash(mention_content),
                 url=normalized_url,
                 author=crawl_result.get("author", ""),
-                published_at=None,  # Will try to parse later if available
+                published_at=crawl_result.get("published_at") or sr.get("published_at"),
                 collected_at=datetime.now(timezone.utc),
                 matched_keywords=matched_kw_data,
+                language=crawl_result.get("language", ""),
+                country=job.country,
                 meta_data={
-                    "discovery_job_id": job.id,
-                    "domain": domain,
-                    "source_type": "auto_discovered",
-                    "snippet": match_result.get("match_context", ""),
                     "search_position": sr.get("position"),
-                    "language": crawl_result.get("language", ""),
                 },
+                extraction_source="crawled_page" if crawl_result.get("success") else "search_result",
                 is_reviewed=False,
             )
+            
+            # Simple influence score calculation
+            base_score = 5.0
+            if sr.get("position"):
+                try:
+                    pos = int(sr.get("position"))
+                    base_score = max(0.1, 10.0 - (pos * 0.2))
+                except Exception:
+                    pass
+            mention.influence_score = base_score
             db.add(mention)
             db.flush()
 

@@ -7,17 +7,40 @@ from app.models.mention import SentimentScore
 # Mention Schemas
 class MentionBase(BaseModel):
     title: Optional[str] = None
-    content: str
-    url: str
+    content: Optional[str] = None
+    snippet: Optional[str] = None
+    url: Optional[str] = None
     author: Optional[str] = None
     published_at: Optional[datetime] = None
+    project_id: Optional[int] = None
+    keyword_id: Optional[int] = None
+    keyword_text: Optional[str] = None
+    job_id: Optional[int] = None
+    source_type: Optional[str] = None
+    platform: Optional[str] = None
+    domain: Optional[str] = None
+    sentiment: Optional[str] = None
+    sentiment_confidence: Optional[float] = None
+    influence_score: Optional[float] = None
+    reach_estimate: Optional[int] = None
+    views_count: Optional[int] = None
+    comments_count: Optional[int] = None
+    likes_count: Optional[int] = None
+    shares_count: Optional[int] = None
+    language: Optional[str] = None
+    country: Optional[str] = None
+    tags_json: Optional[Any] = None
+    is_muted: Optional[bool] = False
+    is_deleted: Optional[bool] = False
+    extraction_source: Optional[str] = None
+    confidence: Optional[str] = None
 
 
 class MentionCreate(MentionBase):
-    source_id: int
+    source_id: Optional[int] = None
     matched_keywords: Optional[List[Dict[str, Any]]] = None
     platform_post_id: Optional[str] = None
-    metadata: Optional[Dict[str, Any]] = None
+    meta_data: Optional[Dict[str, Any]] = None
 
 
 class MentionUpdate(BaseModel):
@@ -28,12 +51,13 @@ class MentionUpdate(BaseModel):
 
 class MentionResponse(MentionBase):
     id: int
-    source_id: int
-    content_hash: str
-    matched_keywords: Optional[List[Dict[str, Any]]]
-    platform_post_id: Optional[str]
-    metadata: Optional[Dict[str, Any]]
+    source_id: Optional[int] = None
+    content_hash: Optional[str] = None
+    matched_keywords: Optional[List[Dict[str, Any]]] = None
+    platform_post_id: Optional[str] = None
+    meta_data: Optional[Dict[str, Any]] = None
     collected_at: datetime
+    is_reviewed: Optional[bool] = False
     
     class Config:
         orm_mode = True
@@ -82,14 +106,19 @@ class AIAnalysisResponse(AIAnalysisBase):
 # Search and Filter
 class MentionFilter(BaseModel):
     source_id: Optional[int] = None
+    job_id: Optional[int] = None
     keyword_group_id: Optional[int] = None
-    sentiment: Optional[SentimentScore] = None
+    search_query: Optional[str] = None
+    keyword_text: Optional[str] = None
+    source_type: Optional[str] = None
+    sentiment: Optional[str] = None
+    is_muted: Optional[bool] = None
+    min_influence_score: Optional[float] = None
     min_risk_score: Optional[float] = Field(None, ge=0, le=100)
     max_risk_score: Optional[float] = Field(None, ge=0, le=100)
     crisis_level: Optional[int] = Field(None, ge=1, le=5)
     start_date: Optional[datetime] = None
     end_date: Optional[datetime] = None
-    search_query: Optional[str] = None
 
 
 class MentionListResponse(BaseModel):

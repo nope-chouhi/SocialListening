@@ -16,14 +16,38 @@ class Mention(Base):
     __tablename__ = "mentions"
     
     id = Column(Integer, primary_key=True, index=True)
-    source_id = Column(Integer, nullable=False, index=True)
+    project_id = Column(Integer, nullable=True, index=True)
+    keyword_id = Column(Integer, nullable=True, index=True)
+    keyword_text = Column(String(255), nullable=True)
+    job_id = Column(Integer, nullable=True, index=True)
+    source_id = Column(Integer, nullable=True, index=True)
+    
+    # Discovery Info
+    source_type = Column(String(50), nullable=True)
+    platform = Column(String(100), nullable=True)
+    domain = Column(String(500), nullable=True, index=True)
     
     # Content
     title = Column(Text)
-    content = Column(Text, nullable=False)
+    content = Column(Text, nullable=True)
+    snippet = Column(Text, nullable=True)
     content_hash = Column(String(64), unique=True, index=True)  # For deduplication
-    url = Column(Text, nullable=False)
+    url = Column(Text, nullable=True)
     author = Column(String(500))
+    
+    # Analytics & Metrics
+    sentiment = Column(String(50), nullable=True)
+    sentiment_confidence = Column(Float, nullable=True)
+    influence_score = Column(Float, nullable=True)
+    reach_estimate = Column(Integer, nullable=True)
+    views_count = Column(Integer, nullable=True)
+    comments_count = Column(Integer, nullable=True)
+    likes_count = Column(Integer, nullable=True)
+    shares_count = Column(Integer, nullable=True)
+    
+    # Demographics
+    language = Column(String(50), nullable=True)
+    country = Column(String(50), nullable=True)
     
     # Timestamps
     published_at = Column(DateTime(timezone=True), index=True)
@@ -31,6 +55,13 @@ class Mention(Base):
     
     # Matched keywords
     matched_keywords = Column(JSON)  # List of matched keyword IDs and positions
+    
+    # Flags & Actions
+    tags_json = Column(JSON, nullable=True)
+    is_muted = Column(Boolean, default=False)
+    is_deleted = Column(Boolean, default=False)
+    extraction_source = Column(String(100), nullable=True)
+    confidence = Column(String(50), nullable=True)
     
     # Metadata
     platform_post_id = Column(String(255), index=True)  # Facebook post ID, YouTube comment ID, etc.
@@ -42,6 +73,8 @@ class Mention(Base):
         Index('idx_mention_published', 'published_at'),
         Index('idx_mention_collected', 'collected_at'),
         Index('idx_mention_source', 'source_id'),
+        Index('idx_mention_job', 'job_id'),
+        Index('idx_mention_domain', 'domain'),
     )
 
 

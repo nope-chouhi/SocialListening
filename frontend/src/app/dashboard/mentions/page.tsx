@@ -1,12 +1,14 @@
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import {
   Search, Eye, Trash2, FileText, X, ExternalLink,
   ArrowUpDown, ChevronDown, ChevronUp, Filter, BarChart3,
   Globe, Rss, TrendingUp, TrendingDown, Minus,
   AlertTriangle, CheckCircle2, BrainCircuit, Loader2,
   Facebook, Youtube, RefreshCw, SlidersHorizontal, Sparkles,
+  Twitter, Instagram, Mic, Video, Link2Off, Tag,
 } from 'lucide-react';
 import { mentions as mentionsApi, dashboard } from '@/lib/api';
 import toast, { Toaster } from 'react-hot-toast';
@@ -32,7 +34,13 @@ interface MentionItem {
   published_at: string | null;
   collected_at: string | null;
   is_reviewed: boolean;
+  is_muted: boolean;
   matched_keywords: any[] | null;
+  snippet: string | null;
+  sentiment: string | null;
+  domain: string | null;
+  influence_score: number | null;
+  tags_json: string[] | null;
   ai_analysis: {
     sentiment: string | null;
     risk_score: number | null;
@@ -57,6 +65,7 @@ interface Filters {
   sentiment: string | null;
   source_type: string | null;
   min_risk_score: number | null;
+  min_influence_score: number | null;
   sort_by: string;
 }
 
@@ -73,13 +82,16 @@ const SENTIMENT_OPTIONS = [
 ];
 
 const SOURCE_TYPE_OPTIONS = [
-  { value: 'rss', label: 'RSS', icon: Rss, color: 'text-orange-400' },
-  { value: 'website', label: 'Website', icon: Globe, color: 'text-blue-400' },
-  { value: 'facebook_page', label: 'Facebook Page', icon: Facebook, color: 'text-blue-500' },
-  { value: 'facebook_group', label: 'Facebook Group', icon: Facebook, color: 'text-blue-400' },
-  { value: 'youtube_channel', label: 'YouTube Channel', icon: Youtube, color: 'text-red-400' },
-  { value: 'news', label: 'Tin tức', icon: FileText, color: 'text-gray-400' },
-  { value: 'forum', label: 'Forum', icon: Globe, color: 'text-purple-400' },
+  { value: 'web', label: 'Web', icon: Globe, color: 'text-blue-400', disabled: false },
+  { value: 'news', label: 'News', icon: FileText, color: 'text-gray-400', disabled: false },
+  { value: 'blog', label: 'Blogs', icon: FileText, color: 'text-green-400', disabled: false },
+  { value: 'video', label: 'Videos (YouTube)', icon: Youtube, color: 'text-red-400', disabled: false },
+  { value: 'rss', label: 'RSS', icon: Rss, color: 'text-orange-400', disabled: false },
+  { value: 'facebook', label: 'Facebook', icon: Facebook, color: 'text-blue-500', disabled: true, msg: 'Connect required' },
+  { value: 'instagram', label: 'Instagram', icon: Instagram, color: 'text-fuchsia-500', disabled: true, msg: 'Connect required' },
+  { value: 'twitter', label: 'X/Twitter', icon: Twitter, color: 'text-sky-400', disabled: true, msg: 'Not configured' },
+  { value: 'tiktok', label: 'TikTok', icon: Video, color: 'text-pink-400', disabled: true, msg: 'Connector required' },
+  { value: 'podcast', label: 'Podcasts', icon: Mic, color: 'text-purple-400', disabled: true, msg: 'Coming soon' },
 ];
 
 const SORT_OPTIONS = [
@@ -103,16 +115,22 @@ const RISK_PRESETS = [
 function SourceIcon({ type, className }: { type: string; className?: string }) {
   const baseClass = className || 'w-4 h-4';
   switch (type?.toLowerCase()) {
+    case 'facebook':
     case 'facebook_page':
     case 'facebook_group':
-    case 'facebook_profile':
       return <Facebook className={baseClass} />;
-    case 'youtube_channel':
-    case 'youtube_video':
+    case 'instagram':
+      return <Instagram className={baseClass} />;
+    case 'twitter':
+      return <Twitter className={baseClass} />;
+    case 'tiktok':
+    case 'video':
+    case 'youtube':
       return <Youtube className={baseClass} />;
     case 'rss':
       return <Rss className={baseClass} />;
     case 'news':
+    case 'blog':
       return <FileText className={baseClass} />;
     default:
       return <Globe className={baseClass} />;
@@ -166,6 +184,11 @@ function highlightKeywords(text: string, keywords: any[] | null) {
    ═══════════════════════════════════════════════════════════════════════════ */
 
 export default function MentionsPage() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const initialJobId = searchParams?.get('job_id');
+  const initialKeyword = searchParams?.get('keyword');
+
   // Data
   const [mentionsList, setMentionsList] = useState<MentionItem[]>([]);
   const [totalMentions, setTotalMentions] = useState<number>(-1);
@@ -177,12 +200,13 @@ export default function MentionsPage() {
   const [loading, setLoading] = useState(true);
   const [loadingChart, setLoadingChart] = useState(true);
   const [page, setPage] = useState(1);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [searchInput, setSearchInput] = useState('');
+  const [searchTerm, setSearchTerm] = useState(initialKeyword || '');
+  const [searchInput, setSearchInput] = useState(initialKeyword || '');
   const [filters, setFilters] = useState<Filters>({
     sentiment: null,
     source_type: null,
     min_risk_score: null,
+    min_influence_score: null,
     sort_by: 'newest',
   });
   const [filterPanelOpen, setFilterPanelOpen] = useState(false);
@@ -218,10 +242,12 @@ export default function MentionsPage() {
         page_size: 20,
         sort_by: filters.sort_by,
       };
+      if (initialJobId) params.job_id = initialJobId;
       if (searchTerm) params.search_query = searchTerm;
       if (filters.sentiment) params.sentiment = filters.sentiment;
       if (filters.source_type) params.source_type = filters.source_type;
       if (filters.min_risk_score !== null) params.min_risk_score = filters.min_risk_score;
+      if (filters.min_influence_score !== null) params.min_influence_score = filters.min_influence_score;
 
       const data = await mentionsApi.list(params);
       setMentionsList(data.items);
@@ -233,7 +259,7 @@ export default function MentionsPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, searchTerm, filters]);
+  }, [page, searchTerm, filters, initialJobId]);
 
   const fetchChartData = useCallback(async () => {
     try {
@@ -278,7 +304,7 @@ export default function MentionsPage() {
   };
 
   const clearAllFilters = () => {
-    setFilters({ sentiment: null, source_type: null, min_risk_score: null, sort_by: 'newest' });
+    setFilters({ sentiment: null, source_type: null, min_risk_score: null, min_influence_score: null, sort_by: 'newest' });
     setSearchTerm('');
     setSearchInput('');
     setPage(1);
@@ -541,15 +567,21 @@ export default function MentionsPage() {
                 {SOURCE_TYPE_OPTIONS.map((st) => (
                   <button
                     key={st.value}
+                    disabled={st.disabled}
                     onClick={() => updateFilter('source_type', filters.source_type === st.value ? null : st.value)}
-                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all ${
                       filters.source_type === st.value
                         ? 'bg-indigo-500/15 text-white border border-indigo-500/30'
-                        : 'text-gray-400 hover:text-gray-200 hover:bg-[#1E293B] border border-transparent'
+                        : st.disabled
+                          ? 'opacity-40 cursor-not-allowed bg-transparent border border-transparent grayscale'
+                          : 'text-gray-400 hover:text-gray-200 hover:bg-[#1E293B] border border-transparent'
                     }`}
                   >
-                    <st.icon className={`w-3.5 h-3.5 flex-shrink-0 ${st.color}`} />
-                    {st.label}
+                    <div className="flex items-center gap-2.5">
+                      <st.icon className={`w-3.5 h-3.5 flex-shrink-0 ${st.color}`} />
+                      {st.label}
+                    </div>
+                    {st.disabled && <span className="text-[9px] text-gray-500">{st.msg}</span>}
                   </button>
                 ))}
               </div>
@@ -623,18 +655,24 @@ export default function MentionsPage() {
 
               {/* Platform */}
               <h4 className="text-[11px] text-gray-500 font-semibold uppercase tracking-wider mb-2">Nền tảng</h4>
-              <div className="flex flex-wrap gap-1.5 mb-4">
+              <div className="flex flex-col gap-1.5 mb-4">
                 {SOURCE_TYPE_OPTIONS.map((st) => (
                   <button
                     key={st.value}
+                    disabled={st.disabled}
                     onClick={() => updateFilter('source_type', filters.source_type === st.value ? null : st.value)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
+                    className={`flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium border transition-all ${
                       filters.source_type === st.value
                         ? 'bg-indigo-500/15 text-white border-indigo-500/30'
-                        : 'text-gray-400 border-gray-800 hover:border-gray-700'
+                        : st.disabled
+                          ? 'opacity-40 cursor-not-allowed border-transparent bg-transparent grayscale'
+                          : 'text-gray-400 border-gray-800 hover:border-gray-700'
                     }`}
                   >
-                    <st.icon className={`w-3.5 h-3.5 ${st.color}`} /> {st.label}
+                    <div className="flex items-center gap-2">
+                      <st.icon className={`w-3.5 h-3.5 ${st.color}`} /> {st.label}
+                    </div>
+                    {st.disabled && <span className="text-[9px] text-gray-500">{st.msg}</span>}
                   </button>
                 ))}
               </div>
@@ -720,38 +758,42 @@ export default function MentionsPage() {
               <div className="w-16 h-16 rounded-xl bg-[#1E293B] flex items-center justify-center mx-auto mb-4 border border-gray-800">
                 {hasActiveFilters ? <Search className="w-8 h-8 text-gray-600" /> : <FileText className="w-8 h-8 text-gray-600" />}
               </div>
-              <p className="text-gray-400 font-medium mb-1">
-                {hasActiveFilters ? 'Không tìm thấy mentions nào' : 'Chưa có mention nào'}
+              <p className="text-gray-300 font-medium mb-2 text-lg">
+                {hasActiveFilters ? 'Không tìm thấy mentions nào' : 'Chưa có dữ liệu'}
               </p>
-              <p className="text-xs text-gray-600">
+              <p className="text-sm text-gray-500 max-w-md mx-auto leading-relaxed">
                 {hasActiveFilters
                   ? 'Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm.'
-                  : 'Hãy thực hiện scan để thu thập dữ liệu!'}
+                  : initialJobId
+                    ? 'Quá trình quét tự động có thể đang diễn ra. Vui lòng thử tải lại sau ít phút hoặc không có mention nào phù hợp được tìm thấy.'
+                    : 'Nhập từ khóa và tạo phiên bản quét tại Scan Center để tìm kiếm mentions trên web.'}
               </p>
-              {hasActiveFilters && (
-                <button onClick={clearAllFilters} className="mt-4 text-xs text-indigo-400 hover:text-indigo-300 underline underline-offset-2 font-medium transition-colors">
-                  Xóa tất cả bộ lọc
+              {hasActiveFilters ? (
+                <button onClick={clearAllFilters} className="mt-6 px-4 py-2 text-sm text-indigo-400 hover:text-white hover:bg-indigo-500 border border-indigo-500/50 rounded-xl font-medium transition-colors">
+                  Xóa bộ lọc
                 </button>
+              ) : !initialJobId && (
+                <Link href="/dashboard/scan" className="mt-6 inline-flex px-4 py-2 text-sm text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl font-medium transition-colors">
+                  Đến Scan Center
+                </Link>
               )}
             </div>
           ) : (
             <div className="space-y-3">
               {mentionsList.map((mention, idx) => {
-                const analysis = mention.ai_analysis;
-                const sentimentOpt = analysis ? SENTIMENT_OPTIONS.find((s) => s.value === analysis.sentiment) : null;
-                const riskScore = analysis?.risk_score;
-                const isDummy = analysis?.ai_provider === 'dummy' || analysis?.ai_provider === 'dummy_ai';
-
-                const isCritical = analysis?.sentiment === 'negative_high' || (riskScore !== null && riskScore !== undefined && riskScore >= 80);
-                const isPositive = analysis?.sentiment === 'positive';
+                const sentimentOpt = SENTIMENT_OPTIONS.find((s) => s.value === mention.sentiment) || SENTIMENT_OPTIONS.find((s) => s.value === 'neutral');
+                const riskScore = mention.ai_analysis?.risk_score;
+                const isCritical = mention.sentiment === 'negative_high' || (riskScore !== null && riskScore !== undefined && riskScore >= 80);
+                const isPositive = mention.sentiment === 'positive';
+                const isMuted = mention.is_muted;
                 
-                const glowClass = isCritical 
-                  ? 'border-rose-500/40 shadow-[0_0_30px_rgba(225,29,72,0.15)] bg-gradient-to-r from-rose-950/40 to-[#050A15]'
-                  : isPositive 
-                  ? 'border-emerald-500/30 shadow-[0_0_20px_rgba(16,185,129,0.1)] bg-gradient-to-r from-emerald-950/30 to-[#050A15]'
-                  : mention.is_reviewed 
-                    ? 'border-white/5 opacity-70 bg-[#050A15]' 
-                    : 'border-white/10 hover:border-white/20 bg-white/5 backdrop-blur-xl hover:shadow-[0_0_25px_rgba(255,255,255,0.05)]';
+                const glowClass = isMuted
+                  ? 'border-gray-800/50 bg-[#111827]/50 opacity-60 grayscale-[50%]'
+                  : isCritical 
+                    ? 'border-rose-500/40 shadow-[0_0_30px_rgba(225,29,72,0.15)] bg-gradient-to-r from-rose-950/40 to-[#050A15]'
+                    : isPositive 
+                      ? 'border-emerald-500/30 shadow-[0_0_20px_rgba(16,185,129,0.1)] bg-gradient-to-r from-emerald-950/30 to-[#050A15]'
+                      : 'border-white/10 hover:border-white/20 bg-white/5 backdrop-blur-xl hover:shadow-[0_0_25px_rgba(255,255,255,0.05)]';
 
                 return (
                   <div
@@ -759,25 +801,27 @@ export default function MentionsPage() {
                     className={`rounded-2xl border overflow-hidden transition-all duration-500 hover:-translate-y-1 group relative ${glowClass}`}
                     style={{ animationDelay: `${idx * 30}ms` }}
                   >
-                    {isCritical && <div className="absolute left-0 top-0 bottom-0 w-1 bg-rose-500 shadow-[0_0_15px_rgba(225,29,72,1)]" />}
-                    {isPositive && <div className="absolute left-0 top-0 bottom-0 w-1 bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,1)]" />}
+                    {isCritical && !isMuted && <div className="absolute left-0 top-0 bottom-0 w-1 bg-rose-500 shadow-[0_0_15px_rgba(225,29,72,1)]" />}
+                    {isPositive && !isMuted && <div className="absolute left-0 top-0 bottom-0 w-1 bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,1)]" />}
 
                     <div className="p-5">
                       {/* ── Top Row: Source Info + Badges ───────────────────── */}
                       <div className="flex items-start justify-between gap-3 mb-3">
                         <div className="flex items-center gap-3 min-w-0 flex-1">
                           <div className="w-9 h-9 bg-[#0B1220] border border-gray-800 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:border-gray-700 transition-colors">
-                            <SourceIcon type={mention.source_type} className="w-4 h-4 text-indigo-400" />
+                            <SourceIcon type={mention.source_type || 'web'} className="w-4 h-4 text-indigo-400" />
                           </div>
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2">
-                              <span className="text-xs font-semibold text-indigo-400 tracking-wide truncate">{mention.source_name}</span>
+                              <span className="text-sm font-bold text-indigo-400 tracking-wide truncate">
+                                {mention.domain || mention.source_name || 'unknown'}
+                              </span>
                               <span className="text-gray-700">·</span>
-                              <span className="text-[11px] text-gray-500 flex-shrink-0">{formatRelativeTime(mention.collected_at)}</span>
+                              <span className="text-[11px] text-gray-400 flex-shrink-0">{formatRelativeTime(mention.published_at || mention.collected_at)}</span>
                               {mention.author && (
                                 <>
                                   <span className="text-gray-700">·</span>
-                                  <span className="text-[11px] text-gray-500 truncate">{mention.author}</span>
+                                  <span className="text-[11px] text-gray-400 truncate">{mention.author}</span>
                                 </>
                               )}
                             </div>
@@ -785,21 +829,10 @@ export default function MentionsPage() {
                         </div>
 
                         {/* Right badges */}
-                        <div className="flex items-center gap-1.5 flex-shrink-0">
-                          {isDummy && (
-                            <span className="px-2 py-0.5 text-[9px] font-bold tracking-wider text-amber-400 bg-amber-500/10 rounded-md border border-amber-500/20">
-                              DUMMY
-                            </span>
-                          )}
-                          {analysis?.ai_provider && !isDummy && (
-                            <span className="px-2 py-0.5 text-[9px] font-bold tracking-wider text-indigo-400 bg-indigo-500/10 rounded-md border border-indigo-500/20">
-                              {analysis.ai_provider.toUpperCase()}
-                            </span>
-                          )}
-                          {mention.metadata?.source_type === 'auto_discovered' && (
-                            <span className="inline-flex items-center gap-0.5 px-2 py-0.5 text-[9px] font-bold tracking-wider text-fuchsia-400 bg-fuchsia-500/10 rounded-md border border-fuchsia-500/20" title="Được tìm thấy qua Tự động tìm nguồn">
-                              <Sparkles className="w-2.5 h-2.5" />
-                              AUTO-DISCOVERED
+                        <div className="flex flex-wrap justify-end items-center gap-1.5 flex-shrink-0">
+                          {mention.influence_score !== undefined && mention.influence_score !== null && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold tracking-wider rounded-md border bg-indigo-500/10 text-indigo-400 border-indigo-500/20" title="Influence Score">
+                              ⭐ {mention.influence_score}/10
                             </span>
                           )}
                           {sentimentOpt && (
@@ -808,16 +841,16 @@ export default function MentionsPage() {
                               {sentimentOpt.label}
                             </span>
                           )}
-                          {!analysis && (
+                          {isMuted && (
                             <span className="px-2 py-0.5 text-[10px] font-bold tracking-wider text-gray-500 bg-gray-800 rounded-md border border-gray-700">
-                              PENDING
+                              <Link2Off className="w-3 h-3 inline mr-1" /> MUTED
                             </span>
                           )}
                         </div>
                       </div>
 
                       {/* ── Title ───────────────────────────────────────────── */}
-                      <h3 className="font-semibold text-white text-[15px] leading-snug mb-2 line-clamp-2">
+                      <h3 className="font-semibold text-white text-[16px] leading-snug mb-2 line-clamp-2 hover:text-indigo-300 transition-colors cursor-pointer" onClick={() => window.open(mention.url, '_blank')}>
                         {mention.title
                           ? highlightKeywords(mention.title, mention.matched_keywords)
                           : <span className="text-gray-500 italic">Không có tiêu đề</span>
@@ -825,144 +858,77 @@ export default function MentionsPage() {
                       </h3>
 
                       {/* ── Content Preview ─────────────────────────────────── */}
-                      <p className="text-sm text-gray-400 leading-relaxed line-clamp-2 mb-3">
-                        {mention.content
-                          ? highlightKeywords(mention.content.substring(0, 300), mention.matched_keywords)
-                          : ''
+                      <p className="text-sm text-gray-300 leading-relaxed line-clamp-3 mb-3">
+                        {mention.snippet
+                          ? highlightKeywords(mention.snippet, mention.matched_keywords)
+                          : mention.content
+                            ? highlightKeywords(mention.content.substring(0, 300), mention.matched_keywords)
+                            : ''
                         }
                       </p>
 
-                      {/* ── Meta Row: Risk, Crisis, Keywords ────────────────── */}
-                      <div className="flex flex-wrap items-center gap-2 mb-3">
-                        {riskScore !== null && riskScore !== undefined && (
-                          <span className={`px-2 py-0.5 text-[10px] font-bold tracking-wider rounded-md border ${
-                            riskScore >= 80 ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' :
-                            riskScore >= 60 ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' :
-                            riskScore >= 40 ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
-                            'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                          }`}>
-                            RISK {riskScore}
-                          </span>
-                        )}
-                        {analysis?.crisis_level && (
-                          <span className="px-2 py-0.5 text-[10px] font-bold tracking-wider text-purple-400 bg-purple-500/10 rounded-md border border-purple-500/20">
-                            CRISIS L{analysis.crisis_level}
-                          </span>
-                        )}
-                        {analysis?.vietnamese_context_label && (
-                          <span className="px-2 py-0.5 text-[10px] font-medium text-indigo-300 bg-indigo-500/10 rounded-md border border-indigo-500/20">
-                            🏷️ {analysis.vietnamese_context_label}
-                          </span>
-                        )}
-                        {analysis?.tone && (
-                          <span className="px-2 py-0.5 text-[10px] font-medium text-cyan-300 bg-cyan-500/10 rounded-md border border-cyan-500/20">
-                            🎭 {analysis.tone}
-                          </span>
-                        )}
-                        {analysis?.sarcasm_possible && (
-                          <span className="px-2 py-0.5 text-[10px] font-bold tracking-wider text-amber-300 bg-amber-500/10 rounded-md border border-amber-500/20">
-                            😏 MỈA MAI
-                          </span>
-                        )}
-                        {analysis?.sensitive_signal && (
-                          <span className="px-2 py-0.5 text-[10px] font-bold tracking-wider text-rose-300 bg-rose-500/10 rounded-md border border-rose-500/20 animate-pulse">
-                            ⚠️ NHẠY CẢM
-                          </span>
-                        )}
-                        {mention.matched_keywords && mention.matched_keywords.length > 0 && (
-                          <span className="px-2 py-0.5 text-[10px] font-medium text-gray-400 bg-[#0B1220] rounded-md border border-gray-800">
-                            🔑 {mention.matched_keywords.map((k: any) => typeof k === 'string' ? k : k.keyword).join(', ')}
-                          </span>
-                        )}
-                      </div>
+                      {/* ── Meta Row: Tags ────────────────── */}
+                      {mention.tags_json && mention.tags_json.length > 0 && (
+                        <div className="flex flex-wrap items-center gap-2 mb-3">
+                          {mention.tags_json.map((tag: string, tidx: number) => (
+                            <span key={tidx} className="px-2 py-0.5 text-[10px] font-medium text-gray-300 bg-[#0B1220] rounded-md border border-gray-800">
+                              <Tag className="w-2.5 h-2.5 inline mr-1" /> {tag}
+                            </span>
+                          ))}
+                        </div>
+                      )}
 
                       {/* ── Action Bar ──────────────────────────────────────── */}
-                      <div className="flex items-center justify-between pt-3 border-t border-gray-800/60">
-                        <div className="flex items-center gap-1.5">
-                          <Link
-                            href={`/dashboard/mentions/${mention.id}`}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium text-gray-400 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg transition-all border border-transparent hover:border-indigo-500/20"
-                          >
-                            <Eye className="w-3.5 h-3.5" />
-                            Chi tiết
-                          </Link>
-                          {!mention.is_reviewed && (
-                            <button
-                              onClick={() => handleAction(mention.id, 'review', () => mentionsApi.markReviewed(mention.id), 'Đã đánh dấu xem')}
-                              disabled={!!actionLoading[`${mention.id}_review`]}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium text-gray-400 hover:text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-all border border-transparent hover:border-emerald-500/20 disabled:opacity-50"
-                            >
-                              {actionLoading[`${mention.id}_review`] ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
-                              Đã xem
-                            </button>
-                          )}
-                          {!analysis && (
-                            <button
-                              onClick={() => handleAction(mention.id, 'analyze', () => mentionsApi.analyze(mention.id), 'Phân tích xong!')}
-                              disabled={!!actionLoading[`${mention.id}_analyze`]}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium text-gray-400 hover:text-purple-400 hover:bg-purple-500/10 rounded-lg transition-all border border-transparent hover:border-purple-500/20 disabled:opacity-50"
-                            >
-                              {actionLoading[`${mention.id}_analyze`] ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <BrainCircuit className="w-3.5 h-3.5" />}
-                              Phân tích AI
-                            </button>
-                          )}
-                          {analysis && riskScore !== null && riskScore !== undefined && riskScore >= 50 && (
-                            <button
-                              onClick={() => handleAction(mention.id, 'alert', () => mentionsApi.createAlert(mention.id), 'Đã tạo cảnh báo!')}
-                              disabled={!!actionLoading[`${mention.id}_alert`]}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium text-gray-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-all border border-transparent hover:border-rose-500/20 disabled:opacity-50"
-                            >
-                              {actionLoading[`${mention.id}_alert`] ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <AlertTriangle className="w-3.5 h-3.5" />}
-                              Cảnh báo
-                            </button>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-1.5">
+                      <div className="flex flex-wrap items-center justify-between pt-3 border-t border-gray-800/60 gap-2">
+                        <div className="flex flex-wrap items-center gap-1.5">
                           {mention.url && (
                             <a
                               href={mention.url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-medium text-gray-500 hover:text-blue-400 rounded-lg transition-colors"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg transition-all"
                             >
-                              <ExternalLink className="w-3 h-3" />
-                              Nguồn
+                              <ExternalLink className="w-3.5 h-3.5" />
+                              Visit
                             </a>
                           )}
                           <button
-                            disabled
-                            className="inline-flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-medium text-gray-500 opacity-50 cursor-not-allowed rounded-lg border border-transparent"
-                            title="Chưa tích hợp"
+                            onClick={() => handleAction(mention.id, 'mute', () => mentionsApi.updateMute(mention.id, !isMuted), isMuted ? 'Đã bỏ mute' : 'Đã mute domain')}
+                            disabled={!!actionLoading[`${mention.id}_mute`]}
+                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium rounded-lg transition-all border ${
+                              isMuted 
+                                ? 'text-gray-400 border-gray-700 bg-[#1E293B] hover:text-white' 
+                                : 'text-gray-400 border-transparent hover:text-amber-400 hover:bg-amber-500/10 hover:border-amber-500/20'
+                            } disabled:opacity-50`}
                           >
-                            Tạo sự cố (Chưa tích hợp)
+                            {actionLoading[`${mention.id}_mute`] ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Link2Off className="w-3.5 h-3.5" />}
+                            {isMuted ? 'Unmute' : 'Mute site'}
                           </button>
+                          
                           <button
-                            disabled
-                            className="inline-flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-medium text-gray-500 opacity-50 cursor-not-allowed rounded-lg border border-transparent"
-                            title="Chưa tích hợp"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium text-gray-400 hover:text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-all border border-transparent hover:border-emerald-500/20"
+                            title="Add Tags"
                           >
-                            Xử lý danh tiếng (Chưa tích hợp)
+                            <Tag className="w-3.5 h-3.5" />
+                            Tags
                           </button>
+
                           <button
-                            disabled
-                            className="inline-flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-medium text-gray-500 opacity-50 cursor-not-allowed rounded-lg border border-transparent"
-                            title="Chưa tích hợp"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium text-gray-400 hover:text-cyan-400 hover:bg-cyan-500/10 rounded-lg transition-all border border-transparent hover:border-cyan-500/20"
+                            title="Add to Report"
                           >
-                            Gắn thẻ (Chưa tích hợp)
+                            <FileText className="w-3.5 h-3.5" />
+                            Report
                           </button>
-                          <button
-                            disabled
-                            className="inline-flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-medium text-gray-500 opacity-50 cursor-not-allowed rounded-lg border border-transparent"
-                            title="Chưa tích hợp"
-                          >
-                            Mute nguồn (Chưa tích hợp)
-                          </button>
-                          <button
+                        </div>
+
+                        <div className="flex items-center gap-1.5">
+                           <button
                             onClick={() => setDeleteConfirm({ isOpen: true, mentionId: mention.id, mentionTitle: mention.title || 'Mention' })}
-                            className="p-1.5 text-gray-600 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-all"
+                            className="p-1.5 text-gray-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-all"
                             title="Xóa"
                           >
-                            <Trash2 className="w-3.5 h-3.5" />
+                            <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
                       </div>

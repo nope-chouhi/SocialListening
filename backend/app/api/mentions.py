@@ -35,6 +35,10 @@ def list_mentions(
     domain: Optional[str] = None,
     date_from: Optional[datetime] = None,
     date_to: Optional[datetime] = None,
+    job_id: Optional[int] = Query(None),
+    keyword: Optional[str] = Query(None),
+    is_muted: Optional[bool] = Query(None),
+    min_influence_score: Optional[float] = Query(None),
     sort_by: Optional[str] = Query("newest", pattern="^(newest|oldest|risk_high|risk_low|influence_high|engagement_high)$"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
@@ -62,6 +66,28 @@ def list_mentions(
                 query = query.where(Source.source_type.in_(source_types))
             if domain:
                 query = query.where(Source.url.ilike(f"%{domain}%"))
+
+        # Mentions filtering directly
+        if job_id:
+            query = query.where(Mention.job_id == job_id)
+        if keyword:
+            query = query.where(Mention.keyword_text.ilike(f"%{keyword}%"))
+        if is_muted is not None:
+            query = query.where(Mention.is_muted == is_muted)
+        else:
+            query = query.where(Mention.is_muted == False)
+        if min_influence_score is not None:
+            query = query.where(Mention.influence_score >= min_influence_score)
+        
+        # In case source_type is directly on mention (new model)
+        if source_type and not need_source_join:
+            query = query.where(Mention.source_type == source_type)
+        if source_types and not need_source_join:
+            query = query.where(Mention.source_type.in_(source_types))
+        if domain and not need_source_join:
+            query = query.where(Mention.domain.ilike(f"%{domain}%"))
+        if sentiment:
+            query = query.where(Mention.sentiment == sentiment)
 
         if author:
             query = query.where(Mention.author.ilike(f"%{author}%"))
@@ -116,8 +142,7 @@ def list_mentions(
         elif sort_by == "risk_low":
             query = query.order_by(nullslast(AIAnalysis.risk_score.asc()), Mention.id.asc())
         elif sort_by == "influence_high":
-            # Just order by collected_at for now if we don't have influence score in DB
-            query = query.order_by(nullslast(Mention.collected_at.desc()), Mention.id.desc())
+            query = query.order_by(nullslast(Mention.influence_score.desc()), Mention.id.desc())
         elif sort_by == "engagement_high":
             query = query.order_by(nullslast(Mention.collected_at.desc()), Mention.id.desc())
         else:
@@ -157,11 +182,20 @@ def list_mentions(
             result_items.append({
                 "id": m.id,
                 "source_id": m.source_id,
+                "job_id": m.job_id,
                 "source_name": src.name if src else "Unknown",
-                "source_type": (src.source_type.value if src and hasattr(src.source_type, 'value') else (src.source_type if src else "website")),
+                "source_type": m.source_type or (src.source_type.value if src and hasattr(src.source_type, 'value') else (src.source_type if src else "website")),
+                "platform": m.platform,
+                "domain": m.domain,
                 "title": m.title,
                 "content": m.content,
+                "snippet": m.snippet,
                 "url": m.url,
+                "sentiment": m.sentiment or (analysis.sentiment.value if analysis and hasattr(analysis.sentiment, 'value') else (analysis.sentiment if analysis else None)),
+                "sentiment_confidence": m.sentiment_confidence,
+                "influence_score": m.influence_score,
+                "tags_json": m.tags_json,
+                "is_muted": m.is_muted,
                 "author": m.author,
                 "published_at": m.published_at.isoformat() if m.published_at else None,
                 "collected_at": m.collected_at.isoformat() if m.collected_at else None,
@@ -472,4 +506,57 @@ def delete_mention(
 
     db.delete(mention)
     db.commit()
+
+
+class UpdateTagsRequest(BaseModel):
+    tags: list[str]
+
+@router.put("/{mention_id}/tags")
+def update_mention_tags(
+    mention_id: int,
+    req: UpdateTagsRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    mention = db.execute(select(Mention).where(Mention.id == mention_id)).scalar_one_or_none()
+    if not mention: raise HTTPException(status_code=404, detail="Mention not found")
+    mention.tags_json = req.tags
+    db.commit()
+    db.refresh(mention)
+    return {"id": mention.id, "tags": mention.tags_json}
+
+class UpdateMuteRequest(BaseModel):
+    is_muted: bool
+
+@router.put("/{mention_id}/mute")
+def update_mention_mute(
+    mention_id: int,
+    req: UpdateMuteRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    mention = db.execute(select(Mention).where(Mention.id == mention_id)).scalar_one_or_none()
+    if not mention: raise HTTPException(status_code=404, detail="Mention not found")
+    mention.is_muted = req.is_muted
+    db.commit()
+    db.refresh(mention)
+    return {"id": mention.id, "is_muted": mention.is_muted}
+
+class UpdateSentimentRequest(BaseModel):
+    sentiment: str
+
+@router.put("/{mention_id}/sentiment")
+def update_mention_sentiment(
+    mention_id: int,
+    req: UpdateSentimentRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    mention = db.execute(select(Mention).where(Mention.id == mention_id)).scalar_one_or_none()
+    if not mention: raise HTTPException(status_code=404, detail="Mention not found")
+    mention.sentiment = req.sentiment
+    mention.sentiment_confidence = 1.0  # manual override
+    db.commit()
+    db.refresh(mention)
+    return {"id": mention.id, "sentiment": mention.sentiment}
 

@@ -9,7 +9,7 @@ git pull origin main --rebase
 
 echo.
 git add .
-git commit -m "auto-deploy update"
+git diff --cached --quiet || git commit -m "auto-deploy update"
 
 echo.
 git push origin main
