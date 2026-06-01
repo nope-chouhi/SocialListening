@@ -29,7 +29,7 @@ export default function MetaIntegrationPage() {
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+  // Using relative URLs to proxy through Next.js rewrites
 
   useEffect(() => {
     fetchStatus();
@@ -38,7 +38,7 @@ export default function MetaIntegrationPage() {
   const fetchStatus = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`${API_URL}/api/integrations/meta/status`, {
+      const res = await fetch(`/api/integrations/meta/status`, {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
       });
       const data = await res.json();
@@ -54,7 +54,7 @@ export default function MetaIntegrationPage() {
   const handleConnect = async () => {
     try {
       setActionLoading(true);
-      const res = await fetch(`${API_URL}/api/integrations/meta/auth-url`, {
+      const res = await fetch(`/api/integrations/meta/auth-url`, {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
       });
       const data = await res.json();
@@ -75,7 +75,7 @@ export default function MetaIntegrationPage() {
     if (!confirm('Bạn có chắc muốn ngắt kết nối Meta? Mọi tài khoản đang đồng bộ sẽ bị dừng.')) return;
     try {
       setActionLoading(true);
-      await fetch(`${API_URL}/api/integrations/meta/disconnect`, {
+      await fetch(`/api/integrations/meta/disconnect`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
       });
@@ -92,7 +92,7 @@ export default function MetaIntegrationPage() {
 
   const handleToggleAccount = async (accountId: string, currentSelected: boolean) => {
     try {
-      const res = await fetch(`${API_URL}/api/integrations/meta/select-account`, {
+      const res = await fetch(`/api/integrations/meta/select-account`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -117,7 +117,7 @@ export default function MetaIntegrationPage() {
   const handleTestConnection = async () => {
     try {
       setActionLoading(true);
-      const res = await fetch(`${API_URL}/api/integrations/meta/test-connection`, {
+      const res = await fetch(`/api/integrations/meta/test-connection`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
       });

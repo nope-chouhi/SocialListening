@@ -54,7 +54,7 @@ export default function UserManagement() {
       if (filterSuperuser !== null) params.append('is_superuser', String(filterSuperuser));
 
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/admin/users?${params}`,
+        `/api/admin/users?${params}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -75,7 +75,7 @@ export default function UserManagement() {
     try {
       const token = localStorage.getItem('access_token');
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/admin/users/stats/summary`,
+        `/api/admin/users/stats/summary`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -94,7 +94,7 @@ export default function UserManagement() {
     try {
       const token = localStorage.getItem('access_token');
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/admin/users`,
+        `/api/admin/users`,
         {
           method: 'POST',
           headers: {
@@ -123,7 +123,7 @@ export default function UserManagement() {
     try {
       const token = localStorage.getItem('access_token');
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/admin/users/${userId}`,
+        `/api/admin/users/${userId}`,
         {
           method: 'PUT',
           headers: {
@@ -152,7 +152,7 @@ export default function UserManagement() {
     try {
       const token = localStorage.getItem('access_token');
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/admin/users/${userId}`,
+        `/api/admin/users/${userId}`,
         {
           method: 'DELETE',
           headers: { Authorization: `Bearer ${token}` },
@@ -176,7 +176,7 @@ export default function UserManagement() {
     try {
       const token = localStorage.getItem('access_token');
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/admin/users/${userId}/toggle-active`,
+        `/api/admin/users/${userId}/toggle-active`,
         {
           method: 'POST',
           headers: { Authorization: `Bearer ${token}` },
@@ -200,7 +200,7 @@ export default function UserManagement() {
     try {
       const token = localStorage.getItem('access_token');
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/admin/users/${userId}/reset-password`,
+        `/api/admin/users/${userId}/reset-password`,
         {
           method: 'POST',
           headers: {
