@@ -77,14 +77,6 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Must be added BEFORE routers and BEFORE any exception handlers
-_cors_origins = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "https://social-listening-azure.vercel.app",
-]
-if settings.FRONTEND_URL and settings.FRONTEND_URL not in _cors_origins:
-    _cors_origins.append(settings.FRONTEND_URL)
 
 app.add_middleware(
     CORSMiddleware,

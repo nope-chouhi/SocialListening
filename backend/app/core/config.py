@@ -95,8 +95,11 @@ class Settings(BaseSettings):
             "http://127.0.0.1:3000",
             "https://social-listening-azure.vercel.app",  # Vercel frontend
         ]
-        if self.FRONTEND_URL and self.FRONTEND_URL not in origins:
-            origins.append(self.FRONTEND_URL)
+        if self.FRONTEND_URL:
+            # Strip trailing slash from FRONTEND_URL to match browser Origin headers exactly
+            clean_url = self.FRONTEND_URL.rstrip('/')
+            if clean_url not in origins:
+                origins.append(clean_url)
         return origins
     
     if SettingsConfigDict:

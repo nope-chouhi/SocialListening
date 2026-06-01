@@ -268,15 +268,13 @@ export default function ScanPage() {
       const payload: any = {
         keyword_group_ids: finalKeywordGroups,
         mode: scanMode,
+        source_ids: validSources,
       };
 
       if (finalKeywords.length > 0) {
         payload.keywords = finalKeywords;
       }
       
-      if (validSources.length > 0) {
-        payload.source_ids = validSources;
-      }
       if (customUrl) {
         payload.url = customUrl;
       }
@@ -312,56 +310,7 @@ export default function ScanPage() {
     }
   };
 
-  // ── Auto Discovery ──
-  const handleAutoDiscovery = async () => {
-    let targetGroupId = selectedGroups[0] || (quickGroupId as number);
-    let kws = [];
 
-    if (quickKeyword.trim()) {
-      kws = [quickKeyword.trim()];
-    } else if (targetGroupId) {
-      const group = keywordGroups.find(g => g.id === targetGroupId);
-      if (group && group.keywords) {
-        kws = group.keywords.map((k: any) => k.keyword);
-      }
-    }
-
-    if (kws.length === 0) {
-      toast.error('Vui lòng nhập từ khóa mới hoặc chọn 1 nhóm từ khóa có sẵn từ khóa.');
-      return;
-    }
-
-    try {
-      setDiscoveryLoading(true);
-      const loadingToast = toast.loading('Đang tự động tìm nguồn qua SerpAPI...');
-      
-      const payload = {
-        keyword_group_id: targetGroupId || undefined,
-        keywords: kws,
-        exclude_keywords: [],
-        language: discoveryLanguage,
-        country: discoveryCountry,
-        limit: discoveryLimit,
-        date_range: discoveryDateRange
-      };
-
-      const result = await discoveryApi.createJob(payload);
-      
-      toast.dismiss(loadingToast);
-      if (result.success) {
-        toast.success(result.message);
-      } else {
-        toast.error(result.message);
-      }
-      setDiscoveryResult(result);
-      fetchData(); // to update counts if any
-    } catch (error: any) {
-      toast.dismiss();
-      toast.error('Lỗi khi tìm nguồn: ' + getErrorMessage(error));
-    } finally {
-      setDiscoveryLoading(false);
-    }
-  };
 
   // ── Quick actions for sources ──
   const selectAllVisible = () => {
@@ -1001,94 +950,6 @@ export default function ScanPage() {
       </div>
 
 
-
-      {/* ═══════════════════════════════════════════════════════════════════
-          5. AUTO DISCOVERY CONTROL PANEL 
-         ═══════════════════════════════════════════════════════════════════ */}
-      <div className="bg-[#0A0515] border border-fuchsia-900/50 shadow-[0_0_20px_rgba(217,70,239,0.03)] rounded font-mono mt-6">
-        <div className="px-4 py-3 border-b border-fuchsia-900/30 bg-gradient-to-r from-fuchsia-500/10 to-transparent">
-          <h2 className="text-sm font-bold text-fuchsia-400 flex items-center gap-2 tracking-wider">
-            <Globe2 className="w-4 h-4" /> AUTO_DISCOVERY // TỰ ĐỘNG TÌM NGUỒN (SERPAPI)
-          </h2>
-          <p className="text-[10px] text-fuchsia-500/70 mt-1 uppercase tracking-wide">
-            Tìm kiếm web công khai, tự động duyệt URL, phát hiện RSS và thêm Mentions.
-          </p>
-        </div>
-        
-        <div className="p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-          <div>
-            <label className="block text-[10px] font-semibold text-gray-500 uppercase mb-1.5">Ngôn ngữ</label>
-            <select
-              value={discoveryLanguage}
-              onChange={(e) => setDiscoveryLanguage(e.target.value)}
-              className="w-full px-3 py-2 bg-[#02060A] border border-fuchsia-900/50 focus:border-fuchsia-500 rounded text-xs text-fuchsia-100"
-            >
-              <option value="vi">Tiếng Việt</option>
-              <option value="en">English</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-[10px] font-semibold text-gray-500 uppercase mb-1.5">Quốc gia</label>
-            <select
-              value={discoveryCountry}
-              onChange={(e) => setDiscoveryCountry(e.target.value)}
-              className="w-full px-3 py-2 bg-[#02060A] border border-fuchsia-900/50 focus:border-fuchsia-500 rounded text-xs text-fuchsia-100"
-            >
-              <option value="vn">Việt Nam</option>
-              <option value="us">United States</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-[10px] font-semibold text-gray-500 uppercase mb-1.5">Thời gian</label>
-            <select
-              value={discoveryDateRange}
-              onChange={(e) => setDiscoveryDateRange(e.target.value)}
-              className="w-full px-3 py-2 bg-[#02060A] border border-fuchsia-900/50 focus:border-fuchsia-500 rounded text-xs text-fuchsia-100"
-            >
-              <option value="last_24_hours">24 giờ qua</option>
-              <option value="last_7_days">7 ngày qua</option>
-              <option value="last_30_days">30 ngày qua</option>
-              <option value="last_year">1 năm qua</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-[10px] font-semibold text-gray-500 uppercase mb-1.5">Số kết quả (max)</label>
-            <input
-              type="number"
-              min={1} max={100}
-              value={discoveryLimit}
-              onChange={(e) => setDiscoveryLimit(parseInt(e.target.value) || 20)}
-              className="w-full px-3 py-2 bg-[#02060A] border border-fuchsia-900/50 focus:border-fuchsia-500 rounded text-xs text-fuchsia-100"
-            />
-          </div>
-        </div>
-        
-        {discoveryResult && (
-          <div className={`mx-4 mb-4 px-4 py-3 rounded-lg border text-xs ${
-            discoveryResult.success ? 'bg-fuchsia-500/10 border-fuchsia-500/20 text-fuchsia-300' : 'bg-rose-500/10 border-rose-500/20 text-rose-300'
-          }`}>
-            <strong className="block mb-1">{discoveryResult.success ? '✓ Hoàn tất tìm kiếm' : '❌ Lỗi tìm kiếm'}</strong>
-            <p>{discoveryResult.message}</p>
-            {discoveryResult.success && (
-              <div className="mt-2 flex gap-3">
-                <Link href="/dashboard/mentions" className="text-fuchsia-400 hover:text-fuchsia-300 underline flex items-center gap-1">Xem Mentions mới <ExternalLink className="w-3 h-3"/></Link>
-                <Link href="/dashboard/sources?tab=discovered" className="text-fuchsia-400 hover:text-fuchsia-300 underline flex items-center gap-1">Duyệt nguồn tìm được <ExternalLink className="w-3 h-3"/></Link>
-              </div>
-            )}
-          </div>
-        )}
-
-        <div className="px-4 py-3 border-t border-fuchsia-900/30 bg-[#0A0515]/50">
-          <button
-            onClick={handleAutoDiscovery}
-            disabled={discoveryLoading || (!quickKeyword.trim() && selectedGroups.length === 0)}
-            className="w-full flex items-center justify-center px-5 py-3 rounded-xl font-semibold text-sm transition-all duration-200 bg-fuchsia-600 text-white hover:bg-fuchsia-500 shadow-md shadow-fuchsia-500/20 hover:shadow-fuchsia-500/30 active:scale-[0.98] disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed"
-          >
-            {discoveryLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Network className="w-4 h-4 mr-2" />}
-            {discoveryLoading ? 'ĐANG TÌM KIẾM & QUÉT...' : 'TỰ ĐỘNG TÌM NGUỒN & QUÉT'}
-          </button>
-        </div>
-      </div>
 
       {/* ═══════════════════════════════════════════════════════════════════
           5. LATEST SCAN RESULT — Compact card (only if exists)

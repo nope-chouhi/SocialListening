@@ -1,6 +1,7 @@
 import axios, { AxiosError } from 'axios';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const rawApiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const API_URL = rawApiUrl.endsWith('/') ? rawApiUrl.slice(0, -1) : rawApiUrl;
 
 // Dev-only: log API base so we know where requests go
 if (process.env.NODE_ENV !== 'production') {
@@ -80,6 +81,11 @@ export function getErrorMessage(error: any, fallback = 'Lỗi không xác địn
   const status = error?.response?.status;
   const detail = error?.response?.data?.detail;
   let msg = fallback;
+  
+  if (error?.message === 'Network Error') {
+    return `Không kết nối được backend (Network Error). Vui lòng kiểm tra Render backend (https://social-listening-backend.onrender.com) hoặc CORS config. URL gọi: ${error?.config?.url}`;
+  }
+
   if (typeof detail === 'string' && detail) {
     msg = detail;
   } else if (Array.isArray(detail) && detail.length > 0) {
