@@ -7,7 +7,7 @@ import {
   Filter, Eye, EyeOff, CheckSquare, Square, Rss, Globe, FlaskConical,
   ChevronDown, ChevronUp, ExternalLink, Search, Globe2, Network,
 } from 'lucide-react';
-import { crawl, keywords as keywordsApi, sources as sourcesApi, discovery as discoveryApi, getErrorMessage } from '@/lib/api';
+import { crawl, keywords as keywordsApi, sources as sourcesApi, discovery as discoveryApi, getErrorMessage, API_BASE_URL } from '@/lib/api';
 import toast, { Toaster } from 'react-hot-toast';
 import Link from 'next/link';
 
@@ -88,6 +88,26 @@ export default function ScanPage() {
   // UI state
   const [showCustomUrl, setShowCustomUrl] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [showDebug, setShowDebug] = useState(false);
+
+  // Debug state — tracks last API call for diagnostics
+  const [debugInfo, setDebugInfo] = useState<{
+    lastUrl: string;
+    lastPayload: any;
+    lastErrorName: string;
+    lastErrorMessage: string;
+    lastStatus: number | null;
+    lastResponseData: any;
+    hasAuthToken: boolean;
+  }>({
+    lastUrl: '',
+    lastPayload: null,
+    lastErrorName: '',
+    lastErrorMessage: '',
+    lastStatus: null,
+    lastResponseData: null,
+    hasAuthToken: typeof window !== 'undefined' ? !!localStorage.getItem('access_token') : false,
+  });
 
   // Filtered sources
   const filteredSources = useMemo(() => {
@@ -241,7 +261,7 @@ export default function ScanPage() {
       const loadingToast = toast.loading('Đang xử lý và quét dữ liệu...');
       
       let finalKeywordGroups = [...selectedGroups];
-      let finalKeywords = [];
+      let finalKeywords: string[] = [];
 
       if (quickKeyword.trim()) {
         finalKeywords.push(quickKeyword.trim());
@@ -278,9 +298,29 @@ export default function ScanPage() {
       if (customUrl) {
         payload.url = customUrl;
       }
+
+      const finalUrl = `${API_BASE_URL}/api/crawl/manual-scan`;
+      setDebugInfo(prev => ({
+        ...prev,
+        lastUrl: finalUrl,
+        lastPayload: payload,
+        lastErrorName: '',
+        lastErrorMessage: '',
+        lastStatus: null,
+        lastResponseData: null,
+        hasAuthToken: !!localStorage.getItem('access_token'),
+      }));
       
       const result = await crawl.manualScan(payload);
       
+      setDebugInfo(prev => ({
+        ...prev,
+        lastStatus: 200,
+        lastResponseData: result,
+        lastErrorName: '',
+        lastErrorMessage: '',
+      }));
+
       toast.dismiss(loadingToast);
       toast.success(result.message || 'Đã tạo job scan. Hệ thống đang quét trong nền.');
       
@@ -290,7 +330,16 @@ export default function ScanPage() {
       fetchWorkerStatus();
     } catch (error: any) {
       toast.dismiss();
-      toast.error('Lỗi: ' + getErrorMessage(error));
+      const errorMsg = getErrorMessage(error);
+      setDebugInfo(prev => ({
+        ...prev,
+        lastErrorName: error?.name || error?.constructor?.name || 'Error',
+        lastErrorMessage: errorMsg,
+        lastStatus: error?.response?.status || null,
+        lastResponseData: error?.response?.data || null,
+        hasAuthToken: !!localStorage.getItem('access_token'),
+      }));
+      toast.error('Lỗi: ' + errorMsg);
     } finally {
       setScanning(false);
     }
@@ -1053,6 +1102,51 @@ export default function ScanPage() {
                   )}
                 </div>
               ))
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* ═══════════════════════════════════════════════════════════════════
+          DEBUG PANEL — Collapsible connection diagnostics
+         ═══════════════════════════════════════════════════════════════════ */}
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl overflow-hidden">
+        <button
+          onClick={() => setShowDebug(!showDebug)}
+          className="w-full px-4 py-3 flex items-center justify-between hover:bg-[#161B22] transition-colors"
+        >
+          <div className="flex items-center gap-2">
+            <FlaskConical className="w-4 h-4 text-gray-500" />
+            <h2 className="text-sm font-semibold text-gray-400">Debug kết nối backend</h2>
+          </div>
+          {showDebug ? <ChevronUp className="w-4 h-4 text-gray-500" /> : <ChevronDown className="w-4 h-4 text-gray-500" />}
+        </button>
+
+        {showDebug && (
+          <div className="border-t border-gray-800 px-4 py-3 font-mono text-[11px] space-y-1.5">
+            <div className="flex gap-2"><span className="text-gray-500 min-w-[160px]">NEXT_PUBLIC_API_URL:</span><span className="text-cyan-400 break-all">{process.env.NEXT_PUBLIC_API_URL || '(not set — fallback to localhost)'}</span></div>
+            <div className="flex gap-2"><span className="text-gray-500 min-w-[160px]">API_BASE_URL (resolved):</span><span className="text-cyan-400 break-all">{API_BASE_URL}</span></div>
+            <div className="flex gap-2"><span className="text-gray-500 min-w-[160px]">capabilities URL:</span><span className="text-gray-300 break-all">{API_BASE_URL}/api/crawl/capabilities</span></div>
+            <div className="flex gap-2"><span className="text-gray-500 min-w-[160px]">manual-scan URL:</span><span className="text-gray-300 break-all">{API_BASE_URL}/api/crawl/manual-scan</span></div>
+            <div className="flex gap-2"><span className="text-gray-500 min-w-[160px]">Auth token exists:</span><span className={debugInfo.hasAuthToken ? 'text-emerald-400' : 'text-rose-400'}>{debugInfo.hasAuthToken ? 'true' : 'false'}</span></div>
+            
+            {debugInfo.lastUrl && (
+              <>
+                <div className="border-t border-gray-800 mt-2 pt-2" />
+                <div className="text-gray-400 font-semibold">Lần gọi gần nhất:</div>
+                <div className="flex gap-2"><span className="text-gray-500 min-w-[160px]">URL:</span><span className="text-yellow-400 break-all">{debugInfo.lastUrl}</span></div>
+                <div className="flex gap-2"><span className="text-gray-500 min-w-[160px]">Payload:</span><span className="text-gray-300 break-all">{JSON.stringify(debugInfo.lastPayload)}</span></div>
+                <div className="flex gap-2"><span className="text-gray-500 min-w-[160px]">Response status:</span><span className={debugInfo.lastStatus === 200 ? 'text-emerald-400' : debugInfo.lastStatus ? 'text-rose-400' : 'text-gray-500'}>{debugInfo.lastStatus ?? '(no response)'}</span></div>
+                {debugInfo.lastErrorName && (
+                  <div className="flex gap-2"><span className="text-gray-500 min-w-[160px]">Error name:</span><span className="text-rose-400">{debugInfo.lastErrorName}</span></div>
+                )}
+                {debugInfo.lastErrorMessage && (
+                  <div className="flex gap-2"><span className="text-gray-500 min-w-[160px]">Error message:</span><span className="text-rose-400 break-all">{debugInfo.lastErrorMessage}</span></div>
+                )}
+                {debugInfo.lastResponseData && (
+                  <div className="flex gap-2"><span className="text-gray-500 min-w-[160px]">Response data:</span><span className="text-gray-300 break-all">{JSON.stringify(debugInfo.lastResponseData).slice(0, 500)}</span></div>
+                )}
+              </>
             )}
           </div>
         )}

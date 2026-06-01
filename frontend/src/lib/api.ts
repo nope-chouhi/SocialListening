@@ -3,6 +3,9 @@ import axios, { AxiosError } from 'axios';
 const rawApiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 const API_URL = rawApiUrl.endsWith('/') ? rawApiUrl.slice(0, -1) : rawApiUrl;
 
+/** Exported so debug panels can show the resolved base URL */
+export const API_BASE_URL = API_URL;
+
 // Dev-only: log API base so we know where requests go
 if (process.env.NODE_ENV !== 'production') {
   console.log('[API] API_BASE_URL =', API_URL);
@@ -80,17 +83,38 @@ export function isAuthError(error: any): boolean {
 export function getErrorMessage(error: any, fallback = 'Lỗi không xác định'): string {
   const status = error?.response?.status;
   const detail = error?.response?.data?.detail;
-  let msg = fallback;
-  
-  if (error?.message === 'Network Error') {
-    return `Không kết nối được backend (Network Error). Vui lòng kiểm tra Render backend (https://social-listening-backend.onrender.com) hoặc CORS config. URL gọi: ${error?.config?.url}`;
+  const requestUrl = error?.config?.url || '';
+  const fullUrl = error?.config?.baseURL ? `${error.config.baseURL}${requestUrl}` : requestUrl;
+
+  // ── No response at all (Network Error / CORS / ad blocker / backend down) ──
+  if (!error?.response && error?.message === 'Network Error') {
+    return `Không kết nối được backend. Kiểm tra NEXT_PUBLIC_API_URL, CORS hoặc Render. URL: ${fullUrl}`;
   }
 
+  // ── Specific HTTP status codes ──
   if (status === 401 || status === 403) {
     return 'Phiên đăng nhập chưa hợp lệ hoặc đã hết hạn. Vui lòng đăng nhập lại.';
   }
 
+  if (status === 404) {
+    return `Không tìm thấy API. Kiểm tra endpoint frontend/backend. URL: ${requestUrl}`;
+  }
+
+  if (status === 307 || status === 308) {
+    return `API bị redirect (${status}). Kiểm tra dấu / cuối URL.`;
+  }
+
+  if (status === 500) {
+    return 'Backend xử lý lỗi. Kiểm tra Render logs.';
+  }
+
+  // ── Parse detail from response body ──
+  let msg = fallback;
   if (typeof detail === 'string' && detail) {
+    // Backend CONFIG_REQUIRED pattern
+    if (detail.startsWith('CONFIG_REQUIRED')) {
+      return 'Chưa cấu hình Web Search provider (SerpAPI).';
+    }
     msg = detail;
   } else if (Array.isArray(detail) && detail.length > 0) {
     msg = detail.map((d: any) => d.msg || JSON.stringify(d)).join('; ');
@@ -265,12 +289,12 @@ export const sources = {
 // ─── Crawl / Scan ─────────────────────────────────────────────────────────────
 export const crawl = {
   getCapabilities: async () => {
-    const response = await api.get('/api/scan/capabilities');
+    const response = await api.get('/api/crawl/capabilities');
     return response.data;
   },
   manualScan: async (data: { keyword_group_ids?: number[]; keywords?: string[]; source_ids?: number[]; url?: string; mode?: string }) => {
     // Sent as a single JSON object — backend expects ManualScanRequest body
-    const response = await api.post('/api/scan/manual-scan', data);
+    const response = await api.post('/api/crawl/manual-scan', data);
     return response.data;
   },
   getScanHistory: async (page: number = 1, page_size: number = 20) => {
