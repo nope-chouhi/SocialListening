@@ -1,6 +1,5 @@
 """
 Auto Discovery Models for Nope Social Listening Platform.
-Tables created via Base.metadata.create_all() — no alembic migration required.
 """
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text, Float, Enum as SQLEnum, JSON
 from sqlalchemy.sql import func
