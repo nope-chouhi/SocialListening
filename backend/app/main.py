@@ -25,15 +25,12 @@ async def lifespan(app: FastAPI):
     """Startup: create tables + seed data + start scheduler."""
     logger.info("Starting Social Listening Platform...")
 
-    # Create tables (fallback if alembic hasn't run)
-    if settings.ENVIRONMENT != "production" or os.environ.get("AUTO_CREATE_TABLES", "false").lower() == "true":
-        try:
-            Base.metadata.create_all(bind=engine)
-            logger.info("Database tables created/verified")
-        except Exception as e:
-            logger.warning(f"create_all skipped (tables may already exist via alembic): {e}")
-    else:
-        logger.info("Skipped Base.metadata.create_all in production. Relying on migrations.")
+    # Create tables (fallback if alembic hasn't run or is out of sync)
+    try:
+        Base.metadata.create_all(bind=engine)
+        logger.info("Database tables created/verified")
+    except Exception as e:
+        logger.warning(f"create_all skipped (tables may already exist via alembic): {e}")
 
     # Seed service data
     try:
