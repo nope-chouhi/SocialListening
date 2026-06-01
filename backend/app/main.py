@@ -160,6 +160,7 @@ app.include_router(auth.router,             prefix="/api/auth",             tags
 app.include_router(keywords.router,         prefix="/api/keywords",         tags=["Keywords"])
 app.include_router(sources.router,          prefix="/api/sources",          tags=["Sources"])
 app.include_router(crawl.router,            prefix="/api/crawl",            tags=["Crawl"])
+app.include_router(crawl.router,            prefix="/api/scan",             tags=["Scan (Alias for Adblock Bypass)"])
 app.include_router(mentions.router,         prefix="/api/mentions",         tags=["Mentions"])
 app.include_router(alerts.router,           prefix="/api/alerts",           tags=["Alerts"])
 app.include_router(incidents.router,        prefix="/api/incidents",        tags=["Incidents"])

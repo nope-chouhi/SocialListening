@@ -265,12 +265,12 @@ export const sources = {
 // ─── Crawl / Scan ─────────────────────────────────────────────────────────────
 export const crawl = {
   getCapabilities: async () => {
-    const response = await api.get('/api/crawl/capabilities');
+    const response = await api.get('/api/scan/capabilities');
     return response.data;
   },
   manualScan: async (data: { keyword_group_ids?: number[]; keywords?: string[]; source_ids?: number[]; url?: string; mode?: string }) => {
     // Sent as a single JSON object — backend expects ManualScanRequest body
-    const response = await api.post('/api/crawl/manual-scan', data);
+    const response = await api.post('/api/scan/manual-scan', data);
     return response.data;
   },
   getScanHistory: async (page: number = 1, page_size: number = 20) => {
