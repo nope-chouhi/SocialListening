@@ -185,6 +185,41 @@ def get_capabilities():
         }
     }
 
+class DebugDiscoveryRequest(BaseModel):
+    keyword: str
+
+@router.post("/debug-auto-discovery")
+def debug_auto_discovery(
+    body: DebugDiscoveryRequest,
+    current_user: User = Depends(get_current_active_user)
+):
+    from app.core.config import settings
+    has_serpapi = bool(settings.SERPAPI_API_KEY)
+    if not has_serpapi:
+        return {"success": False, "error": "Chưa cấu hình SERPAPI_API_KEY"}
+    
+    try:
+        from app.services.serpapi_provider import search
+        results = search(
+            keywords=[body.keyword],
+            language="vi",
+            country="vn",
+            limit=5,
+            date_range="last_30_days",
+        )
+        return {
+            "success": True,
+            "auth_ok": True,
+            "serpapi_configured": True,
+            "result_count": len(results),
+            "top_results": [
+                {"title": r.get("title"), "domain": r.get("domain")}
+                for r in results[:3]
+            ]
+        }
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
 @router.post("/manual-scan")
 def manual_scan(
     body: ManualScanRequest,

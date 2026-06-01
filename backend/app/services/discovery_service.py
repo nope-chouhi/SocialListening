@@ -143,6 +143,13 @@ def _crawl_url_for_discovery(url: str) -> Dict:
     from bs4 import BeautifulSoup
 
     try:
+        from urllib.parse import urlparse
+        domain = urlparse(url).netloc.lower()
+        if "tiktok.com" in domain:
+            return {"success": False, "error": "Nguồn này chưa hỗ trợ crawl trực tiếp. Cần connector riêng (TikTok)."}
+        if "facebook.com" in domain or "instagram.com" in domain:
+            return {"success": False, "error": "Nguồn này chưa hỗ trợ crawl trực tiếp. Cần connector riêng (Meta)."}
+
         headers = {"User-Agent": settings.CRAWL_USER_AGENT}
         response = requests.get(
             url,
@@ -382,6 +389,8 @@ def run_discovery_job(db: Session, job_id: int) -> DiscoveryJob:
     job.started_at = datetime.now(timezone.utc)
     job.providers_used_json = []
     db.commit()
+    
+    logger.info(f"STAGE D: Discovery Job created and running (job_id={job.id}, mode=AUTO_DISCOVERY, keyword_count={len(job.query_keywords or [])})")
 
     keywords = job.query_keywords or []
     exclude_keywords = job.exclude_keywords or []
@@ -403,6 +412,8 @@ def run_discovery_job(db: Session, job_id: int) -> DiscoveryJob:
 
     # ── Step 2: Search via SerpAPI ──
     search_results = []
+    has_serpapi = bool(settings.SERPAPI_API_KEY)
+    logger.info(f"STAGE E: Calling SerpAPI (configured={has_serpapi})")
     try:
         from app.services.serpapi_provider import search, SerpAPINotConfigured, SerpAPIRateLimitError
         search_results = search(
@@ -460,6 +471,7 @@ def run_discovery_job(db: Session, job_id: int) -> DiscoveryJob:
         # Non-fatal, continue with web results
         
     job.urls_found = len(search_results)
+    logger.info(f"STAGE F: URLs discovered (count={len(search_results)})")
 
     if not search_results:
         job.status = DiscoveryJobStatus.COMPLETED
@@ -471,6 +483,8 @@ def run_discovery_job(db: Session, job_id: int) -> DiscoveryJob:
     # ── Step 3: Process each URL ──
     seen_urls: Set[str] = set()
     domain_data: Dict[str, dict] = {}  # domain -> aggregated data
+
+    logger.info(f"STAGE G & H: Crawling {len(search_results)} URLs and matching keywords...")
 
     for sr in search_results:
         url = sr["url"]
@@ -797,20 +811,33 @@ def run_discovery_job(db: Session, job_id: int) -> DiscoveryJob:
             logger.error(f"Error processing domain {domain}: {e}")
             job.failed_items = (job.failed_items or 0) + 1
 
-    # ── Finalize ──
     has_failures = (job.failed_items or 0) > 0
-    has_results = (job.mentions_created or 0) > 0 or (job.candidate_sources_created or 0) > 0
+    mentions_created = job.mentions_created or 0
+    urls_found = job.urls_found or 0
+    pages_scanned = job.pages_scanned or 0
+    has_results = mentions_created > 0 or (job.candidate_sources_created or 0) > 0
 
-    if has_failures and has_results:
+    if not search_results:
+        job.status = DiscoveryJobStatus.COMPLETED
+        job.error_message = "Không tìm thấy nguồn phù hợp với từ khóa."
+    elif has_failures and has_results:
         job.status = DiscoveryJobStatus.PARTIAL_FAILED
+        job.error_message = f"Hoàn tất một phần. Tìm thấy {urls_found} URL, tạo {mentions_created} mentions."
     elif has_failures and not has_results:
         job.status = DiscoveryJobStatus.FAILED
-        if not job.error_message:
+        if pages_scanned == 0:
+            job.error_message = f"Tìm thấy {urls_found} URL, crawl 0 URL."
+        else:
             job.error_message = "Đã tìm thấy URL nhưng không đọc được nội dung."
     else:
         job.status = DiscoveryJobStatus.COMPLETED
+        if mentions_created == 0 and pages_scanned > 0:
+            job.error_message = "Crawl thành công nhưng không có mention khớp từ khóa."
+        else:
+            job.error_message = f"Tạo {mentions_created} mentions."
 
     job.completed_at = datetime.now(timezone.utc)
     db.commit()
 
+    logger.info(f"STAGE I: Mentions created in DB (count={mentions_created}, urls_crawled={pages_scanned})")
     return job

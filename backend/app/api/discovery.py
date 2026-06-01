@@ -61,16 +61,13 @@ def create_discovery_job(
 
     # Build message
     if job.status == DiscoveryJobStatus.COMPLETED:
-        if (job.mentions_created or 0) > 0:
-            msg = f"Đã hoàn tất. Tìm thấy {job.urls_found} URL, tạo {job.mentions_created} mention, {job.candidate_sources_created or 0} nguồn mới."
-        else:
-            msg = job.error_message or "Đã hoàn tất. Không tìm thấy nội dung khớp từ khóa."
+        msg = job.error_message or f"Đã hoàn tất. Tìm thấy {job.urls_found} URL, tạo {job.mentions_created} mention, {job.candidate_sources_created or 0} nguồn mới."
     elif job.status == DiscoveryJobStatus.PARTIAL_FAILED:
-        msg = f"Hoàn tất một phần. Tạo {job.mentions_created or 0} mention, {job.failed_items or 0} URL thất bại."
+        msg = job.error_message or f"Hoàn tất một phần. Tạo {job.mentions_created or 0} mention, {job.failed_items or 0} URL thất bại."
     elif job.status == DiscoveryJobStatus.FAILED:
         msg = job.error_message or "Tự động tìm nguồn thất bại."
     else:
-        msg = "Đã tạo job tự động tìm nguồn. Hệ thống đang tìm và quét trong nền."
+        msg = job.error_message or "Đã tạo job tự động tìm nguồn. Hệ thống đang tìm và quét trong nền."
 
     return DiscoveryJobStartResponse(
         success=job.status in (DiscoveryJobStatus.COMPLETED, DiscoveryJobStatus.PARTIAL_FAILED),
