@@ -4,12 +4,13 @@ echo   Deploying to GitHub...
 echo ========================================
 echo.
 
-echo Syncing with remote before pushing...
-git pull origin main --rebase
-
-echo.
+echo Adding changes...
 git add .
 git diff --cached --quiet || git commit -m "auto-deploy update"
+
+echo.
+echo Syncing with remote before pushing...
+git pull origin main --rebase
 
 echo.
 git push origin main

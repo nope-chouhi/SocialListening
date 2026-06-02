@@ -7,72 +7,228 @@ import { auth } from '@/lib/api';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { SidebarBadge } from '@/components/dashboard/Badges';
 import { canAccessAdmin, type User } from '@/lib/permissions';
+import { ProjectProvider, useProject } from '@/contexts/ProjectContext';
 import { 
   LayoutDashboard, 
-  Key, 
   Globe, 
   FileText, 
   Bell, 
-  AlertTriangle, 
   LogOut,
   Menu,
   X,
   Settings,
   Briefcase,
-  Radar,
-  BarChart,
-  Users,
-  Trophy,
-  Bot,
   PieChart,
   MessageSquareText,
   ScanSearch,
-  ShieldAlert,
-  ClipboardList
+  ClipboardList,
+  ChevronDown,
+  Plus,
+  Users,
+  SearchCode,
+  Link2
 } from 'lucide-react';
 
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges }: any) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const { projects, activeProject, setActiveProject, loading: projectsLoading } = useProject();
+  const [projectDropdownOpen, setProjectDropdownOpen] = useState(false);
+
+  const projectNav = [
+    { name: 'Mentions', href: '/dashboard/mentions', icon: MessageSquareText },
+    { name: 'Summary', href: '/dashboard/summary', icon: PieChart },
+    { name: 'Sources', href: '/dashboard/sources', icon: Globe },
+    { name: 'Comparison', href: '/dashboard/comparison', icon: LayoutDashboard },
+    { name: 'Influencers', href: '/dashboard/influencers', icon: Users },
+    { name: 'Alerts', href: '/dashboard/alerts', icon: Bell, badge: badges.new_alerts },
+    { name: 'PDF Reports', href: '/dashboard/reports', icon: ClipboardList },
+    { name: 'Project Settings', href: '/dashboard/project-settings', icon: Settings },
+  ];
+
+  const systemNav = [
+    { name: 'Scan Center', href: '/dashboard/scan', icon: SearchCode },
+    { name: 'Integrations', href: '/dashboard/integrations', icon: Link2 },
+    { name: 'Services', href: '/dashboard/services', icon: Briefcase },
+    { name: 'System Settings', href: '/dashboard/settings', icon: Settings },
+  ];
+
+  const handleLogout = () => {
+    auth.logout();
+    router.push('/login');
+  };
+
+  return (
+    <div
+      className={`fixed inset-y-0 left-0 z-50 w-64 bg-[#030614] border-r border-white/5 shadow-[4px_0_24px_rgba(0,0,0,0.6)] transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${
+        sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+      } flex flex-col`}
+    >
+      <div className="absolute top-0 left-0 w-full h-64 bg-indigo-500/5 blur-3xl pointer-events-none" />
+      
+      {/* Logo */}
+      <div className="flex items-center justify-between h-[72px] px-6 border-b border-white/5 relative z-10">
+        <div className="flex items-center space-x-3">
+          <div className="w-9 h-9 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-[0_0_15px_rgba(99,102,241,0.5)] border border-white/20">
+            <span className="text-white font-bold text-lg leading-none">N</span>
+          </div>
+          <h1 className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-zinc-400">Nope</h1>
+        </div>
+        <button
+          onClick={() => setSidebarOpen(false)}
+          className="lg:hidden p-2 -mr-2 text-zinc-400 hover:text-white rounded-lg hover:bg-white/10"
+        >
+          <X className="w-5 h-5" />
+        </button>
+      </div>
+
+      {/* Project Selector */}
+      <div className="p-4 border-b border-white/5 relative z-20">
+        <div className="relative">
+          <button
+            onClick={() => setProjectDropdownOpen(!projectDropdownOpen)}
+            className="w-full flex items-center justify-between px-3 py-2.5 bg-[#111827] border border-gray-800 rounded-xl text-left hover:bg-gray-800 transition-colors"
+          >
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-0.5">Dự án hiện tại</p>
+              <p className="text-sm font-semibold text-white truncate">
+                {projectsLoading ? 'Đang tải...' : activeProject?.name || 'Chọn dự án'}
+              </p>
+            </div>
+            <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${projectDropdownOpen ? 'rotate-180' : ''}`} />
+          </button>
+
+          {projectDropdownOpen && (
+            <div className="absolute top-full left-0 right-0 mt-2 bg-[#1E293B] border border-gray-700 rounded-xl shadow-2xl overflow-hidden py-1 z-50">
+              <div className="max-h-48 overflow-y-auto">
+                {projects.map((p) => (
+                  <button
+                    key={p.id}
+                    onClick={() => {
+                      setActiveProject(p);
+                      setProjectDropdownOpen(false);
+                      router.push('/dashboard/mentions');
+                    }}
+                    className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${
+                      activeProject?.id === p.id ? 'bg-indigo-500/20 text-indigo-400 font-medium' : 'text-gray-300 hover:bg-[#111827]'
+                    }`}
+                  >
+                    {p.name}
+                  </button>
+                ))}
+              </div>
+              <div className="p-2 border-t border-gray-700">
+                <Link
+                  href="/dashboard/projects/new"
+                  onClick={() => setProjectDropdownOpen(false)}
+                  className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-lg transition-colors"
+                >
+                  <Plus className="w-4 h-4" /> Thêm Project
+                </Link>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Navigation */}
+      <nav className="flex-1 px-3 py-4 space-y-6 overflow-y-auto scrollbar-hide relative z-10">
+        
+        {/* Project Contextual Nav */}
+        <div className="space-y-1">
+          <div className="px-3 mb-2 text-[10px] font-bold tracking-widest text-indigo-400 uppercase">
+            Phân tích Dự án
+          </div>
+          {projectNav.map((item) => {
+            const isActive = pathname === item.href;
+            return (
+              <Link
+                key={item.name}
+                href={item.href}
+                className={`group flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
+                  isActive
+                    ? 'text-white bg-white/10'
+                    : 'text-zinc-400 hover:text-white hover:bg-white/5'
+                }`}
+                onClick={() => setSidebarOpen(false)}
+              >
+                <item.icon className={`w-4 h-4 mr-3 ${isActive ? 'text-indigo-400' : 'text-zinc-500'}`} />
+                <span className="truncate flex-1">{item.name}</span>
+                {item.badge ? <SidebarBadge count={item.badge} /> : null}
+              </Link>
+            );
+          })}
+        </div>
+
+        {/* System/Admin Nav */}
+        <div className="space-y-1 pt-4 border-t border-white/5">
+          <div className="px-3 mb-2 text-[10px] font-bold tracking-widest text-gray-500 uppercase">
+            Hệ thống
+          </div>
+          {systemNav.map((item) => {
+            const isActive = pathname === item.href;
+            return (
+              <Link
+                key={item.name}
+                href={item.href}
+                className={`group flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
+                  isActive
+                    ? 'text-white bg-white/10'
+                    : 'text-zinc-400 hover:text-white hover:bg-white/5'
+                }`}
+                onClick={() => setSidebarOpen(false)}
+              >
+                <item.icon className={`w-4 h-4 mr-3 ${isActive ? 'text-indigo-400' : 'text-zinc-500'}`} />
+                <span className="truncate flex-1">{item.name}</span>
+              </Link>
+            );
+          })}
+        </div>
+      </nav>
+
+      {/* User Profile */}
+      <div className="p-4 border-t border-white/5 bg-[#030614] z-10">
+        <div className="flex items-center justify-between group cursor-pointer hover:bg-white/5 p-2 -m-2 rounded-xl transition-colors">
+          <div className="flex items-center space-x-3 flex-1 min-w-0">
+            <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white font-medium text-xs">
+              {(user?.full_name || user?.email || 'U')[0].toUpperCase()}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-zinc-200 truncate">{user?.full_name || user?.email}</p>
+              <p className="text-xs text-zinc-500 truncate capitalize">{user?.role || 'Guest'}</p>
+            </div>
+          </div>
+          <button onClick={handleLogout} className="p-2 text-gray-400 hover:text-red-400 rounded-lg">
+            <LogOut className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [badges, setBadges] = useState<{ new_alerts: number, open_incidents: number, unreviewed_mentions: number }>({
-    new_alerts: 0,
-    open_incidents: 0,
-    unreviewed_mentions: 0
+    new_alerts: 0, open_incidents: 0, unreviewed_mentions: 0
   });
 
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        // Check token first
         const token = localStorage.getItem('access_token');
-        if (!token) {
-          console.log('No token, redirecting to login');
-          router.push('/login');
-          return;
-        }
-
-        // Try to get user info
+        if (!token) return router.push('/login');
         const userData = await auth.getCurrentUser();
         setUser(userData);
         setLoading(false);
       } catch (error: any) {
-        console.error('Auth error:', error);
-        // 401 is handled globally by the API interceptor (redirects to /login?expired=1)
-        // For non-401 errors (network issues, 500, etc.), still show the dashboard in degraded mode
-        if (error?.response?.status !== 401) {
-          setLoading(false);
-        }
-        // If it's 401, the interceptor will redirect — don't set loading=false to avoid flash
+        if (error?.response?.status !== 401) setLoading(false);
       }
     };
-
     checkAuth();
   }, [router]);
 
@@ -81,256 +237,49 @@ export default function DashboardLayout({
       const fetchBadges = async () => {
         try {
           const { dashboard } = await import('@/lib/api');
-          const data = await dashboard.sidebarBadges();
-          setBadges(data);
-        } catch (error) {
-          console.error('Failed to fetch sidebar badges', error);
-        }
+          setBadges(await dashboard.sidebarBadges());
+        } catch (error) {}
       };
       fetchBadges();
-      
-      // Refresh badges every minute
       const interval = setInterval(fetchBadges, 60000);
       return () => clearInterval(interval);
     }
   }, [user]);
 
-  // Load theme from localStorage
   useEffect(() => {
-    const theme = localStorage.getItem('theme');
-    if (theme === 'dark') {
+    if (localStorage.getItem('theme') === 'dark') {
       document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
     }
   }, []);
 
-  const handleLogout = () => {
-    auth.logout();
-    router.push('/login');
-  };
-
-  if (loading) {
-    return (
-      <LoadingSpinner 
-        message="Đang khởi động..."
-        submessage="Lần đầu truy cập có thể mất 30-60 giây để server khởi động. Vui lòng đợi trong giây lát."
-      />
-    );
-  }
-
-  const navigationGroups = [
-    {
-      group: 'TỔNG QUAN',
-      items: [
-        { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-        { name: 'Lượt đề cập', href: '/dashboard/mentions', icon: MessageSquareText, badge: badges.unreviewed_mentions },
-        { name: 'Phân tích', href: '/dashboard/analysis', icon: PieChart, disabled: true },
-      ]
-    },
-    {
-      group: 'THU THẬP DỮ LIỆU',
-      items: [
-        { name: 'Trung tâm quét', href: '/dashboard/scan', icon: ScanSearch },
-        { name: 'Từ khóa', href: '/dashboard/keywords', icon: Key },
-        { name: 'Nguồn', href: '/dashboard/sources', icon: Globe },
-      ]
-    },
-    {
-      group: 'CẢNH BÁO & XỬ LÝ',
-      items: [
-        { name: 'Cảnh báo', href: '/dashboard/alerts', icon: Bell, badge: badges.new_alerts },
-        { name: 'Sự cố', href: '/dashboard/incidents', icon: AlertTriangle, badge: badges.open_incidents },
-        { name: 'Xử lý danh tiếng', href: '/dashboard/reputation', icon: ShieldAlert },
-      ]
-    },
-    {
-      group: 'DỊCH VỤ',
-      items: [
-        { name: 'Dịch vụ', href: '/dashboard/services', icon: Briefcase },
-      ]
-    },
-    {
-      group: 'BÁO CÁO',
-      items: [
-        { name: 'Báo cáo', href: '/dashboard/reports', icon: ClipboardList },
-      ]
-    },
-    {
-      group: 'HỆ THỐNG',
-      items: [
-        { name: 'Cài đặt', href: '/dashboard/settings', icon: Settings },
-      ]
-    }
-  ];
+  if (loading) return <LoadingSpinner message="Đang khởi động..." />;
 
   return (
     <div className="min-h-screen bg-[#050A15]">
-      {/* Mobile sidebar backdrop */}
       {sidebarOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-black/80 backdrop-blur-sm lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
+        <div className="fixed inset-0 z-40 bg-black/80 backdrop-blur-sm lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
+      
+      <DashboardSidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} user={user} badges={badges} />
 
-      {/* Sidebar */}
-      <div
-        className={`fixed inset-y-0 left-0 z-50 w-64 bg-[#030614] border-r border-white/5 shadow-[4px_0_24px_rgba(0,0,0,0.6)] transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
-      >
-        <div className="flex flex-col h-full relative">
-          {/* Subtle background glow in sidebar */}
-          <div className="absolute top-0 left-0 w-full h-64 bg-indigo-500/5 blur-3xl pointer-events-none" />
-          
-          {/* Logo with premium styling */}
-          <div className="flex items-center justify-between h-[72px] px-6 border-b border-white/5 relative overflow-hidden z-10">
-            <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/10 to-transparent pointer-events-none" />
-            <div className="flex items-center space-x-3 relative">
-              <div className="w-9 h-9 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-[0_0_15px_rgba(99,102,241,0.5)] border border-white/20">
-                <span className="text-white font-bold text-lg leading-none tracking-tight drop-shadow-md">N</span>
-              </div>
-              <h1 className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-zinc-400 tracking-wide">Nope</h1>
-            </div>
-            <button
-              onClick={() => setSidebarOpen(false)}
-              className="lg:hidden p-2 -mr-2 text-zinc-400 hover:text-white transition-colors rounded-lg hover:bg-white/10"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-
-          {/* Navigation with refined active/hover states */}
-          <nav className="flex-1 px-3 py-6 space-y-5 overflow-y-auto scrollbar-hide">
-            {navigationGroups.map((group) => (
-              <div key={group.group} className="space-y-1.5">
-                <div className="px-3 mb-2 text-[10px] font-bold tracking-widest text-gray-500 uppercase">
-                  {group.group}
-                </div>
-                {group.items.map((item) => {
-                  const isActive = pathname === item.href;
-                  if (item.disabled) {
-                    return (
-                      <div
-                        key={item.name}
-                        className="group flex items-center px-3 py-2 text-sm font-medium rounded-lg text-gray-600 cursor-not-allowed bg-transparent"
-                        title="Chưa tích hợp"
-                      >
-                        <item.icon className="w-5 h-5 mr-3 flex-shrink-0 text-gray-700" />
-                        <span className="truncate flex-1">{item.name}</span>
-                        <span className="text-[9px] uppercase font-bold text-gray-500 bg-gray-800/40 px-1.5 py-0.5 rounded border border-gray-700/50">Chưa có</span>
-                      </div>
-                    );
-                  }
-                  return (
-                    <Link
-                      key={item.name}
-                      href={item.href}
-                      className={`group flex items-center px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-300 relative overflow-hidden ${
-                        isActive
-                          ? 'text-white bg-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] border border-white/10'
-                          : 'text-zinc-400 hover:text-white hover:bg-white/5 border border-transparent'
-                      }`}
-                      onClick={() => setSidebarOpen(false)}
-                    >
-                      {isActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-indigo-500 rounded-r-full shadow-[0_0_10px_rgba(99,102,241,1)]" />}
-                      <item.icon 
-                        className={`w-5 h-5 mr-3 flex-shrink-0 transition-transform duration-300 ${
-                          isActive ? 'text-indigo-400 scale-110' : 'text-zinc-500 group-hover:text-zinc-300 group-hover:scale-110'
-                        }`} 
-                      />
-                      <span className="truncate">{item.name}</span>
-                      {(item as any).badge ? (
-                        <SidebarBadge count={(item as any).badge} />
-                      ) : null}
-                    </Link>
-                  );
-                })}
-              </div>
-            ))}
-          </nav>
-
-          {/* Premium User Profile Bottom */}
-          <div className="p-4 border-t border-white/5 bg-[#030614] relative z-10">
-            <div className="absolute inset-0 bg-gradient-to-t from-indigo-500/5 to-transparent pointer-events-none" />
-            <div className="flex items-center justify-between group cursor-pointer hover:bg-white/5 p-2 -m-2 rounded-xl transition-colors relative z-20">
-              <div className="flex items-center space-x-3 flex-1 min-w-0">
-                <div className="w-9 h-9 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white font-medium text-sm border border-white/10 shadow-[0_0_10px_rgba(99,102,241,0.2)] group-hover:shadow-[0_0_15px_rgba(99,102,241,0.4)] transition-all">
-                  {(user?.full_name || user?.email || 'U')[0].toUpperCase()}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-zinc-200 truncate">
-                    {user?.full_name || user?.email || 'User'}
-                  </p>
-                  <p className="text-xs text-zinc-500 truncate mt-0.5 capitalize">
-                    {user?.role || 'Guest'}
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleLogout();
-                }}
-                className="p-2 ml-2 text-gray-400 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors"
-                title="Đăng xuất"
-              >
-                <LogOut className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Main content */}
       <div className="lg:pl-64 flex flex-col min-h-screen">
-        {/* Premium Top bar */}
         <div className="sticky top-0 z-20 flex items-center h-16 px-4 bg-[#050A15]/70 backdrop-blur-2xl border-b border-white/5 lg:px-8">
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="lg:hidden p-2 -ml-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors mr-2"
-          >
+          <button onClick={() => setSidebarOpen(true)} className="lg:hidden p-2 -ml-2 text-gray-400 hover:text-white mr-2">
             <Menu className="w-5 h-5" />
           </button>
-          
-          <div className="flex-1 flex items-center">
-            {/* Optional: Add breadcrumbs or page title here later if needed */}
-          </div>
-          
-          {/* Top Bar Actions */}
-          <div className="flex items-center space-x-2">
-            {/* Dark mode toggle - hidden since we are forcing premium dark theme, but kept functional if needed */}
-            <button
-              onClick={() => {
-                const html = document.documentElement;
-                const isDark = html.classList.contains('dark');
-                if (isDark) {
-                  html.classList.remove('dark');
-                  localStorage.setItem('theme', 'light');
-                } else {
-                  html.classList.add('dark');
-                  localStorage.setItem('theme', 'dark');
-                }
-              }}
-              className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
-              title="Chuyển chế độ sáng/tối"
-            >
-              <svg className="w-5 h-5 dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-              </svg>
-              <svg className="w-5 h-5 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-              </svg>
-            </button>
-          </div>
         </div>
-
-        {/* Page content */}
         <main className="flex-1 p-4 lg:p-8 w-full max-w-[1920px] mx-auto">
           {children}
         </main>
       </div>
     </div>
+  );
+}
+
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <ProjectProvider>
+      <DashboardLayoutContent>{children}</DashboardLayoutContent>
+    </ProjectProvider>
   );
 }

@@ -9,9 +9,10 @@ import {
   AlertTriangle, CheckCircle2, BrainCircuit, Loader2,
   Facebook, Youtube, RefreshCw, SlidersHorizontal, Sparkles,
   Twitter, Instagram, Mic, Video, Link2Off, Tag,
-  Plus, FolderDot, LayoutDashboard, SearchCode
+  SearchCode
 } from 'lucide-react';
 import { mentions as mentionsApi, dashboard, keywords as keywordsApi, crawl } from '@/lib/api';
+import { useProject } from '@/contexts/ProjectContext';
 import toast, { Toaster } from 'react-hot-toast';
 import Link from 'next/link';
 import ConfirmDialog from '@/components/ConfirmDialog';
@@ -196,13 +197,10 @@ export default function MentionsPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [sentimentSummary, setSentimentSummary] = useState<any>(null);
   const [trendData, setTrendData] = useState<any[]>([]);
-  const [keywordGroups, setKeywordGroups] = useState<any[]>([]);
-  const [activeProject, setActiveProject] = useState<any>(null);
-
+  const { activeProject, fetchProjects } = useProject();
   // UI state
   const [loading, setLoading] = useState(true);
   const [loadingChart, setLoadingChart] = useState(true);
-  const [isScanning, setIsScanning] = useState(false);
   const [page, setPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState(initialKeyword || '');
   const [searchInput, setSearchInput] = useState(initialKeyword || '');
@@ -248,7 +246,7 @@ export default function MentionsPage() {
       };
       if (initialJobId) params.job_id = initialJobId;
       if (searchTerm) params.search_query = searchTerm;
-      if (activeProject) params.keyword = activeProject.name;
+      if (activeProject) params.project_id = activeProject.id;
       if (filters.sentiment) params.sentiment = filters.sentiment;
       if (filters.source_type) params.source_type = filters.source_type;
       if (filters.min_risk_score !== null) params.min_risk_score = filters.min_risk_score;
@@ -282,79 +280,23 @@ export default function MentionsPage() {
     }
   }, []);
 
-  const fetchKeywordGroups = useCallback(async () => {
-    try {
-      const groups = await keywordsApi.listGroups();
-      setKeywordGroups(groups);
-    } catch (e) {
-      console.error(e);
-    }
-  }, []);
-
   useEffect(() => {
     fetchMentions();
-  }, [fetchMentions]);
+  }, [fetchMentions, activeProject]);
 
   useEffect(() => {
     fetchChartData();
-  }, [fetchChartData]);
-
-  useEffect(() => {
-    fetchKeywordGroups();
-  }, [fetchKeywordGroups]);
+  }, [fetchChartData, activeProject]);
 
   /* ─── PROJECT / SCAN ACTIONS ─────────────────────────────────────────── */
-
-  const handleCreateProject = async (keyword: string) => {
-    if (!keyword.trim()) return;
-    try {
-      setIsScanning(true);
-      const loadingToast = toast.loading(`Đang tạo project và quét web cho "${keyword}"...`);
-      
-      // Create Project (KeywordGroup)
-      const newGroup = await keywordsApi.createGroup({
-        name: keyword.trim(),
-        description: 'Tạo từ tìm kiếm Mentions',
-      });
-      
-      // Add Keyword to Group
-      await keywordsApi.createKeyword({
-        keyword: keyword.trim(),
-        group_id: newGroup.id,
-        keyword_type: 'general',
-      });
-
-      // Trigger Web Scan
-      const payload = {
-        keyword_group_ids: [newGroup.id],
-        mode: 'AUTO_DISCOVERY',
-        keywords: [keyword.trim()]
-      };
-      await crawl.manualScan(payload);
-
-      toast.dismiss(loadingToast);
-      toast.success(`Đang quét web cho "${keyword}". Kết quả sẽ sớm xuất hiện!`);
-      
-      setSearchInput('');
-      setSearchTerm('');
-      setActiveProject(newGroup);
-      fetchKeywordGroups();
-    } catch (error: any) {
-      toast.error('Lỗi khi tạo project: ' + (error.response?.data?.detail || error.message));
-    } finally {
-      setIsScanning(false);
-    }
-  };
 
   const handleSearchChange = (val: string) => {
     setSearchInput(val);
     if (searchTimeout.current) clearTimeout(searchTimeout.current);
-    // Don't auto-search if we're typing to create a project
-  };
-
-  const executeSearch = () => {
-    setSearchTerm(searchInput);
-    setPage(1);
+    searchTimeout.current = setTimeout(() => {
+      setSearchTerm(val);
+      setPage(1);
+    }, 400);
   };
 
 
@@ -446,17 +388,16 @@ export default function MentionsPage() {
         </div>
       </div>
 
-      {/* ─── SEARCH BAR / CREATE PROJECT ─────────────────────────────────── */}
+      {/* ─── SEARCH BAR ─────────────────────────────────── */}
       <div className="relative mb-5 flex gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
           <input
             id="mentions-search"
             type="text"
-            placeholder="Tìm kiếm mentions đang có hoặc nhập từ khóa mới để tìm trên Web..."
+            placeholder="Tìm kiếm mentions trong dự án hiện tại..."
             value={searchInput}
             onChange={(e) => handleSearchChange(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && executeSearch()}
             className="w-full pl-12 pr-12 py-3.5 bg-[#111827] border border-gray-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 text-white placeholder-gray-500 shadow-sm transition-all text-sm"
           />
           {searchInput && (
@@ -468,14 +409,6 @@ export default function MentionsPage() {
             </button>
           )}
         </div>
-        <button
-          onClick={() => handleCreateProject(searchInput)}
-          disabled={!searchInput.trim() || isScanning}
-          className="px-6 py-3.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium rounded-xl flex items-center gap-2 transition-all whitespace-nowrap shadow-lg shadow-indigo-900/20"
-        >
-          {isScanning ? <Loader2 className="w-5 h-5 animate-spin" /> : <SearchCode className="w-5 h-5" />}
-          Tìm trên Web
-        </button>
       </div>
 
       {/* ─── ACTIVE FILTER CHIPS ─────────────────────────────────────────── */}
@@ -594,63 +527,9 @@ export default function MentionsPage() {
         </div>
       )}
 
-      {/* ─── MAIN CONTENT: PROJECTS + FEED + FILTERS ─────────────────────── */}
+      {/* ─── MAIN CONTENT: FEED + FILTERS ─────────────────────── */}
       <div className="flex gap-5">
         
-        {/* ──── LEFT SIDEBAR: PROJECTS (BRAND24 STYLE) ───────────────────── */}
-        <aside className="hidden lg:block w-[240px] xl:w-[260px] flex-shrink-0">
-          <div className="bg-[#111827] border border-gray-800 rounded-xl p-4 sticky top-24 max-h-[calc(100vh-120px)] overflow-y-auto scrollbar-hide">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                PROJECTS
-              </h3>
-              <button 
-                onClick={() => { document.getElementById('mentions-search')?.focus(); }}
-                className="w-6 h-6 rounded-full bg-indigo-500/10 text-indigo-400 flex items-center justify-center hover:bg-indigo-500 hover:text-white transition-all"
-                title="Tạo Project mới"
-              >
-                <Plus className="w-4 h-4" />
-              </button>
-            </div>
-            
-            <div className="space-y-1.5">
-              <button
-                onClick={() => { setActiveProject(null); setPage(1); }}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                  !activeProject
-                    ? 'bg-indigo-500/15 text-white border border-indigo-500/30 shadow-[inset_4px_0_0_rgba(99,102,241,1)]'
-                    : 'text-gray-400 hover:text-gray-200 hover:bg-[#1E293B] border border-transparent'
-                }`}
-              >
-                <LayoutDashboard className={`w-4 h-4 flex-shrink-0 ${!activeProject ? 'text-indigo-400' : 'text-gray-500'}`} />
-                <span className="truncate">Tất cả mentions</span>
-              </button>
-
-              {keywordGroups.map((group) => (
-                <button
-                  key={group.id}
-                  onClick={() => { setActiveProject(group); setPage(1); }}
-                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-all group-hover ${
-                    activeProject?.id === group.id
-                      ? 'bg-emerald-500/15 text-white border border-emerald-500/30 shadow-[inset_4px_0_0_rgba(16,185,129,1)]'
-                      : 'text-gray-400 hover:text-gray-200 hover:bg-[#1E293B] border border-transparent'
-                  }`}
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <span className={`w-2 h-2 rounded-full flex-shrink-0 ${activeProject?.id === group.id ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]' : 'bg-gray-600 group-hover:bg-gray-400'}`} />
-                    <span className="truncate" title={group.name}>{group.name}</span>
-                  </div>
-                  {group.keyword_count > 0 && (
-                    <span className="text-[10px] text-gray-500 bg-gray-800 px-1.5 py-0.5 rounded-md flex-shrink-0">
-                      {group.keyword_count}
-                    </span>
-                  )}
-                </button>
-              ))}
-            </div>
-          </div>
-        </aside>
-
         {/* ──── MAIN RESULTS FEED ──────────────────────────────────────────── */}
         <div className="flex-1 min-w-0">
 

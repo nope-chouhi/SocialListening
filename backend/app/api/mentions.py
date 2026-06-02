@@ -37,6 +37,7 @@ def list_mentions(
     date_to: Optional[datetime] = None,
     job_id: Optional[int] = Query(None),
     keyword: Optional[str] = Query(None),
+    project_id: Optional[int] = Query(None),
     is_muted: Optional[bool] = Query(None),
     min_influence_score: Optional[float] = Query(None),
     sort_by: Optional[str] = Query("newest", pattern="^(newest|oldest|risk_high|risk_low|influence_high|engagement_high)$"),
@@ -68,6 +69,8 @@ def list_mentions(
                 query = query.where(Source.url.ilike(f"%{domain}%"))
 
         # Mentions filtering directly
+        if project_id:
+            query = query.where(Mention.project_id == project_id)
         if job_id:
             query = query.where(Mention.job_id == job_id)
         if keyword:
