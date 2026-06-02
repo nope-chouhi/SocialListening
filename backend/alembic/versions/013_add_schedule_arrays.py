@@ -18,10 +18,22 @@ depends_on = None
 
 def upgrade():
     # Add new JSON columns for multiple schedule selections
-    op.add_column('sources', sa.Column('schedule_days_of_week', postgresql.JSON, nullable=True))
-    op.add_column('sources', sa.Column('schedule_days_of_month', postgresql.JSON, nullable=True))
-    op.add_column('sources', sa.Column('schedule_months', postgresql.JSON, nullable=True))
-    op.add_column('sources', sa.Column('schedule_hours', postgresql.JSON, nullable=True))
+    conn = op.get_bind()
+    from sqlalchemy.engine.reflection import Inspector
+    inspector = Inspector.from_engine(conn)
+    columns = [c['name'] for c in inspector.get_columns('sources')]
+    
+    if 'schedule_days_of_week' not in columns:
+        op.add_column('sources', sa.Column('schedule_days_of_week', postgresql.JSON, nullable=True))
+        
+    if 'schedule_days_of_month' not in columns:
+        op.add_column('sources', sa.Column('schedule_days_of_month', postgresql.JSON, nullable=True))
+        
+    if 'schedule_months' not in columns:
+        op.add_column('sources', sa.Column('schedule_months', postgresql.JSON, nullable=True))
+        
+    if 'schedule_hours' not in columns:
+        op.add_column('sources', sa.Column('schedule_hours', postgresql.JSON, nullable=True))
 
 
 def downgrade():
