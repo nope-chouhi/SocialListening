@@ -74,12 +74,29 @@ def _generate_report_inline(report: Report, db: Session):
             select(Mention).where(
                 and_(
                     Mention.collected_at >= start_date,
-                    Mention.collected_at <= end_date
+                    Mention.collected_at <= end_date,
+                    Mention.add_to_report == True
                 )
             )
         ).scalars().all()
 
         mention_ids = [m.id for m in mentions]
+
+        # Prepare selected mentions for report
+        selected_mentions = []
+        for m in mentions:
+            selected_mentions.append({
+                "id": m.id,
+                "title": m.title,
+                "content": m.content,
+                "snippet": m.snippet,
+                "url": m.url,
+                "domain": m.domain,
+                "source_name": m.source_id,  # Will be populated if needed
+                "sentiment": m.sentiment,
+                "published_at": m.published_at.isoformat() if m.published_at else None,
+                "collected_at": m.collected_at.isoformat() if m.collected_at else None
+            })
 
         # Get AI analyses
         analyses_list = db.execute(
@@ -154,6 +171,7 @@ def _generate_report_inline(report: Report, db: Session):
             "sentiment_counts": sentiment_counts,
             "risk_distribution": risk_distribution,
             "high_risk_mentions": high_risk_mentions[:20],
+            "selected_mentions": selected_mentions,
         }
 
         report.data = report_data

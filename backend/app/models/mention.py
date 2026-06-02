@@ -60,6 +60,7 @@ class Mention(Base):
     tags_json = Column(JSON, nullable=True)
     is_muted = Column(Boolean, default=False)
     is_deleted = Column(Boolean, default=False)
+    add_to_report = Column(Boolean, default=False)
     extraction_source = Column(String(100), nullable=True)
     confidence = Column(String(50), nullable=True)
     

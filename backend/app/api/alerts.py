@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from sqlalchemy import select, func
-from datetime import datetime
+from sqlalchemy import select, func, and_
+from datetime import datetime, timedelta
 from math import ceil
 from typing import Optional
 from pydantic import BaseModel
@@ -11,6 +11,7 @@ from app.core.security import get_current_active_user
 from app.models.user import User
 from app.models.alert import Alert, AlertStatus, AlertSeverity
 from app.models.incident import Incident, IncidentStatus, IncidentLog
+from app.models.mention import Mention, AIAnalysis
 from app.services.notification_service import notify_alert_created
 
 router = APIRouter()
@@ -23,12 +24,22 @@ class AlertCreateBody(BaseModel):
     message: Optional[str] = None
 
 
+class AlertRuleCreateBody(BaseModel):
+    project_id: Optional[int] = None
+    name: str
+    rule_type: str  # "mention_spike", "negative_spike", "high_risk"
+    threshold: float  # e.g., 10 for spike, 0.3 for negative ratio, 70 for risk score
+    window_hours: int = 24  # Time window to check
+    is_active: bool = True
+
+
 @router.get("")
 def list_alerts(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     severity: Optional[str] = None,
     status: Optional[str] = None,
+    project_id: Optional[int] = Query(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
@@ -40,6 +51,9 @@ def list_alerts(
 
     if status:
         query = query.where(Alert.status == status)
+
+    if project_id:
+        query = query.where(Alert.project_id == project_id)
 
     total = db.execute(select(func.count()).select_from(query.subquery())).scalar() or 0
 
@@ -54,6 +68,7 @@ def list_alerts(
         "items": [
             {
                 "id": a.id,
+                "project_id": a.project_id,
                 "mention_id": a.mention_id,
                 "severity": a.severity.value if hasattr(a.severity, 'value') else a.severity,
                 "status": a.status.value if hasattr(a.status, 'value') else a.status,
@@ -297,4 +312,141 @@ def delete_alert(
 
     db.delete(alert)
     db.commit()
+
+
+@router.post("/check-rules", status_code=200)
+def check_alert_rules(
+    body: AlertRuleCreateBody,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Check alert rules and create alerts if thresholds are met"""
+    if not body.is_active:
+        return {"message": "Rule is inactive", "alerts_created": 0}
+    
+    # Calculate time window
+    end_time = datetime.utcnow()
+    start_time = end_time - timedelta(hours=body.window_hours)
+    
+    alerts_created = 0
+    
+    # Build base filter for mentions
+    mention_filter = [
+        Mention.collected_at >= start_time,
+        Mention.collected_at <= end_time,
+        Mention.is_muted == False,
+        Mention.is_deleted == False
+    ]
+    
+    if body.project_id:
+        mention_filter.append(Mention.project_id == body.project_id)
+    
+    if body.rule_type == "mention_spike":
+        # Check if mention count exceeds threshold
+        total_mentions = db.execute(
+            select(func.count(Mention.id)).where(and_(*mention_filter))
+        ).scalar() or 0
+        
+        # Compare with previous period (same window, shifted back)
+        prev_start = start_time - timedelta(hours=body.window_hours)
+        prev_end = start_time
+        prev_mentions = db.execute(
+            select(func.count(Mention.id)).where(
+                and_(
+                    Mention.collected_at >= prev_start,
+                    Mention.collected_at <= prev_end,
+                    Mention.is_muted == False,
+                    Mention.is_deleted == False,
+                    *(mention_filter[1:] if body.project_id else [])
+                )
+            )
+        ).scalar() or 0
+        
+        # Calculate spike (current vs previous)
+        if prev_mentions > 0:
+            spike_ratio = (total_mentions - prev_mentions) / prev_mentions
+        else:
+            spike_ratio = 1.0 if total_mentions > 0 else 0
+        
+        # If spike exceeds threshold, create alert
+        if spike_ratio >= body.threshold:
+            alert = Alert(
+                project_id=body.project_id,
+                title=f"Mention Spike Detected: {body.name}",
+                message=f"Mentions increased by {spike_ratio:.1%} in the last {body.window_hours}h (current: {total_mentions}, previous: {prev_mentions})",
+                severity=AlertSeverity.HIGH if spike_ratio >= 0.5 else AlertSeverity.MEDIUM,
+                status=AlertStatus.NEW
+            )
+            db.add(alert)
+            db.commit()
+            alerts_created += 1
+    
+    elif body.rule_type == "negative_spike":
+        # Check if negative mentions exceed threshold
+        mention_ids = db.execute(
+            select(Mention.id).where(and_(*mention_filter))
+        ).scalars().all()
+        
+        if mention_ids:
+            # Get AI analysis for sentiment
+            negative_count = db.execute(
+                select(func.count(AIAnalysis.id)).where(
+                    and_(
+                        AIAnalysis.mention_id.in_(mention_ids),
+                        AIAnalysis.sentiment.in_(["negative_low", "negative_medium", "negative_high"])
+                    )
+                )
+            ).scalar() or 0
+            
+            total_count = len(mention_ids)
+            negative_ratio = negative_count / total_count if total_count > 0 else 0
+            
+            # If negative ratio exceeds threshold, create alert
+            if negative_ratio >= body.threshold:
+                alert = Alert(
+                    project_id=body.project_id,
+                    title=f"Negative Sentiment Spike: {body.name}",
+                    message=f"Negative sentiment ratio is {negative_ratio:.1%} in the last {body.window_hours}h ({negative_count}/{total_count} mentions)",
+                    severity=AlertSeverity.CRITICAL if negative_ratio >= 0.5 else AlertSeverity.HIGH,
+                    status=AlertStatus.NEW
+                )
+                db.add(alert)
+                db.commit()
+                alerts_created += 1
+    
+    elif body.rule_type == "high_risk":
+        # Check if any mentions have risk score above threshold
+        mention_ids = db.execute(
+            select(Mention.id).where(and_(*mention_filter))
+        ).scalars().all()
+        
+        if mention_ids:
+            high_risk_mentions = db.execute(
+                select(AIAnalysis).where(
+                    and_(
+                        AIAnalysis.mention_id.in_(mention_ids),
+                        AIAnalysis.risk_score >= body.threshold
+                    )
+                )
+            ).scalars().all()
+            
+            if high_risk_mentions:
+                alert = Alert(
+                    project_id=body.project_id,
+                    title=f"High Risk Mentions: {body.name}",
+                    message=f"Found {len(high_risk_mentions)} mentions with risk score >= {body.threshold} in the last {body.window_hours}h",
+                    severity=AlertSeverity.CRITICAL if body.threshold >= 85 else AlertSeverity.HIGH,
+                    status=AlertStatus.NEW
+                )
+                db.add(alert)
+                db.commit()
+                alerts_created += 1
+    
+    return {
+        "message": f"Alert rule check complete",
+        "alerts_created": alerts_created,
+        "rule_type": body.rule_type,
+        "threshold": body.threshold,
+        "window_hours": body.window_hours
+    }
 

@@ -1070,6 +1070,15 @@ export default function ScanPage() {
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-gray-300 font-medium">{job.mentions_found} mentions</span>
+                      {job.status === 'completed' && job.mentions_found > 0 && (
+                        <Link
+                          href={`/dashboard/mentions?job_id=${job.id}`}
+                          className="inline-flex items-center gap-1 text-[10px] font-medium text-indigo-400 hover:text-indigo-300 transition-colors"
+                        >
+                          <Eye className="w-3 h-3" />
+                          Xem
+                        </Link>
+                      )}
                       {(job.status === 'failed' || job.status === 'cancelled') && (
                         <button
                           onClick={() => handleRetry(job.id)}

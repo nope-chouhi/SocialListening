@@ -171,8 +171,10 @@ export const dashboard = {
     const response = await api.get('/api/dashboard/trends', { params: { range } });
     return response.data;
   },
-  sentimentSummary: async (range: string = '7d') => {
-    const response = await api.get('/api/dashboard/sentiment-summary', { params: { range } });
+  sentimentSummary: async (range: string = '7d', projectId?: number) => {
+    const params: any = { range };
+    if (projectId) params.project_id = projectId;
+    const response = await api.get('/api/dashboard/sentiment-summary', { params });
     return response.data;
   },
   hotKeywords: async (range: string = '7d') => {
@@ -382,6 +384,20 @@ export const mentions = {
     const response = await api.post('/api/ai/sentiment', { text });
     return response.data;
   },
+  summary: async (projectId?: number) => {
+    const params: any = {};
+    if (projectId) params.project_id = projectId;
+    const response = await api.get('/api/mentions/summary', { params });
+    return response.data;
+  },
+  addToReport: async (id: number, add: boolean) => {
+    const response = await api.put(`/api/mentions/${id}/add-to-report`, { add_to_report: add });
+    return response.data;
+  },
+  summarize: async (data: { mention_ids?: number[]; filters?: any; project_id?: number }) => {
+    const response = await api.post('/api/mentions/summarize', data);
+    return response.data;
+  },
 };
 
 // ─── Alerts ───────────────────────────────────────────────────────────────────
@@ -417,6 +433,38 @@ export const alerts = {
   },
   createIncident: async (id: number, data?: { title?: string; description?: string }) => {
     const response = await api.post(`/api/alerts/${id}/create-incident`, null, { params: data });
+    return response.data;
+  },
+  checkRules: async (data: { project_id?: number; name: string; rule_type: string; threshold: number; window_hours: number; is_active: boolean }) => {
+    const response = await api.post('/api/alerts/check-rules', data);
+    return response.data;
+  },
+};
+
+// ─── Saved Filters ─────────────────────────────────────────────────────────────
+export const savedFilters = {
+  list: async (projectId?: number) => {
+    const params: any = {};
+    if (projectId) params.project_id = projectId;
+    const response = await api.get('/api/saved-filters', { params });
+    return response.data;
+  },
+  create: async (data: { name: string; filter_json: any; is_default?: boolean }, projectId?: number) => {
+    const params: any = {};
+    if (projectId) params.project_id = projectId;
+    const response = await api.post('/api/saved-filters', data, { params });
+    return response.data;
+  },
+  get: async (id: number) => {
+    const response = await api.get(`/api/saved-filters/${id}`);
+    return response.data;
+  },
+  update: async (id: number, data: { name?: string; filter_json?: any; is_default?: boolean }) => {
+    const response = await api.put(`/api/saved-filters/${id}`, data);
+    return response.data;
+  },
+  delete: async (id: number) => {
+    const response = await api.delete(`/api/saved-filters/${id}`);
     return response.data;
   },
 };

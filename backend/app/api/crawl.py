@@ -42,19 +42,27 @@ def run_manual_scan_task(job_id: int, source_ids: List[int], keyword_texts: List
         sources_to_scan = db.execute(select(Source).where(Source.id.in_(source_ids))).scalars().all()
         all_keywords = db.execute(select(Keyword).where(Keyword.id.in_(keyword_ids))).scalars().all()
 
+        # Get project_id from the first keyword's group (since keywords are project-specific)
+        project_id = None
+        if all_keywords:
+            first_keyword = all_keywords[0]
+            project_id = first_keyword.group_id  # In Nope, keyword groups act as projects
+
         total_mentions = 0
-        
+
         for source in sources_to_scan:
             try:
                 mentions = crawl_source(source, keyword_texts, all_keywords, db)
-                
+
                 for mention_data in mentions:
                     content_hash = hashlib.sha256(mention_data['content'].encode()).hexdigest()
                     existing = db.execute(select(Mention).where(Mention.content_hash == content_hash)).scalar_one_or_none()
                     if existing:
                         continue
-                    
+
                     mention = Mention(
+                        project_id=project_id,  # Set project_id from keyword group
+                        job_id=job.id,
                         source_id=source.id,
                         title=mention_data.get('title'),
                         content=mention_data['content'],

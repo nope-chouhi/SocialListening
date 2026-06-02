@@ -72,7 +72,7 @@ export default function DashboardPage() {
       const [trendsData, sentimentData, keywordsData] = await Promise.all([
         dashboard.trends(timeRange),
         dashboard.sentimentSummary(timeRange),
-        dashboard.hotKeywords(timeRange === '30d' ? '7d' : 'today') // adjust keyword range for performance if needed
+        dashboard.hotKeywords(timeRange === '30d' ? '7d' : 'today'),
       ]);
       setTrends(trendsData);
       setSentiment(sentimentData);
@@ -194,6 +194,85 @@ export default function DashboardPage() {
           <div className="bg-white/5 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/10 p-5 group hover:border-white/20 transition-all duration-500">
             <h2 className="text-base font-bold text-white tracking-wide mb-4">Từ Khóa Nổi Bật</h2>
             <HotKeywordsWidget data={hotKeywords?.items || []} isLoading={loadingCharts} />
+          </div>
+        </div>
+      </div>
+
+      {/* Sources & AI Insights Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Top Sources */}
+        <div className="bg-white/5 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/10 p-5 group hover:border-white/20 transition-all duration-500">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-base font-bold text-white tracking-wide flex items-center gap-2">
+              <BarChart3 className="w-4 h-4 text-indigo-400" />
+              Top Nguồn Đóng Góp Thảo Luận
+            </h2>
+            <span className="text-[10px] font-bold tracking-[0.1em] uppercase bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 px-3 py-1.5 rounded-lg shadow-sm">
+              {timeRange === 'today' ? 'Hôm nay' : timeRange === '7d' ? '7 ngày' : '30 ngày'}
+            </span>
+          </div>
+          {metrics?.top_sources && metrics.top_sources.length > 0 ? (
+            <div className="space-y-3">
+              {metrics.top_sources.slice(0, 5).map((source: any, idx: number) => (
+                <div key={idx} className="flex items-center gap-3 p-3 bg-white/5 rounded-xl hover:bg-white/10 transition-colors">
+                  <div className="w-8 h-8 bg-indigo-500/20 rounded-lg flex items-center justify-center text-indigo-400 font-bold text-sm">
+                    {idx + 1}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-white truncate">{source.domain || source.name || 'Unknown'}</p>
+                    <p className="text-xs text-gray-400">{source.mention_count || 0} mentions</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-bold text-indigo-400">{source.percentage || 0}%</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-40 text-zinc-400">
+              <BarChart3 className="w-8 h-8 mb-2 opacity-50" />
+              <p className="text-sm">Chưa có dữ liệu nguồn</p>
+            </div>
+          )}
+        </div>
+
+        {/* AI Insights */}
+        <div className="bg-gradient-to-br from-indigo-900/40 to-purple-900/20 backdrop-blur-xl rounded-2xl shadow-2xl border border-indigo-500/30 p-5 group hover:border-indigo-500/50 transition-all duration-500">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2 bg-indigo-500/20 rounded-lg border border-indigo-500/30">
+              <Sparkles className="w-5 h-5 text-indigo-400" />
+            </div>
+            <h2 className="text-base font-bold text-indigo-300 tracking-wide">AI Insights</h2>
+          </div>
+          <div className="space-y-4">
+            <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+              <p className="text-xs font-bold text-indigo-400 uppercase tracking-wider mb-2">Trend Analysis</p>
+              <p className="text-sm text-gray-300 leading-relaxed">
+                {metrics?.total_mentions > 0 
+                  ? `Đã ghi nhận ${metrics.total_mentions.toLocaleString()} mentions trong khoảng thời gian đã chọn. ${metrics.negative_mentions > 0 ? `Tỷ lệ tiêu cực là ${((metrics.negative_mentions / metrics.total_mentions) * 100).toFixed(1)}%, cần theo dõi sát sao.` : 'Tỷ lệ tiêu cực thấp, tình hình ổn định.'}`
+                  : 'Chưa có đủ dữ liệu để phân tích trend.'
+                }
+              </p>
+            </div>
+            <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+              <p className="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-2">Recommendations</p>
+              <ul className="space-y-2 text-sm text-gray-300">
+                <li className="flex items-start gap-2">
+                  <span className="text-indigo-400 mt-0.5">•</span>
+                  <span>Tiếp tục theo dõi các từ khóa nổi bật để phát hiện sớm các vấn đề tiềm ẩn.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-indigo-400 mt-0.5">•</span>
+                  <span>Kiểm tra định kỳ các nguồn hoạt động để đảm bảo thu thập dữ liệu hiệu quả.</span>
+                </li>
+                {metrics?.alerts_count > 0 && (
+                  <li className="flex items-start gap-2">
+                    <span className="text-rose-400 mt-0.5">•</span>
+                    <span>Có {metrics.alerts_count} cảnh báo cần xử lý. Ưu tiên giải quyết các cảnh báo nghiêm trọng.</span>
+                  </li>
+                )}
+              </ul>
+            </div>
           </div>
         </div>
       </div>

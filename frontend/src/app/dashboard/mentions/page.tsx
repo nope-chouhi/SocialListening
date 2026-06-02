@@ -9,9 +9,10 @@ import {
   AlertTriangle, CheckCircle2, BrainCircuit, Loader2,
   Facebook, Youtube, RefreshCw, SlidersHorizontal, Sparkles,
   Twitter, Instagram, Mic, Video, Link2Off, Tag,
-  SearchCode, Download
+  SearchCode, Download, CheckSquare, Square, Calendar,
+  Scan, ChevronLeft, ChevronRight, Info
 } from 'lucide-react';
-import { mentions as mentionsApi, dashboard, keywords as keywordsApi, crawl } from '@/lib/api';
+import { mentions as mentionsApi, dashboard, keywords as keywordsApi, crawl, savedFilters } from '@/lib/api';
 import { useProject } from '@/contexts/ProjectContext';
 import toast, { Toaster } from 'react-hot-toast';
 import Link from 'next/link';
@@ -37,6 +38,7 @@ interface MentionItem {
   collected_at: string | null;
   is_reviewed: boolean;
   is_muted: boolean;
+  add_to_report: boolean;
   matched_keywords: any[] | null;
   snippet: string | null;
   sentiment: string | null;
@@ -68,6 +70,7 @@ interface Filters {
   source_type: string | null;
   min_risk_score: number | null;
   min_influence_score: number | null;
+  add_to_report?: boolean | null;
   sort_by: string;
 }
 
@@ -196,7 +199,7 @@ export default function MentionsPage() {
 
   // Data
   const [mentionsList, setMentionsList] = useState<MentionItem[]>([]);
-  const [totalMentions, setTotalMentions] = useState<number>(-1);
+  const [totalMentions, setTotalMentions] = useState<number>(0);
   const [totalPages, setTotalPages] = useState(1);
   const [sentimentSummary, setSentimentSummary] = useState<any>(null);
   const [trendData, setTrendData] = useState<any[]>([]);
@@ -216,6 +219,15 @@ export default function MentionsPage() {
   });
   const [filterPanelOpen, setFilterPanelOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
+  const [savedFiltersOpen, setSavedFiltersOpen] = useState(false);
+  const [savedFiltersList, setSavedFiltersList] = useState<any[]>([]);
+  const [saveFilterModalOpen, setSaveFilterModalOpen] = useState(false);
+  const [saveFilterName, setSaveFilterName] = useState('');
+  const [saveFilterOverwrite, setSaveFilterOverwrite] = useState(false);
+  const [dateRange, setDateRange] = useState('7d');
+  const [summarizeDrawerOpen, setSummarizeDrawerOpen] = useState(false);
+  const [summarizing, setSummarizing] = useState(false);
+  const [aiSummary, setAiSummary] = useState<any>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; mentionId: number | null; mentionTitle: string }>({
     isOpen: false,
     mentionId: null,
@@ -225,6 +237,7 @@ export default function MentionsPage() {
 
   const searchTimeout = useRef<NodeJS.Timeout | null>(null);
   const sortRef = useRef<HTMLDivElement>(null);
+  const savedFiltersRef = useRef<HTMLDivElement>(null);
 
   // Close sort dropdown on outside click
   useEffect(() => {
@@ -232,10 +245,140 @@ export default function MentionsPage() {
       if (sortRef.current && !sortRef.current.contains(e.target as Node)) {
         setSortOpen(false);
       }
+      if (savedFiltersRef.current && !savedFiltersRef.current.contains(e.target as Node)) {
+        setSavedFiltersOpen(false);
+      }
     }
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
+
+  // Fetch saved filters
+  useEffect(() => {
+    if (activeProject) {
+      fetchSavedFilters();
+    }
+  }, [activeProject]);
+
+  const fetchSavedFilters = async () => {
+    try {
+      const data = await savedFilters.list(activeProject?.id);
+      setSavedFiltersList(data.items || []);
+    } catch (error) {
+      console.error('Error fetching saved filters:', error);
+    }
+  };
+
+  const handleSaveFilter = async () => {
+    if (!saveFilterName.trim()) {
+      toast.error('Vui lòng nhập tên bộ lọc');
+      return;
+    }
+
+    try {
+      const filterJson = {
+        ...filters,
+        search_term: searchTerm,
+      };
+
+      // Check if filter with same name exists
+      const existingFilter = savedFiltersList.find((sf: any) => sf.name === saveFilterName.trim());
+      
+      if (existingFilter && !saveFilterOverwrite) {
+        if (!confirm(`Bộ lọc "${saveFilterName}" đã tồn tại. Bạn có muốn ghi đè không?`)) {
+          return;
+        }
+        setSaveFilterOverwrite(true);
+      }
+
+      if (existingFilter) {
+        await savedFilters.update(existingFilter.id, { name: saveFilterName.trim(), filter_json: filterJson });
+        toast.success('Đã cập nhật bộ lọc');
+      } else {
+        await savedFilters.create({ name: saveFilterName.trim(), filter_json: filterJson }, activeProject?.id);
+        toast.success('Đã lưu bộ lọc');
+      }
+
+      setSaveFilterModalOpen(false);
+      setSaveFilterName('');
+      setSaveFilterOverwrite(false);
+      fetchSavedFilters();
+    } catch (error) {
+      toast.error('Lỗi khi lưu bộ lọc');
+    }
+  };
+
+  const openSaveFilterModal = () => {
+    setSaveFilterName('');
+    setSaveFilterOverwrite(false);
+    setSaveFilterModalOpen(true);
+  };
+
+  const handleApplyFilter = async (filterId: number) => {
+    try {
+      const filter = await savedFilters.get(filterId);
+      const filterJson = filter.filter_json;
+      
+      // Apply filters
+      setFilters({
+        sentiment: filterJson.sentiment || null,
+        source_type: filterJson.source_type || null,
+        min_risk_score: filterJson.min_risk_score || null,
+        min_influence_score: filterJson.min_influence_score || null,
+        sort_by: filterJson.sort_by || 'newest',
+      });
+      setSearchTerm(filterJson.search_term || '');
+      setSearchInput(filterJson.search_term || '');
+      
+      toast.success('Đã áp dụng bộ lọc');
+      setSavedFiltersOpen(false);
+    } catch (error) {
+      toast.error('Lỗi khi áp dụng bộ lọc');
+    }
+  };
+
+  const handleDeleteFilter = async (filterId: number) => {
+    if (!confirm('Bạn có chắc muốn xóa bộ lọc này?')) return;
+
+    try {
+      await savedFilters.delete(filterId);
+      toast.success('Đã xóa bộ lọc');
+      fetchSavedFilters();
+    } catch (error) {
+      toast.error('Lỗi khi xóa bộ lọc');
+    }
+  };
+
+  const handleSummarize = async () => {
+    try {
+      setSummarizing(true);
+      setAiSummary(null);
+      
+      const payload: any = {
+        project_id: activeProject?.id,
+      };
+      
+      // Add filters
+      if (filters.sentiment) payload.filters = { ...payload.filters, sentiment: filters.sentiment };
+      if (filters.source_type) payload.filters = { ...payload.filters, source_type: filters.source_type };
+      if (filters.min_risk_score !== null) payload.filters = { ...payload.filters, min_risk_score: filters.min_risk_score };
+      if (filters.min_influence_score !== null) payload.filters = { ...payload.filters, min_influence_score: filters.min_influence_score };
+      if (searchTerm) payload.filters = { ...payload.filters, search_query: searchTerm };
+      
+      // If specific mention IDs are selected (future feature), add them
+      // For now, summarize based on current filtered view
+      
+      const result = await mentionsApi.summarize(payload);
+      setAiSummary(result);
+      setSummarizeDrawerOpen(true);
+      toast.success('Đã tạo tóm tắt AI');
+    } catch (error: any) {
+      console.error('Error summarizing:', error);
+      toast.error(error?.response?.data?.detail || 'Lỗi khi tạo tóm tắt AI. Có thể AI chưa được cấu hình.');
+    } finally {
+      setSummarizing(false);
+    }
+  };
 
   /* ─── DATA FETCHING ─────────────────────────────────────────────────── */
 
@@ -271,7 +414,7 @@ export default function MentionsPage() {
     try {
       setLoadingChart(true);
       const [sentRes, trendRes] = await Promise.all([
-        dashboard.sentimentSummary('7d'),
+        mentionsApi.summary(activeProject?.id),
         dashboard.trends('7d'),
       ]);
       setSentimentSummary(sentRes);
@@ -281,7 +424,7 @@ export default function MentionsPage() {
     } finally {
       setLoadingChart(false);
     }
-  }, []);
+  }, [activeProject]);
 
   useEffect(() => {
     fetchMentions();
@@ -347,6 +490,19 @@ export default function MentionsPage() {
     }
   };
 
+  const handleToggleAddToReport = async (mentionId: number, currentStatus: boolean) => {
+    setActionLoading((prev) => ({ ...prev, [`${mentionId}_add_to_report`]: true }));
+    try {
+      await mentionsApi.addToReport(mentionId, !currentStatus);
+      toast.success(!currentStatus ? 'Đã thêm vào báo cáo' : 'Đã xóa khỏi báo cáo');
+      fetchMentions();
+    } catch (error: any) {
+      toast.error(error?.response?.data?.detail || 'Có lỗi xảy ra');
+    } finally {
+      setActionLoading((prev) => ({ ...prev, [`${mentionId}_add_to_report`]: false }));
+    }
+  };
+
   const handleExportCsv = async () => {
     try {
       const params: Record<string, unknown> = {};
@@ -387,49 +543,138 @@ export default function MentionsPage() {
       <Toaster position="top-right" />
 
       {/* ─── PAGE HEADER ─────────────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
-        <div>
-          <h1 className="text-2xl font-bold text-white tracking-wide flex items-center gap-2.5">
-            <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg shadow-indigo-500/20">
-              <FileText className="w-4 h-4 text-white" />
-            </div>
-            Mentions
-          </h1>
-          <p className="text-sm text-gray-500 mt-1.5 ml-[42px]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div className="flex-1">
+          <div className="flex items-center gap-3 mb-2">
+            <h1 className="text-2xl font-bold text-white tracking-wide flex items-center gap-2.5">
+              <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg shadow-indigo-500/20">
+                <FileText className="w-4 h-4 text-white" />
+              </div>
+              Mentions
+            </h1>
+            {activeProject && (
+              <span className="px-2.5 py-1 bg-indigo-500/10 border border-indigo-500/20 rounded-lg text-xs font-medium text-indigo-400">
+                {activeProject.name}
+              </span>
+            )}
+          </div>
+          <p className="text-sm text-gray-500 ml-[42px]">
             {totalMentions >= 0 ? `${totalMentions.toLocaleString()} kết quả` : 'Đang tải...'}
             {hasActiveFilters && ' (đã lọc)'}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Date Range Selector */}
+          <div className="inline-flex bg-[#1E293B] border border-gray-700 rounded-lg p-1">
+            {['1d', '7d', '30d', '90d'].map((range) => (
+              <button
+                key={range}
+                onClick={() => setDateRange(range)}
+                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+                  dateRange === range
+                    ? 'bg-indigo-600 text-white'
+                    : 'text-gray-400 hover:text-white hover:bg-gray-800'
+                }`}
+              >
+                {range === '1d' ? '1 ngày' : range === '7d' ? '7 ngày' : range === '30d' ? '30 ngày' : '90 ngày'}
+              </button>
+            ))}
+          </div>
+
+          {/* Saved Filters Dropdown */}
+          <div className="relative" ref={savedFiltersRef}>
+            <button
+              onClick={() => setSavedFiltersOpen(!savedFiltersOpen)}
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-300 bg-[#1E293B] border border-gray-700 rounded-xl hover:bg-gray-800 hover:text-white transition-all"
+            >
+              <SlidersHorizontal className="w-4 h-4" />
+              Saved Filters
+              <ChevronDown className={`w-3 h-3 transition-transform ${savedFiltersOpen ? 'rotate-180' : ''}`} />
+            </button>
+            {savedFiltersOpen && (
+              <div className="absolute right-0 top-full mt-1 w-56 bg-[#1E293B] border border-gray-700 rounded-xl shadow-2xl z-20 py-1 animate-fadeIn">
+                <button
+                  onClick={openSaveFilterModal}
+                  className="w-full text-left px-4 py-2 text-xs font-medium text-indigo-400 hover:bg-[#111827] transition-colors border-b border-gray-800"
+                >
+                  + Save Current Filter
+                </button>
+                {savedFiltersList.length === 0 ? (
+                  <div className="px-4 py-3 text-xs text-gray-500 text-center">No saved filters</div>
+                ) : (
+                  savedFiltersList.map((sf: any) => (
+                    <div key={sf.id} className="flex items-center justify-between px-4 py-2 hover:bg-[#111827] group">
+                      <button
+                        onClick={() => handleApplyFilter(sf.id)}
+                        className="flex-1 text-left text-xs font-medium text-gray-300 hover:text-white transition-colors"
+                      >
+                        {sf.name}
+                      </button>
+                      <button
+                        onClick={() => handleDeleteFilter(sf.id)}
+                        className="p-1 text-gray-500 hover:text-rose-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Summarize with AI Button */}
+          <button
+            onClick={handleSummarize}
+            disabled={summarizing}
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-indigo-300 bg-indigo-500/10 border border-indigo-500/30 rounded-xl hover:bg-indigo-500/20 hover:text-indigo-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {summarizing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+            AI Summary
+          </button>
+
+          {/* Scan Now Button */}
+          <Link
+            href="/dashboard/scan"
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-emerald-300 bg-emerald-500/10 border border-emerald-500/30 rounded-xl hover:bg-emerald-500/20 hover:text-emerald-200 transition-all"
+          >
+            <Scan className="w-4 h-4" />
+            Scan Now
+          </Link>
+
+          {/* Export CSV */}
           <button
             type="button"
             onClick={handleExportCsv}
-            className="btn-gradient inline-flex items-center gap-2 text-sm"
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-300 bg-[#1E293B] border border-gray-700 rounded-xl hover:bg-gray-800 hover:text-white transition-all"
           >
             <Download className="w-4 h-4" />
-            Xuất CSV
+            Export
           </button>
+
+          {/* Refresh */}
           <button
             onClick={() => { fetchMentions(); fetchChartData(); }}
             className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-300 bg-[#1E293B] border border-gray-700 rounded-xl hover:bg-gray-800 hover:text-white transition-all"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            Làm mới
+            Refresh
           </button>
         </div>
       </div>
 
-      {/* ─── SEARCH BAR ─────────────────────────────────── */}
-      <div className="relative mb-5 flex gap-3">
+      {/* ─── TOOLBAR ─────────────────────────────────────────────────── */}
+      <div className="flex flex-col lg:flex-row gap-4 mb-6">
+        {/* Search */}
         <div className="relative flex-1">
           <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
           <input
             id="mentions-search"
             type="text"
-            placeholder="Tìm kiếm mentions trong dự án hiện tại..."
+            placeholder="Tìm kiếm mentions..."
             value={searchInput}
             onChange={(e) => handleSearchChange(e.target.value)}
-            className="w-full pl-12 pr-12 py-3.5 bg-[#111827] border border-gray-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 text-white placeholder-gray-500 shadow-sm transition-all text-sm"
+            className="w-full pl-12 pr-12 py-3 bg-[#111827] border border-gray-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 text-white placeholder-gray-500 shadow-sm transition-all text-sm"
           />
           {searchInput && (
             <button
@@ -440,590 +685,639 @@ export default function MentionsPage() {
             </button>
           )}
         </div>
-      </div>
 
-      {/* ─── ACTIVE FILTER CHIPS ─────────────────────────────────────────── */}
-      {hasActiveFilters && (
-        <div className="flex flex-wrap items-center gap-2 mb-5 animate-fadeIn">
-          <span className="text-xs text-gray-500 font-medium uppercase tracking-wider mr-1">Bộ lọc:</span>
-          {filters.sentiment && (
-            <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border ${SENTIMENT_OPTIONS.find((s) => s.value === filters.sentiment)?.bg || 'bg-gray-800 text-gray-400 border-gray-700'}`}>
-              <SentimentDot sentiment={filters.sentiment} />
-              {SENTIMENT_OPTIONS.find((s) => s.value === filters.sentiment)?.label}
-              <button onClick={() => updateFilter('sentiment', null)} className="ml-1 hover:text-white transition-colors">
-                <X className="w-3 h-3" />
-              </button>
-            </span>
-          )}
-          {filters.source_type && (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border bg-blue-500/10 text-blue-400 border-blue-500/20">
-              <SourceIcon type={filters.source_type} className="w-3.5 h-3.5" />
-              {SOURCE_TYPE_OPTIONS.find((s) => s.value === filters.source_type)?.label || filters.source_type}
-              <button onClick={() => updateFilter('source_type', null)} className="ml-1 hover:text-white transition-colors">
-                <X className="w-3 h-3" />
-              </button>
-            </span>
-          )}
-          {filters.min_risk_score !== null && (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border bg-orange-500/10 text-orange-400 border-orange-500/20">
-              Risk ≥ {filters.min_risk_score}
-              <button onClick={() => updateFilter('min_risk_score', null)} className="ml-1 hover:text-white transition-colors">
-                <X className="w-3 h-3" />
-              </button>
-            </span>
-          )}
-          {searchTerm && (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border bg-purple-500/10 text-purple-400 border-purple-500/20">
-              "{searchTerm}"
-              <button onClick={() => { setSearchTerm(''); setSearchInput(''); setPage(1); }} className="ml-1 hover:text-white transition-colors">
-                <X className="w-3 h-3" />
-              </button>
-            </span>
-          )}
+        {/* Sort Dropdown */}
+        <div className="relative" ref={sortRef}>
           <button
-            onClick={clearAllFilters}
-            className="text-xs text-gray-500 hover:text-white transition-colors underline underline-offset-2 ml-2"
+            onClick={() => setSortOpen(!sortOpen)}
+            className="inline-flex items-center gap-2 px-4 py-3 bg-[#111827] border border-gray-800 rounded-xl hover:border-gray-700 transition-all text-sm font-medium text-gray-300 hover:text-white"
           >
-            Xóa tất cả
+            <ArrowUpDown className="w-4 h-4" />
+            {SORT_OPTIONS.find((o) => o.value === filters.sort_by)?.label || 'Sort'}
+            <ChevronDown className={`w-3 h-3 transition-transform ${sortOpen ? 'rotate-180' : ''}`} />
           </button>
-        </div>
-      )}
-
-      {/* ─── SUMMARY STATS ───────────────────────────────────────────────── */}
-      {summaryStats.length > 0 && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
-          {summaryStats.map((stat) => (
-            <div
-              key={stat.label}
-              className="bg-[#111827] border border-gray-800 rounded-xl p-4 flex items-center gap-3 hover:border-gray-700 transition-colors group"
-            >
-              <div className={`w-10 h-10 ${stat.bg} rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform`}>
-                <stat.icon className={`w-5 h-5 ${stat.color}`} />
-              </div>
-              <div className="min-w-0">
-                <p className="text-xl font-bold text-white tabular-nums">{stat.value.toLocaleString()}</p>
-                <p className="text-[11px] text-gray-500 font-medium uppercase tracking-wider truncate">{stat.label}</p>
-              </div>
+          {sortOpen && (
+            <div className="absolute right-0 top-full mt-1 w-48 bg-[#111827] border border-gray-800 rounded-xl shadow-2xl z-20 py-1 animate-fadeIn">
+              {SORT_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() => { setFilters({ ...filters, sort_by: opt.value }); setSortOpen(false); setPage(1); }}
+                  className={`w-full text-left px-4 py-2 text-sm font-medium transition-colors ${
+                    filters.sort_by === opt.value
+                      ? 'bg-indigo-600/20 text-indigo-400'
+                      : 'text-gray-400 hover:text-white hover:bg-gray-800'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
             </div>
-          ))}
+          )}
         </div>
-      )}
 
-      {/* ─── CHART + MINI TREND ──────────────────────────────────────────── */}
-      {trendData.length > 0 && (
-        <div className="bg-[#111827] border border-gray-800 rounded-xl p-4 mb-5">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold text-gray-300 flex items-center gap-2">
-              <BarChart3 className="w-4 h-4 text-indigo-400" />
-              Xu hướng 7 ngày
-            </h3>
-          </div>
-          <div className="h-36">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={trendData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1E293B" />
-                <XAxis
-                  dataKey="date"
-                  tick={{ fill: '#64748B', fontSize: 10 }}
-                  tickLine={false}
-                  axisLine={false}
-                  tickFormatter={(v) => {
-                    if (typeof v === 'string' && v.includes('-')) {
-                      const parts = v.split('-');
-                      if (parts.length === 3) return `${parts[2]}/${parts[1]}`;
-                    }
-                    return v;
-                  }}
-                />
-                <YAxis tick={{ fill: '#64748B', fontSize: 10 }} tickLine={false} axisLine={false} />
-                <Tooltip
-                  contentStyle={{
-                    borderRadius: '12px',
-                    border: '1px solid #374151',
-                    backgroundColor: '#1E293B',
-                    color: '#F3F4F6',
-                    fontSize: '12px',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
-                  }}
-                />
-                <Bar dataKey="total_mentions" name="Mentions" radius={[4, 4, 0, 0]}>
-                  {trendData.map((_, i) => (
-                    <Cell key={i} fill={i === trendData.length - 1 ? '#818CF8' : '#4F46E5'} />
-                  ))}
-                </Bar>
-                <Bar dataKey="negative_mentions" name="Tiêu cực" fill="#F43F5E" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      )}
-
-      {/* ─── MAIN CONTENT: FEED + FILTERS ─────────────────────── */}
-      <div className="flex gap-5">
-        
-        {/* ──── MAIN RESULTS FEED ──────────────────────────────────────────── */}
-        <div className="flex-1 min-w-0">
-
-
-        {/* ──── MOBILE FILTER BUTTON ───────────────────────────────────────── */}
+        {/* Filter Toggle */}
         <button
           onClick={() => setFilterPanelOpen(!filterPanelOpen)}
-          className="lg:hidden fixed bottom-6 right-6 z-30 w-14 h-14 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-full shadow-xl shadow-indigo-500/30 flex items-center justify-center text-white hover:scale-105 transition-transform"
+          className={`inline-flex items-center gap-2 px-4 py-3 rounded-xl transition-all text-sm font-medium ${
+            filterPanelOpen
+              ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20'
+              : 'bg-[#111827] border border-gray-800 text-gray-300 hover:border-gray-700 hover:text-white'
+          }`}
         >
-          <Filter className="w-5 h-5" />
-          {activeFilterCount > 0 && (
-            <span className="absolute -top-1 -right-1 w-5 h-5 bg-rose-500 rounded-full text-[10px] font-bold flex items-center justify-center">
-              {activeFilterCount}
-            </span>
+          <Filter className="w-4 h-4" />
+          Filters
+          {hasActiveFilters && (
+            <span className="w-2 h-2 bg-indigo-400 rounded-full animate-pulse" />
           )}
         </button>
+      </div>
 
-        {/* ──── MOBILE FILTER PANEL ────────────────────────────────────────── */}
-        {filterPanelOpen && (
+      {/* Quick Filter Chips */}
+      <div className="flex flex-wrap items-center gap-2 mb-6">
+        <button
+          onClick={() => { setFilters({ ...filters, sentiment: null, source_type: null, min_risk_score: null, min_influence_score: null }); setPage(1); }}
+          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+            !hasActiveFilters
+              ? 'bg-indigo-600 text-white'
+              : 'bg-[#111827] border border-gray-800 text-gray-400 hover:text-white hover:border-gray-700'
+          }`}
+        >
+          All
+        </button>
+        <button
+          onClick={() => { setFilters({ ...filters, sentiment: 'positive' }); setPage(1); }}
+          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+            filters.sentiment === 'positive'
+              ? 'bg-emerald-600 text-white'
+              : 'bg-[#111827] border border-gray-800 text-gray-400 hover:text-white hover:border-gray-700'
+          }`}
+        >
+          Positive
+        </button>
+        <button
+          onClick={() => { setFilters({ ...filters, sentiment: 'negative_medium' }); setPage(1); }}
+          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+            filters.sentiment?.includes('negative')
+              ? 'bg-rose-600 text-white'
+              : 'bg-[#111827] border border-gray-800 text-gray-400 hover:text-white hover:border-gray-700'
+          }`}
+        >
+          Negative
+        </button>
+        <button
+          onClick={() => { setFilters({ ...filters, sentiment: 'neutral' }); setPage(1); }}
+          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+            filters.sentiment === 'neutral'
+              ? 'bg-gray-600 text-white'
+              : 'bg-[#111827] border border-gray-800 text-gray-400 hover:text-white hover:border-gray-700'
+          }`}
+        >
+          Neutral
+        </button>
+        <button
+          onClick={() => { setFilters({ ...filters, min_risk_score: 60 }); setPage(1); }}
+          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+            filters.min_risk_score !== null && filters.min_risk_score >= 60
+              ? 'bg-amber-600 text-white'
+              : 'bg-[#111827] border border-gray-800 text-gray-400 hover:text-white hover:border-gray-700'
+          }`}
+        >
+          Important
+        </button>
+        <button
+          onClick={() => { setFilters({ ...filters, add_to_report: true }); setPage(1); }}
+          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+            filters.add_to_report
+              ? 'bg-indigo-600 text-white'
+              : 'bg-[#111827] border border-gray-800 text-gray-400 hover:text-white hover:border-gray-700'
+          }`}
+        >
+          Added to Report
+        </button>
+
+        {/* Active Filter Chips */}
+        {hasActiveFilters && (
           <>
-            <div className="lg:hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" onClick={() => setFilterPanelOpen(false)} />
-            <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#111827] border-t border-gray-800 rounded-t-2xl p-5 max-h-[70vh] overflow-y-auto animate-fadeIn">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-                  <SlidersHorizontal className="w-4 h-4 text-indigo-400" />
-                  Bộ lọc
-                </h3>
-                <button onClick={() => setFilterPanelOpen(false)} className="p-1 text-gray-400 hover:text-white"><X className="w-5 h-5" /></button>
-              </div>
-
-              {/* Sentiment */}
-              <h4 className="text-[11px] text-gray-500 font-semibold uppercase tracking-wider mb-2">Cảm xúc</h4>
-              <div className="flex flex-wrap gap-1.5 mb-4">
-                {SENTIMENT_OPTIONS.map((s) => (
-                  <button
-                    key={s.value}
-                    onClick={() => updateFilter('sentiment', filters.sentiment === s.value ? null : s.value)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
-                      filters.sentiment === s.value
-                        ? 'bg-indigo-500/15 text-white border-indigo-500/30'
-                        : 'text-gray-400 border-gray-800 hover:border-gray-700'
-                    }`}
-                  >
-                    <span className={`w-2 h-2 rounded-full ${s.dot}`} /> {s.label}
-                  </button>
-                ))}
-              </div>
-
-              {/* Platform */}
-              <h4 className="text-[11px] text-gray-500 font-semibold uppercase tracking-wider mb-2">Nền tảng</h4>
-              <div className="flex flex-col gap-1.5 mb-4">
-                {SOURCE_TYPE_OPTIONS.map((st) => (
-                  <button
-                    key={st.value}
-                    disabled={st.disabled}
-                    onClick={() => updateFilter('source_type', filters.source_type === st.value ? null : st.value)}
-                    className={`flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium border transition-all ${
-                      filters.source_type === st.value
-                        ? 'bg-indigo-500/15 text-white border-indigo-500/30'
-                        : st.disabled
-                          ? 'opacity-40 cursor-not-allowed border-transparent bg-transparent grayscale'
-                          : 'text-gray-400 border-gray-800 hover:border-gray-700'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <st.icon className={`w-3.5 h-3.5 ${st.color}`} /> {st.label}
-                    </div>
-                    {st.disabled && <span className="text-[9px] text-gray-500">{st.msg}</span>}
-                  </button>
-                ))}
-              </div>
-
-              {/* Risk */}
-              <h4 className="text-[11px] text-gray-500 font-semibold uppercase tracking-wider mb-2">Risk Score</h4>
-              <div className="flex flex-wrap gap-1.5 mb-4">
-                {RISK_PRESETS.map((r) => (
-                  <button
-                    key={r.label}
-                    onClick={() => updateFilter('min_risk_score', filters.min_risk_score === r.value ? null : r.value)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
-                      filters.min_risk_score === r.value
-                        ? 'bg-indigo-500/15 text-white border-indigo-500/30'
-                        : 'text-gray-400 border-gray-800 hover:border-gray-700'
-                    }`}
-                  >
-                    {r.label}
-                  </button>
-                ))}
-              </div>
-
-              <div className="flex gap-2 pt-3 border-t border-gray-800">
-                <button onClick={clearAllFilters} className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-300 bg-[#1E293B] border border-gray-700 rounded-xl hover:bg-gray-800 transition-colors">
-                  Reset
-                </button>
-                <button onClick={() => setFilterPanelOpen(false)} className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-indigo-600 rounded-xl hover:bg-indigo-500 transition-colors">
-                  Áp dụng
-                </button>
-              </div>
-            </div>
+            <div className="w-px h-6 bg-gray-800 mx-2" />
+            {filters.sentiment && (
+              <button
+                onClick={() => { setFilters({ ...filters, sentiment: null }); setPage(1); }}
+                className="inline-flex items-center gap-1 px-2 py-1 bg-indigo-500/10 border border-indigo-500/20 rounded-md text-xs font-medium text-indigo-400 hover:bg-indigo-500/20"
+              >
+                {SENTIMENT_OPTIONS.find((o) => o.value === filters.sentiment)?.label || filters.sentiment}
+                <X className="w-3 h-3" />
+              </button>
+            )}
+            {filters.source_type && (
+              <button
+                onClick={() => { setFilters({ ...filters, source_type: null }); setPage(1); }}
+                className="inline-flex items-center gap-1 px-2 py-1 bg-indigo-500/10 border border-indigo-500/20 rounded-md text-xs font-medium text-indigo-400 hover:bg-indigo-500/20"
+              >
+                {SOURCE_TYPE_OPTIONS.find((o) => o.value === filters.source_type)?.label || filters.source_type}
+                <X className="w-3 h-3" />
+              </button>
+            )}
+            {filters.min_risk_score !== null && (
+              <button
+                onClick={() => { setFilters({ ...filters, min_risk_score: null }); setPage(1); }}
+                className="inline-flex items-center gap-1 px-2 py-1 bg-indigo-500/10 border border-indigo-500/20 rounded-md text-xs font-medium text-indigo-400 hover:bg-indigo-500/20"
+              >
+                Risk ≥ {filters.min_risk_score}
+                <X className="w-3 h-3" />
+              </button>
+            )}
+            {searchTerm && (
+              <button
+                onClick={() => { setSearchInput(''); setSearchTerm(''); setPage(1); }}
+                className="inline-flex items-center gap-1 px-2 py-1 bg-indigo-500/10 border border-indigo-500/20 rounded-md text-xs font-medium text-indigo-400 hover:bg-indigo-500/20"
+              >
+                Search: {searchTerm}
+                <X className="w-3 h-3" />
+              </button>
+            )}
+            <button
+              onClick={() => { setFilters({ sentiment: null, source_type: null, min_risk_score: null, min_influence_score: null, sort_by: 'newest' }); setSearchInput(''); setSearchTerm(''); setPage(1); }}
+              className="px-2 py-1 text-xs font-medium text-gray-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-md transition-colors"
+            >
+              Clear All
+            </button>
           </>
         )}
+      </div>
 
+      {/* ─── SUMMARY CARDS ─────────────────────────────────────────────────── */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div className="bg-[#111827] border border-gray-800 rounded-xl p-4 hover:border-gray-700 transition-all">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Total</span>
+            <BarChart3 className="w-4 h-4 text-gray-600" />
+          </div>
+          <div className="text-2xl font-bold text-white">{totalMentions.toLocaleString()}</div>
+        </div>
+        <div className="bg-[#111827] border border-gray-800 rounded-xl p-4 hover:border-gray-700 transition-all">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Positive</span>
+            <TrendingUp className="w-4 h-4 text-emerald-500" />
+          </div>
+          <div className="text-2xl font-bold text-emerald-400">{sentimentSummary?.positive || 0}</div>
+        </div>
+        <div className="bg-[#111827] border border-gray-800 rounded-xl p-4 hover:border-gray-700 transition-all">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Negative</span>
+            <TrendingDown className="w-4 h-4 text-rose-500" />
+          </div>
+          <div className="text-2xl font-bold text-rose-400">{sentimentSummary?.negative || 0}</div>
+        </div>
+        <div className="bg-[#111827] border border-gray-800 rounded-xl p-4 hover:border-gray-700 transition-all">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Neutral</span>
+            <Minus className="w-4 h-4 text-gray-500" />
+          </div>
+          <div className="text-2xl font-bold text-gray-400">{sentimentSummary?.neutral || 0}</div>
+        </div>
+      </div>
 
-          {/* Sort bar */}
-          <div className="flex items-center justify-between mb-4">
-            <p className="text-xs text-gray-500 font-medium">
-              {loading ? (
-                <span className="inline-flex items-center gap-1.5"><Loader2 className="w-3 h-3 animate-spin" /> Đang tải...</span>
-              ) : (
-                <>Hiển thị {mentionsList.length} / {totalMentions.toLocaleString()} mentions</>
-              )}
-            </p>
-            <div className="relative" ref={sortRef}>
+      {/* ─── MAIN LAYOUT ─────────────────────────────────────────────────── */}
+      <div className="flex gap-6">
+        {/* Mentions List */}
+        <div className="flex-1 min-w-0">
+          {loading && mentionsList.length === 0 ? (
+            <div className="flex items-center justify-center h-64">
+              <div className="text-gray-500 flex items-center gap-2">
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Đang tải mentions...
+              </div>
+            </div>
+          ) : mentionsList.length === 0 ? (
+            <div className="bg-[#111827] border border-gray-800 rounded-xl p-12 text-center">
+              <FileText className="w-12 h-12 text-gray-600 mx-auto mb-4" />
+              <p className="text-gray-400 font-medium">Không tìm thấy mentions nào</p>
+              <p className="text-gray-500 text-sm mt-2">Thử thay đổi bộ lọc hoặc chạy quét mới</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {mentionsList.map((mention) => (
+                <div
+                  key={mention.id}
+                  className={`bg-[#111827] border rounded-xl p-4 hover:border-gray-700 transition-all group ${
+                    mention.add_to_report ? 'border-indigo-500/30 bg-indigo-500/5' : 'border-gray-800'
+                  }`}
+                >
+                  <div className="flex items-start gap-4">
+                    {/* Checkbox for add_to_report */}
+                    <button
+                      onClick={() => handleToggleAddToReport(mention.id, mention.add_to_report)}
+                      disabled={!!actionLoading[`${mention.id}_add_to_report`]}
+                      className="flex-shrink-0 mt-1"
+                    >
+                      {actionLoading[`${mention.id}_add_to_report`] ? (
+                        <Loader2 className="w-5 h-5 animate-spin text-gray-500" />
+                      ) : mention.add_to_report ? (
+                        <CheckSquare className="w-5 h-5 text-indigo-400" />
+                      ) : (
+                        <Square className="w-5 h-5 text-gray-600 hover:text-gray-400" />
+                      )}
+                    </button>
+
+                    {/* Source Icon */}
+                    <div className="flex-shrink-0">
+                      <div className="w-10 h-10 rounded-lg bg-[#1E293B] border border-gray-700 flex items-center justify-center">
+                        <SourceIcon type={mention.source_type} className="w-5 h-5 text-gray-400" />
+                      </div>
+                    </div>
+
+                    {/* Content */}
+                    <div className="flex-1 min-w-0">
+                      {/* Header */}
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-white text-sm line-clamp-2 mb-1">
+                            {mention.title || 'Không có tiêu đề'}
+                          </h3>
+                          <div className="flex items-center gap-2 text-xs text-gray-500">
+                            <span className="text-gray-400">{mention.domain || mention.source_name || 'unknown'}</span>
+                            <span>•</span>
+                            <span>{formatRelativeTime(mention.published_at || mention.collected_at)}</span>
+                          </div>
+                        </div>
+                        {/* Sentiment Badge */}
+                        {mention.sentiment && (
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-medium uppercase tracking-wider ${
+                            mention.sentiment === 'positive' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
+                            mention.sentiment?.includes('negative') ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20' :
+                            'bg-gray-500/10 text-gray-400 border border-gray-500/20'
+                          }`}>
+                            {mention.sentiment.replace('_', ' ')}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Snippet with keyword highlight */}
+                      <p className="text-sm text-gray-300 line-clamp-3 mb-3">
+                        {highlightKeywords(mention.snippet || mention.content, mention.matched_keywords)}
+                      </p>
+
+                      {/* Meta Row */}
+                      <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500 mb-3">
+                        {mention.ai_analysis && mention.ai_analysis.risk_score !== null && (
+                          <span className={`px-2 py-0.5 rounded ${
+                            mention.ai_analysis.risk_score >= 60 ? 'bg-amber-500/10 text-amber-400' : 'bg-gray-500/10 text-gray-400'
+                          }`}>
+                            Risk: {mention.ai_analysis.risk_score}
+                          </span>
+                        )}
+                        {mention.influence_score !== null && (
+                          <span className="px-2 py-0.5 bg-gray-500/10 text-gray-400 rounded">
+                            Influence: {mention.influence_score}
+                          </span>
+                        )}
+                        {mention.matched_keywords && mention.matched_keywords.length > 0 && (
+                          <span className="px-2 py-0.5 bg-indigo-500/10 text-indigo-400 rounded">
+                            {mention.matched_keywords.length} keywords
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex items-center gap-2 pt-2 border-t border-gray-800">
+                        <a
+                          href={mention.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-400 hover:text-white bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                          Visit
+                        </a>
+                        <button
+                          onClick={() => handleToggleAddToReport(mention.id, mention.add_to_report)}
+                          disabled={!!actionLoading[`${mention.id}_add_to_report`]}
+                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                            mention.add_to_report
+                              ? 'text-indigo-400 bg-indigo-500/10 hover:bg-indigo-500/20'
+                              : 'text-gray-400 bg-gray-800 hover:bg-gray-700 hover:text-white'
+                          } disabled:opacity-50`}
+                        >
+                          {actionLoading[`${mention.id}_add_to_report`] ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          ) : mention.add_to_report ? (
+                            <CheckSquare className="w-3.5 h-3.5" />
+                          ) : (
+                            <Square className="w-3.5 h-3.5" />
+                          )}
+                          {mention.add_to_report ? 'In Report' : 'Add to Report'}
+                        </button>
+                        <button
+                          onClick={() => setDeleteConfirm({ isOpen: true, mentionId: mention.id, mentionTitle: mention.title || 'N/A' })}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2 mt-6">
               <button
-                onClick={() => setSortOpen(!sortOpen)}
-                className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-gray-400 bg-[#111827] border border-gray-800 rounded-lg hover:text-white hover:border-gray-700 transition-all"
+                onClick={() => setPage(Math.max(1, page - 1))}
+                disabled={page === 1}
+                className="p-2 text-gray-400 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed bg-[#111827] border border-gray-800 rounded-lg"
               >
-                <ArrowUpDown className="w-3.5 h-3.5" />
-                {SORT_OPTIONS.find((s) => s.value === filters.sort_by)?.label}
-                <ChevronDown className={`w-3 h-3 transition-transform ${sortOpen ? 'rotate-180' : ''}`} />
+                <ChevronLeft className="w-4 h-4" />
               </button>
-              {sortOpen && (
-                <div className="absolute right-0 top-full mt-1 w-44 bg-[#1E293B] border border-gray-700 rounded-xl shadow-2xl z-20 py-1 animate-fadeIn">
-                  {SORT_OPTIONS.map((opt) => (
+              <span className="text-sm text-gray-400">
+                Trang {page} / {totalPages}
+              </span>
+              <button
+                onClick={() => setPage(Math.min(totalPages, page + 1))}
+                disabled={page === totalPages}
+                className="p-2 text-gray-400 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed bg-[#111827] border border-gray-800 rounded-lg"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Sticky Filter Panel */}
+        {filterPanelOpen && (
+          <div className="w-80 flex-shrink-0">
+            <div className="sticky top-4 bg-[#111827] border border-gray-800 rounded-xl p-5 max-h-[calc(100vh-200px)] overflow-y-auto">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="font-semibold text-white text-base flex items-center gap-2">
+                  <Filter className="w-4 h-4 text-indigo-400" />
+                  Filters
+                </h3>
+                <button
+                  onClick={() => setFilterPanelOpen(false)}
+                  className="text-gray-500 hover:text-white transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Sentiment Section */}
+              <div className="mb-6 pb-6 border-b border-gray-800">
+                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 block flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  Sentiment
+                </label>
+                <div className="space-y-2">
+                  {SENTIMENT_OPTIONS.map((opt) => (
                     <button
                       key={opt.value}
-                      onClick={() => { updateFilter('sort_by', opt.value); setSortOpen(false); }}
-                      className={`w-full text-left px-4 py-2 text-xs font-medium transition-colors ${
-                        filters.sort_by === opt.value
-                          ? 'text-indigo-400 bg-indigo-500/10'
-                          : 'text-gray-300 hover:bg-[#111827]'
+                      onClick={() => setFilters({ ...filters, sentiment: filters.sentiment === opt.value ? null : opt.value })}
+                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                        filters.sentiment === opt.value
+                          ? 'bg-indigo-500/15 text-white border border-indigo-500/30'
+                          : 'text-gray-400 hover:text-gray-200 hover:bg-[#1E293B] border border-transparent'
+                      }`}
+                    >
+                      <span className={`w-2 h-2 rounded-full flex-shrink-0 ${opt.dot}`} />
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Source Type Section */}
+              <div className="mb-6 pb-6 border-b border-gray-800">
+                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 block flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                  Source Type
+                </label>
+                <div className="space-y-2">
+                  {SOURCE_TYPE_OPTIONS.filter((o) => !o.disabled).map((opt) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => setFilters({ ...filters, source_type: filters.source_type === opt.value ? null : opt.value })}
+                      className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                        filters.source_type === opt.value
+                          ? 'bg-indigo-500/15 text-white border border-indigo-500/30'
+                          : 'text-gray-400 hover:text-gray-200 hover:bg-[#1E293B] border border-transparent'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <opt.icon className={`w-4 h-4 flex-shrink-0 ${opt.color}`} />
+                        {opt.label}
+                      </div>
+                      {filters.source_type === opt.value && <CheckCircle2 className="w-4 h-4 text-indigo-400" />}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Risk Score Section */}
+              <div className="mb-6 pb-6 border-b border-gray-800">
+                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 block flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                  Risk Score
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {RISK_PRESETS.map((opt) => (
+                    <button
+                      key={opt.label}
+                      onClick={() => setFilters({ ...filters, min_risk_score: filters.min_risk_score === opt.value ? null : opt.value })}
+                      className={`px-3 py-2.5 rounded-lg text-xs font-medium transition-all text-center ${
+                        filters.min_risk_score === opt.value
+                          ? 'bg-indigo-500/15 text-white border border-indigo-500/30'
+                          : 'text-gray-400 hover:text-gray-200 hover:bg-[#1E293B] border border-gray-800'
                       }`}
                     >
                       {opt.label}
                     </button>
                   ))}
                 </div>
-              )}
+              </div>
+
+              {/* Influence Score Section */}
+              <div className="mb-6">
+                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 block flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-purple-500" />
+                  Influence Score
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { value: null, label: 'All' },
+                    { value: 50, label: '≥ 50' },
+                    { value: 70, label: '≥ 70' },
+                    { value: 90, label: '≥ 90' },
+                  ].map((opt) => (
+                    <button
+                      key={opt.label}
+                      onClick={() => setFilters({ ...filters, min_influence_score: opt.value })}
+                      className={`px-2 py-2 rounded-lg text-xs font-medium transition-all text-center ${
+                        filters.min_influence_score === opt.value
+                          ? 'bg-indigo-500/15 text-white border border-indigo-500/30'
+                          : 'text-gray-400 hover:text-gray-200 hover:bg-[#1E293B] border border-gray-800'
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Reset Button */}
+              <button
+                onClick={() => setFilters({ sentiment: null, source_type: null, min_risk_score: null, min_influence_score: null, sort_by: 'newest' })}
+                className="w-full px-4 py-3 text-sm font-medium text-gray-400 hover:text-white bg-gray-800 hover:bg-gray-700 rounded-xl transition-colors flex items-center justify-center gap-2"
+              >
+                <RefreshCw className="w-4 h-4" />
+                Reset All Filters
+              </button>
             </div>
           </div>
-
-          {/* ── RESULTS LIST ─────────────────────────────────────────────── */}
-          {loading && mentionsList.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-64 gap-3">
-              <Loader2 className="w-8 h-8 text-indigo-400 animate-spin" />
-              <p className="text-sm text-gray-500 font-medium">Đang tải dữ liệu...</p>
-            </div>
-          ) : totalMentions === 0 && !loading ? (
-            <div className="bg-[#111827] border border-gray-800 rounded-xl p-10 text-center">
-              <div className="w-16 h-16 rounded-xl bg-[#1E293B] flex items-center justify-center mx-auto mb-4 border border-gray-800">
-                {hasActiveFilters ? <Search className="w-8 h-8 text-gray-600" /> : <FileText className="w-8 h-8 text-gray-600" />}
-              </div>
-              <p className="text-gray-300 font-medium mb-2 text-lg">
-                {hasActiveFilters ? 'Không tìm thấy mentions nào' : 'Chưa có dữ liệu'}
-              </p>
-              <p className="text-sm text-gray-500 max-w-md mx-auto leading-relaxed">
-                {hasActiveFilters
-                  ? 'Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm.'
-                  : initialJobId
-                    ? 'Quá trình quét tự động có thể đang diễn ra. Vui lòng thử tải lại sau ít phút hoặc không có mention nào phù hợp được tìm thấy.'
-                    : 'Nhập từ khóa và tạo phiên bản quét tại Scan Center để tìm kiếm mentions trên web.'}
-              </p>
-              {hasActiveFilters ? (
-                <button onClick={clearAllFilters} className="mt-6 px-4 py-2 text-sm text-indigo-400 hover:text-white hover:bg-indigo-500 border border-indigo-500/50 rounded-xl font-medium transition-colors">
-                  Xóa bộ lọc
-                </button>
-              ) : !initialJobId && (
-                <Link href="/dashboard/scan" className="mt-6 inline-flex px-4 py-2 text-sm text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl font-medium transition-colors">
-                  Đến Scan Center
-                </Link>
-              )}
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {mentionsList.map((mention, idx) => {
-                const sentimentOpt = SENTIMENT_OPTIONS.find((s) => s.value === mention.sentiment) || SENTIMENT_OPTIONS.find((s) => s.value === 'neutral');
-                const riskScore = mention.ai_analysis?.risk_score;
-                const isCritical = mention.sentiment === 'negative_high' || (riskScore !== null && riskScore !== undefined && riskScore >= 80);
-                const isPositive = mention.sentiment === 'positive';
-                const isMuted = mention.is_muted;
-                
-                const glowClass = isMuted
-                  ? 'border-gray-800/50 bg-[#111827]/50 opacity-60 grayscale-[50%]'
-                  : isCritical 
-                    ? 'border-rose-500/40 shadow-[0_0_30px_rgba(225,29,72,0.15)] bg-gradient-to-r from-rose-950/40 to-[#050A15]'
-                    : isPositive 
-                      ? 'border-emerald-500/30 shadow-[0_0_20px_rgba(16,185,129,0.1)] bg-gradient-to-r from-emerald-950/30 to-[#050A15]'
-                      : 'border-white/10 hover:border-white/20 bg-white/5 backdrop-blur-xl hover:shadow-[0_0_25px_rgba(255,255,255,0.05)]';
-
-                return (
-                  <div
-                    key={mention.id}
-                    className={`rounded-2xl border overflow-hidden transition-all duration-500 hover:-translate-y-1 group relative ${glowClass}`}
-                    style={{ animationDelay: `${idx * 30}ms` }}
-                  >
-                    {isCritical && !isMuted && <div className="absolute left-0 top-0 bottom-0 w-1 bg-rose-500 shadow-[0_0_15px_rgba(225,29,72,1)]" />}
-                    {isPositive && !isMuted && <div className="absolute left-0 top-0 bottom-0 w-1 bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,1)]" />}
-
-                    <div className="p-5">
-                      {/* ── Top Row: Source Info + Badges ───────────────────── */}
-                      <div className="flex items-start justify-between gap-3 mb-3">
-                        <div className="flex items-center gap-3 min-w-0 flex-1">
-                          <div className="w-9 h-9 bg-[#0B1220] border border-gray-800 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:border-gray-700 transition-colors">
-                            <SourceIcon type={mention.source_type || 'web'} className="w-4 h-4 text-indigo-400" />
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-bold text-indigo-400 tracking-wide truncate">
-                                {mention.domain || mention.source_name || 'unknown'}
-                              </span>
-                              <span className="text-gray-700">·</span>
-                              <span className="text-[11px] text-gray-400 flex-shrink-0">{formatRelativeTime(mention.published_at || mention.collected_at)}</span>
-                              {mention.author && (
-                                <>
-                                  <span className="text-gray-700">·</span>
-                                  <span className="text-[11px] text-gray-400 truncate">{mention.author}</span>
-                                </>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Right badges */}
-                        <div className="flex flex-wrap justify-end items-center gap-1.5 flex-shrink-0">
-                          {mention.influence_score !== undefined && mention.influence_score !== null && (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold tracking-wider rounded-md border bg-indigo-500/10 text-indigo-400 border-indigo-500/20" title="Influence Score">
-                              ⭐ {mention.influence_score}/10
-                            </span>
-                          )}
-                          {sentimentOpt && (
-                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold tracking-wider rounded-md border ${sentimentOpt.bg}`}>
-                              <span className={`w-1.5 h-1.5 rounded-full ${sentimentOpt.dot}`} />
-                              {sentimentOpt.label}
-                            </span>
-                          )}
-                          {isMuted && (
-                            <span className="px-2 py-0.5 text-[10px] font-bold tracking-wider text-gray-500 bg-gray-800 rounded-md border border-gray-700">
-                              <Link2Off className="w-3 h-3 inline mr-1" /> MUTED
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* ── Title ───────────────────────────────────────────── */}
-                      <h3 className="font-semibold text-white text-[16px] leading-snug mb-2 line-clamp-2 hover:text-indigo-300 transition-colors cursor-pointer" onClick={() => window.open(mention.url, '_blank')}>
-                        {mention.title
-                          ? highlightKeywords(mention.title, mention.matched_keywords)
-                          : <span className="text-gray-500 italic">Không có tiêu đề</span>
-                        }
-                      </h3>
-
-                      {/* ── Content Preview ─────────────────────────────────── */}
-                      <p className="text-sm text-gray-300 leading-relaxed line-clamp-3 mb-3">
-                        {mention.snippet
-                          ? highlightKeywords(mention.snippet, mention.matched_keywords)
-                          : mention.content
-                            ? highlightKeywords(mention.content.substring(0, 300), mention.matched_keywords)
-                            : ''
-                        }
-                      </p>
-
-                      {/* ── Meta Row: Tags ────────────────── */}
-                      {mention.tags_json && mention.tags_json.length > 0 && (
-                        <div className="flex flex-wrap items-center gap-2 mb-3">
-                          {mention.tags_json.map((tag: string, tidx: number) => (
-                            <span key={tidx} className="px-2 py-0.5 text-[10px] font-medium text-gray-300 bg-[#0B1220] rounded-md border border-gray-800">
-                              <Tag className="w-2.5 h-2.5 inline mr-1" /> {tag}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-
-                      {/* ── Action Bar ──────────────────────────────────────── */}
-                      <div className="flex flex-wrap items-center justify-between pt-3 border-t border-gray-800/60 gap-2">
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          {mention.url && (
-                            <a
-                              href={mention.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg transition-all"
-                            >
-                              <ExternalLink className="w-3.5 h-3.5" />
-                              Visit
-                            </a>
-                          )}
-                          <button
-                            onClick={() => handleAction(mention.id, 'mute', () => mentionsApi.updateMute(mention.id, !isMuted), isMuted ? 'Đã bỏ mute' : 'Đã mute domain')}
-                            disabled={!!actionLoading[`${mention.id}_mute`]}
-                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium rounded-lg transition-all border ${
-                              isMuted 
-                                ? 'text-gray-400 border-gray-700 bg-[#1E293B] hover:text-white' 
-                                : 'text-gray-400 border-transparent hover:text-amber-400 hover:bg-amber-500/10 hover:border-amber-500/20'
-                            } disabled:opacity-50`}
-                          >
-                            {actionLoading[`${mention.id}_mute`] ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Link2Off className="w-3.5 h-3.5" />}
-                            {isMuted ? 'Unmute' : 'Mute site'}
-                          </button>
-                          
-                          <button
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium text-gray-400 hover:text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-all border border-transparent hover:border-emerald-500/20"
-                            title="Add Tags"
-                          >
-                            <Tag className="w-3.5 h-3.5" />
-                            Tags
-                          </button>
-
-                          <button
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium text-gray-400 hover:text-cyan-400 hover:bg-cyan-500/10 rounded-lg transition-all border border-transparent hover:border-cyan-500/20"
-                            title="Add to Report"
-                          >
-                            <FileText className="w-3.5 h-3.5" />
-                            Report
-                          </button>
-                        </div>
-
-                        <div className="flex items-center gap-1.5">
-                           <button
-                            onClick={() => setDeleteConfirm({ isOpen: true, mentionId: mention.id, mentionTitle: mention.title || 'Mention' })}
-                            className="p-1.5 text-gray-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-all"
-                            title="Xóa"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          {/* ── PAGINATION ────────────────────────────────────────────────── */}
-          {totalPages > 1 && (
-            <div className="flex justify-center items-center gap-2 mt-6 mb-2">
-              <button
-                onClick={() => setPage(1)}
-                disabled={page === 1}
-                className="px-3 py-2 text-xs font-medium border border-gray-800 bg-[#111827] text-gray-400 rounded-lg hover:bg-[#1E293B] hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-              >
-                ««
-              </button>
-              <button
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page === 1}
-                className="px-4 py-2 text-xs font-medium border border-gray-800 bg-[#111827] text-gray-400 rounded-lg hover:bg-[#1E293B] hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-              >
-                Trước
-              </button>
-              <span className="px-4 py-2 text-xs font-medium text-gray-400 bg-[#111827] border border-gray-800 rounded-lg">
-                <span className="text-white">{page}</span> / <span className="text-white">{totalPages}</span>
-              </span>
-              <button
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={page === totalPages}
-                className="px-4 py-2 text-xs font-medium border border-gray-800 bg-[#111827] text-gray-400 rounded-lg hover:bg-[#1E293B] hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-              >
-                Sau
-              </button>
-              <button
-                onClick={() => setPage(totalPages)}
-                disabled={page === totalPages}
-                className="px-3 py-2 text-xs font-medium border border-gray-800 bg-[#111827] text-gray-400 rounded-lg hover:bg-[#1E293B] hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-              >
-                »»
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* ──── RIGHT FILTER PANEL (Desktop) ───────────────────────────────── */}
-        <aside className="hidden xl:block w-[260px] flex-shrink-0">
-          <div className="bg-[#111827] border border-gray-800 rounded-xl p-4 sticky top-24 space-y-5">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-                <SlidersHorizontal className="w-4 h-4 text-indigo-400" />
-                Bộ lọc
-              </h3>
-              {hasActiveFilters && (
-                <button onClick={clearAllFilters} className="text-[10px] text-indigo-400 hover:text-indigo-300 font-medium uppercase tracking-wider transition-colors">
-                  Reset
-                </button>
-              )}
-            </div>
-
-            {/* Sentiment */}
-            <div>
-              <h4 className="text-[11px] text-gray-500 font-semibold uppercase tracking-wider mb-2.5">Cảm xúc</h4>
-              <div className="space-y-1">
-                {SENTIMENT_OPTIONS.map((s) => (
-                  <button
-                    key={s.value}
-                    onClick={() => updateFilter('sentiment', filters.sentiment === s.value ? null : s.value)}
-                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
-                      filters.sentiment === s.value
-                        ? 'bg-indigo-500/15 text-white border border-indigo-500/30'
-                        : 'text-gray-400 hover:text-gray-200 hover:bg-[#1E293B] border border-transparent'
-                    }`}
-                  >
-                    <span className={`w-2 h-2 rounded-full flex-shrink-0 ${s.dot}`} />
-                    {s.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Platform */}
-            <div>
-              <h4 className="text-[11px] text-gray-500 font-semibold uppercase tracking-wider mb-2.5">Nền tảng</h4>
-              <div className="space-y-1">
-                {SOURCE_TYPE_OPTIONS.map((st) => (
-                  <button
-                    key={st.value}
-                    disabled={st.disabled}
-                    onClick={() => updateFilter('source_type', filters.source_type === st.value ? null : st.value)}
-                    className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all ${
-                      filters.source_type === st.value
-                        ? 'bg-indigo-500/15 text-white border border-indigo-500/30'
-                        : st.disabled
-                          ? 'opacity-40 cursor-not-allowed bg-transparent border border-transparent grayscale'
-                          : 'text-gray-400 hover:text-gray-200 hover:bg-[#1E293B] border border-transparent'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <st.icon className={`w-3.5 h-3.5 flex-shrink-0 ${st.color}`} />
-                      {st.label}
-                    </div>
-                    {st.disabled && <span className="text-[9px] text-gray-500">{st.msg}</span>}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Risk Score */}
-            <div>
-              <h4 className="text-[11px] text-gray-500 font-semibold uppercase tracking-wider mb-2.5">Risk Score</h4>
-              <div className="grid grid-cols-2 gap-1.5">
-                {RISK_PRESETS.map((r) => (
-                  <button
-                    key={r.label}
-                    onClick={() => updateFilter('min_risk_score', filters.min_risk_score === r.value ? null : r.value)}
-                    className={`px-3 py-2 rounded-lg text-xs font-medium transition-all text-center ${
-                      filters.min_risk_score === r.value
-                        ? 'bg-indigo-500/15 text-white border border-indigo-500/30'
-                        : 'text-gray-400 hover:text-gray-200 hover:bg-[#1E293B] border border-gray-800'
-                    }`}
-                  >
-                    {r.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        </aside>
+        )}
       </div>
 
-      {/* ─── DELETE DIALOG ────────────────────────────────────────────────── */}
+      {/* ─── AI SUMMARY DRAWER ─────────────────────────────────────────────── */}
+      {summarizeDrawerOpen && (
+        <div className="fixed inset-0 z-50 overflow-hidden">
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setSummarizeDrawerOpen(false)} />
+          <div className="absolute right-0 top-0 h-full w-full max-w-lg bg-[#111827] border-l border-gray-800 shadow-2xl overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-indigo-400" />
+                  AI Summary
+                </h2>
+                <button
+                  onClick={() => setSummarizeDrawerOpen(false)}
+                  className="text-gray-500 hover:text-white"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              {summarizing ? (
+                <div className="flex items-center justify-center h-64">
+                  <div className="text-gray-500 flex items-center gap-2">
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Đang tạo tóm tắt...
+                  </div>
+                </div>
+              ) : aiSummary ? (
+                <div className="prose prose-invert prose-sm max-w-none">
+                  <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-lg p-4 mb-4">
+                    <p className="text-sm text-indigo-300">
+                      <Info className="w-4 h-4 inline mr-2" />
+                      Tóm tắt này được tạo dựa trên {totalMentions} mentions hiện tại với các bộ lọc đã áp dụng.
+                    </p>
+                  </div>
+                  <div className="text-gray-300 whitespace-pre-wrap leading-relaxed">
+                    {aiSummary.summary || aiSummary.result || JSON.stringify(aiSummary, null, 2)}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center text-gray-500">
+                  <Info className="w-12 h-12 mx-auto mb-4 text-gray-600" />
+                  <p>Không thể tạo tóm tắt</p>
+                  <p className="text-sm mt-2">Có thể AI chưa được cấu hình hoặc có lỗi xảy ra.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── SAVE FILTER MODAL ─────────────────────────────────────────────── */}
+      {saveFilterModalOpen && (
+        <div className="fixed inset-0 z-50 overflow-hidden">
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setSaveFilterModalOpen(false)} />
+          <div className="absolute inset-0 flex items-center justify-center p-4">
+            <div className="bg-[#111827] border border-gray-800 rounded-xl shadow-2xl w-full max-w-md">
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                    <SlidersHorizontal className="w-5 h-5 text-indigo-400" />
+                    Save Filter
+                  </h2>
+                  <button
+                    onClick={() => setSaveFilterModalOpen(false)}
+                    className="text-gray-500 hover:text-white"
+                  >
+                    <X className="w-6 h-6" />
+                  </button>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Filter Name</label>
+                    <input
+                      type="text"
+                      value={saveFilterName}
+                      onChange={(e) => setSaveFilterName(e.target.value)}
+                      placeholder="Enter filter name..."
+                      className="w-full px-4 py-3 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500"
+                      autoFocus
+                    />
+                  </div>
+
+                  <div className="bg-gray-800/50 rounded-lg p-4">
+                    <p className="text-xs text-gray-400 mb-2">Current filters:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {filters.sentiment && (
+                        <span className="px-2 py-1 bg-indigo-500/10 text-indigo-400 rounded text-xs">
+                          Sentiment: {filters.sentiment}
+                        </span>
+                      )}
+                      {filters.source_type && (
+                        <span className="px-2 py-1 bg-indigo-500/10 text-indigo-400 rounded text-xs">
+                          Source: {filters.source_type}
+                        </span>
+                      )}
+                      {filters.min_risk_score !== null && (
+                        <span className="px-2 py-1 bg-indigo-500/10 text-indigo-400 rounded text-xs">
+                          Risk ≥ {filters.min_risk_score}
+                        </span>
+                      )}
+                      {searchTerm && (
+                        <span className="px-2 py-1 bg-indigo-500/10 text-indigo-400 rounded text-xs">
+                          Search: {searchTerm}
+                        </span>
+                      )}
+                      {!hasActiveFilters && (
+                        <span className="text-xs text-gray-500">No active filters</span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3 pt-4">
+                    <button
+                      onClick={() => setSaveFilterModalOpen(false)}
+                      className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-300 bg-gray-800 hover:bg-gray-700 rounded-xl transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleSaveFilter}
+                      disabled={!saveFilterName.trim()}
+                      className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Save Filter
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── DELETE CONFIRM DIALOG ─────────────────────────────────────────── */}
       <ConfirmDialog
         isOpen={deleteConfirm.isOpen}
         onClose={() => setDeleteConfirm({ isOpen: false, mentionId: null, mentionTitle: '' })}
         onConfirm={handleDelete}
-        title="Xóa mention"
+        title="Xóa Mention"
         message={`Bạn có chắc muốn xóa mention "${deleteConfirm.mentionTitle}"?`}
         confirmText="Xóa"
         cancelText="Hủy"

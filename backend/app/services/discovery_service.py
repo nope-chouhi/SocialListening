@@ -617,6 +617,7 @@ def run_discovery_job(db: Session, job_id: int) -> DiscoveryJob:
                 platform = "youtube"
 
             mention = Mention(
+                project_id=job.project_id,  # Set project_id from discovery job
                 job_id=job.id,
                 source_id=None,  # Nullable for auto-discovered
                 keyword_text=keywords[0] if keywords else None,

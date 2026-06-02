@@ -1,15 +1,17 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { BarChart, FileText, Download, Mail, Copy, CheckCircle, RefreshCcw } from 'lucide-react';
-import { reports } from '@/lib/api';
+import { BarChart, FileText, Download, Mail, Copy, CheckCircle, RefreshCcw, X, ExternalLink, Plus } from 'lucide-react';
+import { reports, mentions as mentionsApi } from '@/lib/api';
 import toast from 'react-hot-toast';
+import Link from 'next/link';
 
 export default function ReportsPage() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [removingMention, setRemovingMention] = useState<number | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -24,6 +26,19 @@ export default function ReportsPage() {
       toast.error('Lỗi tải dữ liệu báo cáo');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleRemoveFromReport = async (mentionId: number) => {
+    try {
+      setRemovingMention(mentionId);
+      await mentionsApi.addToReport(mentionId, false);
+      toast.success('Đã xóa mention khỏi báo cáo');
+      fetchData(); // Refresh report data
+    } catch (error) {
+      toast.error('Lỗi khi xóa mention khỏi báo cáo');
+    } finally {
+      setRemovingMention(null);
     }
   };
 
@@ -164,19 +179,69 @@ export default function ReportsPage() {
           </div>
 
           <div className="mb-12">
-            <h3 className="text-sm font-bold text-white mb-4 border-b border-white/10 pb-2 uppercase tracking-widest">Top Nguồn Đóng Góp Thảo Luận</h3>
+            <div className="flex items-center justify-between mb-4 border-b border-white/10 pb-2">
+              <h3 className="text-sm font-bold text-white uppercase tracking-widest">Mentions Được Chọn Cho Báo Cáo</h3>
+              <span className="text-xs text-gray-400">{data?.selected_mentions?.length || 0} mentions</span>
+            </div>
             <div className="space-y-3">
-              {data?.top_sources?.map((s: any, i: number) => (
-                <div key={i} className="flex items-center justify-between p-4 bg-white/5 border border-white/5 rounded-xl hover:bg-white/10 transition-colors">
-                  <div className="flex items-center space-x-4">
-                    <div className="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-300 font-bold text-xs border border-indigo-500/30">
-                      {i + 1}
+              {data?.selected_mentions && data.selected_mentions.length > 0 ? (
+                data.selected_mentions.map((m: any, i: number) => (
+                  <div key={i} className="p-4 bg-white/5 border border-white/5 rounded-xl hover:bg-white/10 transition-colors group">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h4 className="font-bold text-white text-sm line-clamp-1">{m.title || 'Không có tiêu đề'}</h4>
+                          {m.url && (
+                            <a
+                              href={m.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-gray-500 hover:text-indigo-400 transition-colors"
+                            >
+                              <ExternalLink className="w-3.5 h-3.5" />
+                            </a>
+                          )}
+                        </div>
+                        <p className="text-xs text-gray-400 mb-2">{m.domain || m.source_name || 'unknown'}</p>
+                        <p className="text-xs text-gray-300 line-clamp-2">{m.snippet || m.content?.substring(0, 200) || ''}</p>
+                      </div>
+                      <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold rounded-md border ${
+                          m.sentiment === 'positive' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
+                          m.sentiment?.includes('negative') ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' :
+                          'bg-gray-500/10 text-gray-400 border-gray-500/20'
+                        }`}>
+                          {m.sentiment || 'unknown'}
+                        </span>
+                        <button
+                          onClick={() => handleRemoveFromReport(m.id)}
+                          disabled={removingMention === m.id}
+                          className="text-xs text-gray-500 hover:text-rose-400 transition-colors flex items-center gap-1 disabled:opacity-50"
+                        >
+                          {removingMention === m.id ? (
+                            <RefreshCcw className="w-3 h-3 animate-spin" />
+                          ) : (
+                            <X className="w-3 h-3" />
+                          )}
+                          Remove
+                        </button>
+                      </div>
                     </div>
-                    <span className="font-bold text-white tracking-wide">{s.name}</span>
                   </div>
-                  <span className="font-black text-indigo-400 bg-indigo-500/10 px-3 py-1 rounded-md border border-indigo-500/20">{s.count.toLocaleString()} Mentions</span>
+                ))
+              ) : (
+                <div className="p-8 bg-white/5 border border-white/5 rounded-xl text-center">
+                  <FileText className="w-12 h-12 text-gray-600 mx-auto mb-4" />
+                  <p className="text-sm text-gray-400 mb-4">Chưa có mentions nào được chọn cho báo cáo.</p>
+                  <Link
+                    href="/dashboard/mentions"
+                    className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-colors"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Thêm Mentions từ trang Mentions
+                  </Link>
                 </div>
-              ))}
+              )}
             </div>
           </div>
 

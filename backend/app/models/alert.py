@@ -23,6 +23,7 @@ class Alert(Base):
     __tablename__ = "alerts"
     
     id = Column(Integer, primary_key=True, index=True)
+    project_id = Column(Integer, nullable=True, index=True)
     mention_id = Column(Integer, nullable=False, index=True)
     
     # Alert details

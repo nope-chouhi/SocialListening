@@ -1,10 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { AlertTriangle, Check, X, Plus, FileText } from 'lucide-react';
+import { AlertTriangle, Check, X, Plus, FileText, RefreshCw, Play, Edit2, ToggleLeft, ToggleRight } from 'lucide-react';
 import { alerts as alertsApi, getErrorMessage } from '@/lib/api';
 import toast, { Toaster } from 'react-hot-toast';
 import Link from 'next/link';
+import { useProject } from '@/contexts/ProjectContext';
 
 const SEVERITIES = [
   { value: 'low', label: 'Thấp' },
@@ -13,17 +14,33 @@ const SEVERITIES = [
   { value: 'critical', label: 'Nghiêm trọng' },
 ];
 
+const RULE_TYPES = [
+  { value: 'mention_spike', label: 'Mention Spike', description: 'Alert when mentions exceed threshold' },
+  { value: 'negative_spike', label: 'Negative Spike', description: 'Alert when negative sentiment exceeds threshold' },
+  { value: 'high_risk', label: 'High Risk', description: 'Alert when risk score exceeds threshold' },
+];
+
 export default function AlertsPage() {
+  const { activeProject } = useProject();
   const [alerts, setAlerts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const [showCreate, setShowCreate] = useState(false);
+  const [showRuleCheck, setShowRuleCheck] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [checkingRules, setCheckingRules] = useState(false);
   const [form, setForm] = useState({
     title: '',
     severity: 'high',
     message: '',
     mention_id: '',
+  });
+  const [ruleForm, setRuleForm] = useState({
+    name: '',
+    rule_type: 'mention_spike',
+    threshold: 10,
+    window_hours: 24,
+    is_active: true,
   });
 
   useEffect(() => {
@@ -90,6 +107,26 @@ export default function AlertsPage() {
     }
   };
 
+  const handleCheckRules = async () => {
+    try {
+      setCheckingRules(true);
+      const result = await alertsApi.checkRules({
+        project_id: activeProject?.id,
+        name: ruleForm.name || 'Manual Check',
+        rule_type: ruleForm.rule_type,
+        threshold: ruleForm.threshold,
+        window_hours: ruleForm.window_hours,
+        is_active: ruleForm.is_active,
+      });
+      toast.success(`Đã kiểm tra rules. Tạo ${result.alerts_created || 0} cảnh báo mới.`);
+      fetchAlerts();
+    } catch (error: any) {
+      toast.error(getErrorMessage(error) || 'Lỗi khi kiểm tra rules');
+    } finally {
+      setCheckingRules(false);
+    }
+  };
+
   const getSeverityBadge = (severity: string) => {
     if (severity === 'critical') return 'bg-rose-500/10 text-rose-400 border-rose-500/20';
     if (severity === 'high') return 'bg-orange-500/10 text-orange-400 border-orange-500/20';
@@ -125,13 +162,22 @@ export default function AlertsPage() {
           <h1 className="text-2xl font-bold text-white tracking-wide">Cảnh Báo</h1>
           <p className="text-sm text-gray-400 mt-1">Quản lý các cảnh báo từ hệ thống</p>
         </div>
-        <button
-          onClick={() => setShowCreate(true)}
-          className="flex items-center justify-center space-x-2 px-4 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors shadow-sm shadow-indigo-500/20 font-medium"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Tạo cảnh báo</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowRuleCheck(true)}
+            className="flex items-center justify-center space-x-2 px-4 py-2.5 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-colors shadow-sm shadow-emerald-500/20 font-medium"
+          >
+            <Play className="w-4 h-4" />
+            <span>Manual Check</span>
+          </button>
+          <button
+            onClick={() => setShowCreate(true)}
+            className="flex items-center justify-center space-x-2 px-4 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors shadow-sm shadow-indigo-500/20 font-medium"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Tạo cảnh báo</span>
+          </button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -304,6 +350,112 @@ export default function AlertsPage() {
                   className="px-5 py-2.5 text-white bg-indigo-600 rounded-xl hover:bg-indigo-700 disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed transition-all shadow-sm shadow-indigo-500/20 font-medium"
                 >
                   {submitting ? 'Đang tạo...' : 'Tạo cảnh báo'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Manual Rule Check Modal */}
+      {showRuleCheck && (
+        <div className="fixed inset-0 z-[60] overflow-y-auto">
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm transition-opacity" onClick={() => setShowRuleCheck(false)} />
+          <div className="flex min-h-full items-center justify-center p-4">
+            <div className="relative bg-[#111827] border border-gray-800 rounded-2xl shadow-2xl w-full max-w-lg transform transition-all overflow-hidden">
+              <div className="p-6 border-b border-gray-800 flex items-center justify-between bg-[#1E293B]/30">
+                <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                  <Play className="w-5 h-5 text-emerald-400" />
+                  Manual Rule Check
+                </h2>
+                <button onClick={() => setShowRuleCheck(false)} className="text-gray-500 hover:text-gray-300 transition-colors">
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+              <div className="p-6 space-y-5">
+                <p className="text-sm text-gray-400 mb-4">
+                  Kiểm tra thủ công các rules để tạo cảnh báo dựa trên ngưỡng đã cấu hình.
+                </p>
+                {/* Rule Type */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Loại Rule
+                  </label>
+                  <select
+                    value={ruleForm.rule_type}
+                    onChange={(e) => setRuleForm({ ...ruleForm, rule_type: e.target.value })}
+                    className="w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white"
+                  >
+                    {RULE_TYPES.map((r) => (
+                      <option key={r.value} value={r.value}>{r.label}</option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-gray-500 mt-1">{RULE_TYPES.find(r => r.value === ruleForm.rule_type)?.description}</p>
+                </div>
+                {/* Threshold */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Ngưỡng (Threshold)
+                  </label>
+                  <input
+                    type="number"
+                    value={ruleForm.threshold}
+                    onChange={(e) => setRuleForm({ ...ruleForm, threshold: parseFloat(e.target.value) })}
+                    className="w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white"
+                  />
+                </div>
+                {/* Window Hours */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Khoảng thời gian (giờ)
+                  </label>
+                  <input
+                    type="number"
+                    value={ruleForm.window_hours}
+                    onChange={(e) => setRuleForm({ ...ruleForm, window_hours: parseInt(e.target.value) })}
+                    className="w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white"
+                  />
+                </div>
+                {/* Active Toggle */}
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium text-gray-300">
+                    Kích hoạt rule
+                  </label>
+                  <button
+                    onClick={() => setRuleForm({ ...ruleForm, is_active: !ruleForm.is_active })}
+                    className={`relative w-12 h-6 rounded-full transition-colors ${
+                      ruleForm.is_active ? 'bg-indigo-600' : 'bg-gray-700'
+                    }`}
+                  >
+                    <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${
+                      ruleForm.is_active ? 'translate-x-6' : 'translate-x-0'
+                    }`} />
+                  </button>
+                </div>
+              </div>
+              <div className="p-6 border-t border-gray-800 bg-[#1E293B]/30 flex justify-end space-x-3">
+                <button
+                  onClick={() => setShowRuleCheck(false)}
+                  className="px-5 py-2.5 text-gray-300 bg-[#111827] border border-gray-700 rounded-xl hover:bg-gray-800 hover:text-white transition-colors font-medium"
+                >
+                  Hủy
+                </button>
+                <button
+                  onClick={handleCheckRules}
+                  disabled={checkingRules}
+                  className="px-5 py-2.5 text-white bg-emerald-600 rounded-xl hover:bg-emerald-700 disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed transition-all shadow-sm shadow-emerald-500/20 font-medium flex items-center gap-2"
+                >
+                  {checkingRules ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      Đang kiểm tra...
+                    </>
+                  ) : (
+                    <>
+                      <Play className="w-4 h-4" />
+                      Chạy Kiểm Tra
+                    </>
+                  )}
                 </button>
               </div>
             </div>

@@ -4,12 +4,13 @@ import { useEffect, useState } from 'react';
 import {
   Plus, Trash2, Search, Globe, Facebook, Youtube, Clock,
   Radar, CheckCircle, XCircle, Ban, Rss, ExternalLink, RefreshCw,
-  Loader2, Plug, Wifi, WifiOff, Sparkles,
+  Loader2, Plug, Wifi, WifiOff, Sparkles, BarChart3, TrendingUp,
 } from 'lucide-react';
-import { sources as sourcesApi, discoveredSources as dsApi, discovery as discoveryApi, getErrorMessage, getUserFacingErrorMessage } from '@/lib/api';
+import { sources as sourcesApi, discoveredSources as dsApi, discovery as discoveryApi, getErrorMessage, getUserFacingErrorMessage, dashboard } from '@/lib/api';
 import toast, { Toaster } from 'react-hot-toast';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import ScheduleSelector from '@/components/ScheduleSelector';
+import Link from 'next/link';
 
 type SourceTab = 'active' | 'discovered' | 'connectors';
 
@@ -66,6 +67,10 @@ export default function SourcesPage() {
   const [connectors, setConnectors] = useState<any[]>([]);
   const [connectorsLoading, setConnectorsLoading] = useState(false);
 
+  // Top domains state
+  const [topDomains, setTopDomains] = useState<any[]>([]);
+  const [topDomainsLoading, setTopDomainsLoading] = useState(false);
+
   useEffect(() => {
     fetchSources();
   }, []);
@@ -73,7 +78,20 @@ export default function SourcesPage() {
   useEffect(() => {
     if (activeTab === 'discovered') fetchDiscoveredSources();
     if (activeTab === 'connectors') fetchConnectors();
+    if (activeTab === 'active') fetchTopDomains();
   }, [activeTab, dsFilter]);
+
+  const fetchTopDomains = async () => {
+    try {
+      setTopDomainsLoading(true);
+      const data = await dashboard.summary();
+      setTopDomains(data.top_sources || []);
+    } catch (error: any) {
+      console.error('Error fetching top domains:', error);
+    } finally {
+      setTopDomainsLoading(false);
+    }
+  };
 
   const fetchDiscoveredSources = async () => {
     try {
@@ -410,6 +428,50 @@ export default function SourcesPage() {
           TAB 1: ACTIVE SOURCES
          ════════════════════════════════════════════════════════════════ */}
       {activeTab === 'active' && (<>
+      {/* Top Domains Section */}
+      <div className="bg-white/5 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/10 p-6 mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-bold text-white tracking-wide flex items-center gap-2">
+            <BarChart3 className="w-5 h-5 text-indigo-400" />
+            Top Domains Đóng Góp Thảo Luận
+          </h2>
+          <span className="text-xs font-bold tracking-wider uppercase bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 px-3 py-1.5 rounded-lg shadow-sm">
+            Top 10
+          </span>
+        </div>
+        {topDomainsLoading ? (
+          <div className="flex items-center justify-center h-32">
+            <Loader2 className="w-6 h-6 text-indigo-400 animate-spin" />
+          </div>
+        ) : topDomains && topDomains.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+            {topDomains.slice(0, 10).map((domain: any, idx: number) => (
+              <Link
+                key={idx}
+                href={`/dashboard/mentions?search=${encodeURIComponent(domain.domain || '')}`}
+                className="flex items-center gap-3 p-3 bg-white/5 rounded-xl hover:bg-white/10 hover:border-indigo-500/50 border border-transparent transition-all group"
+              >
+                <div className="w-8 h-8 bg-indigo-500/20 rounded-lg flex items-center justify-center text-indigo-400 font-bold text-sm flex-shrink-0">
+                  {idx + 1}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-white truncate group-hover:text-indigo-300 transition-colors">
+                    {domain.domain || domain.name || 'Unknown'}
+                  </p>
+                  <p className="text-xs text-gray-400">{domain.mention_count || 0} mentions</p>
+                </div>
+                <TrendingUp className="w-4 h-4 text-emerald-400 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center h-32 text-zinc-400">
+            <BarChart3 className="w-8 h-8 mb-2 opacity-50" />
+            <p className="text-sm">Chưa có dữ liệu domain</p>
+          </div>
+        )}
+      </div>
+
       {/* Search */}
       <div className="flex flex-col sm:flex-row items-center gap-4 mb-6">
         <div className="relative flex-1 w-full">

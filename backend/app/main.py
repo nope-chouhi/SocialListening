@@ -12,7 +12,7 @@ from app.api import (
     auth, keywords, sources, mentions, alerts,
     incidents, reports, dashboard, crawl, takedown, services, admin, users, settings as settings_api,
     roles, api_keys, branding, audit, monitor, system, ai, evidence, ai_chat, competitors, influencers,
-    reputation, discovery, integrations, realtime
+    reputation, discovery, integrations, realtime, saved_filters
 )
 from app.api import service_requests
 
@@ -195,6 +195,7 @@ app.include_router(reputation.router,       prefix="/api/reputation",        tag
 app.include_router(discovery.router,        prefix="/api/discovery",         tags=["Auto Discovery"])
 app.include_router(integrations.router,     prefix="/api/integrations",      tags=["Integrations"])
 app.include_router(realtime.router,         prefix="/api/realtime",          tags=["Realtime"])
+app.include_router(saved_filters.router,    prefix="/api/saved-filters",    tags=["Saved Filters"])
 
 @app.get("/")
 def root():

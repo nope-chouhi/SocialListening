@@ -391,6 +391,7 @@ def get_dashboard_trends(
 @router.get("/sentiment-summary")
 def get_sentiment_summary(
     time_range: str = Query("7d", alias="range", pattern="^(today|7d|30d)$"),
+    project_id: Optional[int] = Query(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
@@ -409,34 +410,42 @@ def get_sentiment_summary(
         
         from app.models.mention import SentimentScore
         
+        # Build base filter for mentions
+        mention_filter = [Mention.collected_at >= start_date, Mention.is_muted == False]
+        if project_id:
+            mention_filter.append(Mention.project_id == project_id)
+        
         # Get total mentions in this period
         try:
             total_mentions = db.execute(
-                select(func.count(Mention.id)).where(Mention.collected_at >= start_date)
+                select(func.count(Mention.id)).where(and_(*mention_filter))
             ).scalar() or 0
         except:
             total_mentions = 0
         
+        # Build filter for AI analysis - need to join with mentions to filter by project_id
+        ai_filter = [AIAnalysis.analyzed_at >= start_date]
+        if project_id:
+            # Subquery to get mention IDs for this project
+            project_mention_ids = db.execute(
+                select(Mention.id).where(and_(*mention_filter))
+            ).scalars().all()
+            if project_mention_ids:
+                ai_filter.append(AIAnalysis.mention_id.in_(project_mention_ids))
+            else:
+                # No mentions for this project, so no AI analysis
+                ai_filter.append(AIAnalysis.mention_id == -1)  # Force empty result
+        
         try:
             positive = db.execute(
-                select(func.count(AIAnalysis.id)).where(
-                    and_(
-                        AIAnalysis.analyzed_at >= start_date,
-                        AIAnalysis.sentiment == SentimentScore.POSITIVE
-                    )
-                )
+                select(func.count(AIAnalysis.id)).where(and_(*ai_filter, AIAnalysis.sentiment == SentimentScore.POSITIVE))
             ).scalar() or 0
         except Exception:
             positive = 0
             
         try:
             neutral = db.execute(
-                select(func.count(AIAnalysis.id)).where(
-                    and_(
-                        AIAnalysis.analyzed_at >= start_date,
-                        AIAnalysis.sentiment == SentimentScore.NEUTRAL
-                    )
-                )
+                select(func.count(AIAnalysis.id)).where(and_(*ai_filter, AIAnalysis.sentiment == SentimentScore.NEUTRAL))
             ).scalar() or 0
         except Exception:
             neutral = 0
@@ -445,7 +454,7 @@ def get_sentiment_summary(
             negative = db.execute(
                 select(func.count(AIAnalysis.id)).where(
                     and_(
-                        AIAnalysis.analyzed_at >= start_date,
+                        *ai_filter,
                         AIAnalysis.sentiment.in_([SentimentScore.NEGATIVE_LOW, SentimentScore.NEGATIVE_MEDIUM, SentimentScore.NEGATIVE_HIGH])
                     )
                 )

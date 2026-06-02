@@ -7,7 +7,8 @@ from app.api import (
     incidents,
     reports,
     dashboard,
-    monitor
+    monitor,
+    saved_filters
 )
 
 __all__ = [
@@ -19,6 +20,7 @@ __all__ = [
     "incidents",
     "reports",
     "dashboard",
-    "monitor"
+    "monitor",
+    "saved_filters"
 ]
 
