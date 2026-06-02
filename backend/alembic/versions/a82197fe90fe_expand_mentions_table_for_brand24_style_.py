@@ -17,43 +17,51 @@ depends_on = None
 
 
 def upgrade() -> None:
+    conn = op.get_bind()
+    from sqlalchemy.engine.reflection import Inspector
+    inspector = Inspector.from_engine(conn)
+    columns = [c['name'] for c in inspector.get_columns('mentions')]
+    
     # Modify existing columns to be nullable
     op.alter_column('mentions', 'source_id', existing_type=sa.Integer(), nullable=True)
     op.alter_column('mentions', 'content', existing_type=sa.Text(), nullable=True)
     op.alter_column('mentions', 'url', existing_type=sa.Text(), nullable=True)
     
-    # Add new columns
-    op.add_column('mentions', sa.Column('project_id', sa.Integer(), nullable=True))
-    op.add_column('mentions', sa.Column('keyword_id', sa.Integer(), nullable=True))
-    op.add_column('mentions', sa.Column('keyword_text', sa.String(length=255), nullable=True))
-    op.add_column('mentions', sa.Column('job_id', sa.Integer(), nullable=True))
+    # Add new columns conditionally
+    if 'project_id' not in columns: op.add_column('mentions', sa.Column('project_id', sa.Integer(), nullable=True))
+    if 'keyword_id' not in columns: op.add_column('mentions', sa.Column('keyword_id', sa.Integer(), nullable=True))
+    if 'keyword_text' not in columns: op.add_column('mentions', sa.Column('keyword_text', sa.String(length=255), nullable=True))
+    if 'job_id' not in columns: op.add_column('mentions', sa.Column('job_id', sa.Integer(), nullable=True))
     
-    op.add_column('mentions', sa.Column('source_type', sa.String(length=50), nullable=True))
-    op.add_column('mentions', sa.Column('platform', sa.String(length=100), nullable=True))
-    op.add_column('mentions', sa.Column('domain', sa.String(length=500), nullable=True))
-    op.add_column('mentions', sa.Column('snippet', sa.Text(), nullable=True))
+    if 'source_type' not in columns: op.add_column('mentions', sa.Column('source_type', sa.String(length=50), nullable=True))
+    if 'platform' not in columns: op.add_column('mentions', sa.Column('platform', sa.String(length=100), nullable=True))
+    if 'domain' not in columns: op.add_column('mentions', sa.Column('domain', sa.String(length=500), nullable=True))
+    if 'snippet' not in columns: op.add_column('mentions', sa.Column('snippet', sa.Text(), nullable=True))
     
-    op.add_column('mentions', sa.Column('sentiment', sa.String(length=50), nullable=True))
-    op.add_column('mentions', sa.Column('sentiment_confidence', sa.Float(), nullable=True))
-    op.add_column('mentions', sa.Column('influence_score', sa.Float(), nullable=True))
-    op.add_column('mentions', sa.Column('reach_estimate', sa.Integer(), nullable=True))
-    op.add_column('mentions', sa.Column('views_count', sa.Integer(), nullable=True))
-    op.add_column('mentions', sa.Column('comments_count', sa.Integer(), nullable=True))
-    op.add_column('mentions', sa.Column('likes_count', sa.Integer(), nullable=True))
-    op.add_column('mentions', sa.Column('shares_count', sa.Integer(), nullable=True))
+    if 'sentiment' not in columns: op.add_column('mentions', sa.Column('sentiment', sa.String(length=50), nullable=True))
+    if 'sentiment_confidence' not in columns: op.add_column('mentions', sa.Column('sentiment_confidence', sa.Float(), nullable=True))
+    if 'influence_score' not in columns: op.add_column('mentions', sa.Column('influence_score', sa.Float(), nullable=True))
+    if 'reach_estimate' not in columns: op.add_column('mentions', sa.Column('reach_estimate', sa.Integer(), nullable=True))
+    if 'views_count' not in columns: op.add_column('mentions', sa.Column('views_count', sa.Integer(), nullable=True))
+    if 'comments_count' not in columns: op.add_column('mentions', sa.Column('comments_count', sa.Integer(), nullable=True))
+    if 'likes_count' not in columns: op.add_column('mentions', sa.Column('likes_count', sa.Integer(), nullable=True))
+    if 'shares_count' not in columns: op.add_column('mentions', sa.Column('shares_count', sa.Integer(), nullable=True))
     
-    op.add_column('mentions', sa.Column('language', sa.String(length=50), nullable=True))
-    op.add_column('mentions', sa.Column('country', sa.String(length=50), nullable=True))
+    if 'language' not in columns: op.add_column('mentions', sa.Column('language', sa.String(length=50), nullable=True))
+    if 'country' not in columns: op.add_column('mentions', sa.Column('country', sa.String(length=50), nullable=True))
     
-    op.add_column('mentions', sa.Column('tags_json', sa.JSON(), nullable=True))
-    op.add_column('mentions', sa.Column('is_muted', sa.Boolean(), server_default='false', nullable=True))
-    op.add_column('mentions', sa.Column('is_deleted', sa.Boolean(), server_default='false', nullable=True))
-    op.add_column('mentions', sa.Column('extraction_source', sa.String(length=100), nullable=True))
-    op.add_column('mentions', sa.Column('confidence', sa.String(length=50), nullable=True))
+    if 'tags_json' not in columns: op.add_column('mentions', sa.Column('tags_json', sa.JSON(), nullable=True))
+    if 'is_muted' not in columns: op.add_column('mentions', sa.Column('is_muted', sa.Boolean(), server_default='false', nullable=True))
+    if 'is_deleted' not in columns: op.add_column('mentions', sa.Column('is_deleted', sa.Boolean(), server_default='false', nullable=True))
+    if 'extraction_source' not in columns: op.add_column('mentions', sa.Column('extraction_source', sa.String(length=100), nullable=True))
+    if 'confidence' not in columns: op.add_column('mentions', sa.Column('confidence', sa.String(length=50), nullable=True))
     
     # Create new indices
-    op.create_index(op.f('ix_mention_job'), 'mentions', ['job_id'], unique=False)
-    op.create_index(op.f('ix_mention_domain'), 'mentions', ['domain'], unique=False)
+    indices = [ix['name'] for ix in inspector.get_indexes('mentions')]
+    if 'ix_mention_job' not in indices:
+        op.create_index(op.f('ix_mention_job'), 'mentions', ['job_id'], unique=False)
+    if 'ix_mention_domain' not in indices:
+        op.create_index(op.f('ix_mention_domain'), 'mentions', ['domain'], unique=False)
 
 
 def downgrade() -> None:
