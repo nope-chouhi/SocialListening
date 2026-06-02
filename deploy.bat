@@ -25,4 +25,4 @@ echo Frontend: https://social-listening-azure.vercel.app
 echo.
 echo Auto-deployment will complete in 2-5 minutes.
 echo.
-timeout /t 5 > NUL
+ping 127.0.0.1 -n 6 > nul
