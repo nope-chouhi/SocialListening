@@ -22,7 +22,7 @@ def run_migrations():
         # FIX THE alembic_version table to skip already-existing tables
         with engine.begin() as conn:
             conn.execute(sa.text("DELETE FROM alembic_version"))
-            conn.execute(sa.text("INSERT INTO alembic_version (version_num) VALUES ('022'), ('bda1a60d4048')"))
+            conn.execute(sa.text("INSERT INTO alembic_version (version_num) VALUES ('bda1a60d4048')"))
             
         # Make sure we're in the right directory (backend/)
         base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
