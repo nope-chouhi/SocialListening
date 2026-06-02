@@ -11,8 +11,8 @@ from sqlalchemy.engine.reflection import Inspector
 
 
 # revision identifiers, used by Alembic.
-revision = '026_ensure_missing_mention_columns'
-down_revision = '025_create_saved_filters_table'
+revision = '026'
+down_revision = '025'
 branch_labels = None
 depends_on = None
 
