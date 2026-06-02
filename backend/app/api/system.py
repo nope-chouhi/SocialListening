@@ -17,8 +17,9 @@ def run_migrations():
         import alembic.config
         import alembic.command
         
-        # Make sure we're in the right directory
-        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        # Make sure we're in the right directory (backend/)
+        # __file__ is backend/app/api/system.py
+        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         os.chdir(base_dir)
         
         alembic_cfg = alembic.config.Config("alembic.ini")

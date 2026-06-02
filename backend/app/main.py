@@ -25,10 +25,27 @@ async def lifespan(app: FastAPI):
     """Startup: create tables + seed data + start scheduler."""
     logger.info("Starting Social Listening Platform...")
 
-    # Create tables (fallback if alembic hasn't run or is out of sync)
+    # Run database migrations automatically
     try:
-        Base.metadata.create_all(bind=engine)
-        logger.info("Database tables created/verified")
+        import os
+        import alembic.config
+        import alembic.command
+        logger.info("Running automatic database migrations...")
+        
+        # __file__ is backend/app/main.py
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        alembic_ini_path = os.path.join(base_dir, "alembic.ini")
+        
+        # We must change dir so alembic script_location resolves correctly
+        original_cwd = os.getcwd()
+        os.chdir(base_dir)
+        
+        alembic_cfg = alembic.config.Config("alembic.ini")
+        alembic.command.upgrade(alembic_cfg, "head")
+        logger.info("Database migrations applied successfully.")
+        
+        # Restore cwd just in case
+        os.chdir(original_cwd)
     except Exception as e:
         logger.warning(f"create_all skipped (tables may already exist via alembic): {e}")
 
