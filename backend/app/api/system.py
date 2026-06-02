@@ -13,21 +13,31 @@ router = APIRouter()
 def run_migrations():
     """Run alembic upgrade head programmatically without auth."""
     try:
-        import os
-        import alembic.config
-        import alembic.command
+        from app.core.database import engine
+        from sqlalchemy.engine.reflection import Inspector
+        import sqlalchemy as sa
         
-        # Make sure we're in the right directory (backend/)
-        # __file__ is backend/app/api/system.py
-        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-        os.chdir(base_dir)
+        inspector = Inspector.from_engine(engine)
+        tables = inspector.get_table_names()
         
-        alembic_cfg = alembic.config.Config("alembic.ini")
-        alembic.command.upgrade(alembic_cfg, "head")
-        return {"status": "success", "message": "Database migrations applied successfully.", "cwd": os.getcwd()}
+        mentions_columns = []
+        if 'mentions' in tables:
+            mentions_columns = [c['name'] for c in inspector.get_columns('mentions')]
+            
+        alembic_version = None
+        if 'alembic_version' in tables:
+            with engine.connect() as conn:
+                alembic_version = conn.execute(sa.text("SELECT version_num FROM alembic_version")).scalar()
+                
+        return {
+            "status": "success",
+            "alembic_version": alembic_version,
+            "tables": tables,
+            "mentions_columns": mentions_columns
+        }
     except Exception as e:
         import traceback
-        raise HTTPException(status_code=500, detail=f"Migration failed: {str(e)}\n{traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=f"Check failed: {str(e)}\n{traceback.format_exc()}")
 
 @router.get("/worker-status")
 def get_worker_status(
