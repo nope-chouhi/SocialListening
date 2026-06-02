@@ -207,11 +207,11 @@ export const keywords = {
     const response = await api.get(`/api/keywords/groups/${groupId}/keywords`);
     return response.data;
   },
-  createKeyword: async (data: { group_id: number; keyword: string; keyword_type?: string; is_active?: boolean }) => {
+  createKeyword: async (data: { group_id: number; keyword: string; keyword_type?: string; is_active?: boolean; is_excluded?: boolean }) => {
     const response = await api.post('/api/keywords', data);
     return response.data;
   },
-  createKeywordsBulk: async (data: { group_id: number; keywords: string[]; keyword_type?: string; is_active?: boolean }) => {
+  createKeywordsBulk: async (data: { group_id: number; keywords: string[]; keyword_type?: string; is_active?: boolean; is_excluded?: boolean }) => {
     const response = await api.post('/api/keywords/bulk', data);
     return response.data;
   },
