@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from datetime import datetime, timezone
 from app.core.database import get_db
@@ -8,6 +8,18 @@ from app.models.system_settings import WorkerStatus
 from app.models.source import Source
 
 router = APIRouter()
+
+@router.get("/migrate")
+def run_migrations(current_user: User = Depends(get_current_active_user)):
+    """Run alembic upgrade head programmatically."""
+    try:
+        import alembic.config
+        import alembic.command
+        alembic_cfg = alembic.config.Config("alembic.ini")
+        alembic.command.upgrade(alembic_cfg, "head")
+        return {"status": "success", "message": "Database migrations applied successfully."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Migration failed: {str(e)}")
 
 @router.get("/worker-status")
 def get_worker_status(
