@@ -126,13 +126,13 @@ def list_mentions(
                 query = query.where(AIAnalysis.risk_score >= min_risk_score)
 
         try:
-            # Count query (reconstruct cleanly instead of duplicating conditions, or just use subquery)
-            count_query = select(func.count()).select_from(query.subquery())
+            # Count query using with_only_columns is safer in Postgres
+            count_query = query.with_only_columns(func.count(Mention.id)).order_by(None)
             total = db.execute(count_query).scalar() or 0
         except Exception as e:
             db.rollback()
             logger.error(f"Error querying total mentions count: {e}")
-            raise HTTPException(status_code=500, detail="Lỗi khi truy vấn số lượng mentions")
+            raise HTTPException(status_code=500, detail=f"Lỗi khi truy vấn số lượng mentions: {str(e)}")
 
         from sqlalchemy import nullslast
         offset = (page - 1) * page_size
