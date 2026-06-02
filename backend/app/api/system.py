@@ -10,16 +10,23 @@ from app.models.source import Source
 router = APIRouter()
 
 @router.get("/migrate")
-def run_migrations(current_user: User = Depends(get_current_active_user)):
-    """Run alembic upgrade head programmatically."""
+def run_migrations():
+    """Run alembic upgrade head programmatically without auth."""
     try:
+        import os
         import alembic.config
         import alembic.command
+        
+        # Make sure we're in the right directory
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        os.chdir(base_dir)
+        
         alembic_cfg = alembic.config.Config("alembic.ini")
         alembic.command.upgrade(alembic_cfg, "head")
-        return {"status": "success", "message": "Database migrations applied successfully."}
+        return {"status": "success", "message": "Database migrations applied successfully.", "cwd": os.getcwd()}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Migration failed: {str(e)}")
+        import traceback
+        raise HTTPException(status_code=500, detail=f"Migration failed: {str(e)}\n{traceback.format_exc()}")
 
 @router.get("/worker-status")
 def get_worker_status(
