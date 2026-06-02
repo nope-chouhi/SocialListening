@@ -9,8 +9,9 @@ import {
   AlertTriangle, CheckCircle2, BrainCircuit, Loader2,
   Facebook, Youtube, RefreshCw, SlidersHorizontal, Sparkles,
   Twitter, Instagram, Mic, Video, Link2Off, Tag,
+  Plus, FolderDot, LayoutDashboard, SearchCode
 } from 'lucide-react';
-import { mentions as mentionsApi, dashboard } from '@/lib/api';
+import { mentions as mentionsApi, dashboard, keywords as keywordsApi, crawl } from '@/lib/api';
 import toast, { Toaster } from 'react-hot-toast';
 import Link from 'next/link';
 import ConfirmDialog from '@/components/ConfirmDialog';
@@ -195,10 +196,13 @@ export default function MentionsPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [sentimentSummary, setSentimentSummary] = useState<any>(null);
   const [trendData, setTrendData] = useState<any[]>([]);
+  const [keywordGroups, setKeywordGroups] = useState<any[]>([]);
+  const [activeProject, setActiveProject] = useState<any>(null);
 
   // UI state
   const [loading, setLoading] = useState(true);
   const [loadingChart, setLoadingChart] = useState(true);
+  const [isScanning, setIsScanning] = useState(false);
   const [page, setPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState(initialKeyword || '');
   const [searchInput, setSearchInput] = useState(initialKeyword || '');
@@ -244,6 +248,7 @@ export default function MentionsPage() {
       };
       if (initialJobId) params.job_id = initialJobId;
       if (searchTerm) params.search_query = searchTerm;
+      if (activeProject) params.keyword = activeProject.name;
       if (filters.sentiment) params.sentiment = filters.sentiment;
       if (filters.source_type) params.source_type = filters.source_type;
       if (filters.min_risk_score !== null) params.min_risk_score = filters.min_risk_score;
@@ -277,6 +282,15 @@ export default function MentionsPage() {
     }
   }, []);
 
+  const fetchKeywordGroups = useCallback(async () => {
+    try {
+      const groups = await keywordsApi.listGroups();
+      setKeywordGroups(groups);
+    } catch (e) {
+      console.error(e);
+    }
+  }, []);
+
   useEffect(() => {
     fetchMentions();
   }, [fetchMentions]);
@@ -285,16 +299,64 @@ export default function MentionsPage() {
     fetchChartData();
   }, [fetchChartData]);
 
-  /* ─── SEARCH DEBOUNCE ───────────────────────────────────────────────── */
+  useEffect(() => {
+    fetchKeywordGroups();
+  }, [fetchKeywordGroups]);
+
+  /* ─── PROJECT / SCAN ACTIONS ─────────────────────────────────────────── */
+
+  const handleCreateProject = async (keyword: string) => {
+    if (!keyword.trim()) return;
+    try {
+      setIsScanning(true);
+      const loadingToast = toast.loading(`Đang tạo project và quét web cho "${keyword}"...`);
+      
+      // Create Project (KeywordGroup)
+      const newGroup = await keywordsApi.createGroup({
+        name: keyword.trim(),
+        description: 'Tạo từ tìm kiếm Mentions',
+      });
+      
+      // Add Keyword to Group
+      await keywordsApi.createKeyword({
+        keyword: keyword.trim(),
+        group_id: newGroup.id,
+        keyword_type: 'general',
+      });
+
+      // Trigger Web Scan
+      const payload = {
+        keyword_group_ids: [newGroup.id],
+        mode: 'AUTO_DISCOVERY',
+        keywords: [keyword.trim()]
+      };
+      await crawl.manualScan(payload);
+
+      toast.dismiss(loadingToast);
+      toast.success(`Đang quét web cho "${keyword}". Kết quả sẽ sớm xuất hiện!`);
+      
+      setSearchInput('');
+      setSearchTerm('');
+      setActiveProject(newGroup);
+      fetchKeywordGroups();
+    } catch (error: any) {
+      toast.error('Lỗi khi tạo project: ' + (error.response?.data?.detail || error.message));
+    } finally {
+      setIsScanning(false);
+    }
+  };
 
   const handleSearchChange = (val: string) => {
     setSearchInput(val);
     if (searchTimeout.current) clearTimeout(searchTimeout.current);
-    searchTimeout.current = setTimeout(() => {
-      setSearchTerm(val);
-      setPage(1);
-    }, 400);
+    // Don't auto-search if we're typing to create a project
   };
+
+  const executeSearch = () => {
+    setSearchTerm(searchInput);
+    setPage(1);
+  };
+
 
   /* ─── FILTER ACTIONS ────────────────────────────────────────────────── */
 
@@ -384,25 +446,36 @@ export default function MentionsPage() {
         </div>
       </div>
 
-      {/* ─── SEARCH BAR ──────────────────────────────────────────────────── */}
-      <div className="relative mb-5">
-        <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
-        <input
-          id="mentions-search"
-          type="text"
-          placeholder="Tìm kiếm mentions theo tiêu đề, nội dung..."
-          value={searchInput}
-          onChange={(e) => handleSearchChange(e.target.value)}
-          className="w-full pl-12 pr-12 py-3.5 bg-[#111827] border border-gray-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 text-white placeholder-gray-500 shadow-sm transition-all text-sm"
-        />
-        {searchInput && (
-          <button
-            onClick={() => { setSearchInput(''); setSearchTerm(''); setPage(1); }}
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        )}
+      {/* ─── SEARCH BAR / CREATE PROJECT ─────────────────────────────────── */}
+      <div className="relative mb-5 flex gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
+          <input
+            id="mentions-search"
+            type="text"
+            placeholder="Tìm kiếm mentions đang có hoặc nhập từ khóa mới để tìm trên Web..."
+            value={searchInput}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && executeSearch()}
+            className="w-full pl-12 pr-12 py-3.5 bg-[#111827] border border-gray-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 text-white placeholder-gray-500 shadow-sm transition-all text-sm"
+          />
+          {searchInput && (
+            <button
+              onClick={() => { setSearchInput(''); setSearchTerm(''); setPage(1); }}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+        <button
+          onClick={() => handleCreateProject(searchInput)}
+          disabled={!searchInput.trim() || isScanning}
+          className="px-6 py-3.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium rounded-xl flex items-center gap-2 transition-all whitespace-nowrap shadow-lg shadow-indigo-900/20"
+        >
+          {isScanning ? <Loader2 className="w-5 h-5 animate-spin" /> : <SearchCode className="w-5 h-5" />}
+          Tìm trên Web
+        </button>
       </div>
 
       {/* ─── ACTIVE FILTER CHIPS ─────────────────────────────────────────── */}
@@ -521,93 +594,66 @@ export default function MentionsPage() {
         </div>
       )}
 
-      {/* ─── MAIN CONTENT: FILTERS + FEED ────────────────────────────────── */}
+      {/* ─── MAIN CONTENT: PROJECTS + FEED + FILTERS ─────────────────────── */}
       <div className="flex gap-5">
-
-        {/* ──── LEFT FILTER PANEL (Desktop) ────────────────────────────────── */}
-        <aside className="hidden lg:block w-[260px] flex-shrink-0">
-          <div className="bg-[#111827] border border-gray-800 rounded-xl p-4 sticky top-24 space-y-5">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-                <SlidersHorizontal className="w-4 h-4 text-indigo-400" />
-                Bộ lọc
+        
+        {/* ──── LEFT SIDEBAR: PROJECTS (BRAND24 STYLE) ───────────────────── */}
+        <aside className="hidden lg:block w-[240px] xl:w-[260px] flex-shrink-0">
+          <div className="bg-[#111827] border border-gray-800 rounded-xl p-4 sticky top-24 max-h-[calc(100vh-120px)] overflow-y-auto scrollbar-hide">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                PROJECTS
               </h3>
-              {hasActiveFilters && (
-                <button onClick={clearAllFilters} className="text-[10px] text-indigo-400 hover:text-indigo-300 font-medium uppercase tracking-wider transition-colors">
-                  Reset
+              <button 
+                onClick={() => { document.getElementById('mentions-search')?.focus(); }}
+                className="w-6 h-6 rounded-full bg-indigo-500/10 text-indigo-400 flex items-center justify-center hover:bg-indigo-500 hover:text-white transition-all"
+                title="Tạo Project mới"
+              >
+                <Plus className="w-4 h-4" />
+              </button>
+            </div>
+            
+            <div className="space-y-1.5">
+              <button
+                onClick={() => { setActiveProject(null); setPage(1); }}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                  !activeProject
+                    ? 'bg-indigo-500/15 text-white border border-indigo-500/30 shadow-[inset_4px_0_0_rgba(99,102,241,1)]'
+                    : 'text-gray-400 hover:text-gray-200 hover:bg-[#1E293B] border border-transparent'
+                }`}
+              >
+                <LayoutDashboard className={`w-4 h-4 flex-shrink-0 ${!activeProject ? 'text-indigo-400' : 'text-gray-500'}`} />
+                <span className="truncate">Tất cả mentions</span>
+              </button>
+
+              {keywordGroups.map((group) => (
+                <button
+                  key={group.id}
+                  onClick={() => { setActiveProject(group); setPage(1); }}
+                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-all group-hover ${
+                    activeProject?.id === group.id
+                      ? 'bg-emerald-500/15 text-white border border-emerald-500/30 shadow-[inset_4px_0_0_rgba(16,185,129,1)]'
+                      : 'text-gray-400 hover:text-gray-200 hover:bg-[#1E293B] border border-transparent'
+                  }`}
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className={`w-2 h-2 rounded-full flex-shrink-0 ${activeProject?.id === group.id ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]' : 'bg-gray-600 group-hover:bg-gray-400'}`} />
+                    <span className="truncate" title={group.name}>{group.name}</span>
+                  </div>
+                  {group.keyword_count > 0 && (
+                    <span className="text-[10px] text-gray-500 bg-gray-800 px-1.5 py-0.5 rounded-md flex-shrink-0">
+                      {group.keyword_count}
+                    </span>
+                  )}
                 </button>
-              )}
-            </div>
-
-            {/* Sentiment */}
-            <div>
-              <h4 className="text-[11px] text-gray-500 font-semibold uppercase tracking-wider mb-2.5">Cảm xúc</h4>
-              <div className="space-y-1">
-                {SENTIMENT_OPTIONS.map((s) => (
-                  <button
-                    key={s.value}
-                    onClick={() => updateFilter('sentiment', filters.sentiment === s.value ? null : s.value)}
-                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
-                      filters.sentiment === s.value
-                        ? 'bg-indigo-500/15 text-white border border-indigo-500/30'
-                        : 'text-gray-400 hover:text-gray-200 hover:bg-[#1E293B] border border-transparent'
-                    }`}
-                  >
-                    <span className={`w-2 h-2 rounded-full flex-shrink-0 ${s.dot}`} />
-                    {s.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Platform */}
-            <div>
-              <h4 className="text-[11px] text-gray-500 font-semibold uppercase tracking-wider mb-2.5">Nền tảng</h4>
-              <div className="space-y-1">
-                {SOURCE_TYPE_OPTIONS.map((st) => (
-                  <button
-                    key={st.value}
-                    disabled={st.disabled}
-                    onClick={() => updateFilter('source_type', filters.source_type === st.value ? null : st.value)}
-                    className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all ${
-                      filters.source_type === st.value
-                        ? 'bg-indigo-500/15 text-white border border-indigo-500/30'
-                        : st.disabled
-                          ? 'opacity-40 cursor-not-allowed bg-transparent border border-transparent grayscale'
-                          : 'text-gray-400 hover:text-gray-200 hover:bg-[#1E293B] border border-transparent'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <st.icon className={`w-3.5 h-3.5 flex-shrink-0 ${st.color}`} />
-                      {st.label}
-                    </div>
-                    {st.disabled && <span className="text-[9px] text-gray-500">{st.msg}</span>}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Risk Score */}
-            <div>
-              <h4 className="text-[11px] text-gray-500 font-semibold uppercase tracking-wider mb-2.5">Risk Score</h4>
-              <div className="grid grid-cols-2 gap-1.5">
-                {RISK_PRESETS.map((r) => (
-                  <button
-                    key={r.label}
-                    onClick={() => updateFilter('min_risk_score', filters.min_risk_score === r.value ? null : r.value)}
-                    className={`px-3 py-2 rounded-lg text-xs font-medium transition-all text-center ${
-                      filters.min_risk_score === r.value
-                        ? 'bg-indigo-500/15 text-white border border-indigo-500/30'
-                        : 'text-gray-400 hover:text-gray-200 hover:bg-[#1E293B] border border-gray-800'
-                    }`}
-                  >
-                    {r.label}
-                  </button>
-                ))}
-              </div>
+              ))}
             </div>
           </div>
         </aside>
+
+        {/* ──── MAIN RESULTS FEED ──────────────────────────────────────────── */}
+        <div className="flex-1 min-w-0">
+
 
         {/* ──── MOBILE FILTER BUTTON ───────────────────────────────────────── */}
         <button
@@ -707,8 +753,7 @@ export default function MentionsPage() {
           </>
         )}
 
-        {/* ──── MAIN RESULTS FEED ──────────────────────────────────────────── */}
-        <div className="flex-1 min-w-0">
+
           {/* Sort bar */}
           <div className="flex items-center justify-between mb-4">
             <p className="text-xs text-gray-500 font-medium">
@@ -976,6 +1021,91 @@ export default function MentionsPage() {
             </div>
           )}
         </div>
+
+        {/* ──── RIGHT FILTER PANEL (Desktop) ───────────────────────────────── */}
+        <aside className="hidden xl:block w-[260px] flex-shrink-0">
+          <div className="bg-[#111827] border border-gray-800 rounded-xl p-4 sticky top-24 space-y-5">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                <SlidersHorizontal className="w-4 h-4 text-indigo-400" />
+                Bộ lọc
+              </h3>
+              {hasActiveFilters && (
+                <button onClick={clearAllFilters} className="text-[10px] text-indigo-400 hover:text-indigo-300 font-medium uppercase tracking-wider transition-colors">
+                  Reset
+                </button>
+              )}
+            </div>
+
+            {/* Sentiment */}
+            <div>
+              <h4 className="text-[11px] text-gray-500 font-semibold uppercase tracking-wider mb-2.5">Cảm xúc</h4>
+              <div className="space-y-1">
+                {SENTIMENT_OPTIONS.map((s) => (
+                  <button
+                    key={s.value}
+                    onClick={() => updateFilter('sentiment', filters.sentiment === s.value ? null : s.value)}
+                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+                      filters.sentiment === s.value
+                        ? 'bg-indigo-500/15 text-white border border-indigo-500/30'
+                        : 'text-gray-400 hover:text-gray-200 hover:bg-[#1E293B] border border-transparent'
+                    }`}
+                  >
+                    <span className={`w-2 h-2 rounded-full flex-shrink-0 ${s.dot}`} />
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Platform */}
+            <div>
+              <h4 className="text-[11px] text-gray-500 font-semibold uppercase tracking-wider mb-2.5">Nền tảng</h4>
+              <div className="space-y-1">
+                {SOURCE_TYPE_OPTIONS.map((st) => (
+                  <button
+                    key={st.value}
+                    disabled={st.disabled}
+                    onClick={() => updateFilter('source_type', filters.source_type === st.value ? null : st.value)}
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+                      filters.source_type === st.value
+                        ? 'bg-indigo-500/15 text-white border border-indigo-500/30'
+                        : st.disabled
+                          ? 'opacity-40 cursor-not-allowed bg-transparent border border-transparent grayscale'
+                          : 'text-gray-400 hover:text-gray-200 hover:bg-[#1E293B] border border-transparent'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <st.icon className={`w-3.5 h-3.5 flex-shrink-0 ${st.color}`} />
+                      {st.label}
+                    </div>
+                    {st.disabled && <span className="text-[9px] text-gray-500">{st.msg}</span>}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Risk Score */}
+            <div>
+              <h4 className="text-[11px] text-gray-500 font-semibold uppercase tracking-wider mb-2.5">Risk Score</h4>
+              <div className="grid grid-cols-2 gap-1.5">
+                {RISK_PRESETS.map((r) => (
+                  <button
+                    key={r.label}
+                    onClick={() => updateFilter('min_risk_score', filters.min_risk_score === r.value ? null : r.value)}
+                    className={`px-3 py-2 rounded-lg text-xs font-medium transition-all text-center ${
+                      filters.min_risk_score === r.value
+                        ? 'bg-indigo-500/15 text-white border border-indigo-500/30'
+                        : 'text-gray-400 hover:text-gray-200 hover:bg-[#1E293B] border border-gray-800'
+                    }`}
+                  >
+                    {r.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </aside>
       </div>
 
       {/* ─── DELETE DIALOG ────────────────────────────────────────────────── */}
