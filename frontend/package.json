@@ -52,7 +52,8 @@
     "react-hook-form": "^7.53.0",
     "@hookform/resolvers": "^3.9.0",
     "zod": "^3.23.0",
-    "axios": "^1.7.0"
+    "axios": "^1.7.0",
+    "html2pdf.js": "^0.10.1"
   },
   "devDependencies": {
     "eslint": "^8.57.0",
