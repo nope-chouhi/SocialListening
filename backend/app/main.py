@@ -12,7 +12,7 @@ from app.api import (
     auth, keywords, sources, mentions, alerts,
     incidents, reports, dashboard, crawl, takedown, services, admin, users, settings as settings_api,
     roles, api_keys, branding, audit, monitor, system, ai, evidence, ai_chat, competitors, influencers,
-    reputation, discovery, integrations
+    reputation, discovery, integrations, realtime
 )
 from app.api import service_requests
 
@@ -61,19 +61,23 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning(f"Service seed skipped: {e}")
 
-    # Start background scheduler
-    if os.getenv("ENABLE_EMBEDDED_SCHEDULER", "false").lower() == "true":
+    # Start background scheduler (embedded or SCHEDULER_ENABLED)
+    enable_scheduler = (
+        os.getenv("ENABLE_EMBEDDED_SCHEDULER", "false").lower() == "true"
+        or os.getenv("SCHEDULER_ENABLED", "true").lower() == "true"
+    )
+    if enable_scheduler:
         try:
             from app.services.scheduler_service import start_scheduler
-            start_scheduler(is_embedded=True)
-            logger.info("Embedded background scheduler started")
+            start_scheduler(is_embedded=os.getenv("ENABLE_EMBEDDED_SCHEDULER", "false").lower() == "true")
+            logger.info("Background scheduler started")
         except Exception as e:
-            logger.warning(f"Embedded scheduler start failed: {e}")
+            logger.warning(f"Scheduler start failed: {e}")
 
     yield
     
     # Shutdown scheduler
-    if os.getenv("ENABLE_EMBEDDED_SCHEDULER", "false").lower() == "true":
+    if enable_scheduler:
         try:
             from app.services.scheduler_service import stop_scheduler
             stop_scheduler()
@@ -190,6 +194,7 @@ app.include_router(influencers.router,      prefix="/api/influencers",       tag
 app.include_router(reputation.router,       prefix="/api/reputation",        tags=["Reputation Handling"])
 app.include_router(discovery.router,        prefix="/api/discovery",         tags=["Auto Discovery"])
 app.include_router(integrations.router,     prefix="/api/integrations",      tags=["Integrations"])
+app.include_router(realtime.router,         prefix="/api/realtime",          tags=["Realtime"])
 
 @app.get("/")
 def root():

@@ -76,6 +76,15 @@ class Settings(BaseSettings):
     CRAWL_TIMEOUT: int = 30
     CRAWL_MAX_RETRIES: int = 3
     CRAWL_USER_AGENT: str = "Mozilla/5.0 (compatible; SocialListeningBot/1.0)"
+
+    # Social platform APIs
+    TWITTER_BEARER_TOKEN: str = ""
+    NEWS_API_KEY: str = ""
+    SOCIAL_CRAWL_ENABLED: bool = True
+    SOCIAL_CRAWL_INTERVAL_MINUTES: int = 5
+
+    # DistilBERT sentiment microservice (Flask on port 5001)
+    SENTIMENT_SERVICE_URL: str = "http://localhost:5001"
     
     # Auto Discovery / Web Search
     WEB_SEARCH_PROVIDER: str = "serpapi"  # serpapi, none

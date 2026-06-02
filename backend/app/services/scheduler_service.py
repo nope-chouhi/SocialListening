@@ -382,6 +382,21 @@ def start_scheduler(interval_minutes: int = 10, is_embedded: bool = False):
             next_run_time=datetime.now(timezone.utc) + timedelta(seconds=30)  # First run 30s after start
         )
 
+        # Social platform crawl (Twitter/Reddit/News) every 5 minutes
+        from app.core.config import settings as app_settings
+        if app_settings.SOCIAL_CRAWL_ENABLED:
+            from app.services.social_crawl_job import run_social_crawl_sync
+            social_interval = app_settings.SOCIAL_CRAWL_INTERVAL_MINUTES
+            scheduler.add_job(
+                run_social_crawl_sync,
+                IntervalTrigger(minutes=social_interval),
+                id='social_crawl',
+                name='Social Platform Crawl',
+                replace_existing=True,
+                next_run_time=datetime.now(timezone.utc) + timedelta(seconds=60),
+            )
+            logger.info(f"Social crawl job scheduled every {social_interval} min")
+
         scheduler.start()
         scheduler_started = True
 

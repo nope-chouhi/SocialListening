@@ -9,8 +9,25 @@ from app.models.user import User
 from app.models.mention import Mention
 from app.models.incident import Incident
 from app.services.ai_service import get_ai_provider
+from app.services.sentiment_client import analyze_sentiment
+from pydantic import BaseModel
 
 router = APIRouter()
+
+
+class SentimentRequest(BaseModel):
+    text: str
+
+
+@router.post("/sentiment")
+def analyze_text_sentiment(
+    body: SentimentRequest,
+    current_user: User = Depends(get_current_active_user),
+):
+    """Analyze sentiment via DistilBERT microservice (or neutral fallback)."""
+    if not body.text.strip():
+        raise HTTPException(status_code=400, detail="text is required")
+    return analyze_sentiment(body.text)
 
 @router.post("/generate-brief")
 def generate_executive_brief(

@@ -8,6 +8,7 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 import { SidebarBadge } from '@/components/dashboard/Badges';
 import { canAccessAdmin, type User } from '@/lib/permissions';
 import { ProjectProvider, useProject } from '@/contexts/ProjectContext';
+import ThemeToggle from '@/components/ThemeToggle';
 import { 
   LayoutDashboard, 
   Globe, 
@@ -263,10 +264,13 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
       <DashboardSidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} user={user} badges={badges} />
 
       <div className="lg:pl-64 flex flex-col min-h-screen">
-        <div className="sticky top-0 z-20 flex items-center h-16 px-4 bg-[#050A15]/70 backdrop-blur-2xl border-b border-white/5 lg:px-8">
+        <div className="sticky top-0 z-20 flex items-center justify-between h-16 px-4 bg-[#050A15]/70 backdrop-blur-2xl border-b border-white/5 lg:px-8">
           <button onClick={() => setSidebarOpen(true)} className="lg:hidden p-2 -ml-2 text-gray-400 hover:text-white mr-2">
             <Menu className="w-5 h-5" />
           </button>
+          <div className="ml-auto">
+            <ThemeToggle />
+          </div>
         </div>
         <main className="flex-1 p-4 lg:p-8 w-full max-w-[1920px] mx-auto">
           {children}

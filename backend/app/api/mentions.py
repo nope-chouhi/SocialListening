@@ -1,9 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import select, func, text
 from typing import List, Optional
 from pydantic import BaseModel
-from datetime import datetime
+from datetime import datetime, timezone
+import csv
+import io
 
 from app.core.database import get_db
 from app.core.security import get_current_active_user
@@ -228,6 +231,72 @@ def list_mentions(
     except Exception as e:
         logger.error(f"Critical error in list_mentions: {e}")
         raise HTTPException(status_code=500, detail="Lỗi hệ thống khi tải danh sách mentions")
+
+
+@router.get("/export")
+def export_mentions_csv(
+    sentiment: Optional[str] = None,
+    source_type: Optional[str] = None,
+    project_id: Optional[int] = Query(None),
+    keyword: Optional[str] = Query(None),
+    date_from: Optional[datetime] = None,
+    date_to: Optional[datetime] = None,
+    limit: int = Query(5000, ge=1, le=10000),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
+    """Export mentions as CSV (Excel-compatible)."""
+    query = select(Mention).where(Mention.is_muted == False)
+    if project_id:
+        query = query.where(Mention.project_id == project_id)
+    if sentiment:
+        query = query.where(Mention.sentiment == sentiment)
+    if source_type:
+        query = query.where(Mention.source_type == source_type)
+    if keyword:
+        query = query.where(Mention.keyword_text.ilike(f"%{keyword}%"))
+    if date_from:
+        query = query.where(Mention.collected_at >= date_from)
+    if date_to:
+        query = query.where(Mention.collected_at <= date_to)
+
+    query = query.order_by(Mention.collected_at.desc()).limit(limit)
+    rows = db.execute(query).scalars().all()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow([
+        "id", "author", "platform", "source_type", "title", "content",
+        "url", "sentiment", "reach", "interactions", "influence_score",
+        "published_at", "collected_at", "keyword",
+    ])
+
+    for m in rows:
+        interactions = (m.likes_count or 0) + (m.comments_count or 0) + (m.shares_count or 0)
+        writer.writerow([
+            m.id,
+            m.author or "",
+            m.platform or "",
+            m.source_type or "",
+            (m.title or "")[:500],
+            (m.content or "")[:2000],
+            m.url or "",
+            m.sentiment or "",
+            m.reach_estimate or 0,
+            interactions,
+            m.influence_score or 0,
+            m.published_at.isoformat() if m.published_at else "",
+            m.collected_at.isoformat() if m.collected_at else "",
+            m.keyword_text or "",
+        ])
+
+    output.seek(0)
+    filename = f"mentions_export_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M')}.csv"
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 @router.get("/{mention_id}")

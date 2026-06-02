@@ -9,7 +9,7 @@ import {
   AlertTriangle, CheckCircle2, BrainCircuit, Loader2,
   Facebook, Youtube, RefreshCw, SlidersHorizontal, Sparkles,
   Twitter, Instagram, Mic, Video, Link2Off, Tag,
-  SearchCode
+  SearchCode, Download
 } from 'lucide-react';
 import { mentions as mentionsApi, dashboard, keywords as keywordsApi, crawl } from '@/lib/api';
 import { useProject } from '@/contexts/ProjectContext';
@@ -91,7 +91,8 @@ const SOURCE_TYPE_OPTIONS = [
   { value: 'rss', label: 'RSS', icon: Rss, color: 'text-orange-400', disabled: false },
   { value: 'facebook', label: 'Facebook', icon: Facebook, color: 'text-blue-500', disabled: true, msg: 'Connect required' },
   { value: 'instagram', label: 'Instagram', icon: Instagram, color: 'text-fuchsia-500', disabled: true, msg: 'Connect required' },
-  { value: 'twitter', label: 'X/Twitter', icon: Twitter, color: 'text-sky-400', disabled: true, msg: 'Not configured' },
+  { value: 'twitter', label: 'X/Twitter', icon: Twitter, color: 'text-sky-400', disabled: false },
+  { value: 'reddit', label: 'Reddit', icon: Globe, color: 'text-orange-400', disabled: false },
   { value: 'tiktok', label: 'TikTok', icon: Video, color: 'text-pink-400', disabled: true, msg: 'Connector required' },
   { value: 'podcast', label: 'Podcasts', icon: Mic, color: 'text-purple-400', disabled: true, msg: 'Coming soon' },
 ];
@@ -101,6 +102,8 @@ const SORT_OPTIONS = [
   { value: 'oldest', label: 'Cũ nhất' },
   { value: 'risk_high', label: 'Risk cao → thấp' },
   { value: 'risk_low', label: 'Risk thấp → cao' },
+  { value: 'influence_high', label: 'Ảnh hưởng cao' },
+  { value: 'engagement_high', label: 'Tương tác cao' },
 ];
 
 const RISK_PRESETS = [
@@ -344,6 +347,26 @@ export default function MentionsPage() {
     }
   };
 
+  const handleExportCsv = async () => {
+    try {
+      const params: Record<string, unknown> = {};
+      if (activeProject) params.project_id = activeProject.id;
+      if (filters.sentiment) params.sentiment = filters.sentiment;
+      if (filters.source_type) params.source_type = filters.source_type;
+      if (searchTerm) params.keyword = searchTerm;
+      const blob = await mentionsApi.exportCsv(params);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `mentions_${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('Đã xuất CSV');
+    } catch {
+      toast.error('Lỗi khi xuất CSV');
+    }
+  };
+
   /* ─── SENTIMENT SUMMARY STATS ───────────────────────────────────────── */
 
   const summaryStats = sentimentSummary
@@ -378,6 +401,14 @@ export default function MentionsPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleExportCsv}
+            className="btn-gradient inline-flex items-center gap-2 text-sm"
+          >
+            <Download className="w-4 h-4" />
+            Xuất CSV
+          </button>
           <button
             onClick={() => { fetchMentions(); fetchChartData(); }}
             className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-300 bg-[#1E293B] border border-gray-700 rounded-xl hover:bg-gray-800 hover:text-white transition-all"

@@ -183,6 +183,12 @@ export const dashboard = {
     const response = await api.get('/api/dashboard/sidebar-badges');
     return response.data;
   },
+  realtimeMetrics: async (projectId?: number, hours = 24) => {
+    const response = await api.get('/api/realtime/metrics', {
+      params: { project_id: projectId, hours },
+    });
+    return response.data;
+  },
 };
 
 // ─── Keywords ────────────────────────────────────────────────────────────────
@@ -363,6 +369,17 @@ export const mentions = {
   },
   updateSentiment: async (id: number, sentiment: string) => {
     const response = await api.put(`/api/mentions/${id}/sentiment`, { sentiment });
+    return response.data;
+  },
+  exportCsv: async (params?: Record<string, unknown>) => {
+    const response = await api.get('/api/mentions/export', {
+      params,
+      responseType: 'blob',
+    });
+    return response.data as Blob;
+  },
+  analyzeSentiment: async (text: string) => {
+    const response = await api.post('/api/ai/sentiment', { text });
     return response.data;
   },
 };

@@ -187,3 +187,22 @@
 .dark .sidebar-item-hover:hover {
   background-color: rgba(30, 41, 59, 0.5) !important;
 }
+
+/* Glassmorphism cards */
+.glass-card {
+  @apply bg-white/5 backdrop-blur-xl border border-white/10 shadow-xl;
+}
+
+.light .glass-card,
+html.light .glass-card {
+  @apply bg-white/80 border-slate-200/80 text-slate-900 shadow-md;
+}
+
+html.light body {
+  background-color: #f1f5f9;
+  color: #0f172a;
+}
+
+.btn-gradient {
+  @apply bg-gradient-to-r from-brand-blue to-brand-purple text-white font-medium rounded-xl px-4 py-2 shadow-lg hover:opacity-90 transition-opacity;
+}

@@ -15,8 +15,11 @@ import SentimentDonutChart from '@/components/dashboard/SentimentDonutChart';
 import HotKeywordsWidget from '@/components/dashboard/HotKeywordsWidget';
 import MentionCard from '@/components/dashboard/MentionCard';
 import AlertCard from '@/components/dashboard/AlertCard';
+import RealtimeStatsSection from '@/components/dashboard/RealtimeStatsSection';
+import { useProject } from '@/contexts/ProjectContext';
 
 export default function DashboardPage() {
+  const { activeProject } = useProject();
   const [metrics, setMetrics] = useState<any>(null);
   const [trends, setTrends] = useState<any>(null);
   const [sentiment, setSentiment] = useState<any>(null);
@@ -152,6 +155,9 @@ export default function DashboardPage() {
           </button>
         </div>
       </div>
+
+      {/* Real-time section */}
+      <RealtimeStatsSection projectId={activeProject?.id} />
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
