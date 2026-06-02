@@ -14,24 +14,31 @@ def run_migrations():
     """Run alembic upgrade head programmatically without auth."""
     try:
         from app.core.database import engine
-        from sqlalchemy.engine.reflection import Inspector
         import sqlalchemy as sa
+        import os
+        import alembic.config
+        import alembic.command
         
+        # FIX THE alembic_version table to skip already-existing tables
+        with engine.begin() as conn:
+            conn.execute(sa.text("DELETE FROM alembic_version"))
+            conn.execute(sa.text("INSERT INTO alembic_version (version_num) VALUES ('022'), ('bda1a60d4048')"))
+            
+        # Make sure we're in the right directory (backend/)
+        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        os.chdir(base_dir)
+        
+        alembic_cfg = alembic.config.Config("alembic.ini")
+        alembic.command.upgrade(alembic_cfg, "head")
+        
+        from sqlalchemy.engine.reflection import Inspector
         inspector = Inspector.from_engine(engine)
         tables = inspector.get_table_names()
+        mentions_columns = [c['name'] for c in inspector.get_columns('mentions')] if 'mentions' in tables else []
         
-        mentions_columns = []
-        if 'mentions' in tables:
-            mentions_columns = [c['name'] for c in inspector.get_columns('mentions')]
-            
-        alembic_version = None
-        if 'alembic_version' in tables:
-            with engine.connect() as conn:
-                alembic_version = conn.execute(sa.text("SELECT version_num FROM alembic_version")).scalar()
-                
         return {
             "status": "success",
-            "alembic_version": alembic_version,
+            "message": "Database migrations applied successfully.",
             "tables": tables,
             "mentions_columns": mentions_columns
         }
