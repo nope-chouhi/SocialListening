@@ -45,6 +45,7 @@ def get_mentions_summary(
                 select(func.count(Mention.id)).where(and_(*base_filter))
             ).scalar() or 0
         except Exception as e:
+            db.rollback()
             logger.error(f"Error querying total mentions: {e}")
             total = 0
         
@@ -73,6 +74,7 @@ def get_mentions_summary(
                 )
             ).scalar() or 0 if ai_filter else 0
         except Exception as e:
+            db.rollback()
             logger.error(f"Error querying sentiment counts: {e}")
             positive = 0
             neutral = 0
@@ -89,6 +91,7 @@ def get_mentions_summary(
                 if count > 0:
                     source_type_counts[st] = count
         except Exception as e:
+            db.rollback()
             logger.error(f"Error querying source type counts: {e}")
             source_type_counts = {}
         
@@ -109,6 +112,7 @@ def get_mentions_summary(
                     })
             by_day.reverse()
         except Exception as e:
+            db.rollback()
             logger.error(f"Error querying by_day counts: {e}")
             by_day = []
         
@@ -299,6 +303,7 @@ def list_mentions(
                     select(func.count(Mention.id)).where(Mention.is_muted == False)
                 ).scalar() or 0
             except Exception as fallback_error:
+                db.rollback()
                 logger.error(f"Fallback count also failed: {fallback_error}")
                 total = 0
 
@@ -324,6 +329,7 @@ def list_mentions(
         try:
             mentions = db.execute(query).scalars().all()
         except Exception as e:
+            db.rollback()
             logger.error(f"Error querying mentions page: {e}")
             raise HTTPException(status_code=500, detail=f"Lỗi khi truy vấn dữ liệu mentions: {str(e)}")
 
@@ -356,24 +362,25 @@ def list_mentions(
                 "source_id": m.source_id,
                 "job_id": m.job_id,
                 "source_name": src.name if src else "Unknown",
-                "source_type": m.source_type or (src.source_type.value if src and hasattr(src.source_type, 'value') else (src.source_type if src else "website")),
+                "source_type": m.source_type or (src.source_type.value if src and hasattr(src.source_type, 'value') else (src.source_type if src else "web")),
                 "platform": m.platform,
                 "domain": m.domain,
-                "title": m.title,
+                "title": m.title or m.domain or m.url or "Không có tiêu đề",
                 "content": m.content,
-                "snippet": m.snippet,
+                "snippet": m.snippet or "Không có đoạn trích",
                 "url": m.url,
-                "sentiment": m.sentiment or (analysis.sentiment.value if analysis and hasattr(analysis.sentiment, 'value') else (analysis.sentiment if analysis else None)),
+                "sentiment": m.sentiment or (analysis.sentiment.value if analysis and hasattr(analysis.sentiment, 'value') else (analysis.sentiment if analysis else "neutral")),
                 "sentiment_confidence": m.sentiment_confidence,
                 "influence_score": m.influence_score,
-                "tags_json": m.tags_json,
+                "tags_json": m.tags_json or [],
                 "is_muted": m.is_muted,
                 "add_to_report": m.add_to_report,
-                "author": m.author,
-                "published_at": m.published_at.isoformat() if m.published_at else None,
+                "author": m.author or "Unknown",
+                "published_at": m.published_at.isoformat() if m.published_at else (m.collected_at.isoformat() if m.collected_at else None),
                 "collected_at": m.collected_at.isoformat() if m.collected_at else None,
                 "is_reviewed": m.is_reviewed,
-                "matched_keywords": m.matched_keywords,
+                "matched_keywords": m.matched_keywords or [],
+                "metadata": m.meta_data or {},
                 "ai_analysis": {
                     "sentiment": analysis.sentiment.value if analysis and hasattr(analysis.sentiment, 'value') else (analysis.sentiment if analysis else None),
                     "risk_score": analysis.risk_score if analysis else None,
