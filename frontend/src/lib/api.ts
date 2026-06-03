@@ -380,6 +380,14 @@ export const mentions = {
     const response = await api.put(`/api/mentions/${id}/mute`, { is_muted });
     return response.data;
   },
+  muteDomain: async (domain: string, project_id: number) => {
+    const response = await api.post('/api/mentions/mute-domain', { domain, project_id });
+    return response.data;
+  },
+  muteAuthor: async (author: string, project_id: number) => {
+    const response = await api.post('/api/mentions/mute-author', { author, project_id });
+    return response.data;
+  },
   updateSentiment: async (id: number, sentiment: string) => {
     const response = await api.put(`/api/mentions/${id}/sentiment`, { sentiment });
     return response.data;

@@ -964,3 +964,34 @@ def update_mention_sentiment(
     db.refresh(mention)
     return {"id": mention.id, "sentiment": mention.sentiment}
 
+class MuteDomainRequest(BaseModel):
+    domain: str
+    project_id: int
+
+@router.post("/mute-domain")
+def mute_domain(
+    req: MuteDomainRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    mentions = db.execute(apply_tenant_filter(select(Mention), Mention, current_user).where(Mention.project_id == req.project_id, Mention.domain == req.domain)).scalars().all()
+    for m in mentions:
+        m.is_muted = True
+    db.commit()
+    return {"status": "success", "muted_mentions": len(mentions), "domain": req.domain}
+
+class MuteAuthorRequest(BaseModel):
+    author: str
+    project_id: int
+
+@router.post("/mute-author")
+def mute_author(
+    req: MuteAuthorRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    mentions = db.execute(apply_tenant_filter(select(Mention), Mention, current_user).where(Mention.project_id == req.project_id, Mention.author == req.author)).scalars().all()
+    for m in mentions:
+        m.is_muted = True
+    db.commit()
+    return {"status": "success", "muted_mentions": len(mentions), "author": req.author}

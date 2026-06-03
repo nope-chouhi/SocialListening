@@ -44,6 +44,7 @@ interface MentionItem {
   sentiment: string | null;
   domain: string | null;
   influence_score: number | null;
+  tags?: string[] | string;
   tags_json: string[] | null;
   ai_analysis: {
     sentiment: string | null;
@@ -227,12 +228,22 @@ function MentionsPageContent() {
   const [searchTerm, setSearchTerm] = useState(initialSearch || '');
   const [searchInput, setSearchInput] = useState(initialSearch || '');
 
+  const [searchState, setSearchState] = useState<'IDLE' | 'TYPING' | 'SEARCHING_DB' | 'LOCAL_RESULTS_FOUND' | 'NO_LOCAL_RESULTS' | 'AUTO_SCAN_STARTING' | 'AUTO_SCAN_RUNNING' | 'AUTO_SCAN_COMPLETED' | 'AUTO_SCAN_NO_RESULTS' | 'AUTO_SCAN_FAILED'>('IDLE');
+
+  useEffect(() => {
+    const handleTyping = () => setSearchState('TYPING');
+    window.addEventListener('topbar_search_typing', handleTyping);
+    return () => window.removeEventListener('topbar_search_typing', handleTyping);
+  }, []);
+
   useEffect(() => {
     const q = searchParams?.get('q') || searchParams?.get('keyword') || '';
     if (q !== searchTerm) {
       setSearchTerm(q);
       setSearchInput(q);
       setPage(1);
+      if (q) setSearchState('SEARCHING_DB');
+      else setSearchState('IDLE');
     }
   }, [searchParams]);
   const [filters, setFilters] = useState<Filters>({
@@ -434,8 +445,19 @@ function MentionsPageContent() {
         if (filters.source_type) params.source_type = filters.source_type;
         if (filters.min_risk_score !== null) params.min_risk_score = filters.min_risk_score;
         if (filters.min_influence_score !== null) params.min_influence_score = filters.min_influence_score;
-      }
 
+        if (dateRange && dateRange !== 'all') {
+          const now = new Date();
+          const from = new Date();
+          if (dateRange === '1d') from.setDate(now.getDate() - 1);
+          else if (dateRange === '7d') from.setDate(now.getDate() - 7);
+          else if (dateRange === '30d') from.setDate(now.getDate() - 30);
+          else if (dateRange === '90d') from.setDate(now.getDate() - 90);
+          
+          params.date_from = from.toISOString();
+          params.date_to = now.toISOString();
+        }
+      }
       if (activeProject) params.project_id = activeProject.id;
 
       const data = await mentionsApi.list(params);
@@ -446,38 +468,51 @@ function MentionsPageContent() {
       // Auto-trigger scan if 0 results
       if (data.total === 0 && searchTerm && !initialJobId && !activeScanJobId) {
         const keywordLower = searchTerm.toLowerCase().trim();
-        if (!scannedKeywordsRef.current?.has(keywordLower) && activeProject) {
-          scannedKeywordsRef.current?.add(keywordLower);
-          
-          // Call scan immediately
-          try {
-            toast.success(`Đang tự động quét mạng cho từ khóa: ${searchTerm}...`);
-            const res = await crawl.manualScan({
-              project_id: activeProject.id,
-              keywords: [searchTerm],
-              mode: 'AUTO_DISCOVERY',
-              source_ids: [],
-              max_results: 100,
-            });
-            setActiveScanJobId(res.job_id);
-            setActiveScanKeyword(params.q);
-            setScanJobStatus({ status: 'QUEUED' });
-            scanStartTimeRef.current = Date.now();
-          } catch (err) {
-            console.error('Scan error:', err);
-            toast.error('Lỗi khi tự động quét dữ liệu');
-            // Allow retry if failed
-            scannedKeywordsRef.current?.delete(keywordLower);
+        // min keyword length = 2
+        if (keywordLower.length >= 2) {
+          if (!scannedKeywordsRef.current?.has(keywordLower) && activeProject) {
+            scannedKeywordsRef.current?.add(keywordLower);
+            
+            // Call scan immediately
+            try {
+              setSearchState('AUTO_SCAN_STARTING');
+              const res = await crawl.manualScan({
+                project_id: activeProject.id,
+                keywords: [searchTerm],
+                mode: 'AUTO_DISCOVERY',
+                source_ids: [],
+              });
+              setActiveScanJobId(res.job_id);
+              setActiveScanKeyword(searchTerm);
+              setScanJobStatus({ status: 'QUEUED' });
+              setSearchState('AUTO_SCAN_RUNNING');
+              scanStartTimeRef.current = Date.now();
+            } catch (err) {
+              console.error('Scan error:', err);
+              setSearchState('AUTO_SCAN_FAILED');
+              // Allow retry if failed
+              scannedKeywordsRef.current?.delete(keywordLower);
+            }
+          } else {
+            setSearchState('NO_LOCAL_RESULTS');
           }
+        } else {
+          setSearchState('NO_LOCAL_RESULTS');
         }
+      } else if (data.total === 0) {
+        setSearchState('NO_LOCAL_RESULTS');
+      } else {
+        if (searchTerm) setSearchState('LOCAL_RESULTS_FOUND');
+        else setSearchState('IDLE');
       }
     } catch (error: any) {
       console.error('Error fetching mentions:', error);
       toast.error(error.response?.data?.detail || 'Lỗi khi tải mentions');
+      setSearchState('NO_LOCAL_RESULTS');
     } finally {
       setLoading(false);
     }
-  }, [page, searchTerm, filters, initialJobId, activeProject?.id]);
+  }, [page, filters, initialJobId, searchTerm, activeProject, dateRange]);
 
   const fetchChartData = async () => {
     setChartLoading(true);
@@ -569,9 +604,8 @@ function MentionsPageContent() {
       // Check for frontend timeout (2.5 minutes) in case the backend job hangs or server restarts
       if (scanStartTimeRef.current && Date.now() - scanStartTimeRef.current > 150000) {
         clearInterval(interval);
-        setActiveScanJobId(null);
-        setScanJobStatus(null);
-        toast.error('Quá thời gian chờ phản hồi từ máy chủ (Timeout).');
+        setSearchState('AUTO_SCAN_FAILED');
+        setScanJobStatus((prev: any) => ({ ...prev, status: 'TIMEOUT', error_message: 'Quá thời gian chờ phản hồi từ máy chủ (Timeout).' }));
         return;
       }
 
@@ -584,21 +618,20 @@ function MentionsPageContent() {
           scanStartTimeRef.current = null;
           
           if (status === 'COMPLETED' || status === 'PARTIAL_FAILED') {
-            setActiveScanJobId(null);
-            setScanJobStatus(null);
-            toast.success('Quét hoàn tất! Đang tải dữ liệu mới...');
+            setSearchState('AUTO_SCAN_COMPLETED');
             fetchMentions();
+          } else if (status === 'COMPLETED_NO_RESULTS') {
+            setSearchState('AUTO_SCAN_NO_RESULTS');
           } else {
-            // Keep activeScanJobId to show the detailed error panel in the UI
-            if (status === 'FAILED' || status === 'TIMEOUT') {
-              toast.error(`Lượt quét thất bại: ${data.error_message || 'Timeout'}`);
-            }
+            setSearchState('AUTO_SCAN_FAILED');
           }
+        } else {
+            setSearchState('AUTO_SCAN_RUNNING');
         }
       } catch (err) {
         console.error(err);
       }
-    }, 500);
+    }, 3000);
     return () => clearInterval(interval);
   }, [activeScanJobId, router, searchParams]);
 
@@ -689,6 +722,16 @@ function MentionsPageContent() {
       if (filters.sentiment) params.sentiment = filters.sentiment;
       if (filters.source_type) params.source_type = filters.source_type;
       if (searchTerm) params.keyword = searchTerm;
+      if (dateRange && dateRange !== 'all') {
+        const now = new Date();
+        const from = new Date();
+        if (dateRange === '1d') from.setDate(now.getDate() - 1);
+        else if (dateRange === '7d') from.setDate(now.getDate() - 7);
+        else if (dateRange === '30d') from.setDate(now.getDate() - 30);
+        else if (dateRange === '90d') from.setDate(now.getDate() - 90);
+        params.date_from = from.toISOString();
+        params.date_to = now.toISOString();
+      }
       const blob = await mentionsApi.exportCsv(params);
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -769,6 +812,14 @@ function MentionsPageContent() {
               <button onClick={handleExportCsv} className="p-2 text-gray-400 hover:text-blue-600 transition-colors">
                 <Download className="w-4 h-4" />
               </button>
+              <button 
+                 onClick={handleScanClick}
+                 disabled={activeScanJobId !== null}
+                 className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
+               >
+                 {activeScanJobId ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+                 {activeScanJobId ? 'Đang quét...' : 'Scan Now'}
+               </button>
            </div>
         </div>
 
@@ -845,21 +896,96 @@ function MentionsPageContent() {
 
         {/* MENTIONS LIST */}
         <div className="space-y-4">
-          {loading ? (
+          {searchState === 'TYPING' ? (
             <div className="py-20 flex flex-col items-center justify-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
               <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-4" />
-              <p className="text-gray-500 dark:text-gray-500">Đang tải Mentions...</p>
+              <p className="text-gray-500 dark:text-gray-500">Đang nhập từ khóa...</p>
+            </div>
+          ) : searchState === 'SEARCHING_DB' ? (
+            <div className="py-20 flex flex-col items-center justify-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-4" />
+              <p className="text-gray-500 dark:text-gray-500">Đang tìm mentions hiện có liên quan đến '{searchTerm}'...</p>
+            </div>
+          ) : ['AUTO_SCAN_STARTING', 'AUTO_SCAN_RUNNING'].includes(searchState) ? (
+            <div className="py-20 flex flex-col items-center justify-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-4" />
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Đang tìm các bài viết/web/video liên quan đến '{searchTerm}'...</h3>
+              <p className="text-gray-500 dark:text-gray-500 mb-4">Hệ thống đang quét Web Search, YouTube và các nguồn đã cấu hình.</p>
+              {activeProject && searchTerm.toLowerCase().trim() !== activeProject.name.toLowerCase().trim() && !activeProject.name.toLowerCase().trim().includes(searchTerm.toLowerCase().trim()) && (
+                <div className="bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 text-xs px-3 py-1.5 rounded-md mb-4 border border-yellow-200 dark:border-yellow-800/30">
+                  <span className="font-semibold">Lưu ý:</span> Đang tìm '{searchTerm}' trong project '{activeProject.name}'
+                </div>
+              )}
+              {scanJobStatus?.status && (
+                 <div className="flex flex-col items-center text-sm text-gray-400 gap-1">
+                   <span>Trạng thái: {scanJobStatus.status} {activeScanJobId && `(Lượt quét #${activeScanJobId})`}</span>
+                 </div>
+              )}
+            </div>
+          ) : searchState === 'AUTO_SCAN_NO_RESULTS' ? (
+            <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Không tìm thấy bài viết/web/video phù hợp với từ khóa '{searchTerm}'.</h3>
+              <div className="bg-gray-50 dark:bg-white/5 rounded-lg p-4 mb-6 text-sm text-gray-500 dark:text-gray-400 max-w-md text-left w-full space-y-2">
+                 <p className="font-semibold text-gray-700 dark:text-gray-300">Kết quả quét ({scanJobStatus?.job_id}):</p>
+                 <p>• Web Search: {scanJobStatus?.summary?.web?.called ? `${scanJobStatus.summary.web.raw_results_count} kết quả thô, ${scanJobStatus.summary.web.results_after_keyword_match} phù hợp` : 'Bỏ qua'}</p>
+                 <p>• YouTube: {scanJobStatus?.summary?.youtube?.called ? `${scanJobStatus.summary.youtube.raw_results_count} video` : 'Bỏ qua'}</p>
+                 <p>• Trùng lặp đã bỏ qua: {scanJobStatus?.summary?.duplicates_skipped || 0}</p>
+              </div>
+              <div className="flex gap-3">
+                 <button onClick={handleScanClick} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors">Thử quét lại</button>
+                 <button onClick={() => { setSearchTerm(''); router.push('/dashboard/mentions'); }} className="px-4 py-2 bg-gray-200 dark:bg-white/10 hover:bg-gray-300 dark:hover:bg-white/20 text-gray-800 dark:text-white rounded-lg text-sm font-medium transition-colors">Xóa bộ lọc</button>
+              </div>
+            </div>
+          ) : searchState === 'NO_LOCAL_RESULTS' ? (
+            <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Chưa có dữ liệu trong DB cho '{searchTerm}'</h3>
+              {searchTerm.length < 2 && (
+                <p className="text-gray-500 dark:text-gray-500 mb-6 max-w-sm">Từ khóa quá ngắn để tự động quét internet (cần ít nhất 2 ký tự).</p>
+              )}
+              <button 
+                onClick={handleScanClick}
+                disabled={activeScanJobId !== null || searchTerm.length < 2}
+                className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
+              >
+                <Search className="w-4 h-4" />
+                Scan Now
+              </button>
             </div>
           ) : mentionsList.length === 0 ? (
             <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
               <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
                 <Search className="w-8 h-8 text-gray-400" />
               </div>
-              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Không tìm thấy kết quả</h3>
-              <p className="text-gray-500 dark:text-gray-500 max-w-sm">Thử thay đổi từ khóa hoặc bộ lọc để xem các Mentions khác.</p>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Chưa có đề cập nào</h3>
+              <p className="text-gray-500 dark:text-gray-500 max-w-sm mb-6">Dự án của bạn chưa thu thập được đề cập nào, hoặc dữ liệu không khớp với bộ lọc.</p>
             </div>
           ) : (
-            mentionsList.map((mention) => (
+            <div className="space-y-4">
+              {searchState === 'AUTO_SCAN_COMPLETED' && scanJobStatus && (
+                <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/50 rounded-lg p-3 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                    <span className="text-sm text-emerald-800 dark:text-emerald-300 font-medium">
+                      {scanJobStatus.summary?.new_mentions_created > 0 
+                        ? `Đã tìm thấy ${scanJobStatus.summary.new_mentions_created} kết quả mới liên quan đến '${searchTerm}'.`
+                        : `Không có mentions mới. Hệ thống tìm lại ${scanJobStatus.summary?.duplicates_skipped || 0} kết quả đã tồn tại trước đó.`
+                      }
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="px-2 py-1 bg-emerald-100 dark:bg-emerald-800 text-emerald-700 dark:text-emerald-200 text-xs font-bold rounded-md">
+                      Lượt quét #{scanJobStatus.job_id}
+                    </span>
+                  </div>
+                </div>
+              )}
+              {mentionsList.map((mention) => (
               <div key={mention.id} className="bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10 overflow-hidden group hover:border-gray-300 transition-colors">
                 <div className="p-5">
                   <div className="flex items-start gap-4">
@@ -887,13 +1013,21 @@ function MentionsPageContent() {
                            </div>
                         </div>
                         {/* Sentiment Badge */}
-                        <div className={`px-2.5 py-1 rounded-md text-xs font-bold flex items-center gap-1.5 whitespace-nowrap ${
+                        <div className={`px-2 py-0.5 rounded-md text-xs font-bold flex items-center whitespace-nowrap ${
                            mention.sentiment === 'positive' ? 'bg-emerald-50 text-emerald-600' :
                            mention.sentiment?.startsWith('negative') ? 'bg-rose-50 text-rose-600' :
                            'bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-gray-400'
                         }`}>
-                           {mention.sentiment === 'positive' ? 'Positive' : mention.sentiment?.startsWith('negative') ? 'Negative' : 'Neutral'}
-                           <ChevronDown className="w-3 h-3" />
+                           <select
+                             value={mention.sentiment === 'positive' ? 'positive' : mention.sentiment?.startsWith('negative') ? 'negative_medium' : 'neutral'}
+                             onChange={(e) => handleAction(mention.id, 'sentiment', () => mentionsApi.updateSentiment(mention.id, e.target.value), 'Đã cập nhật sentiment')}
+                             className="bg-transparent border-none outline-none font-bold cursor-pointer appearance-none pr-1"
+                           >
+                             <option value="positive" className="text-emerald-600">Positive</option>
+                             <option value="neutral" className="text-gray-600">Neutral</option>
+                             <option value="negative_medium" className="text-rose-600">Negative</option>
+                           </select>
+                           <ChevronDown className="w-3 h-3 pointer-events-none" />
                         </div>
                       </div>
                       
@@ -918,7 +1052,17 @@ function MentionsPageContent() {
                      <a href={mention.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-700">
                        <ExternalLink className="w-3.5 h-3.5" /> Visit
                      </a>
-                     <button className="flex items-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 dark:text-gray-100">
+                     <button 
+                       onClick={() => {
+                         const currentTags = mention.tags ? (Array.isArray(mention.tags) ? mention.tags.join(', ') : mention.tags) : '';
+                         const input = window.prompt('Nhập các tags (cách nhau bởi dấu phẩy):', currentTags);
+                         if (input !== null) {
+                           const newTags = input.split(',').map((t) => t.trim()).filter(Boolean);
+                           handleAction(mention.id, 'tags', () => mentionsApi.updateTags(mention.id, newTags), 'Đã cập nhật tags');
+                         }
+                       }}
+                       className="flex items-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 dark:text-gray-100"
+                     >
                        <Tag className="w-3.5 h-3.5" /> Tags
                      </button>
                      <button onClick={() => setDeleteConfirm({ isOpen: true, mentionId: mention.id, mentionTitle: mention.title || '' })} className="flex items-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-500 hover:text-red-600">
@@ -927,14 +1071,27 @@ function MentionsPageContent() {
                      <button onClick={() => handleToggleAddToReport(mention.id, mention.add_to_report)} className={`flex items-center gap-1.5 text-xs font-medium ${mention.add_to_report ? 'text-indigo-600' : 'text-gray-500 dark:text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 dark:text-gray-100'}`}>
                        <FileText className="w-3.5 h-3.5" /> {mention.add_to_report ? 'Remove from PDF' : 'Add to PDF report'}
                      </button>
-                     <button onClick={() => handleAction(mention.id, 'mute', () => mentionsApi.updateMute(mention.id, true), 'Đã ẩn mention')} className="flex items-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 dark:text-gray-100">
+                     <button 
+                       disabled={!mention.author}
+                       onClick={() => handleAction(mention.id, 'mute_author', () => mentionsApi.muteAuthor(mention.author!, activeProject!.id), `Đã ẩn tác giả ${mention.author}`)} 
+                       className="flex items-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 disabled:opacity-50"
+                     >
                        <Eye className="w-3.5 h-3.5" /> Mute author
+                     </button>
+                     <button 
+                       disabled={!mention.domain}
+                       onClick={() => handleAction(mention.id, 'mute_domain', () => mentionsApi.muteDomain(mention.domain!, activeProject!.id), `Đã ẩn nguồn ${mention.domain}`)} 
+                       className="flex items-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 disabled:opacity-50"
+                     >
+                       <Eye className="w-3.5 h-3.5" /> Mute site
                      </button>
                    </div>
                    <input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
                 </div>
-              </div>
+               </div>
             ))
+            }
+            </div>
           )}
         </div>
 
@@ -963,12 +1120,19 @@ function MentionsPageContent() {
         
         {/* Date Filter */}
         <div className="bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10 p-4">
-           <div className="flex items-center justify-between cursor-pointer">
-             <div className="flex items-center gap-2 text-sm font-bold text-gray-800 dark:text-gray-100">
-               <Calendar className="w-4 h-4 text-gray-500 dark:text-gray-500" />
-               Last 30 days
-             </div>
-             <ChevronDown className="w-4 h-4 text-gray-400" />
+           <div className="flex items-center gap-2 text-sm font-bold text-gray-800 dark:text-gray-100">
+             <Calendar className="w-4 h-4 text-gray-500 dark:text-gray-500" />
+             <select 
+               value={dateRange}
+               onChange={(e) => setDateRange(e.target.value)}
+               className="bg-transparent border-none outline-none cursor-pointer flex-1 font-bold dark:text-gray-100"
+             >
+               <option value="all" className="dark:bg-gray-800">Tất cả thời gian</option>
+               <option value="1d" className="dark:bg-gray-800">Hôm nay</option>
+               <option value="7d" className="dark:bg-gray-800">7 ngày qua</option>
+               <option value="30d" className="dark:bg-gray-800">30 ngày qua</option>
+               <option value="90d" className="dark:bg-gray-800">90 ngày qua</option>
+             </select>
            </div>
         </div>
 
@@ -988,13 +1152,16 @@ function MentionsPageContent() {
                    <input 
                      type="checkbox" 
                      checked={isSelected}
+                     disabled={src.disabled}
                      onChange={() => {
-                        setFilters({ ...filters, source_type: isSelected ? null : src.value });
-                        setPage(1);
+                        if (!src.disabled) {
+                          setFilters({ ...filters, source_type: isSelected ? null : src.value });
+                          setPage(1);
+                        }
                      }}
-                     className="mt-0.5 rounded border-gray-300 text-emerald-500 focus:ring-emerald-500" 
+                     className="mt-0.5 rounded border-gray-300 text-emerald-500 focus:ring-emerald-500 disabled:opacity-50" 
                    />
-                   <div className="flex flex-col">
+                   <div className={`flex flex-col ${src.disabled ? 'opacity-50' : ''}`}>
                      <span className="text-xs font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
                        <div className={`w-5 h-5 rounded-full flex items-center justify-center bg-gray-100 dark:bg-white/10 ${src.color}`}>
                           <src.icon className="w-3 h-3" />
@@ -1002,9 +1169,9 @@ function MentionsPageContent() {
                        {src.label}
                      </span>
                      {src.disabled && (
-                        <button className="mt-1 ml-6 text-[9px] font-bold bg-emerald-500 text-white px-1.5 py-0.5 rounded uppercase tracking-wider w-max">
-                          CONNECT
-                        </button>
+                        <span className="mt-1 ml-6 text-[9px] font-bold bg-gray-500 text-white px-1.5 py-0.5 rounded uppercase tracking-wider w-max">
+                          {src.msg || 'COMING SOON'}
+                        </span>
                      )}
                    </div>
                  </div>
@@ -1077,6 +1244,34 @@ function MentionsPageContent() {
         </div>
 
       </div>
+
+      {/* Scan Confirm Modal */}
+      {scanConfirm.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white dark:bg-[#050A15] border border-gray-200 dark:border-white/10 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
+            <div className="p-6">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Xác nhận quét</h2>
+              <p className="text-gray-600 dark:text-gray-400 mb-6 leading-relaxed">
+                Từ khóa bạn đang tìm kiếm (<span className="font-bold text-blue-600">{scanConfirm.keyword}</span>) khác với tên project hiện tại (<span className="font-bold">{activeProject?.name}</span>). Bạn có chắc chắn muốn quét từ khóa này vào project hiện tại không?
+              </p>
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={() => setScanConfirm({ isOpen: false, keyword: '' })}
+                  className="px-5 py-2 rounded-xl text-sm font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
+                >
+                  Hủy
+                </button>
+                <button
+                  onClick={() => executeScan(scanConfirm.keyword)}
+                  className="px-5 py-2 rounded-xl text-sm font-bold bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+                >
+                  Tiếp tục quét
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
