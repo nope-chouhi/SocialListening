@@ -567,14 +567,18 @@ export default function MentionsPage() {
         const status = data.status?.toUpperCase();
         if (['COMPLETED', 'COMPLETED_NO_RESULTS', 'FAILED', 'PARTIAL_FAILED', 'TIMEOUT'].includes(status)) {
           clearInterval(interval);
-          setActiveScanJobId(null);
-          setScanJobStatus(null);
           scanStartTimeRef.current = null;
-          if (status === 'FAILED') {
-            toast.error(`Lượt quét thất bại: ${data.error_message || ''}`);
-          } else {
+          
+          if (status === 'COMPLETED' || status === 'PARTIAL_FAILED') {
+            setActiveScanJobId(null);
+            setScanJobStatus(null);
             toast.success('Quét hoàn tất! Đang tải dữ liệu mới...');
-            fetchMentions(); // Refresh mentions to show the new results
+            fetchMentions();
+          } else {
+            // Keep activeScanJobId to show the detailed error panel in the UI
+            if (status === 'FAILED' || status === 'TIMEOUT') {
+              toast.error(`Lượt quét thất bại: ${data.error_message || 'Timeout'}`);
+            }
           }
         }
       } catch (err) {
@@ -1109,11 +1113,82 @@ export default function MentionsPage() {
               {!activeScanJobId && <FileText className="w-12 h-12 text-gray-600 mx-auto mb-4" />}
               {searchTerm ? (
                 activeScanJobId ? (
-                  <>
-                    <Loader2 className="w-12 h-12 text-indigo-500 animate-spin mx-auto mb-4" />
-                    <p className="text-white font-medium text-lg">Đang tự động quét toàn mạng cho từ khóa '{searchTerm}'...</p>
-                    <p className="text-gray-500 text-sm mt-2">Vui lòng đợi trong giây lát, hệ thống đang thu thập dữ liệu từ đa nền tảng.</p>
-                  </>
+                  (scanJobStatus?.status === 'FAILED' || scanJobStatus?.status === 'TIMEOUT') ? (
+                    <div className="text-left w-full max-w-2xl mx-auto bg-[#1E293B] border border-rose-500/30 rounded-xl p-6">
+                       <h3 className="text-rose-400 font-bold text-lg mb-2 flex items-center gap-2"><AlertTriangle /> Lượt quét thất bại</h3>
+                       <p className="text-white mb-4">Lý do: {scanJobStatus.error_message || 'Không rõ nguyên nhân'}</p>
+                       <div className="bg-black/20 p-4 rounded-lg text-sm text-gray-300 font-mono mb-4 overflow-auto max-h-[300px]">
+                         <p>Job ID: {scanJobStatus.job_id}</p>
+                         <p>Project ID: {scanJobStatus.project_id}</p>
+                         <p>Keyword: {scanJobStatus.keywords?.join(', ')}</p>
+                         <p>Final Status: {scanJobStatus.status}</p>
+                         {scanJobStatus.summary?.web && (
+                           <div className="mt-2 pt-2 border-t border-gray-700/50">
+                             <p className="font-bold text-gray-200">Web Search:</p>
+                             <p>- Called: {scanJobStatus.summary.web.called ? 'Yes' : 'No'}</p>
+                             <p>- Status: {scanJobStatus.summary.web.status}</p>
+                             <p>- Raw results: {scanJobStatus.summary.web.raw_results_count}</p>
+                             {scanJobStatus.summary.web.error && <p className="text-rose-400">- Error: {scanJobStatus.summary.web.error}</p>}
+                             {scanJobStatus.summary.web.skip_reason && <p className="text-amber-400">- Skip reason: {scanJobStatus.summary.web.skip_reason}</p>}
+                           </div>
+                         )}
+                         {scanJobStatus.summary?.youtube && (
+                           <div className="mt-2 pt-2 border-t border-gray-700/50">
+                             <p className="font-bold text-gray-200">YouTube:</p>
+                             <p>- Called: {scanJobStatus.summary.youtube.called ? 'Yes' : 'No'}</p>
+                             <p>- Status: {scanJobStatus.summary.youtube.status}</p>
+                             <p>- Raw results: {scanJobStatus.summary.youtube.raw_results_count}</p>
+                             {scanJobStatus.summary.youtube.error && <p className="text-rose-400">- Error: {scanJobStatus.summary.youtube.error}</p>}
+                             {scanJobStatus.summary.youtube.skip_reason && <p className="text-amber-400">- Skip reason: {scanJobStatus.summary.youtube.skip_reason}</p>}
+                           </div>
+                         )}
+                       </div>
+                       <div className="flex flex-wrap gap-3">
+                         <button onClick={handleScanClick} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg flex items-center gap-2"><RefreshCw className="w-4 h-4"/> Thử quét lại</button>
+                         <Link href="/dashboard/system/scan-center" className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg flex items-center gap-2"><ScanCode className="w-4 h-4"/> Mở Scan Center</Link>
+                         <Link href={`/dashboard/system/scan-center/${scanJobStatus.job_id}`} className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg flex items-center gap-2"><Info className="w-4 h-4"/> Xem chi tiết job</Link>
+                       </div>
+                    </div>
+                  ) : scanJobStatus?.status === 'COMPLETED_NO_RESULTS' ? (
+                     <div className="text-left w-full max-w-2xl mx-auto bg-[#1E293B] border border-amber-500/30 rounded-xl p-6">
+                       <h3 className="text-amber-400 font-bold text-lg mb-2 flex items-center gap-2"><Info /> Đã quét xong nhưng không có kết quả</h3>
+                       <p className="text-white mb-4">Các API đã chạy thành công nhưng không tìm thấy đề cập nào khớp với từ khóa.</p>
+                       <div className="bg-black/20 p-4 rounded-lg text-sm text-gray-300 font-mono mb-4 overflow-auto max-h-[300px]">
+                         <p>Job ID: {scanJobStatus.job_id}</p>
+                         <p>Project ID: {scanJobStatus.project_id}</p>
+                         <p>Keyword: {scanJobStatus.keywords?.join(', ')}</p>
+                         <p>Final Status: {scanJobStatus.status}</p>
+                         {scanJobStatus.summary?.web && (
+                           <div className="mt-2 pt-2 border-t border-gray-700/50">
+                             <p className="font-bold text-gray-200">Web Search:</p>
+                             <p>- Called: {scanJobStatus.summary.web.called ? 'Yes' : 'No'}</p>
+                             <p>- Status: {scanJobStatus.summary.web.status}</p>
+                             <p>- Raw results: {scanJobStatus.summary.web.raw_results_count}</p>
+                             {scanJobStatus.summary.web.skip_reason && <p className="text-amber-400">- Skip reason: {scanJobStatus.summary.web.skip_reason}</p>}
+                           </div>
+                         )}
+                         {scanJobStatus.summary?.youtube && (
+                           <div className="mt-2 pt-2 border-t border-gray-700/50">
+                             <p className="font-bold text-gray-200">YouTube:</p>
+                             <p>- Called: {scanJobStatus.summary.youtube.called ? 'Yes' : 'No'}</p>
+                             <p>- Status: {scanJobStatus.summary.youtube.status}</p>
+                             <p>- Raw results: {scanJobStatus.summary.youtube.raw_results_count}</p>
+                             {scanJobStatus.summary.youtube.skip_reason && <p className="text-amber-400">- Skip reason: {scanJobStatus.summary.youtube.skip_reason}</p>}
+                           </div>
+                         )}
+                       </div>
+                       <div className="flex flex-wrap gap-3">
+                           <button onClick={handleScanClick} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg flex items-center gap-2"><RefreshCw className="w-4 h-4"/> Thử quét lại</button>
+                           <Link href="/dashboard/system/scan-center" className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg flex items-center gap-2"><ScanCode className="w-4 h-4"/> Mở Scan Center</Link>
+                       </div>
+                     </div>
+                  ) : (
+                    <>
+                      <Loader2 className="w-12 h-12 text-indigo-500 animate-spin mx-auto mb-4" />
+                      <p className="text-white font-medium text-lg">Đang quét dữ liệu đa nền tảng cho từ khóa '{searchTerm}'...</p>
+                      <p className="text-gray-500 text-sm mt-2">Job ID: {activeScanJobId} | Trạng thái: {scanJobStatus?.status || 'QUEUED'}</p>
+                    </>
+                  )
                 ) : (
                   <>
                     <p className="text-gray-400 font-medium text-lg">Chưa có dữ liệu cho '{searchTerm}' trong cơ sở dữ liệu.</p>
@@ -1553,6 +1628,17 @@ export default function MentionsPage() {
       )}
 
       {/* ─── DELETE CONFIRM DIALOG ─────────────────────────────────────────── */}
+      <ConfirmDialog
+        isOpen={scanConfirm.isOpen}
+        onClose={() => setScanConfirm({ isOpen: false, keyword: '' })}
+        onConfirm={() => executeScan(scanConfirm.keyword)}
+        title="Cảnh báo: Tên dự án và từ khóa khác nhau"
+        message={`Bạn đang quét từ khóa '${scanConfirm.keyword}' trong project '${activeProject?.name}'. Kết quả sẽ được lưu vào project ${activeProject?.name}. Bạn có chắc chắn muốn tiếp tục?`}
+        confirmText="Tiếp tục quét"
+        cancelText="Hủy"
+        type="warning"
+      />
+
       <ConfirmDialog
         isOpen={deleteConfirm.isOpen}
         onClose={() => setDeleteConfirm({ isOpen: false, mentionId: null, mentionTitle: '' })}

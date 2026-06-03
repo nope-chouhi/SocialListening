@@ -129,11 +129,18 @@ def manual_scan(
     job = CrawlJob(
         job_type='manual',
         status=CrawlJobStatus.PENDING,
+        user_id=current_user.id,
         total_sources=0,
         processed_sources=0,
         mentions_found=0,
         started_at=datetime.now(timezone.utc),
-        meta_data={"project_id": project_id, "mode": mode, "keywords": keyword_texts}
+        meta_data={
+            "project_id": project_id, 
+            "mode": mode, 
+            "keywords": keyword_texts,
+            "user_id": current_user.id,
+            "source_ids": body.source_ids or []
+        }
     )
     db.add(job)
     db.commit()
@@ -292,7 +299,7 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
                     summary["web"]["results_after_keyword_match"] += 1
                     content_hash = hashlib.sha256(f"{url}_{title}".encode()).hexdigest()
                     
-                    existing = db.execute(select(Mention).where(Mention.project_id == project_id, Mention.url == url)).scalar_one_or_none()
+                    existing = db.execute(select(Mention).where(Mention.project_id == project_id, Mention.keyword_text == matched_kw, Mention.url == url)).scalar_one_or_none()
                     if existing:
                         summary["web"]["duplicates_skipped"] += 1
                         summary["duplicates_skipped"] += 1
@@ -370,7 +377,7 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
                         
                         content_hash = hashlib.sha256(f"{url}_{title}".encode()).hexdigest()
                         
-                        existing = db.execute(select(Mention).where(Mention.project_id == project_id, Mention.url == url)).scalar_one_or_none()
+                        existing = db.execute(select(Mention).where(Mention.project_id == project_id, Mention.keyword_text == matched_kw, Mention.url == url)).scalar_one_or_none()
                         if existing:
                             summary["youtube"]["duplicates_skipped"] += 1
                             summary["duplicates_skipped"] += 1
@@ -437,6 +444,11 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
                 if job:
                     job.status = CrawlJobStatus.FAILED
                     job.error_message = str(e)[:2000]
+                    # Also populate meta_data with error code
+                    if not job.meta_data: job.meta_data = {}
+                    meta = dict(job.meta_data)
+                    meta["error_code"] = "BACKEND_EXCEPTION"
+                    job.meta_data = meta
                     db.commit()
             except:
                 pass
@@ -684,6 +696,8 @@ def get_crawl_job(
         "status": job.status.value if hasattr(job.status, 'value') else job.status,
         "project_id": meta.get("project_id"),
         "keywords": meta.get("keywords", []),
+        "error_code": meta.get("error_code"),
+        "error_message": job.error_message or meta.get("error_message"),
         "summary": meta.get("summary", {})
     }
 
