@@ -245,18 +245,15 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
                     title = r.get("title", "")
                     snippet = r.get("snippet", "")
                     
-                    # Verify keyword match
+                    # Assign keyword (fallback to first keyword if exact match not found in snippet)
                     import unicodedata
-                    matched = False
-                    matched_kw = ""
+                    matched_kw = keyword_texts[0] if keyword_texts else ""
                     search_text = unicodedata.normalize('NFC', (title + " " + snippet + " " + url).lower())
                     for kw in keyword_texts:
                         kw_norm = unicodedata.normalize('NFC', kw.lower())
                         if kw_norm in search_text:
-                            matched = True
                             matched_kw = kw
                             break
-                    if not matched: continue
                     
                     summary["web"]["results_after_keyword_match"] += 1
                     content_hash = hashlib.sha256(f"{url}_{title}".encode()).hexdigest()
@@ -325,16 +322,13 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
                         snippet = r.get("content", "")
                         
                         import unicodedata
-                        matched = False
-                        matched_kw = ""
+                        matched_kw = keyword_texts[0] if keyword_texts else ""
                         search_text = unicodedata.normalize('NFC', (title + " " + snippet + " " + url).lower())
                         for kw in keyword_texts:
                             kw_norm = unicodedata.normalize('NFC', kw.lower())
                             if kw_norm in search_text:
-                                matched = True
                                 matched_kw = kw
                                 break
-                        if not matched: continue
                         
                         content_hash = hashlib.sha256(f"{url}_{title}".encode()).hexdigest()
                         
