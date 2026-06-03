@@ -295,15 +295,15 @@ def list_mentions(
                 count_base = count_base.where(Mention.collected_at <= date_to)
             
             if search_query and not job_id:
-            search_pattern = f"%{search_query}%"
-            query = query.where(
-                or_(
-                    Mention.title.ilike(search_pattern),
-                    Mention.content.ilike(search_pattern),
-                    Mention.author.ilike(search_pattern),
-                    Mention.url.ilike(search_pattern)
+                search_pattern = f"%{search_query}%"
+                query = query.where(
+                    or_(
+                        Mention.title.ilike(search_pattern),
+                        Mention.content.ilike(search_pattern),
+                        Mention.author.ilike(search_pattern),
+                        Mention.url.ilike(search_pattern)
+                    )
                 )
-            )
 
             if q and not job_id:
             search_term = f"%{q}%"
