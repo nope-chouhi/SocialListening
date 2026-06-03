@@ -161,7 +161,7 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges }: any) {
                 >
                   <item.icon className={`w-4 h-4 mr-3 ${isActive ? 'text-emerald-400' : 'text-zinc-500'}`} />
                   <span className="truncate flex-1">{item.name}</span>
-                  {item.badge ? <SidebarBadge count={item.badge} /> : null}
+                  {(item as any).badge ? <SidebarBadge count={(item as any).badge} /> : null}
                 </Link>
               );
             })}
