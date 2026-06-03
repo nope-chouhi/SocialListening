@@ -67,12 +67,17 @@ class SocialCrawlerService:
     async def crawl_reddit(self, keyword: str) -> List[Dict[str, Any]]:
         url = "https://www.reddit.com/search.json"
         params = {"q": keyword, "limit": 50, "sort": "new"}
-        headers = {"User-Agent": self.user_agent}
+        # Reddit strictly blocks generic browser User-Agents for API/JSON endpoints
+        headers = {"User-Agent": "python:sociallistening:v1.0.0 (by /u/sociallistening)"}
 
-        async with httpx.AsyncClient(timeout=self.timeout, follow_redirects=True) as client:
-            response = await client.get(url, params=params, headers=headers)
-            response.raise_for_status()
-            data = response.json()
+        try:
+            async with httpx.AsyncClient(timeout=self.timeout, follow_redirects=True) as client:
+                response = await client.get(url, params=params, headers=headers)
+                response.raise_for_status()
+                data = response.json()
+        except Exception as e:
+            logger.warning(f"Reddit crawler blocked or failed for '{keyword}'. Skipping Reddit. (Reason: {e})")
+            return []
 
         children = (data.get("data") or {}).get("children") or []
         results = []
