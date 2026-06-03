@@ -466,14 +466,17 @@ export default function MentionsPage() {
     // Reset state on project change to prevent stale data
     setMentionsList([]);
     setPage(1);
-    // Note: We don't reset searchTerm here because user might be typing before switching,
-    // or we might want to keep the filter. But we must clear stale job_id to prevent showing wrong job.
+    
     const newParams = new URLSearchParams(searchParams?.toString() || '');
     if (newParams.has('job_id')) {
       newParams.delete('job_id');
-      router.push(`/dashboard/mentions?${newParams.toString()}`);
+      router.replace(`/dashboard/mentions?${newParams.toString()}`);
     }
-  }, [activeProject?.id]);
+    
+    // Explicitly call fetchMentions here to ensure it loads immediately on project switch
+    fetchMentions();
+  }, [activeProject?.id]); // DO NOT add searchParams to deps of this effect
+
 
   /* ─── SCAN NOW LOGIC ────────────────────────────────────────────────── */
   const [scanConfirm, setScanConfirm] = useState({ isOpen: false, keyword: '' });
@@ -523,7 +526,7 @@ export default function MentionsPage() {
         const data = await crawl.getJob(activeScanJobId);
         setScanJobStatus(data);
         const status = data.status?.toUpperCase();
-        if (['COMPLETED', 'COMPLETED_NO_MENTIONS', 'FAILED', 'PARTIAL_FAILED'].includes(status)) {
+        if (['COMPLETED', 'COMPLETED_NO_RESULTS', 'FAILED', 'PARTIAL_FAILED', 'TIMEOUT'].includes(status)) {
           clearInterval(interval);
           if (status === 'FAILED') {
             toast.error(`Lượt quét thất bại: ${data.error_message || ''}`);
@@ -1163,7 +1166,7 @@ export default function MentionsPage() {
         <div className="flex-1 min-w-0">
           
           {/* Active Scan Progress Box */}
-          {activeScanJobId && scanJobStatus && scanJobStatus.status !== 'COMPLETED' && scanJobStatus.status !== 'FAILED' && (
+          {activeScanJobId && scanJobStatus && !['COMPLETED', 'COMPLETED_NO_RESULTS', 'FAILED', 'PARTIAL_FAILED', 'TIMEOUT'].includes(scanJobStatus.status) && (
             <div className="bg-[#111827] border border-emerald-500/30 rounded-xl p-5 mb-6 shadow-[inset_0_0_20px_rgba(16,185,129,0.05)]">
               <div className="flex flex-col gap-4">
                 <div className="flex items-center justify-between">
@@ -1217,7 +1220,7 @@ export default function MentionsPage() {
             </div>
           )}
 
-          {activeScanJobId && scanJobStatus && scanJobStatus.status === 'COMPLETED' && (
+          {activeScanJobId && scanJobStatus && ['COMPLETED', 'COMPLETED_NO_RESULTS', 'FAILED', 'PARTIAL_FAILED', 'TIMEOUT'].includes(scanJobStatus.status) && (
             <div className="bg-[#111827] border border-emerald-500/30 rounded-xl p-5 mb-6 shadow-[inset_0_0_20px_rgba(16,185,129,0.05)]">
                <div className="flex items-center gap-3">
                  <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center flex-shrink-0">

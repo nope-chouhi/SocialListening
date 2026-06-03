@@ -83,3 +83,5 @@ __all__ = [
     "SocialIntegration", "SocialIntegrationAccount", "OAuthState",
 ]
 
+
+from app.models.source_item import SourceItem

@@ -37,10 +37,11 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges }: any) {
   const [projectDropdownOpen, setProjectDropdownOpen] = useState(false);
 
   const projectNav = [
+    { name: 'Dashboard', href: '/dashboard/overview', icon: LayoutDashboard },
     { name: 'Mentions', href: '/dashboard/mentions', icon: MessageSquareText },
     { name: 'Summary', href: '/dashboard/summary', icon: PieChart },
     { name: 'Sources', href: '/dashboard/sources', icon: Globe },
-    { name: 'Comparison', href: '/dashboard/comparison', icon: LayoutDashboard },
+    { name: 'Comparison', href: '/dashboard/comparison', icon: PieChart },
     { name: 'Influencers', href: '/dashboard/influencers', icon: Users },
     { name: 'Alerts', href: '/dashboard/alerts', icon: Bell, badge: badges.new_alerts },
     { name: 'PDF Reports', href: '/dashboard/reports', icon: ClipboardList },

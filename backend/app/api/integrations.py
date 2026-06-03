@@ -29,14 +29,15 @@ def get_integrations_capabilities(db: Session = Depends(get_db), current_user: U
     from app.core.config import settings
     from app.models.source import Source
     
-    # Web Search
+        # Web Search
     has_serpapi = bool(settings.SERPAPI_API_KEY)
     is_serpapi_provider = getattr(settings, "WEB_SEARCH_PROVIDER", "").lower() == "serpapi"
-    auto_discovery = getattr(settings, "AUTO_DISCOVERY_ENABLED", False)
+    
+    auto_discovery_val = getattr(settings, "AUTO_DISCOVERY_ENABLED", False)
+    auto_discovery = str(auto_discovery_val).lower() in ("true", "1", "yes")
     
     web_ready = has_serpapi and is_serpapi_provider and auto_discovery
-    
-    # YouTube
+# YouTube
     has_youtube = bool(getattr(settings, "YOUTUBE_API_KEY", ""))
     
     # Meta (Facebook/Instagram)

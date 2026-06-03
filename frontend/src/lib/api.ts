@@ -163,6 +163,7 @@ export const auth = {
 
 // ─── Dashboard ────────────────────────────────────────────────────────────────
 export const dashboard = {
+  overview: async (projectId: number): Promise<any> => { const response = await api.get('/api/dashboard/overview', { params: { project_id: projectId } }); return response.data; },
   summary: async () => {
     const response = await api.get('/api/dashboard/summary');
     return response.data;
@@ -513,6 +514,7 @@ export const incidents = {
 
 // ─── Reports ─────────────────────────────────────────────────────────────────
 export const reports = {
+  overview: async (projectId: number): Promise<any> => { const response = await api.get('/api/dashboard/overview', { params: { project_id: projectId } }); return response.data; },
   summary: async () => {
     const response = await api.get('/api/reports/summary');
     return response.data;
@@ -738,6 +740,7 @@ export const aiChat = {
 
 // ─── Competitors ─────────────────────────────────────────────────────────────
 export const competitors = {
+  overview: async (projectId: number): Promise<any> => { const response = await api.get('/api/dashboard/overview', { params: { project_id: projectId } }); return response.data; },
   summary: async () => {
     const response = await api.get('/api/competitors/summary');
     return response.data;
@@ -870,4 +873,8 @@ export const discoveredSources = {
     const response = await api.post(`/api/discovery/sources/${id}/refresh-rss-discovery`);
     return response.data;
   },
+};
+
+export const collectors = {
+  run: (projectId?: number) => api.post(`/api/collectors/run${projectId ? `?project_id=${projectId}` : ''}`),
 };

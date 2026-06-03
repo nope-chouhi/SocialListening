@@ -1,27 +1,59 @@
 import re
 
-with open('backend/app/api/crawl.py', 'r', encoding='utf-8') as f:
+with open("backend/app/api/crawl.py", "r", encoding="utf-8") as f:
     content = f.read()
 
-# Replace run_manual_scan_task
-new_task_code = """
-def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str], mode: str, max_results: int):
+# We need to replace the entire `def run_manual_scan_task(...):` function.
+# It ends right before `def crawl_source(`
+
+new_func = """def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str], mode: str, max_results: int):
     from app.core.database import SessionLocal
     from app.models.crawl import CrawlJob, CrawlJobStatus
     from app.models.mention import Mention
     from app.core.config import settings
     import hashlib
+    import time
+    from urllib.parse import urlparse
     
     db = SessionLocal()
+    start_time = time.time()
+    
     try:
         job = db.execute(select(CrawlJob).where(CrawlJob.id == job_id)).scalar_one_or_none()
         if not job: return
         
         job.status = CrawlJobStatus.RUNNING
         job.started_at = datetime.now(timezone.utc)
-        db.commit()
-
+        
+        # Check environment capabilities
+        has_serpapi = bool(settings.SERPAPI_API_KEY)
+        is_serpapi_provider = getattr(settings, "WEB_SEARCH_PROVIDER", "").lower() == "serpapi"
+        auto_discovery_val = getattr(settings, "AUTO_DISCOVERY_ENABLED", False)
+        auto_discovery = str(auto_discovery_val).lower() in ("true", "1", "yes")
+        web_ready = has_serpapi and is_serpapi_provider and auto_discovery
+        has_youtube = bool(getattr(settings, "YOUTUBE_API_KEY", ""))
+        
         summary = {
+            "web": {
+                "status": "READY" if web_ready else ("SKIPPED" if not is_serpapi_provider else "CONFIG_REQUIRED"),
+                "called": False,
+                "provider": getattr(settings, "WEB_SEARCH_PROVIDER", "none"),
+                "raw_results_count": 0,
+                "results_after_keyword_match": 0,
+                "mentions_created": 0,
+                "duplicates_skipped": 0,
+                "error": None,
+                "skip_reason": "Not configured" if not web_ready else None
+            },
+            "youtube": {
+                "status": "READY" if has_youtube else "CONFIG_REQUIRED",
+                "called": False,
+                "raw_results_count": 0,
+                "mentions_created": 0,
+                "duplicates_skipped": 0,
+                "error": None,
+                "skip_reason": "Not configured" if not has_youtube else None
+            },
             "adapters_ready": [],
             "serpapi_result_count": 0,
             "urls_crawled": 0,
@@ -30,202 +62,213 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
             "old_mentions_existing": 0,
             "errors": []
         }
-
-        run_discovery = mode in ("AUTO_DISCOVERY", "HYBRID")
-        results = []
         
-        if run_discovery:
-            # Web Search (SerpAPI)
-            if settings.SERPAPI_API_KEY:
-                summary["adapters_ready"].append("web")
-                try:
-                    from app.services.serpapi_provider import search
-                    serp_results = search(
-                        keywords=keyword_texts,
-                        language="vi", country="vn",
-                        limit=max_results, date_range="last_30_days"
-                    )
-                    summary["serpapi_result_count"] += len(serp_results)
-                    for r in serp_results:
-                        results.append({
-                            "url": r["url"],
-                            "title": r.get("title", ""),
-                            "snippet": r.get("snippet", ""),
-                            "source_type": "web",
-                            "platform": "google",
-                            "published_at": None,
-                            "author": ""
-                        })
-                except Exception as e:
-                    summary["errors"].append(f"SerpAPI: {e}")
+        job.meta_data = {"summary": summary, "project_id": project_id, "keywords": keyword_texts}
+        db.commit()
 
-            # YouTube (if configured)
+        run_discovery = True # Always run discovery if mode is anything (we force web adapter to run when configured)
+        
+        def commit_summary():
+            db.commit()
+            
+        def is_timeout():
+            return (time.time() - start_time) > 120
+
+        # -------------- WEB ADAPTER --------------
+        if web_ready:
+            summary["adapters_ready"].append("web")
+            summary["web"]["called"] = True
+            summary["web"]["status"] = "RUNNING"
+            job.meta_data = {"summary": summary, "project_id": project_id, "keywords": keyword_texts}
+            commit_summary()
+            
             try:
+                if is_timeout():
+                    raise TimeoutError("Scan timeout reached before Web Search")
+                
+                from app.services.serpapi_provider import search
+                serp_results = search(
+                    keywords=keyword_texts,
+                    language="vi", country="vn",
+                    limit=max_results, date_range="last_30_days"
+                )
+                summary["serpapi_result_count"] += len(serp_results)
+                summary["web"]["raw_results_count"] += len(serp_results)
+                
+                # INSERT IMMEDIATELY
+                for r in serp_results:
+                    url = r.get("url", "").lower().strip()
+                    if not url: continue
+                    title = r.get("title", "")
+                    snippet = r.get("snippet", "")
+                    
+                    # Verify keyword match
+                    matched = False
+                    matched_kw = ""
+                    search_text = (title + " " + snippet + " " + url).lower()
+                    for kw in keyword_texts:
+                        if kw.lower() in search_text:
+                            matched = True
+                            matched_kw = kw
+                            break
+                    if not matched: continue
+                    
+                    summary["web"]["results_after_keyword_match"] += 1
+                    content_hash = hashlib.sha256(f"{url}_{title}".encode()).hexdigest()
+                    
+                    existing = db.execute(select(Mention).where(Mention.project_id == project_id, Mention.url == url)).scalar_one_or_none()
+                    if existing:
+                        summary["web"]["duplicates_skipped"] += 1
+                        summary["duplicates_skipped"] += 1
+                        summary["old_mentions_existing"] += 1
+                        continue
+                        
+                    parsed_domain = urlparse(url).netloc
+                    
+                    mention = Mention(
+                        project_id=project_id,
+                        job_id=job_id,
+                        keyword_text=matched_kw,
+                        source_type="web",
+                        platform="web",
+                        domain=parsed_domain,
+                        title=title[:500] if title else None,
+                        snippet=snippet[:1000] if snippet else None,
+                        content=snippet[:10000] if snippet else None,
+                        url=url,
+                        content_hash=content_hash,
+                        collected_at=datetime.now(timezone.utc),
+                        is_reviewed=False,
+                        author="",
+                        published_at=None
+                    )
+                    db.add(mention)
+                    summary["web"]["mentions_created"] += 1
+                    summary["new_mentions_created"] += 1
+                db.flush()
+                summary["web"]["status"] = "COMPLETED"
+            except Exception as e:
+                summary["errors"].append(f"WebSearch: {e}")
+                summary["web"]["error"] = str(e)
+                summary["web"]["status"] = "ERROR"
+            
+            job.meta_data = {"summary": summary, "project_id": project_id, "keywords": keyword_texts}
+            commit_summary()
+            
+        # -------------- YOUTUBE ADAPTER --------------
+        if has_youtube:
+            summary["adapters_ready"].append("youtube")
+            summary["youtube"]["called"] = True
+            summary["youtube"]["status"] = "RUNNING"
+            job.meta_data = {"summary": summary, "project_id": project_id, "keywords": keyword_texts}
+            commit_summary()
+            
+            try:
+                if is_timeout():
+                    raise TimeoutError("Scan timeout reached before YouTube")
+                    
                 from app.services.connectors.youtube_connector import YouTubeConnector
                 yt = YouTubeConnector()
                 if yt.validate_config():
-                    summary["adapters_ready"].append("youtube")
                     yt_res = yt.search_keywords(keywords=keyword_texts, max_results=10)
+                    summary["youtube"]["raw_results_count"] += len(yt_res)
+                    
                     for r in yt_res:
-                        results.append({
-                            "url": r["url"],
-                            "title": r.get("title", ""),
-                            "snippet": r.get("content", ""),
-                            "source_type": "video",
-                            "platform": "youtube",
-                            "published_at": r.get("published_at"),
-                            "author": r.get("author", "")
-                        })
+                        url = r.get("url", "").lower().strip()
+                        if not url: continue
+                        title = r.get("title", "")
+                        snippet = r.get("content", "")
+                        
+                        matched = False
+                        matched_kw = ""
+                        search_text = (title + " " + snippet + " " + url).lower()
+                        for kw in keyword_texts:
+                            if kw.lower() in search_text:
+                                matched = True
+                                matched_kw = kw
+                                break
+                        if not matched: continue
+                        
+                        content_hash = hashlib.sha256(f"{url}_{title}".encode()).hexdigest()
+                        
+                        existing = db.execute(select(Mention).where(Mention.project_id == project_id, Mention.url == url)).scalar_one_or_none()
+                        if existing:
+                            summary["youtube"]["duplicates_skipped"] += 1
+                            summary["duplicates_skipped"] += 1
+                            summary["old_mentions_existing"] += 1
+                            continue
+                            
+                        mention = Mention(
+                            project_id=project_id,
+                            job_id=job_id,
+                            keyword_text=matched_kw,
+                            source_type="video",
+                            platform="youtube",
+                            domain="youtube.com",
+                            title=title[:500] if title else None,
+                            snippet=snippet[:1000] if snippet else None,
+                            content=snippet[:10000] if snippet else None,
+                            url=url,
+                            content_hash=content_hash,
+                            collected_at=datetime.now(timezone.utc),
+                            is_reviewed=False,
+                            author=r.get("author", "")[:500],
+                            published_at=r.get("published_at")
+                        )
+                        db.add(mention)
+                        summary["youtube"]["mentions_created"] += 1
+                        summary["new_mentions_created"] += 1
+                    db.flush()
+                summary["youtube"]["status"] = "COMPLETED"
             except Exception as e:
-                pass
-
-        # Deduplication and Insertion
-        for res in results:
-            url = res["url"].lower().strip()
-            summary["urls_crawled"] += 1
-            
-            content_hash = hashlib.sha256(f"{url}_{res['title']}".encode()).hexdigest()
-            
-            # Check duplication in this project
-            existing = db.execute(
-                select(Mention).where(
-                    Mention.project_id == project_id,
-                    Mention.url == url
-                )
-            ).scalar_one_or_none()
-            
-            if existing:
-                summary["duplicates_skipped"] += 1
-                summary["old_mentions_existing"] += 1
-                continue
+                summary["errors"].append(f"YouTube: {e}")
+                summary["youtube"]["error"] = str(e)
+                summary["youtube"]["status"] = "ERROR"
                 
-            # Create NEW mention
-            try:
-                mention = Mention(
-                    project_id=project_id,
-                    job_id=job_id,
-                    keyword_text=keyword_texts[0] if keyword_texts else "",
-                    source_type=res["source_type"],
-                    platform=res["platform"],
-                    domain=url.split("/")[2] if "//" in url else url.split("/")[0],
-                    title=res["title"][:500] if res["title"] else None,
-                    snippet=res["snippet"][:1000] if res["snippet"] else None,
-                    content=res["snippet"][:10000] if res["snippet"] else None,
-                    url=url,
-                    content_hash=content_hash,
-                    collected_at=datetime.now(timezone.utc),
-                    is_reviewed=False,
-                    author=res.get("author", "")[:500],
-                    published_at=res.get("published_at")
-                )
-                db.add(mention)
-                db.flush()
-                summary["new_mentions_created"] += 1
-            except Exception as e:
-                summary["errors"].append(f"DB Insert error: {e}")
+            job.meta_data = {"summary": summary, "project_id": project_id, "keywords": keyword_texts}
+            commit_summary()
 
         db.commit()
 
-        job.status = CrawlJobStatus.COMPLETED
         job.completed_at = datetime.now(timezone.utc)
         job.meta_data = {"summary": summary, "project_id": project_id, "keywords": keyword_texts}
         job.mentions_found = summary["new_mentions_created"]
+        
+        # Determine final status
+        if is_timeout():
+            job.status = CrawlJobStatus.TIMEOUT
+            job.error_message = "Scan timeout: adapters did not complete within 120 seconds."
+        elif len(summary["errors"]) > 0 and len(summary["adapters_ready"]) > 0 and len(summary["errors"]) == len(summary["adapters_ready"]):
+            job.status = CrawlJobStatus.FAILED
+            job.error_message = "All adapters failed: " + "; ".join(summary["errors"])
+        elif len(summary["errors"]) > 0:
+            job.status = CrawlJobStatus.PARTIAL_FAILED
+        elif summary["new_mentions_created"] == 0 and summary["duplicates_skipped"] == 0:
+            job.status = CrawlJobStatus.COMPLETED_NO_RESULTS
+        else:
+            job.status = CrawlJobStatus.COMPLETED
+            
         db.commit()
     except Exception as e:
         if 'job' in locals() and job:
             job.status = CrawlJobStatus.FAILED
             job.error_message = str(e)
-            db.commit()
+            try:
+                db.commit()
+            except:
+                db.rollback()
     finally:
         db.close()
+
 """
 
-new_manual_scan_code = """
-@router.post("/manual-scan")
-def manual_scan(
-    body: ManualScanRequest,
-    background_tasks: BackgroundTasks,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
-):
-    \"\"\"
-    Manual scan: Live pipeline for API adapters.
-    \"\"\"
-    keyword_texts = []
-    if body.keywords:
-        for kw in body.keywords:
-            kw_lower = kw.lower().strip()
-            if kw_lower and kw_lower not in keyword_texts:
-                keyword_texts.append(kw_lower)
+# Regex to replace from `def run_manual_scan_task` to `def crawl_source`
+pattern = r"def run_manual_scan_task\(.*?def crawl_source\("
+replacement = new_func + "\n\ndef crawl_source("
 
-    if not keyword_texts:
-        raise HTTPException(status_code=400, detail="Vui lòng cung cấp ít nhất một từ khóa (qua keywords)")
+new_content = re.sub(pattern, replacement, content, flags=re.DOTALL)
 
-    mode = getattr(body, "mode", "HYBRID") or "HYBRID"
-    project_id = body.project_id
-    max_results = body.max_results or 50
+with open("backend/app/api/crawl.py", "w", encoding="utf-8") as f:
+    f.write(new_content)
 
-    job = CrawlJob(
-        job_type='manual',
-        status=CrawlJobStatus.PENDING,
-        total_sources=0,
-        processed_sources=0,
-        mentions_found=0,
-        started_at=datetime.now(timezone.utc),
-        meta_data={"project_id": project_id, "mode": mode, "keywords": keyword_texts}
-    )
-    db.add(job)
-    db.commit()
-    db.refresh(job)
-
-    background_tasks.add_task(run_manual_scan_task, job.id, project_id, keyword_texts, mode, max_results)
-
-    return {
-        "job_id": job.id,
-        "status": "QUEUED",
-        "mode": mode,
-        "project_id": project_id,
-        "keywords": keyword_texts
-    }
-"""
-
-new_get_job_code = """
-@router.get("/jobs/{job_id}")
-def get_crawl_job(
-    job_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
-):
-    job = db.execute(select(CrawlJob).where(CrawlJob.id == job_id)).scalar_one_or_none()
-    if not job:
-        raise HTTPException(status_code=404, detail="Job not found")
-        
-    meta = job.meta_data or {}
-    
-    return {
-        "job_id": job.id,
-        "status": job.status.value if hasattr(job.status, 'value') else job.status,
-        "project_id": meta.get("project_id"),
-        "keywords": meta.get("keywords", []),
-        "summary": meta.get("summary", {})
-    }
-"""
-
-# Apply the regex substitution safely
-content = re.sub(
-    r'@router\.post\("/manual-scan"\).*?def crawl_source\(',
-    new_manual_scan_code + "\n" + new_task_code + "\ndef crawl_source(",
-    content,
-    flags=re.DOTALL
-)
-
-# Insert get_crawl_job after get_crawl_jobs route
-content = re.sub(
-    r'(@router\.post\("/jobs/\{job_id\}/retry"\))',
-    new_get_job_code + "\n" + r'\1',
-    content
-)
-
-with open('backend/app/api/crawl.py', 'w', encoding='utf-8') as f:
-    f.write(content)
-print("Updated backend/app/api/crawl.py")
+print("Patch applied to crawl.py successfully.")

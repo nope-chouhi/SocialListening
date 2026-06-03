@@ -9,6 +9,7 @@ from contextlib import asynccontextmanager
 from app.core.config import settings
 from app.core.database import engine, Base, SessionLocal
 from app.api import (
+    collectors,
     auth, keywords, sources, mentions, alerts,
     incidents, reports, dashboard, crawl, takedown, services, admin, users, settings as settings_api,
     roles, api_keys, branding, audit, monitor, system, ai, evidence, ai_chat, competitors, influencers,
@@ -165,6 +166,7 @@ if settings.ENVIRONMENT != "production":
 
 
 # ─── Routers ──────────────────────────────────────────────────────────────────
+app.include_router(collectors.router,       prefix="/api/collectors",      tags=["Collectors"])
 app.include_router(auth.router,             prefix="/api/auth",             tags=["Authentication"])
 app.include_router(keywords.router,         prefix="/api/keywords",         tags=["Keywords"])
 app.include_router(sources.router,          prefix="/api/sources",          tags=["Sources"])

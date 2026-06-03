@@ -8,8 +8,12 @@ class CrawlJobStatus(str, Enum):
     PENDING = "pending"
     RUNNING = "running"
     COMPLETED = "completed"
+    COMPLETED_NO_RESULTS = "completed_no_results"
     FAILED = "failed"
+    PARTIAL_FAILED = "partial_failed"
+    TIMEOUT = "timeout"
     CANCELLED = "cancelled"
+
 
 
 class CrawlJob(Base):

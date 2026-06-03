@@ -214,13 +214,13 @@ def list_mentions(
         if author:
             query = query.where(Mention.author.ilike(f"%{author}%"))
             
-        if date_from:
+        if date_from and not job_id:
             query = query.where(Mention.collected_at >= date_from)
             
-        if date_to:
+        if date_to and not job_id:
             query = query.where(Mention.collected_at <= date_to)
 
-        if search_query:
+        if search_query and not job_id:
             search_pattern = f"%{search_query}%"
             query = query.where(
                 or_(
@@ -231,7 +231,7 @@ def list_mentions(
                 )
             )
 
-        if q:
+        if q and not job_id:
             search_term = f"%{q}%"
             query = query.filter(
                 or_(
@@ -294,28 +294,28 @@ def list_mentions(
             if date_to:
                 count_base = count_base.where(Mention.collected_at <= date_to)
             
-            if search_query:
-                search_pattern = f"%{search_query}%"
-                count_base = count_base.where(
-                    or_(
-                        Mention.title.ilike(search_pattern),
-                        Mention.content.ilike(search_pattern),
-                        Mention.author.ilike(search_pattern),
-                        Mention.url.ilike(search_pattern)
-                    )
+            if search_query and not job_id:
+            search_pattern = f"%{search_query}%"
+            query = query.where(
+                or_(
+                    Mention.title.ilike(search_pattern),
+                    Mention.content.ilike(search_pattern),
+                    Mention.author.ilike(search_pattern),
+                    Mention.url.ilike(search_pattern)
                 )
+            )
 
-            if q:
-                search_term = f"%{q}%"
-                count_base = count_base.filter(
-                    or_(
-                        Mention.title.ilike(search_term),
-                        Mention.snippet.ilike(search_term),
-                        Mention.content.ilike(search_term),
-                        Mention.url.ilike(search_term),
-                        Mention.domain.ilike(search_term),
-                    )
+            if q and not job_id:
+            search_term = f"%{q}%"
+            query = query.filter(
+                or_(
+                    Mention.title.ilike(search_term),
+                    Mention.snippet.ilike(search_term),
+                    Mention.content.ilike(search_term),
+                    Mention.url.ilike(search_term),
+                    Mention.domain.ilike(search_term),
                 )
+            )
             
             # Execute count
             total = db.execute(select(func.count()).select_from(count_base.subquery())).scalar() or 0
@@ -454,10 +454,10 @@ def export_mentions_csv(
         query = query.where(Mention.source_type == source_type)
     if keyword:
         query = query.where(Mention.keyword_text.ilike(f"%{keyword}%"))
-    if date_from:
-        query = query.where(Mention.collected_at >= date_from)
-    if date_to:
-        query = query.where(Mention.collected_at <= date_to)
+    if date_from and not job_id:
+            query = query.where(Mention.collected_at >= date_from)
+    if date_to and not job_id:
+            query = query.where(Mention.collected_at <= date_to)
 
     query = query.order_by(Mention.collected_at.desc()).limit(limit)
     rows = db.execute(query).scalars().all()
