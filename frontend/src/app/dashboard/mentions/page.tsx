@@ -1145,7 +1145,7 @@ export default function MentionsPage() {
                        </div>
                        <div className="flex flex-wrap gap-3">
                          <button onClick={handleScanClick} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg flex items-center gap-2"><RefreshCw className="w-4 h-4"/> Thử quét lại</button>
-                         <Link href="/dashboard/system/scan-center" className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg flex items-center gap-2"><ScanCode className="w-4 h-4"/> Mở Scan Center</Link>
+                         <Link href="/dashboard/system/scan-center" className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg flex items-center gap-2"><Scan className="w-4 h-4"/> Mở Scan Center</Link>
                          <Link href={`/dashboard/system/scan-center/${scanJobStatus.job_id}`} className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg flex items-center gap-2"><Info className="w-4 h-4"/> Xem chi tiết job</Link>
                        </div>
                     </div>
