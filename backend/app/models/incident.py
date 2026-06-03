@@ -38,6 +38,7 @@ class Incident(Base):
     __tablename__ = "incidents"
     
     id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, index=True, nullable=True)
     mention_id = Column(Integer, nullable=False, index=True)
     owner_id = Column(Integer, nullable=False, index=True)
     

@@ -9,6 +9,7 @@ import csv
 import io
 
 from app.core.database import get_db
+from app.core.tenant import apply_tenant_filter
 from app.core.security import get_current_active_user
 from app.models.user import User
 from app.models.mention import Mention, AIAnalysis
@@ -42,7 +43,7 @@ def get_mentions_summary(
         # Total mentions
         try:
             total = db.execute(
-                select(func.count(Mention.id)).where(and_(*base_filter))
+                apply_tenant_filter(select(func.count(Mention.id)), Mention, current_user).where(and_(*base_filter))
             ).scalar() or 0
         except Exception as e:
             db.rollback()
@@ -86,7 +87,7 @@ def get_mentions_summary(
             source_types = ['web', 'news', 'blog', 'rss', 'youtube', 'facebook', 'instagram', 'twitter', 'tiktok']
             for st in source_types:
                 count = db.execute(
-                    select(func.count(Mention.id)).where(and_(*base_filter, Mention.source_type == st))
+                    apply_tenant_filter(select(func.count(Mention.id)), Mention, current_user).where(and_(*base_filter, Mention.source_type == st))
                 ).scalar() or 0
                 if count > 0:
                     source_type_counts[st] = count
@@ -103,7 +104,7 @@ def get_mentions_summary(
                 day_start = (now - timedelta(days=i)).replace(hour=0, minute=0, second=0, microsecond=0)
                 day_end = day_start + timedelta(days=1)
                 count = db.execute(
-                    select(func.count(Mention.id)).where(and_(*base_filter, Mention.collected_at >= day_start, Mention.collected_at < day_end))
+                    apply_tenant_filter(select(func.count(Mention.id)), Mention, current_user).where(and_(*base_filter, Mention.collected_at >= day_start, Mention.collected_at < day_end))
                 ).scalar() or 0
                 if count > 0:
                     by_day.append({
@@ -170,7 +171,7 @@ def list_mentions(
         from sqlalchemy import or_
         from app.models.source import Source
 
-        query = select(Mention)
+        query = apply_tenant_filter(select(Mention), Mention, current_user)
         has_ai_filter = sentiment or sentiments or min_risk_score is not None
         need_source_join = bool(source_type or source_types or domain)
         need_ai_join = has_ai_filter or sort_by in ("risk_high", "risk_low")
@@ -259,7 +260,7 @@ def list_mentions(
         # Count query - build a separate simpler count query to avoid issues with complex joins
         try:
             # Build base count query with same filters but without joins for counting
-            count_base = select(Mention)
+            count_base = apply_tenant_filter(select(Mention), Mention, current_user)
             
             # Apply the same filters to count query
             if source_id:
@@ -342,7 +343,7 @@ def list_mentions(
             # Fallback: try a simpler count without complex filters
             try:
                 total = db.execute(
-                    select(func.count(Mention.id)).where(Mention.is_muted == False)
+                    apply_tenant_filter(select(func.count(Mention.id)), Mention, current_user).where(Mention.is_muted == False)
                 ).scalar() or 0
             except Exception as fallback_error:
                 db.rollback()
@@ -462,7 +463,7 @@ def export_mentions_csv(
     current_user: User = Depends(get_current_active_user),
 ):
     """Export mentions as CSV (Excel-compatible)."""
-    query = select(Mention).where(Mention.is_muted == False)
+    query = apply_tenant_filter(select(Mention), Mention, current_user).where(Mention.is_muted == False)
     if project_id:
         query = query.where(Mention.project_id == project_id)
     if sentiment:
@@ -523,7 +524,7 @@ def get_mention(
 ):
     """Get a mention by ID with AI analysis"""
     mention = db.execute(
-        select(Mention).where(Mention.id == mention_id)
+        apply_tenant_filter(select(Mention), Mention, current_user).where(Mention.id == mention_id)
     ).scalar_one_or_none()
 
     if not mention:
@@ -568,7 +569,7 @@ def analyze_mention(
 ):
     """Run AI analysis on a mention"""
     mention = db.execute(
-        select(Mention).where(Mention.id == mention_id)
+        apply_tenant_filter(select(Mention), Mention, current_user).where(Mention.id == mention_id)
     ).scalar_one_or_none()
 
     if not mention:
@@ -660,7 +661,7 @@ def create_alert_from_mention(
 ):
     """Create an alert from a mention"""
     mention = db.execute(
-        select(Mention).where(Mention.id == mention_id)
+        apply_tenant_filter(select(Mention), Mention, current_user).where(Mention.id == mention_id)
     ).scalar_one_or_none()
 
     if not mention:
@@ -717,7 +718,7 @@ def create_incident_from_mention(
 ):
     """Create an incident from a mention"""
     mention = db.execute(
-        select(Mention).where(Mention.id == mention_id)
+        apply_tenant_filter(select(Mention), Mention, current_user).where(Mention.id == mention_id)
     ).scalar_one_or_none()
 
     if not mention:
@@ -762,7 +763,7 @@ def mark_mention_reviewed(
 ):
     """Mark a mention as reviewed"""
     mention = db.execute(
-        select(Mention).where(Mention.id == mention_id)
+        apply_tenant_filter(select(Mention), Mention, current_user).where(Mention.id == mention_id)
     ).scalar_one_or_none()
 
     if not mention:
@@ -786,7 +787,7 @@ def delete_mention(
 ):
     """Delete a mention"""
     mention = db.execute(
-        select(Mention).where(Mention.id == mention_id)
+        apply_tenant_filter(select(Mention), Mention, current_user).where(Mention.id == mention_id)
     ).scalar_one_or_none()
 
     if not mention:
@@ -806,7 +807,7 @@ def update_mention_tags(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
-    mention = db.execute(select(Mention).where(Mention.id == mention_id)).scalar_one_or_none()
+    mention = db.execute(apply_tenant_filter(select(Mention), Mention, current_user).where(Mention.id == mention_id)).scalar_one_or_none()
     if not mention: raise HTTPException(status_code=404, detail="Mention not found")
     mention.tags_json = req.tags
     db.commit()
@@ -826,7 +827,7 @@ def update_mention_add_to_report(
     current_user: User = Depends(get_current_active_user)
 ):
     """Toggle add_to_report flag for a mention"""
-    mention = db.execute(select(Mention).where(Mention.id == mention_id)).scalar_one_or_none()
+    mention = db.execute(apply_tenant_filter(select(Mention), Mention, current_user).where(Mention.id == mention_id)).scalar_one_or_none()
     if not mention: raise HTTPException(status_code=404, detail="Mention not found")
     mention.add_to_report = req.add_to_report
     db.commit()
@@ -852,11 +853,11 @@ def summarize_current_results(
     # Get mentions based on request
     if req.mention_ids:
         mentions = db.execute(
-            select(Mention).where(Mention.id.in_(req.mention_ids))
+            apply_tenant_filter(select(Mention), Mention, current_user).where(Mention.id.in_(req.mention_ids))
         ).scalars().all()
     else:
         # Build query from filters
-        query = select(Mention)
+        query = apply_tenant_filter(select(Mention), Mention, current_user)
         filters = req.filters or {}
         
         if filters.get("project_id"):
@@ -938,7 +939,7 @@ def update_mention_mute(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
-    mention = db.execute(select(Mention).where(Mention.id == mention_id)).scalar_one_or_none()
+    mention = db.execute(apply_tenant_filter(select(Mention), Mention, current_user).where(Mention.id == mention_id)).scalar_one_or_none()
     if not mention: raise HTTPException(status_code=404, detail="Mention not found")
     mention.is_muted = req.is_muted
     db.commit()
@@ -955,7 +956,7 @@ def update_mention_sentiment(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
-    mention = db.execute(select(Mention).where(Mention.id == mention_id)).scalar_one_or_none()
+    mention = db.execute(apply_tenant_filter(select(Mention), Mention, current_user).where(Mention.id == mention_id)).scalar_one_or_none()
     if not mention: raise HTTPException(status_code=404, detail="Mention not found")
     mention.sentiment = req.sentiment
     mention.sentiment_confidence = 1.0  # manual override

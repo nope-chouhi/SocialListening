@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session, selectinload
 from sqlalchemy import select, func, delete
 from typing import List
+from app.core.tenant import apply_tenant_filter
 
 from app.core.database import get_db
 from app.core.security import get_current_active_user
@@ -25,7 +26,7 @@ def list_keyword_groups(
     current_user: User = Depends(get_current_active_user)
 ):
     """List all keyword groups"""
-    query = select(KeywordGroup)
+    query = apply_tenant_filter(select(KeywordGroup), KeywordGroup, current_user)
     
     if is_active is not None:
         query = query.where(KeywordGroup.is_active == is_active)
@@ -62,6 +63,7 @@ def create_keyword_group(
 ):
     """Create a new keyword group"""
     group = KeywordGroup(**group_data.dict())
+    group.user_id = current_user.id
     db.add(group)
     db.commit()
     db.refresh(group)
@@ -85,7 +87,7 @@ def get_keyword_group(
     current_user: User = Depends(get_current_active_user)
 ):
     """Get a keyword group by ID"""
-    query = select(KeywordGroup).where(KeywordGroup.id == group_id).options(selectinload(KeywordGroup.keywords))
+    query = apply_tenant_filter(select(KeywordGroup), KeywordGroup, current_user).where(KeywordGroup.id == group_id).options(selectinload(KeywordGroup.keywords))
     result = db.execute(query)
     group = result.scalar_one_or_none()
     
@@ -103,7 +105,7 @@ def update_keyword_group(
     current_user: User = Depends(get_current_active_user)
 ):
     """Update a keyword group"""
-    query = select(KeywordGroup).where(KeywordGroup.id == group_id)
+    query = apply_tenant_filter(select(KeywordGroup), KeywordGroup, current_user).where(KeywordGroup.id == group_id)
     result = db.execute(query)
     group = result.scalar_one_or_none()
     
@@ -127,7 +129,7 @@ def delete_keyword_group(
     current_user: User = Depends(get_current_active_user)
 ):
     """Delete a keyword group"""
-    query = select(KeywordGroup).where(KeywordGroup.id == group_id)
+    query = apply_tenant_filter(select(KeywordGroup), KeywordGroup, current_user).where(KeywordGroup.id == group_id)
     result = db.execute(query)
     group = result.scalar_one_or_none()
     
@@ -147,7 +149,7 @@ def list_keywords_in_group(
     current_user: User = Depends(get_current_active_user)
 ):
     """List all keywords in a group"""
-    query = select(Keyword).where(Keyword.group_id == group_id)
+    query = apply_tenant_filter(select(Keyword).join(KeywordGroup, Keyword.group_id == KeywordGroup.id).where(Keyword.group_id == group_id), KeywordGroup, current_user)
     
     if is_active is not None:
         query = query.where(Keyword.is_active == is_active)
@@ -173,7 +175,7 @@ def create_keyword(
         raise HTTPException(status_code=422, detail="Từ khóa không hợp lệ")
 
     # Verify group exists
-    group_query = select(KeywordGroup).where(KeywordGroup.id == keyword_data.group_id)
+    group_query = apply_tenant_filter(select(KeywordGroup), KeywordGroup, current_user).where(KeywordGroup.id == keyword_data.group_id)
     group = db.execute(group_query).scalar_one_or_none()
     
     if not group:
@@ -210,7 +212,7 @@ def create_keywords_bulk(
     """Bulk create keywords"""
     # Verify group exists
     group = db.execute(
-        select(KeywordGroup).where(KeywordGroup.id == bulk_data.group_id)
+        apply_tenant_filter(select(KeywordGroup).where(KeywordGroup.id == bulk_data.group_id), KeywordGroup, current_user)
     ).scalar_one_or_none()
     
     if not group:
@@ -279,7 +281,7 @@ def get_keyword(
     current_user: User = Depends(get_current_active_user)
 ):
     """Get a keyword by ID"""
-    query = select(Keyword).where(Keyword.id == keyword_id)
+    query = apply_tenant_filter(select(Keyword).join(KeywordGroup, Keyword.group_id == KeywordGroup.id).where(Keyword.id == keyword_id), KeywordGroup, current_user)
     result = db.execute(query)
     keyword = result.scalar_one_or_none()
     
@@ -297,7 +299,7 @@ def update_keyword(
     current_user: User = Depends(get_current_active_user)
 ):
     """Update a keyword"""
-    query = select(Keyword).where(Keyword.id == keyword_id)
+    query = apply_tenant_filter(select(Keyword).join(KeywordGroup, Keyword.group_id == KeywordGroup.id).where(Keyword.id == keyword_id), KeywordGroup, current_user)
     result = db.execute(query)
     keyword = result.scalar_one_or_none()
     
@@ -321,7 +323,7 @@ def delete_keyword(
     current_user: User = Depends(get_current_active_user)
 ):
     """Delete a keyword"""
-    query = select(Keyword).where(Keyword.id == keyword_id)
+    query = apply_tenant_filter(select(Keyword).join(KeywordGroup, Keyword.group_id == KeywordGroup.id).where(Keyword.id == keyword_id), KeywordGroup, current_user)
     result = db.execute(query)
     keyword = result.scalar_one_or_none()
     
@@ -340,7 +342,7 @@ def delete_all_keywords_in_group(
 ):
     """Delete all keywords in a group"""
     # Verify group exists
-    group_query = select(KeywordGroup).where(KeywordGroup.id == group_id)
+    group_query = apply_tenant_filter(select(KeywordGroup), KeywordGroup, current_user).where(KeywordGroup.id == group_id)
     group_result = db.execute(group_query)
     group = group_result.scalar_one_or_none()
     

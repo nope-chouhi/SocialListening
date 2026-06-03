@@ -31,6 +31,7 @@ class SourceGroup(Base):
     __tablename__ = "source_groups"
     
     id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, index=True, nullable=True)
     name = Column(String(255), nullable=False, index=True)
     description = Column(Text)
     is_active = Column(Boolean, default=True)
@@ -43,6 +44,7 @@ class Source(Base):
     __tablename__ = "sources"
     
     id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, index=True, nullable=True)
     group_id = Column(Integer, index=True)
     name = Column(String(500), nullable=False)
     source_type = Column(SQLEnum(SourceType, values_callable=lambda x: [e.value for e in x]), nullable=False, index=True)

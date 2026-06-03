@@ -26,6 +26,7 @@ class KeywordGroup(Base):
     __tablename__ = "keyword_groups"
     
     id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, index=True, nullable=True)
     name = Column(String(255), nullable=False, index=True)
     description = Column(Text)
     priority = Column(Integer, default=3)  # 1-5, 5 is highest

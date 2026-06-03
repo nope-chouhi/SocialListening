@@ -20,6 +20,7 @@ class CrawlJob(Base):
     __tablename__ = "crawl_jobs"
     
     id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, index=True, nullable=True)
     
     # Job details
     job_type = Column(String(50), nullable=False)  # manual, scheduled
@@ -51,6 +52,7 @@ class ScanSchedule(Base):
     __tablename__ = "scan_schedules"
     
     id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, index=True, nullable=True)
     name = Column(String(255), nullable=False)
     description = Column(Text)
     

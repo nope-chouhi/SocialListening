@@ -16,6 +16,7 @@ class Mention(Base):
     __tablename__ = "mentions"
     
     id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, index=True, nullable=True)
     project_id = Column(Integer, nullable=True, index=True)
     keyword_id = Column(Integer, nullable=True, index=True)
     keyword_text = Column(String(255), nullable=True)

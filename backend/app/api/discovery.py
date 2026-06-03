@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import select, func, desc
 
 from app.core.database import get_db
+from app.core.tenant import apply_tenant_filter
 from app.core.security import get_current_active_user
 from app.core.config import settings
 from app.models.user import User
@@ -85,9 +86,9 @@ def list_discovery_jobs(
     current_user: User = Depends(get_current_active_user),
 ):
     """List discovery jobs."""
-    total = db.execute(select(func.count(DiscoveryJob.id))).scalar() or 0
+    total = db.execute(apply_tenant_filter(select(func.count(DiscoveryJob.id)), DiscoveryJob, current_user, 'created_by_user_id')).scalar() or 0
     jobs = db.execute(
-        select(DiscoveryJob)
+        apply_tenant_filter(select(DiscoveryJob), DiscoveryJob, current_user, 'created_by_user_id')
         .order_by(desc(DiscoveryJob.created_at))
         .offset((page - 1) * page_size)
         .limit(page_size)
@@ -106,7 +107,7 @@ def get_discovery_job(
     current_user: User = Depends(get_current_active_user),
 ):
     """Get discovery job detail."""
-    job = db.query(DiscoveryJob).get(job_id)
+    job = db.scalars(apply_tenant_filter(select(DiscoveryJob).where(DiscoveryJob.id == job_id), DiscoveryJob, current_user, 'created_by_user_id')).first()
     if not job:
         raise HTTPException(status_code=404, detail="Không tìm thấy job.")
     return _job_to_response(job)

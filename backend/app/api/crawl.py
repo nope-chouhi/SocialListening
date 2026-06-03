@@ -10,6 +10,7 @@ import feedparser
 from pydantic import BaseModel
 
 from app.core.database import get_db, SessionLocal
+from app.core.tenant import apply_tenant_filter
 from app.core.security import get_current_active_user
 from app.models.user import User
 from app.models.source import Source, SourceType
@@ -82,8 +83,8 @@ def debug_auto_discovery(
         from app.services.serpapi_provider import search
         results = search(
             keywords=[body.keyword],
-            language="vi",
-            country="vn",
+            language="",
+            country="",
             limit=5,
             date_range="last_30_days",
         )
@@ -209,10 +210,32 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
         job.meta_data = {"summary": summary, "project_id": project_id, "keywords": keyword_texts}
         db.commit()
 
-        run_discovery = True # Always run discovery if mode is anything (we force web adapter to run when configured)
+        run_discovery = mode in ("AUTO_DISCOVERY", "HYBRID")
         
         def commit_summary():
             db.commit()
+            
+        if run_discovery:
+            # Trigger discovery job
+            from app.services.discovery_service import create_discovery_job, run_discovery_job
+            try:
+                from app.models.user import User
+                first_user = db.query(User).first()
+                user_id = first_user.id if first_user else 1
+                req_data = {
+                    "keywords": keyword_texts,
+                    "limit": max_results,
+                    "language": "",
+                    "country": ""
+                }
+                disc_job = create_discovery_job(db, user_id=user_id, request_data=req_data)
+                db.commit()
+                # Discovery is meant to run in the background or synchronously here? 
+                # Let's run it synchronously since this runs inside a celery task anyway
+                run_discovery_job(db, disc_job.id)
+            except Exception as e:
+                import logging
+                logging.getLogger(__name__).error(f"Failed to create discovery job from scan: {e}")
             
         def is_timeout():
             return (time.time() - start_time) > 120
@@ -232,7 +255,7 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
                 from app.services.serpapi_provider import search
                 serp_results = search(
                     keywords=keyword_texts,
-                    language="vi", country="vn",
+                    language="", country="",
                     limit=max_results, date_range=""
                 )
                 summary["serpapi_result_count"] += len(serp_results)
@@ -258,7 +281,7 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
                     summary["web"]["results_after_keyword_match"] += 1
                     content_hash = hashlib.sha256(f"{url}_{title}".encode()).hexdigest()
                     
-                    existing = db.execute(select(Mention).where(Mention.project_id == project_id, Mention.url == url)).scalar_one_or_none()
+                    existing = db.execute(apply_tenant_filter(select(Mention), Mention, current_user).where(Mention.project_id == project_id, Mention.url == url)).scalar_one_or_none()
                     if existing:
                         summary["web"]["duplicates_skipped"] += 1
                         summary["duplicates_skipped"] += 1
@@ -332,7 +355,7 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
                         
                         content_hash = hashlib.sha256(f"{url}_{title}".encode()).hexdigest()
                         
-                        existing = db.execute(select(Mention).where(Mention.project_id == project_id, Mention.url == url)).scalar_one_or_none()
+                        existing = db.execute(apply_tenant_filter(select(Mention), Mention, current_user).where(Mention.project_id == project_id, Mention.url == url)).scalar_one_or_none()
                         if existing:
                             summary["youtube"]["duplicates_skipped"] += 1
                             summary["duplicates_skipped"] += 1
@@ -523,11 +546,11 @@ def get_scan_history(
     """Get scan history (recent mentions)"""
     from math import ceil
     
-    total = db.execute(select(func.count(Mention.id))).scalar() or 0
+    total = db.execute(apply_tenant_filter(select(func.count(Mention.id)), Mention, current_user)).scalar() or 0
     
     offset = (page - 1) * page_size
     mentions = db.execute(
-        select(Mention)
+        apply_tenant_filter(select(Mention), Mention, current_user)
         .order_by(Mention.collected_at.desc())
         .offset(offset)
         .limit(page_size)

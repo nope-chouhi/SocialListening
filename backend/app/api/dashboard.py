@@ -5,13 +5,14 @@ from datetime import datetime, timedelta, timezone
 from typing import List, Optional
 
 from app.core.database import get_db
+from app.core.tenant import apply_tenant_filter
 from app.core.security import get_current_active_user
 from app.models.user import User
 from app.models.mention import Mention, AIAnalysis, SentimentScore
 from app.models.alert import Alert, AlertSeverity, AlertStatus
 from app.models.incident import Incident, IncidentStatus
 from app.models.source import Source
-from app.models.keyword import Keyword
+from app.models.keyword import Keyword, KeywordGroup
 
 router = APIRouter()
 
@@ -31,14 +32,14 @@ def get_dashboard_summary(
         
         # Total mentions
         try:
-            total_mentions = db.execute(select(func.count(Mention.id))).scalar() or 0
+            total_mentions = db.execute(apply_tenant_filter(select(func.count(Mention.id)), Mention, current_user)).scalar() or 0
         except Exception as e:
             logger.error(f"Error querying total mentions: {e}")
             total_mentions = 0
             
         try:
             mentions_today = db.execute(
-                select(func.count(Mention.id)).where(Mention.collected_at >= today_start)
+                apply_tenant_filter(select(func.count(Mention.id)), Mention, current_user).where(Mention.collected_at >= today_start)
             ).scalar() or 0
         except Exception as e:
             logger.error(f"Error querying mentions today: {e}")
@@ -64,7 +65,7 @@ def get_dashboard_summary(
         # Alerts
         try:
             total_alerts = db.execute(
-                select(func.count(Alert.id)).where(Alert.status != 'resolved')
+                apply_tenant_filter(select(func.count(Alert.id)), Alert, current_user).where(Alert.status != 'resolved')
             ).scalar() or 0
         except Exception as e:
             logger.error(f"Error querying total alerts: {e}")
@@ -73,7 +74,7 @@ def get_dashboard_summary(
         # Incidents
         try:
             total_incidents = db.execute(
-                select(func.count(Incident.id)).where(Incident.status != 'closed')
+                apply_tenant_filter(select(func.count(Incident.id)), Incident, current_user).where(Incident.status != 'closed')
             ).scalar() or 0
         except Exception as e:
             logger.error(f"Error querying total incidents: {e}")
@@ -82,7 +83,7 @@ def get_dashboard_summary(
         # Sources
         try:
             total_sources = db.execute(
-                select(func.count(Source.id)).where(Source.is_active == True)
+                apply_tenant_filter(select(func.count(Source.id)), Source, current_user).where(Source.is_active == True)
             ).scalar() or 0
         except Exception as e:
             logger.error(f"Error querying active sources: {e}")
@@ -91,7 +92,7 @@ def get_dashboard_summary(
         # Latest mentions with AI analysis
         latest_mentions_data = []
         try:
-            latest_mentions_query = select(Mention).order_by(Mention.collected_at.desc()).limit(10)
+            latest_mentions_query = apply_tenant_filter(select(Mention), Mention, current_user).order_by(Mention.collected_at.desc()).limit(10)
             latest_mentions = db.execute(latest_mentions_query).scalars().all()
             
             for m in latest_mentions:
@@ -104,7 +105,7 @@ def get_dashboard_summary(
                 
                 try:
                     source = db.execute(
-                        select(Source).where(Source.id == m.source_id)
+                        apply_tenant_filter(select(Source), Source, current_user).where(Source.id == m.source_id)
                     ).scalar_one_or_none()
                 except Exception:
                     source = None
@@ -130,7 +131,7 @@ def get_dashboard_summary(
         # Latest alerts
         latest_alerts_data = []
         try:
-            latest_alerts_query = select(Alert).order_by(Alert.created_at.desc()).limit(10)
+            latest_alerts_query = apply_tenant_filter(select(Alert), Alert, current_user).order_by(Alert.created_at.desc()).limit(10)
             latest_alerts = db.execute(latest_alerts_query).scalars().all()
             
             for a in latest_alerts:
@@ -202,7 +203,7 @@ def get_latest_mentions(
     import logging
     logger = logging.getLogger(__name__)
     try:
-        latest_mentions_query = select(Mention).order_by(Mention.collected_at.desc()).limit(limit)
+        latest_mentions_query = apply_tenant_filter(select(Mention), Mention, current_user).order_by(Mention.collected_at.desc()).limit(limit)
         latest_mentions = db.execute(latest_mentions_query).scalars().all()
         
         latest_mentions_data = []
@@ -216,7 +217,7 @@ def get_latest_mentions(
             
             try:
                 source = db.execute(
-                    select(Source).where(Source.id == m.source_id)
+                    apply_tenant_filter(select(Source), Source, current_user).where(Source.id == m.source_id)
                 ).scalar_one_or_none()
             except Exception:
                 source = None
@@ -256,7 +257,7 @@ def get_latest_alerts(
     import logging
     logger = logging.getLogger(__name__)
     try:
-        latest_alerts_query = select(Alert).order_by(Alert.created_at.desc()).limit(limit)
+        latest_alerts_query = apply_tenant_filter(select(Alert), Alert, current_user).order_by(Alert.created_at.desc()).limit(limit)
         latest_alerts = db.execute(latest_alerts_query).scalars().all()
         
         latest_alerts_data = []
@@ -318,7 +319,7 @@ def get_dashboard_trends(
             # Total mentions for this day
             try:
                 total_mentions = db.execute(
-                    select(func.count(Mention.id)).where(
+                    apply_tenant_filter(select(func.count(Mention.id)), Mention, current_user).where(
                         and_(
                             Mention.collected_at >= day_start,
                             Mention.collected_at < day_end
@@ -345,7 +346,7 @@ def get_dashboard_trends(
             # Alerts for this day
             try:
                 alerts_count = db.execute(
-                    select(func.count(Alert.id)).where(
+                    apply_tenant_filter(select(func.count(Alert.id)), Alert, current_user).where(
                         and_(
                             Alert.created_at >= day_start,
                             Alert.created_at < day_end
@@ -358,7 +359,7 @@ def get_dashboard_trends(
             # Incidents for this day
             try:
                 incidents_count = db.execute(
-                    select(func.count(Incident.id)).where(
+                    apply_tenant_filter(select(func.count(Incident.id)), Incident, current_user).where(
                         and_(
                             Incident.created_at >= day_start,
                             Incident.created_at < day_end
@@ -418,7 +419,7 @@ def get_sentiment_summary(
         # Get total mentions in this period
         try:
             total_mentions = db.execute(
-                select(func.count(Mention.id)).where(and_(*mention_filter))
+                apply_tenant_filter(select(func.count(Mention.id)), Mention, current_user).where(and_(*mention_filter))
             ).scalar() or 0
         except:
             total_mentions = 0
@@ -505,7 +506,7 @@ def get_hot_keywords(
         # Get all keywords
         try:
             all_keywords = db.execute(
-                select(Keyword).where(Keyword.is_active == True)
+                apply_tenant_filter(select(Keyword).join(KeywordGroup, Keyword.group_id == KeywordGroup.id), KeywordGroup, current_user) if 'KeywordGroup' in globals() or 'KeywordGroup' in locals() else apply_tenant_filter(select(Keyword), None, current_user).where(Keyword.is_active == True)
             ).scalars().all()
         except Exception:
             all_keywords = []
@@ -513,7 +514,7 @@ def get_hot_keywords(
         # Get recent mentions
         try:
             recent_mentions = db.execute(
-                select(Mention).where(Mention.collected_at >= start_date)
+                apply_tenant_filter(select(Mention), Mention, current_user).where(Mention.collected_at >= start_date)
             ).scalars().all()
         except Exception:
             recent_mentions = []
@@ -584,14 +585,14 @@ def get_sidebar_badges(
     try:
         try:
             new_alerts = db.execute(
-                select(func.count(Alert.id)).where(Alert.status == 'new')
+                apply_tenant_filter(select(func.count(Alert.id)), Alert, current_user).where(Alert.status == 'new')
             ).scalar() or 0
         except Exception:
             new_alerts = 0
         
         try:
             open_incidents = db.execute(
-                select(func.count(Incident.id)).where(
+                apply_tenant_filter(select(func.count(Incident.id)), Incident, current_user).where(
                     Incident.status.in_(['new', 'investigating', 'in_progress'])
                 )
             ).scalar() or 0
@@ -600,7 +601,7 @@ def get_sidebar_badges(
         
         try:
             unreviewed_mentions = db.execute(
-                select(func.count(Mention.id)).where(Mention.is_reviewed == False)
+                apply_tenant_filter(select(func.count(Mention.id)), Mention, current_user).where(Mention.is_reviewed == False)
             ).scalar() or 0
         except Exception:
             unreviewed_mentions = 0
@@ -639,10 +640,10 @@ def get_dashboard_overview(
     d30_start = now - timedelta(days=30)
     
     # Totals
-    mentions_total = db.execute(select(func.count(Mention.id)).where(Mention.project_id == project_id)).scalar() or 0
-    mentions_today = db.execute(select(func.count(Mention.id)).where(and_(Mention.project_id == project_id, Mention.collected_at >= today_start))).scalar() or 0
-    mentions_7d = db.execute(select(func.count(Mention.id)).where(and_(Mention.project_id == project_id, Mention.collected_at >= d7_start))).scalar() or 0
-    mentions_30d = db.execute(select(func.count(Mention.id)).where(and_(Mention.project_id == project_id, Mention.collected_at >= d30_start))).scalar() or 0
+    mentions_total = db.execute(apply_tenant_filter(select(func.count(Mention.id)), Mention, current_user).where(Mention.project_id == project_id)).scalar() or 0
+    mentions_today = db.execute(apply_tenant_filter(select(func.count(Mention.id)), Mention, current_user).where(and_(Mention.project_id == project_id, Mention.collected_at >= today_start))).scalar() or 0
+    mentions_7d = db.execute(apply_tenant_filter(select(func.count(Mention.id)), Mention, current_user).where(and_(Mention.project_id == project_id, Mention.collected_at >= d7_start))).scalar() or 0
+    mentions_30d = db.execute(apply_tenant_filter(select(func.count(Mention.id)), Mention, current_user).where(and_(Mention.project_id == project_id, Mention.collected_at >= d30_start))).scalar() or 0
     
     last_job = db.execute(select(CrawlJob).where(and_(CrawlJob.status == "completed", CrawlJob.meta_data.op('->>')('project_id') == str(project_id))).order_by(CrawlJob.completed_at.desc())).scalar_one_or_none()
     new_mentions_last_scan = last_job.mentions_found if last_job else 0
@@ -676,7 +677,7 @@ def get_dashboard_overview(
     
     has_youtube = bool(getattr(settings, "YOUTUBE_API_KEY", ""))
     
-    rss_count = db.execute(select(func.count(Source.id)).where(Source.source_type == "rss")).scalar() or 0
+    rss_count = db.execute(apply_tenant_filter(select(func.count(Source.id)), Source, current_user).where(Source.source_type == "rss")).scalar() or 0
 
     collectors = {
         "web": {"status": "READY" if web_ready else "CONFIG_REQUIRED"},
@@ -690,7 +691,7 @@ def get_dashboard_overview(
     
     # Recent mentions
     recent_mentions = db.execute(
-        select(Mention).where(Mention.project_id == project_id).order_by(Mention.collected_at.desc()).limit(5)
+        apply_tenant_filter(select(Mention), Mention, current_user).where(Mention.project_id == project_id).order_by(Mention.collected_at.desc()).limit(5)
     ).scalars().all()
     
     recent_jobs = db.execute(

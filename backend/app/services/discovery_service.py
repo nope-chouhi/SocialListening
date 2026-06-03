@@ -420,8 +420,8 @@ def run_discovery_job(db: Session, job_id: int) -> DiscoveryJob:
         from app.services.serpapi_provider import search, SerpAPINotConfigured, SerpAPIRateLimitError
         search_results = search(
             keywords=keywords,
-            language=job.language or "vi",
-            country=job.country or "vn",
+            language=job.language if job.language is not None else "vi",
+            country=job.country if job.country is not None else "vn",
             limit=job.limit or 50,
             date_range=job.date_range or "",
         )

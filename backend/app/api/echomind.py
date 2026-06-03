@@ -4,6 +4,10 @@ from sqlalchemy import func
 from typing import List
 
 from app.core.database import get_db
+from app.core.security import get_current_active_user
+from app.models.user import User
+from app.core.tenant import apply_tenant_filter
+from sqlalchemy import select
 from app.models.echomind import EchoKeyword, EchoMention
 from app.schemas.echomind import (
     EchoKeywordCreate, EchoKeywordResponse,
@@ -13,24 +17,24 @@ from app.schemas.echomind import (
 router = APIRouter()
 
 @router.get("/keywords", response_model=List[EchoKeywordResponse])
-def get_keywords(db: Session = Depends(get_db)):
-    return db.query(EchoKeyword).all()
+def get_keywords(db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
+    return db.scalars(apply_tenant_filter(select(EchoKeyword), EchoKeyword, current_user)).all()
 
 @router.post("/keywords", response_model=EchoKeywordResponse)
-def create_keyword(keyword: EchoKeywordCreate, db: Session = Depends(get_db)):
-    db_obj = db.query(EchoKeyword).filter(EchoKeyword.keyword == keyword.keyword).first()
+def create_keyword(keyword: EchoKeywordCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
+    db_obj = db.scalars(apply_tenant_filter(select(EchoKeyword).where(EchoKeyword.keyword == keyword.keyword), EchoKeyword, current_user)).first()
     if db_obj:
         raise HTTPException(status_code=400, detail="Keyword already exists")
     
-    new_kw = EchoKeyword(keyword=keyword.keyword)
+    new_kw = EchoKeyword(keyword=keyword.keyword, user_id=current_user.id)
     db.add(new_kw)
     db.commit()
     db.refresh(new_kw)
     return new_kw
 
 @router.delete("/keywords/{id}")
-def delete_keyword(id: int, db: Session = Depends(get_db)):
-    db_obj = db.query(EchoKeyword).filter(EchoKeyword.id == id).first()
+def delete_keyword(id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
+    db_obj = db.scalars(apply_tenant_filter(select(EchoKeyword).where(EchoKeyword.id == id), EchoKeyword, current_user)).first()
     if not db_obj:
         raise HTTPException(status_code=404, detail="Keyword not found")
     
@@ -40,13 +44,13 @@ def delete_keyword(id: int, db: Session = Depends(get_db)):
     return {"status": "ok"}
 
 @router.get("/mentions", response_model=List[EchoMentionResponse])
-def get_mentions(db: Session = Depends(get_db)):
+def get_mentions(db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
     # In a real app we'd paginate, sort, filter. For MVP, sort by descending date.
-    return db.query(EchoMention).order_by(EchoMention.created_at.desc()).limit(100).all()
+    return db.scalars(apply_tenant_filter(select(EchoMention).order_by(EchoMention.created_at.desc()).limit(100), EchoMention, current_user)).all()
 
 @router.get("/analytics/summary", response_model=AnalyticsSummaryResponse)
-def get_analytics_summary(db: Session = Depends(get_db)):
-    mentions = db.query(EchoMention).all()
+def get_analytics_summary(db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
+    mentions = db.scalars(apply_tenant_filter(select(EchoMention), EchoMention, current_user)).all()
     
     total = len(mentions)
     positive = sum(1 for m in mentions if m.sentiment == 'positive')
