@@ -105,7 +105,6 @@ export default function DashboardPage() {
   }
 
   const stats = [
-    { name: 'Tổng Mentions', value: metrics?.total_mentions || 0, icon: Database, colorClass: 'bg-blue-500' },
     { name: 'Mentions Hôm Nay', value: metrics?.mentions_today || 0, icon: TrendingUp, colorClass: 'bg-green-500' },
     { name: 'Mentions Tiêu Cực', value: metrics?.negative_mentions || 0, icon: TrendingDown, colorClass: 'bg-red-500' },
     { name: 'Cảnh Báo', value: metrics?.alerts_count || 0, icon: AlertTriangle, colorClass: 'bg-yellow-500' },
@@ -185,16 +184,10 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Sentiment & Hot Keywords */}
-        <div className="space-y-6">
-          <div className="bg-white/5 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/10 p-5 group hover:border-white/20 transition-all duration-500">
-            <h2 className="text-base font-bold text-white tracking-wide mb-4">Phân Bố Sắc Thái</h2>
-            <SentimentDonutChart data={sentiment} isLoading={loadingCharts} />
-          </div>
-          <div className="bg-white/5 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/10 p-5 group hover:border-white/20 transition-all duration-500">
-            <h2 className="text-base font-bold text-white tracking-wide mb-4">Từ Khóa Nổi Bật</h2>
-            <HotKeywordsWidget data={hotKeywords?.items || []} isLoading={loadingCharts} />
-          </div>
+        {/* Hot Keywords */}
+        <div className="bg-white/5 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/10 p-5 group hover:border-white/20 transition-all duration-500">
+          <h2 className="text-base font-bold text-white tracking-wide mb-4">Từ Khóa Nổi Bật</h2>
+          <HotKeywordsWidget data={hotKeywords?.items || []} isLoading={loadingCharts} />
         </div>
       </div>
 
