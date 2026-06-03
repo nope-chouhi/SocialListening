@@ -200,24 +200,32 @@ class SocialCrawlerService:
         platforms = platforms or ["twitter", "reddit", "news", "google_news"]
         mentions: List[Dict[str, Any]] = []
 
+        import asyncio
+        tasks = []
         for keyword in keywords:
             for platform in platforms:
-                try:
-                    if platform == "twitter":
-                        batch = await self.crawl_twitter(keyword)
-                    elif platform == "reddit":
-                        batch = await self.crawl_reddit(keyword)
-                    elif platform == "news":
-                        batch = await self.crawl_news(keyword)
-                    elif platform == "google_news":
-                        batch = await self.crawl_google_news(keyword)
-                    else:
-                        continue
-                    for m in batch:
-                        m["keyword"] = keyword
-                    mentions.extend(batch)
-                except Exception as e:
-                    logger.error(f"Error crawling {platform} for '{keyword}': {e}")
+                if platform == "twitter":
+                    tasks.append((platform, keyword, self.crawl_twitter(keyword)))
+                elif platform == "reddit":
+                    tasks.append((platform, keyword, self.crawl_reddit(keyword)))
+                elif platform == "news":
+                    tasks.append((platform, keyword, self.crawl_news(keyword)))
+                elif platform == "google_news":
+                    tasks.append((platform, keyword, self.crawl_google_news(keyword)))
+                    
+        if not tasks:
+            return []
+
+        coros = [t[2] for t in tasks]
+        results = await asyncio.gather(*coros, return_exceptions=True)
+        
+        for (platform, keyword, _), batch in zip(tasks, results):
+            if isinstance(batch, Exception):
+                logger.error(f"Error crawling {platform} for '{keyword}': {batch}")
+            elif batch:
+                for m in batch:
+                    m["keyword"] = keyword
+                mentions.extend(batch)
 
         return mentions
 

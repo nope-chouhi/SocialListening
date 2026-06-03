@@ -584,7 +584,7 @@ export default function MentionsPage() {
       } catch (err) {
         console.error(err);
       }
-    }, 3000);
+    }, 500);
     return () => clearInterval(interval);
   }, [activeScanJobId, router, searchParams]);
 
