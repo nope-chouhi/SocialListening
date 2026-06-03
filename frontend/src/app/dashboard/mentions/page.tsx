@@ -1113,7 +1113,7 @@ export default function MentionsPage() {
               {!activeScanJobId && <FileText className="w-12 h-12 text-gray-600 mx-auto mb-4" />}
               {searchTerm ? (
                 activeScanJobId ? (
-                  (scanJobStatus?.status === 'FAILED' || scanJobStatus?.status === 'TIMEOUT') ? (
+                  (scanJobStatus?.status?.toUpperCase() === 'FAILED' || scanJobStatus?.status?.toUpperCase() === 'TIMEOUT') ? (
                     <div className="text-left w-full max-w-2xl mx-auto bg-[#1E293B] border border-rose-500/30 rounded-xl p-6">
                        <h3 className="text-rose-400 font-bold text-lg mb-2 flex items-center gap-2"><AlertTriangle /> Lượt quét thất bại</h3>
                        <p className="text-white mb-4">Lý do: {scanJobStatus.error_message || 'Không rõ nguyên nhân'}</p>
@@ -1149,7 +1149,7 @@ export default function MentionsPage() {
                          <Link href={`/dashboard/system/scan-center/${scanJobStatus.job_id}`} className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg flex items-center gap-2"><Info className="w-4 h-4"/> Xem chi tiết job</Link>
                        </div>
                     </div>
-                  ) : scanJobStatus?.status === 'COMPLETED_NO_RESULTS' ? (
+                  ) : scanJobStatus?.status?.toUpperCase() === 'COMPLETED_NO_RESULTS' ? (
                      <div className="text-left w-full max-w-2xl mx-auto bg-[#1E293B] border border-amber-500/30 rounded-xl p-6">
                        <h3 className="text-amber-400 font-bold text-lg mb-2 flex items-center gap-2"><Info /> Đã quét xong nhưng không có kết quả</h3>
                        <p className="text-white mb-4">Các API đã chạy thành công nhưng không tìm thấy đề cập nào khớp với từ khóa.</p>

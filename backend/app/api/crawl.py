@@ -297,7 +297,7 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
                         continue # Skip irrelevant result that doesn't contain the keyword
                     
                     summary["web"]["results_after_keyword_match"] += 1
-                    content_hash = hashlib.sha256(f"{url}_{title}".encode()).hexdigest()
+                    content_hash = hashlib.sha256(f"{project_id}_{matched_kw}_{url}_{title}".encode()).hexdigest()
                     
                     existing = db.execute(select(Mention).where(Mention.project_id == project_id, Mention.keyword_text == matched_kw, Mention.url == url)).scalar_one_or_none()
                     if existing:
@@ -375,7 +375,7 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
                         if not matched_kw:
                             continue # Skip irrelevant result that doesn't contain the keyword
                         
-                        content_hash = hashlib.sha256(f"{url}_{title}".encode()).hexdigest()
+                        content_hash = hashlib.sha256(f"{project_id}_{matched_kw}_{url}_{title}".encode()).hexdigest()
                         
                         existing = db.execute(select(Mention).where(Mention.project_id == project_id, Mention.keyword_text == matched_kw, Mention.url == url)).scalar_one_or_none()
                         if existing:
