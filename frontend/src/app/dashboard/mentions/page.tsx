@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import {
   Search, Eye, Trash2, FileText, X, ExternalLink,
@@ -203,7 +203,7 @@ function highlightText(text: string, query: string): React.ReactNode {
    MAIN COMPONENT
    ═══════════════════════════════════════════════════════════════════════════ */
 
-export default function MentionsPage() {
+function MentionsPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const initialJobId = searchParams?.get('job_id');
@@ -226,6 +226,15 @@ export default function MentionsPage() {
   const [page, setPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState(initialSearch || '');
   const [searchInput, setSearchInput] = useState(initialSearch || '');
+
+  useEffect(() => {
+    const q = searchParams?.get('q') || searchParams?.get('keyword') || '';
+    if (q !== searchTerm) {
+      setSearchTerm(q);
+      setSearchInput(q);
+      setPage(1);
+    }
+  }, [searchParams]);
   const [filters, setFilters] = useState<Filters>({
     sentiment: null,
     source_type: null,
@@ -1050,41 +1059,32 @@ export default function MentionsPage() {
              </h3>
            </div>
            <div className="px-2">
-             <input type="range" min="0" max="10" defaultValue="0" className="w-full h-1 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer accent-blue-600" />
+             <input 
+               type="range" 
+               min="0" 
+               max="10" 
+               value={filters.min_influence_score || 0}
+               onChange={(e) => {
+                 setFilters({ ...filters, min_influence_score: parseInt(e.target.value) });
+                 setPage(1);
+               }}
+               className="w-full h-1 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer accent-blue-600" 
+             />
              <div className="flex justify-between text-[10px] text-gray-500 dark:text-gray-500 mt-2 font-medium">
                <span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span>
              </div>
            </div>
         </div>
 
-        {/* Other dropdowns */}
-        <div className="bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10 p-4 space-y-4">
-           <div>
-             <div className="flex items-center justify-between mb-2">
-               <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100 flex items-center gap-1.5">Geolocation <Info className="w-3.5 h-3.5 text-gray-400" /></h3>
-               <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-500"><span className="text-[10px]">Exclude countries</span><div className="w-6 h-3 bg-gray-200 dark:bg-gray-800 rounded-full"></div></div>
-             </div>
-             <div className="flex items-center justify-between border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-gray-500 dark:text-gray-500">Choose continents <ChevronDown className="w-4 h-4" /></div>
-             <div className="flex items-center justify-between border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-gray-500 dark:text-gray-500 mt-2">Choose countries <ChevronDown className="w-4 h-4" /></div>
-           </div>
-           
-           <div>
-             <div className="flex items-center justify-between mb-2">
-               <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100 flex items-center gap-1.5">Emotions <Info className="w-3.5 h-3.5 text-gray-400" /></h3>
-             </div>
-             <div className="flex items-center justify-between border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-gray-500 dark:text-gray-500">Choose emotions <ChevronDown className="w-4 h-4" /></div>
-           </div>
-
-           <div>
-             <div className="flex items-center justify-between mb-2">
-               <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100 flex items-center gap-1.5">Language <Info className="w-3.5 h-3.5 text-gray-400" /></h3>
-               <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-500"><span className="text-[10px]">Exclude languages</span><div className="w-6 h-3 bg-gray-200 dark:bg-gray-800 rounded-full"></div></div>
-             </div>
-             <div className="flex items-center justify-between border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-gray-500 dark:text-gray-500">Choose languages <ChevronDown className="w-4 h-4" /></div>
-           </div>
-        </div>
-
       </div>
     </div>
+  );
+}
+
+export default function MentionsPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-gray-500">Đang tải dữ liệu...</div>}>
+      <MentionsPageContent />
+    </Suspense>
   );
 }

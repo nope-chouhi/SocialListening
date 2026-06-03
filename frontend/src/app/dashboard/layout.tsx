@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { Suspense, useEffect, useState } from 'react';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { auth } from '@/lib/api';
 import LoadingSpinner from '@/components/LoadingSpinner';
@@ -265,6 +265,8 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges }: any) {
 
 function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const q = searchParams.get('q') || '';
   const pathname = usePathname();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -323,14 +325,27 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
           </button>
 
           {/* Search bar */}
-          <div className="flex-1 flex items-center max-w-xl relative">
+          <form 
+            className="flex-1 flex items-center max-w-xl relative"
+            onSubmit={(e) => {
+              e.preventDefault();
+              const val = (e.currentTarget.elements.namedItem('q') as HTMLInputElement).value;
+              if (val) {
+                router.push(`/dashboard/mentions?q=${encodeURIComponent(val)}`);
+              } else {
+                router.push('/dashboard/mentions');
+              }
+            }}
+          >
             <Search className="w-4 h-4 text-gray-400 absolute left-3" />
             <input 
+              name="q"
               type="text"
+              defaultValue={q}
               placeholder="Search through mentions, authors & domains..."
               className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg text-sm text-gray-700 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
             />
-          </div>
+          </form>
 
           <div className="ml-auto flex items-center space-x-4">
             <button className="hidden sm:flex items-center px-4 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-full transition-colors tracking-wide shadow-sm">
@@ -364,7 +379,9 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <ProjectProvider>
-      <DashboardLayoutContent>{children}</DashboardLayoutContent>
+      <Suspense fallback={<LoadingSpinner message="Đang khởi động..." />}>
+        <DashboardLayoutContent>{children}</DashboardLayoutContent>
+      </Suspense>
     </ProjectProvider>
   );
 }
