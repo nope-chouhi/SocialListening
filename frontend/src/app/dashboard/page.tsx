@@ -33,11 +33,11 @@ export default function DashboardPage() {
   useEffect(() => {
     fetchUserRole();
     fetchDashboardSummary();
-  }, []);
+  }, [activeProject?.id]);
 
   useEffect(() => {
     fetchChartData();
-  }, [timeRange]);
+  }, [timeRange, activeProject?.id]);
 
   const fetchUserRole = async () => {
     try {
@@ -53,7 +53,7 @@ export default function DashboardPage() {
   const fetchDashboardSummary = async () => {
     try {
       setLoadingMetrics(true);
-      const data = await dashboard.summary();
+      const data = await dashboard.summary(activeProject?.id);
       setMetrics(data);
     } catch (error: any) {
       console.error('Error fetching dashboard summary:', error);
@@ -70,9 +70,9 @@ export default function DashboardPage() {
     try {
       setLoadingCharts(true);
       const [trendsData, sentimentData, keywordsData] = await Promise.all([
-        dashboard.trends(timeRange),
-        dashboard.sentimentSummary(timeRange),
-        dashboard.hotKeywords(timeRange === '30d' ? '7d' : 'today'),
+        dashboard.trends(timeRange, activeProject?.id),
+        dashboard.sentimentSummary(timeRange, activeProject?.id),
+        dashboard.hotKeywords(timeRange === '30d' ? '7d' : 'today', activeProject?.id),
       ]);
       setTrends(trendsData);
       setSentiment(sentimentData);

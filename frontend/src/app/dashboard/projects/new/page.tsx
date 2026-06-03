@@ -49,22 +49,24 @@ export default function NewProjectPage() {
 
       // 2. Add Included Keywords
       const includedList = keywords.split(',').map(k => k.trim()).filter(Boolean);
-      for (const kw of includedList) {
-        await keywordsApi.createKeyword({
-          keyword: kw,
+      if (includedList.length > 0) {
+        await keywordsApi.createKeywordsBulk({
           group_id: newGroup.id,
+          keywords: includedList,
           keyword_type: 'general',
+          is_active: true
         });
       }
 
       // 3. Add Excluded Keywords
       const excludedList = excludedKeywords.split(',').map(k => k.trim()).filter(Boolean);
-      for (const kw of excludedList) {
-        await keywordsApi.createKeyword({
-          keyword: kw,
+      if (excludedList.length > 0) {
+        await keywordsApi.createKeywordsBulk({
           group_id: newGroup.id,
+          keywords: excludedList,
           keyword_type: 'negative_phrase',
-          is_excluded: true
+          is_excluded: true,
+          is_active: true
         });
       }
 

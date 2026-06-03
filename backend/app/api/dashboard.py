@@ -20,6 +20,7 @@ router = APIRouter()
 @router.get("/summary")
 def get_dashboard_summary(
     days: int = Query(30, ge=1, le=365),
+    project_id: Optional[int] = Query(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
@@ -32,15 +33,19 @@ def get_dashboard_summary(
         
         # Total mentions
         try:
-            total_mentions = db.execute(apply_tenant_filter(select(func.count(Mention.id)), Mention, current_user)).scalar() or 0
+            base_query = apply_tenant_filter(select(func.count(Mention.id)), Mention, current_user)
+            if project_id:
+                base_query = base_query.where(Mention.project_id == project_id)
+            total_mentions = db.execute(base_query).scalar() or 0
         except Exception as e:
             logger.error(f"Error querying total mentions: {e}")
             total_mentions = 0
             
         try:
-            mentions_today = db.execute(
-                apply_tenant_filter(select(func.count(Mention.id)), Mention, current_user).where(Mention.collected_at >= today_start)
-            ).scalar() or 0
+            base_query = apply_tenant_filter(select(func.count(Mention.id)), Mention, current_user).where(Mention.collected_at >= today_start)
+            if project_id:
+                base_query = base_query.where(Mention.project_id == project_id)
+            mentions_today = db.execute(base_query).scalar() or 0
         except Exception as e:
             logger.error(f"Error querying mentions today: {e}")
             mentions_today = 0
@@ -49,9 +54,12 @@ def get_dashboard_summary(
         month_start = now - timedelta(days=30)
         try:
             from app.models.mention import SentimentScore
+            query = select(func.count(AIAnalysis.id))
+            if project_id:
+                query = query.join(Mention, AIAnalysis.mention_id == Mention.id).where(Mention.project_id == project_id)
+            
             negative_mentions = db.execute(
-                select(func.count(AIAnalysis.id))
-                .where(
+                query.where(
                     and_(
                         AIAnalysis.sentiment.in_([SentimentScore.NEGATIVE_LOW, SentimentScore.NEGATIVE_MEDIUM, SentimentScore.NEGATIVE_HIGH]),
                         AIAnalysis.analyzed_at >= month_start
@@ -92,7 +100,10 @@ def get_dashboard_summary(
         # Latest mentions with AI analysis
         latest_mentions_data = []
         try:
-            latest_mentions_query = apply_tenant_filter(select(Mention), Mention, current_user).order_by(Mention.collected_at.desc()).limit(10)
+            latest_mentions_query = apply_tenant_filter(select(Mention), Mention, current_user)
+            if project_id:
+                latest_mentions_query = latest_mentions_query.where(Mention.project_id == project_id)
+            latest_mentions_query = latest_mentions_query.order_by(Mention.collected_at.desc()).limit(10)
             latest_mentions = db.execute(latest_mentions_query).scalars().all()
             
             for m in latest_mentions:
@@ -285,6 +296,7 @@ def get_latest_alerts(
 @router.get("/trends")
 def get_dashboard_trends(
     time_range: str = Query("7d", alias="range", pattern="^(today|7d|30d)$"),
+    project_id: Optional[int] = Query(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
@@ -318,21 +330,26 @@ def get_dashboard_trends(
             
             # Total mentions for this day
             try:
-                total_mentions = db.execute(
-                    apply_tenant_filter(select(func.count(Mention.id)), Mention, current_user).where(
-                        and_(
-                            Mention.collected_at >= day_start,
-                            Mention.collected_at < day_end
-                        )
+                base_query = apply_tenant_filter(select(func.count(Mention.id)), Mention, current_user).where(
+                    and_(
+                        Mention.collected_at >= day_start,
+                        Mention.collected_at < day_end
                     )
-                ).scalar() or 0
+                )
+                if project_id:
+                    base_query = base_query.where(Mention.project_id == project_id)
+                total_mentions = db.execute(base_query).scalar() or 0
             except Exception:
                 total_mentions = 0
             
             try:
                 from app.models.mention import SentimentScore
+                query = select(func.count(AIAnalysis.id))
+                if project_id:
+                    query = query.join(Mention, AIAnalysis.mention_id == Mention.id).where(Mention.project_id == project_id)
+                
                 negative_mentions = db.execute(
-                    select(func.count(AIAnalysis.id)).where(
+                    query.where(
                         and_(
                             AIAnalysis.analyzed_at >= day_start,
                             AIAnalysis.analyzed_at < day_end,
@@ -487,6 +504,7 @@ def get_sentiment_summary(
 @router.get("/hot-keywords")
 def get_hot_keywords(
     time_range: str = Query("7d", alias="range", pattern="^(today|7d|30d)$"),
+    project_id: Optional[int] = Query(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
@@ -513,9 +531,10 @@ def get_hot_keywords(
         
         # Get recent mentions
         try:
-            recent_mentions = db.execute(
-                apply_tenant_filter(select(Mention), Mention, current_user).where(Mention.collected_at >= start_date)
-            ).scalars().all()
+            mentions_query = apply_tenant_filter(select(Mention), Mention, current_user).where(Mention.collected_at >= start_date)
+            if project_id:
+                mentions_query = mentions_query.where(Mention.project_id == project_id)
+            recent_mentions = db.execute(mentions_query).scalars().all()
         except Exception:
             recent_mentions = []
         

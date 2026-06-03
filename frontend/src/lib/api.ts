@@ -164,12 +164,16 @@ export const auth = {
 // ─── Dashboard ────────────────────────────────────────────────────────────────
 export const dashboard = {
   overview: async (projectId: number): Promise<any> => { const response = await api.get('/api/dashboard/overview', { params: { project_id: projectId } }); return response.data; },
-  summary: async () => {
-    const response = await api.get('/api/dashboard/summary');
+  summary: async (projectId?: number) => {
+    const params: any = {};
+    if (projectId) params.project_id = projectId;
+    const response = await api.get('/api/dashboard/summary', { params });
     return response.data;
   },
-  trends: async (range: string = '7d') => {
-    const response = await api.get('/api/dashboard/trends', { params: { range } });
+  trends: async (range: string = '7d', projectId?: number) => {
+    const params: any = { range };
+    if (projectId) params.project_id = projectId;
+    const response = await api.get('/api/dashboard/trends', { params });
     return response.data;
   },
   sentimentSummary: async (range: string = '7d', projectId?: number) => {
@@ -178,8 +182,10 @@ export const dashboard = {
     const response = await api.get('/api/dashboard/sentiment-summary', { params });
     return response.data;
   },
-  hotKeywords: async (range: string = '7d') => {
-    const response = await api.get('/api/dashboard/hot-keywords', { params: { range } });
+  hotKeywords: async (range: string = '7d', projectId?: number) => {
+    const params: any = { range };
+    if (projectId) params.project_id = projectId;
+    const response = await api.get('/api/dashboard/hot-keywords', { params });
     return response.data;
   },
   sidebarBadges: async () => {

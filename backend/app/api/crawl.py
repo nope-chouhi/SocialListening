@@ -230,9 +230,9 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
                 }
                 disc_job = create_discovery_job(db, user_id=user_id, request_data=req_data)
                 db.commit()
-                # Discovery is meant to run in the background or synchronously here? 
-                # Let's run it synchronously since this runs inside a celery task anyway
-                run_discovery_job(db, disc_job.id)
+                # Run discovery asynchronously to prevent blocking manual scan
+                import threading
+                threading.Thread(target=_run_discovery_bg, args=(disc_job.id,)).start()
             except Exception as e:
                 import logging
                 logging.getLogger(__name__).error(f"Failed to create discovery job from scan: {e}")
@@ -270,13 +270,16 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
                     
                     # Assign keyword (fallback to first keyword if exact match not found in snippet)
                     import unicodedata
-                    matched_kw = keyword_texts[0] if keyword_texts else ""
+                    matched_kw = None
                     search_text = unicodedata.normalize('NFC', (title + " " + snippet + " " + url).lower())
                     for kw in keyword_texts:
                         kw_norm = unicodedata.normalize('NFC', kw.lower())
                         if kw_norm in search_text:
                             matched_kw = kw
                             break
+                    
+                    if not matched_kw:
+                        continue # Skip irrelevant result that doesn't contain the keyword
                     
                     summary["web"]["results_after_keyword_match"] += 1
                     content_hash = hashlib.sha256(f"{url}_{title}".encode()).hexdigest()
@@ -345,13 +348,16 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
                         snippet = r.get("content", "")
                         
                         import unicodedata
-                        matched_kw = keyword_texts[0] if keyword_texts else ""
+                        matched_kw = None
                         search_text = unicodedata.normalize('NFC', (title + " " + snippet + " " + url).lower())
                         for kw in keyword_texts:
                             kw_norm = unicodedata.normalize('NFC', kw.lower())
                             if kw_norm in search_text:
                                 matched_kw = kw
                                 break
+                        
+                        if not matched_kw:
+                            continue # Skip irrelevant result that doesn't contain the keyword
                         
                         content_hash = hashlib.sha256(f"{url}_{title}".encode()).hexdigest()
                         
