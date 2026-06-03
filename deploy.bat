@@ -30,4 +30,4 @@ echo Frontend: https://social-listening-azure.vercel.app
 echo.
 echo Vercel dang bat dau build, doi mot chut la len nhe!
 echo.
-REM pause
+pause
