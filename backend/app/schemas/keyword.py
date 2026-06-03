@@ -1,7 +1,29 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
 from datetime import datetime
 from typing import Optional, List
 from app.models.keyword import KeywordType, LogicOperator
+
+
+def normalize_keyword_type_val(value):
+    if not value:
+        return KeywordType.GENERAL
+    if isinstance(value, KeywordType):
+        value = value.value
+    v = str(value).lower()
+    mapping = {
+        "product": "brand",
+        "products": "brand",
+        "brand": "brand",
+        "general": "general",
+        "competitor": "competitor",
+        "person": "person",
+        "service": "service",
+        "location": "location",
+        "hashtag": "hashtag",
+        "negative_phrase": "negative_phrase",
+        "positive_phrase": "positive_phrase"
+    }
+    return KeywordType(mapping.get(v, "general"))
 
 
 # Keyword Schemas
@@ -11,6 +33,10 @@ class KeywordBase(BaseModel):
     logic_operator: LogicOperator = LogicOperator.OR
     is_excluded: bool = False
     is_active: bool = True
+
+    @validator("keyword_type", pre=True, always=True)
+    def validate_keyword_type(cls, v):
+        return normalize_keyword_type_val(v)
 
 
 class KeywordCreate(KeywordBase):
@@ -22,6 +48,10 @@ class KeywordBulkCreate(BaseModel):
     keywords: List[str]
     keyword_type: KeywordType = KeywordType.GENERAL
     is_active: bool = True
+
+    @validator("keyword_type", pre=True, always=True)
+    def validate_keyword_type(cls, v):
+        return normalize_keyword_type_val(v)
 
 
 class KeywordBulkResponse(BaseModel):
@@ -39,6 +69,12 @@ class KeywordUpdate(BaseModel):
     logic_operator: Optional[LogicOperator] = None
     is_excluded: Optional[bool] = None
     is_active: Optional[bool] = None
+
+    @validator("keyword_type", pre=True, always=True)
+    def validate_keyword_type(cls, v):
+        if v is None:
+            return v
+        return normalize_keyword_type_val(v)
 
 
 class KeywordResponse(KeywordBase):

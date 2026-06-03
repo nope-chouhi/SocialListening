@@ -162,13 +162,13 @@ def run_social_crawl_sync():
     db = SessionLocal()
     try:
         keywords = db.execute(
-            select(Keyword).where(Keyword.is_active == True)
+            select(Keyword.keyword).where(Keyword.is_active == True)
         ).scalars().all()
         if not keywords:
             logger.info("[SocialCrawl] No active keywords")
             return
 
-        keyword_list = list({k.keyword.strip() for k in keywords if k.keyword and k.keyword.strip()})[:20]
+        keyword_list = list({k.strip() for k in keywords if k and k.strip()})[:20]
         platforms = DEFAULT_PLATFORMS.copy()
         from app.core.config import settings
         if settings.TWITTER_BEARER_TOKEN:
