@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { LayoutDashboard, MessageSquare, Key, EchoMindIcon } from 'lucide-react';
+import { LayoutDashboard, MessageSquare, Key } from 'lucide-react';
 import { ReactNode } from 'react';
 
 export default function EchoMindLayout({ children }: { children: ReactNode }) {
