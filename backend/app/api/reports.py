@@ -14,6 +14,7 @@ from app.models.alert import Alert
 from app.schemas.report import (
     ReportCreate, ReportResponse, ReportListResponse
 )
+from app.core.tenant import apply_tenant_filter
 
 router = APIRouter()
 router = APIRouter()
@@ -29,7 +30,7 @@ def get_reports_summary(
     now = datetime.utcnow()
     # Simple summary for the frontend
     
-    total_mentions = db.execute(select(func.count(Mention.id))).scalar() or 0
+    total_mentions = db.execute(apply_tenant_filter(select(func.count(Mention.id)), Mention, current_user)).scalar() or 0
     total_analyzed = db.execute(
         select(func.count(AIAnalysis.id))
     ).scalar() or 0
@@ -63,15 +64,19 @@ def get_reports_summary(
         ]
     }
 
-def _generate_report_inline(report: Report, db: Session):
+def _generate_report_inline(report: Report, db: Session, current_user: User = None):
     """Generate report data inline (no Celery needed)."""
     try:
         start_date = report.start_date
         end_date = report.end_date
 
         # Get mentions in date range
+        mentions_query = select(Mention)
+        if current_user:
+            mentions_query = apply_tenant_filter(mentions_query, Mention, current_user)
+            
         mentions = db.execute(
-            select(Mention).where(
+            mentions_query.where(
                 and_(
                     Mention.collected_at >= start_date,
                     Mention.collected_at <= end_date,
@@ -105,8 +110,12 @@ def _generate_report_inline(report: Report, db: Session):
         analyses = {a.mention_id: a for a in analyses_list}
 
         # Get alerts in date range
+        alerts_query = select(Alert)
+        if current_user:
+            alerts_query = apply_tenant_filter(alerts_query, Alert, current_user)
+            
         alerts = db.execute(
-            select(Alert).where(
+            alerts_query.where(
                 and_(
                     Alert.created_at >= start_date,
                     Alert.created_at <= end_date
@@ -197,7 +206,7 @@ def list_reports(
     current_user: User = Depends(get_current_active_user)
 ):
     """List reports with filtering and pagination"""
-    query = select(Report)
+    query = apply_tenant_filter(select(Report), Report, current_user, "generated_by")
 
     if report_type:
         query = query.where(Report.report_type == report_type)
@@ -244,7 +253,7 @@ def create_report(
 
     # Generate report inline (no Celery)
     try:
-        _generate_report_inline(report, db)
+        _generate_report_inline(report, db, current_user)
     except Exception as e:
         # Status already set to FAILED in helper
         pass
@@ -261,7 +270,7 @@ def get_report(
 ):
     """Get a report by ID"""
     report = db.execute(
-        select(Report).where(Report.id == report_id)
+        apply_tenant_filter(select(Report), Report, current_user, "generated_by").where(Report.id == report_id)
     ).scalar_one_or_none()
 
     if not report:
@@ -278,7 +287,7 @@ def delete_report(
 ):
     """Delete a report"""
     report = db.execute(
-        select(Report).where(Report.id == report_id)
+        apply_tenant_filter(select(Report), Report, current_user, "generated_by").where(Report.id == report_id)
     ).scalar_one_or_none()
 
     if not report:

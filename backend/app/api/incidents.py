@@ -1,4 +1,4 @@
-﻿from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import select, func
 from datetime import datetime
@@ -10,6 +10,7 @@ from app.core.database import get_db
 from app.core.security import get_current_active_user
 from app.models.user import User
 from app.models.incident import Incident, IncidentStatus, IncidentLog
+from app.core.tenant import apply_tenant_filter
 
 router = APIRouter()
 
@@ -48,7 +49,7 @@ def list_incidents(
     current_user: User = Depends(get_current_active_user)
 ):
     """List incidents with filtering and pagination"""
-    query = select(Incident)
+    query = apply_tenant_filter(select(Incident), Incident, current_user)
 
     if status:
         query = query.where(Incident.status == status)
@@ -105,7 +106,8 @@ def create_incident(
         title=body.title,
         description=body.description,
         status=IncidentStatus.NEW,
-        deadline=deadline
+        deadline=deadline,
+        user_id=current_user.id
     )
     db.add(incident)
     db.commit()
@@ -141,7 +143,7 @@ def get_incident(
 ):
     """Get an incident by ID"""
     incident = db.execute(
-        select(Incident).where(Incident.id == incident_id)
+        apply_tenant_filter(select(Incident), Incident, current_user).where(Incident.id == incident_id)
     ).scalar_one_or_none()
 
     if not incident:
@@ -173,7 +175,7 @@ def update_incident(
 ):
     """Update an incident (accepts JSON body)"""
     incident = db.execute(
-        select(Incident).where(Incident.id == incident_id)
+        apply_tenant_filter(select(Incident), Incident, current_user).where(Incident.id == incident_id)
     ).scalar_one_or_none()
 
     if not incident:
@@ -244,7 +246,7 @@ def delete_incident(
 ):
     """Delete an incident"""
     incident = db.execute(
-        select(Incident).where(Incident.id == incident_id)
+        apply_tenant_filter(select(Incident), Incident, current_user).where(Incident.id == incident_id)
     ).scalar_one_or_none()
 
     if not incident:
@@ -262,7 +264,7 @@ def get_incident_logs(
 ):
     """Get all logs for an incident"""
     incident = db.execute(
-        select(Incident).where(Incident.id == incident_id)
+        apply_tenant_filter(select(Incident), Incident, current_user).where(Incident.id == incident_id)
     ).scalar_one_or_none()
 
     if not incident:
@@ -297,7 +299,7 @@ def add_incident_log(
 ):
     """Add a manual log entry to an incident"""
     incident = db.execute(
-        select(Incident).where(Incident.id == incident_id)
+        apply_tenant_filter(select(Incident), Incident, current_user).where(Incident.id == incident_id)
     ).scalar_one_or_none()
 
     if not incident:
@@ -331,7 +333,7 @@ def close_incident(
 ):
     """Close an incident"""
     incident = db.execute(
-        select(Incident).where(Incident.id == incident_id)
+        apply_tenant_filter(select(Incident), Incident, current_user).where(Incident.id == incident_id)
     ).scalar_one_or_none()
 
     if not incident:

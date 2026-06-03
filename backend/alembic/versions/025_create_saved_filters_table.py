@@ -62,7 +62,7 @@ def upgrade():
         except Exception:
             pass  # Table already exists
 
-    print("✅ Migration 025 complete - saved_filters table created!")
+    print("Migration 025 complete - saved_filters table created!")
 
 
 def downgrade():

@@ -6,6 +6,7 @@ from sqlalchemy import select, func
 from typing import List, Optional
 
 from app.core.database import get_db
+from app.core.tenant import apply_tenant_filter
 from app.core.security import get_current_active_user
 from app.models.user import User
 from app.models.source import Source, SourceGroup, SourceType, CrawlFrequency
@@ -71,7 +72,7 @@ def list_source_groups(
 ):
     """List all source groups with source counts."""
     try:
-        query = select(SourceGroup)
+        query = apply_tenant_filter(select(SourceGroup), SourceGroup, current_user)
         if is_active is not None:
             query = query.where(SourceGroup.is_active == is_active)
         query = query.offset(skip).limit(limit).order_by(SourceGroup.created_at.desc())
@@ -80,7 +81,7 @@ def list_source_groups(
         response = []
         for group in groups:
             count = db.execute(
-                select(func.count(Source.id)).where(Source.group_id == group.id)
+                apply_tenant_filter(select(func.count(Source.id)), Source, current_user).where(Source.group_id == group.id)
             ).scalar() or 0
             response.append(SourceGroupListResponse(
                 id=group.id,
@@ -104,7 +105,9 @@ def create_source_group(
 ):
     """Create a new source group."""
     try:
-        group = SourceGroup(**group_data.dict())
+        group_dict = group_data.dict()
+        group_dict['user_id'] = current_user.id
+        group = SourceGroup(**group_dict)
         db.add(group)
         db.commit()
         db.refresh(group)
@@ -129,10 +132,10 @@ def get_source_group(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
-    group = db.execute(select(SourceGroup).where(SourceGroup.id == group_id)).scalar_one_or_none()
+    group = db.execute(apply_tenant_filter(select(SourceGroup), SourceGroup, current_user).where(SourceGroup.id == group_id)).scalar_one_or_none()
     if not group:
         raise HTTPException(status_code=404, detail="Source group not found")
-    sources_in_group = db.execute(select(Source).where(Source.group_id == group_id)).scalars().all()
+    sources_in_group = db.execute(apply_tenant_filter(select(Source), Source, current_user).where(Source.group_id == group_id)).scalars().all()
     return SourceGroupResponse(
         id=group.id,
         name=group.name,
@@ -151,14 +154,14 @@ def update_source_group(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
-    group = db.execute(select(SourceGroup).where(SourceGroup.id == group_id)).scalar_one_or_none()
+    group = db.execute(apply_tenant_filter(select(SourceGroup), SourceGroup, current_user).where(SourceGroup.id == group_id)).scalar_one_or_none()
     if not group:
         raise HTTPException(status_code=404, detail="Source group not found")
     for field, value in group_data.dict(exclude_unset=True).items():
         setattr(group, field, value)
     db.commit()
     db.refresh(group)
-    sources_in_group = db.execute(select(Source).where(Source.group_id == group_id)).scalars().all()
+    sources_in_group = db.execute(apply_tenant_filter(select(Source), Source, current_user).where(Source.group_id == group_id)).scalars().all()
     return SourceGroupResponse(
         id=group.id,
         name=group.name,
@@ -176,7 +179,7 @@ def delete_source_group(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
-    group = db.execute(select(SourceGroup).where(SourceGroup.id == group_id)).scalar_one_or_none()
+    group = db.execute(apply_tenant_filter(select(SourceGroup), SourceGroup, current_user).where(SourceGroup.id == group_id)).scalar_one_or_none()
     if not group:
         raise HTTPException(status_code=404, detail="Source group not found")
     db.delete(group)
@@ -197,7 +200,7 @@ def list_sources(
 ):
     """List all sources. Returns [] if none exist."""
     try:
-        query = select(Source)
+        query = apply_tenant_filter(select(Source), Source, current_user)
         if group_id is not None:
             query = query.where(Source.group_id == group_id)
         if source_type is not None:
@@ -221,11 +224,12 @@ def create_source(
     """Create a new source."""
     try:
         if source_data.group_id:
-            group = db.execute(select(SourceGroup).where(SourceGroup.id == source_data.group_id)).scalar_one_or_none()
+            group = db.execute(apply_tenant_filter(select(SourceGroup), SourceGroup, current_user).where(SourceGroup.id == source_data.group_id)).scalar_one_or_none()
             if not group:
                 raise HTTPException(status_code=404, detail="Source group not found")
 
         data = source_data.dict()
+        data['user_id'] = current_user.id
 
         # Parse crawl_time string → datetime.time for DB column
         crawl_time_obj = None
@@ -249,7 +253,7 @@ def create_source(
         )
 
         # Check for duplicate URL
-        existing = db.execute(select(Source).where(Source.url == data['url'])).scalars().first()
+        existing = db.execute(apply_tenant_filter(select(Source), Source, current_user).where(Source.url == data['url'])).scalars().first()
         if existing:
             raise HTTPException(status_code=409, detail="Nguồn với URL này đã tồn tại")
 
@@ -282,7 +286,7 @@ def get_source(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
-    source = db.execute(select(Source).where(Source.id == source_id)).scalar_one_or_none()
+    source = db.execute(apply_tenant_filter(select(Source), Source, current_user).where(Source.id == source_id)).scalar_one_or_none()
     if not source:
         raise HTTPException(status_code=404, detail="Source not found")
     return _source_to_response(source)
@@ -295,7 +299,7 @@ def update_source(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
-    source = db.execute(select(Source).where(Source.id == source_id)).scalar_one_or_none()
+    source = db.execute(apply_tenant_filter(select(Source), Source, current_user).where(Source.id == source_id)).scalar_one_or_none()
     if not source:
         raise HTTPException(status_code=404, detail="Source not found")
 
@@ -355,7 +359,7 @@ def delete_source(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
-    source = db.execute(select(Source).where(Source.id == source_id)).scalar_one_or_none()
+    source = db.execute(apply_tenant_filter(select(Source), Source, current_user).where(Source.id == source_id)).scalar_one_or_none()
     if not source:
         raise HTTPException(status_code=404, detail="Source not found")
     db.delete(source)
@@ -370,7 +374,7 @@ def test_source(
 ):
     """Test if a source URL is reachable."""
     import httpx
-    source = db.execute(select(Source).where(Source.id == source_id)).scalar_one_or_none()
+    source = db.execute(apply_tenant_filter(select(Source), Source, current_user).where(Source.id == source_id)).scalar_one_or_none()
     if not source:
         raise HTTPException(status_code=404, detail="Source not found")
     try:
@@ -387,7 +391,7 @@ def scan_source(
     current_user: User = Depends(get_current_active_user)
 ):
     """Trigger a manual scan on a specific source."""
-    source = db.execute(select(Source).where(Source.id == source_id)).scalar_one_or_none()
+    source = db.execute(apply_tenant_filter(select(Source), Source, current_user).where(Source.id == source_id)).scalar_one_or_none()
     if not source:
         raise HTTPException(status_code=404, detail="Source not found")
 
@@ -397,7 +401,9 @@ def scan_source(
     import hashlib
     from datetime import datetime
 
-    all_keywords = db.execute(select(Keyword).where(Keyword.is_active == True)).scalars().all()
+    from app.models.keyword import KeywordGroup
+    
+    all_keywords = db.execute(apply_tenant_filter(select(Keyword).join(KeywordGroup, Keyword.group_id == KeywordGroup.id), KeywordGroup, current_user).where(Keyword.is_active == True)).scalars().all()
     if not all_keywords:
         return {"success": False, "message": "Không có từ khóa nào được kích hoạt"}
 
@@ -407,7 +413,7 @@ def scan_source(
         new_count = 0
         for mention_data in mentions_data:
             content_hash = hashlib.sha256(mention_data['content'].encode()).hexdigest()
-            existing = db.execute(select(Mention).where(Mention.content_hash == content_hash)).scalar_one_or_none()
+            existing = db.execute(apply_tenant_filter(select(Mention), Mention, current_user).where(Mention.content_hash == content_hash)).scalar_one_or_none()
             if existing:
                 continue
             mention = Mention(

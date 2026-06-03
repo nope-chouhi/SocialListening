@@ -13,6 +13,7 @@ from app.models.alert import Alert, AlertStatus, AlertSeverity
 from app.models.incident import Incident, IncidentStatus, IncidentLog
 from app.models.mention import Mention, AIAnalysis
 from app.services.notification_service import notify_alert_created
+from app.core.tenant import apply_tenant_filter
 
 router = APIRouter()
 
@@ -44,7 +45,7 @@ def list_alerts(
     current_user: User = Depends(get_current_active_user)
 ):
     """List alerts with filtering and pagination"""
-    query = select(Alert)
+    query = apply_tenant_filter(select(Alert), Alert, current_user)
 
     if severity:
         query = query.where(Alert.severity == severity)
@@ -107,7 +108,8 @@ def create_alert(
         title=body.title,
         severity=body.severity,
         message=body.message,
-        status=AlertStatus.NEW
+        status=AlertStatus.NEW,
+        user_id=current_user.id
     )
     db.add(alert)
     db.commit()
@@ -138,7 +140,7 @@ def get_alert(
 ):
     """Get an alert by ID"""
     alert = db.execute(
-        select(Alert).where(Alert.id == alert_id)
+        apply_tenant_filter(select(Alert), Alert, current_user).where(Alert.id == alert_id)
     ).scalar_one_or_none()
 
     if not alert:
@@ -165,7 +167,7 @@ def acknowledge_alert(
 ):
     """Acknowledge an alert"""
     alert = db.execute(
-        select(Alert).where(Alert.id == alert_id)
+        apply_tenant_filter(select(Alert), Alert, current_user).where(Alert.id == alert_id)
     ).scalar_one_or_none()
 
     if not alert:
@@ -196,7 +198,7 @@ def resolve_alert(
 ):
     """Resolve an alert"""
     alert = db.execute(
-        select(Alert).where(Alert.id == alert_id)
+        apply_tenant_filter(select(Alert), Alert, current_user).where(Alert.id == alert_id)
     ).scalar_one_or_none()
 
     if not alert:
@@ -224,7 +226,7 @@ def ignore_alert(
 ):
     """Ignore an alert"""
     alert = db.execute(
-        select(Alert).where(Alert.id == alert_id)
+        apply_tenant_filter(select(Alert), Alert, current_user).where(Alert.id == alert_id)
     ).scalar_one_or_none()
 
     if not alert:
@@ -254,7 +256,7 @@ def create_incident_from_alert(
 ):
     """Create an incident from an alert"""
     alert = db.execute(
-        select(Alert).where(Alert.id == alert_id)
+        apply_tenant_filter(select(Alert), Alert, current_user).where(Alert.id == alert_id)
     ).scalar_one_or_none()
 
     if not alert:
@@ -266,7 +268,8 @@ def create_incident_from_alert(
         owner_id=current_user.id,
         title=incident_title,
         description=description or f"Sự cố được tạo từ cảnh báo #{alert.id}: {alert.title}",
-        status=IncidentStatus.NEW
+        status=IncidentStatus.NEW,
+        user_id=current_user.id
     )
     db.add(incident)
     db.commit()
@@ -304,7 +307,7 @@ def delete_alert(
 ):
     """Delete an alert"""
     alert = db.execute(
-        select(Alert).where(Alert.id == alert_id)
+        apply_tenant_filter(select(Alert), Alert, current_user).where(Alert.id == alert_id)
     ).scalar_one_or_none()
 
     if not alert:
@@ -375,7 +378,8 @@ def check_alert_rules(
                 title=f"Mention Spike Detected: {body.name}",
                 message=f"Mentions increased by {spike_ratio:.1%} in the last {body.window_hours}h (current: {total_mentions}, previous: {prev_mentions})",
                 severity=AlertSeverity.HIGH if spike_ratio >= 0.5 else AlertSeverity.MEDIUM,
-                status=AlertStatus.NEW
+                status=AlertStatus.NEW,
+                user_id=current_user.id
             )
             db.add(alert)
             db.commit()
@@ -408,7 +412,8 @@ def check_alert_rules(
                     title=f"Negative Sentiment Spike: {body.name}",
                     message=f"Negative sentiment ratio is {negative_ratio:.1%} in the last {body.window_hours}h ({negative_count}/{total_count} mentions)",
                     severity=AlertSeverity.CRITICAL if negative_ratio >= 0.5 else AlertSeverity.HIGH,
-                    status=AlertStatus.NEW
+                    status=AlertStatus.NEW,
+                    user_id=current_user.id
                 )
                 db.add(alert)
                 db.commit()
@@ -436,7 +441,8 @@ def check_alert_rules(
                     title=f"High Risk Mentions: {body.name}",
                     message=f"Found {len(high_risk_mentions)} mentions with risk score >= {body.threshold} in the last {body.window_hours}h",
                     severity=AlertSeverity.CRITICAL if body.threshold >= 85 else AlertSeverity.HIGH,
-                    status=AlertStatus.NEW
+                    status=AlertStatus.NEW,
+                    user_id=current_user.id
                 )
                 db.add(alert)
                 db.commit()

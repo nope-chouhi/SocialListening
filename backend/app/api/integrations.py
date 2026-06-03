@@ -29,7 +29,7 @@ def get_integrations_capabilities(db: Session = Depends(get_db), current_user: U
     from app.core.config import settings
     from app.models.source import Source
     
-        # Web Search
+            # Web Search
     has_serpapi = bool(settings.SERPAPI_API_KEY)
     is_serpapi_provider = getattr(settings, "WEB_SEARCH_PROVIDER", "").lower() == "serpapi"
     
