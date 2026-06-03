@@ -533,10 +533,12 @@ def get_crawl_jobs(
                 "processed_sources": j.processed_sources or 0,
                 "mentions_found": j.mentions_found or 0,
                 "error_message": j.error_message,
+                "project_id": (j.meta_data or {}).get("project_id"),
                 "retry_count": j.retry_count or 0,
                 "created_at": j.created_at.isoformat() if j.created_at else None,
                 "started_at": j.started_at.isoformat() if j.started_at else None,
                 "completed_at": j.completed_at.isoformat() if j.completed_at else None,
+                "metadata": j.meta_data or {}
             }
             for j in jobs
         ],

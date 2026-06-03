@@ -23,6 +23,7 @@ class CrawlJobResponse(CrawlJobBase):
     processed_sources: int
     mentions_found: int
     error_message: Optional[str]
+    project_id: Optional[int] = None
     retry_count: int
     created_at: datetime
     started_at: Optional[datetime]

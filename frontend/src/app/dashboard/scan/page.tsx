@@ -35,6 +35,7 @@ interface CrawlJob {
   created_at: string | null;
   started_at: string | null;
   completed_at: string | null;
+  project_id?: number;
 }
 
 type SourceFilter = 'all' | 'rss' | 'website' | 'global_search' | 'active';
@@ -1022,7 +1023,7 @@ export default function ScanPage() {
           </div>
           {latestJob.mentions_found > 0 && (
             <Link
-              href={`/dashboard/mentions?job_id=${latestJob.id}`}
+              href={latestJob.project_id ? `/dashboard/mentions?project_id=${latestJob.project_id}&job_id=${latestJob.id}` : `/dashboard/mentions?job_id=${latestJob.id}`}
               className="ml-auto inline-flex items-center gap-1 text-[11px] font-medium text-indigo-400 hover:text-indigo-300 transition-colors"
             >
               Xem lượt đề cập
@@ -1072,7 +1073,7 @@ export default function ScanPage() {
                       <span className="text-xs text-gray-300 font-medium">{job.mentions_found} mentions</span>
                       {job.status === 'completed' && job.mentions_found > 0 && (
                         <Link
-                          href={`/dashboard/mentions?job_id=${job.id}`}
+                          href={job.project_id ? `/dashboard/mentions?project_id=${job.project_id}&job_id=${job.id}` : `/dashboard/mentions?job_id=${job.id}`}
                           className="inline-flex items-center gap-1 text-[10px] font-medium text-indigo-400 hover:text-indigo-300 transition-colors"
                         >
                           <Eye className="w-3 h-3" />

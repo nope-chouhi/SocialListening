@@ -209,13 +209,15 @@ export default function MentionsPage() {
   const initialJobId = searchParams?.get('job_id');
   const initialSearch = searchParams?.get('q') || searchParams?.get('keyword');
 
+  const initialProjectId = searchParams?.get('project_id');
+
   // Data
   const [mentionsList, setMentionsList] = useState<MentionItem[]>([]);
   const [totalMentions, setTotalMentions] = useState<number>(0);
   const [totalPages, setTotalPages] = useState(1);
   const [sentimentSummary, setSentimentSummary] = useState<any>(null);
   const [trendData, setTrendData] = useState<any[]>([]);
-  const { activeProject, fetchProjects } = useProject();
+  const { activeProject, setActiveProject, projects, fetchProjects } = useProject();
   // UI state
   const [loading, setLoading] = useState(true);
   const [loadingChart, setLoadingChart] = useState(true);
@@ -247,6 +249,7 @@ export default function MentionsPage() {
   });
   const [actionLoading, setActionLoading] = useState<Record<string, boolean>>({});
 
+  const hasSyncedUrlProject = useRef(false);
   
   // NEW SCAN STATES
   const [activeScanJobId, setActiveScanJobId] = useState<number | null>(null);
@@ -408,15 +411,20 @@ export default function MentionsPage() {
         page_size: 20,
         sort_by: filters.sort_by,
       };
-      if (initialJobId) params.job_id = initialJobId;
-      if (searchTerm) {
-        params.q = searchTerm;
+      if (initialJobId) {
+        params.job_id = initialJobId;
+      } else {
+        // Only apply other filters if NOT viewing a specific job history
+        if (searchTerm) {
+          params.q = searchTerm;
+        }
+        if (filters.sentiment) params.sentiment = filters.sentiment;
+        if (filters.source_type) params.source_type = filters.source_type;
+        if (filters.min_risk_score !== null) params.min_risk_score = filters.min_risk_score;
+        if (filters.min_influence_score !== null) params.min_influence_score = filters.min_influence_score;
       }
+
       if (activeProject) params.project_id = activeProject.id;
-      if (filters.sentiment) params.sentiment = filters.sentiment;
-      if (filters.source_type) params.source_type = filters.source_type;
-      if (filters.min_risk_score !== null) params.min_risk_score = filters.min_risk_score;
-      if (filters.min_influence_score !== null) params.min_influence_score = filters.min_influence_score;
 
       const data = await mentionsApi.list(params);
       setMentionsList(data.items);
@@ -856,6 +864,23 @@ export default function MentionsPage() {
 
       {/* Quick Filter Chips */}
       <div className="flex flex-wrap items-center gap-2 mb-6">
+        {initialJobId && (
+          <div className="flex items-center gap-2 mr-4 pr-4 border-r border-gray-800">
+            <span className="px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+              Lượt quét #{initialJobId}
+            </span>
+            <button
+              onClick={() => {
+                const newParams = new URLSearchParams(searchParams?.toString() || '');
+                newParams.delete('job_id');
+                router.push(`/dashboard/mentions?${newParams.toString()}`);
+              }}
+              className="text-xs text-gray-400 hover:text-white underline transition-colors"
+            >
+              Xem tất cả mentions của project
+            </button>
+          </div>
+        )}
         <button
           onClick={() => { setFilters({ ...filters, sentiment: null, source_type: null, min_risk_score: null, min_influence_score: null }); setPage(1); }}
           className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
@@ -1136,6 +1161,84 @@ export default function MentionsPage() {
       <div className="flex gap-6">
         {/* Mentions List */}
         <div className="flex-1 min-w-0">
+          
+          {/* Active Scan Progress Box */}
+          {activeScanJobId && scanJobStatus && scanJobStatus.status !== 'COMPLETED' && scanJobStatus.status !== 'FAILED' && (
+            <div className="bg-[#111827] border border-emerald-500/30 rounded-xl p-5 mb-6 shadow-[inset_0_0_20px_rgba(16,185,129,0.05)]">
+              <div className="flex flex-col gap-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                    <Loader2 className="w-4 h-4 text-emerald-400 animate-spin" />
+                    Đang quét dữ liệu mới cho từ khóa "{activeScanKeyword}"...
+                  </h3>
+                  <span className="text-xs text-gray-500 font-mono">#{activeScanJobId}</span>
+                </div>
+                
+                {scanJobStatus.summary && (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
+                    <div className="bg-gray-800/50 rounded-lg p-3 border border-gray-700/50">
+                      <div className="text-gray-400 mb-1">Web Search</div>
+                      <div className="text-gray-200 font-medium">
+                        {scanJobStatus.summary.web?.raw_results_count || 0} kết quả
+                      </div>
+                    </div>
+                    <div className="bg-gray-800/50 rounded-lg p-3 border border-gray-700/50">
+                      <div className="text-gray-400 mb-1">YouTube</div>
+                      <div className="text-gray-200 font-medium">
+                        {scanJobStatus.summary.youtube?.raw_results_count || 0} kết quả
+                      </div>
+                    </div>
+                    <div className="bg-indigo-500/10 rounded-lg p-3 border border-indigo-500/20">
+                      <div className="text-indigo-400 mb-1">Mentions Mới</div>
+                      <div className="text-indigo-300 font-medium text-lg">
+                        {scanJobStatus.summary.new_mentions_created || 0}
+                      </div>
+                    </div>
+                    <div className="bg-gray-800/50 rounded-lg p-3 border border-gray-700/50">
+                      <div className="text-gray-400 mb-1">Bỏ qua (Trùng)</div>
+                      <div className="text-gray-300 font-medium">
+                        {scanJobStatus.summary.duplicates_skipped || 0}
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                {scanJobStatus.summary?.errors && scanJobStatus.summary.errors.length > 0 && (
+                  <div className="mt-2 text-xs text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded-lg p-3">
+                    <div className="font-semibold mb-1 flex items-center gap-1.5"><AlertTriangle className="w-3.5 h-3.5" /> Lỗi xảy ra:</div>
+                    <ul className="list-disc list-inside space-y-1">
+                      {scanJobStatus.summary.errors.map((err: string, i: number) => (
+                        <li key={i}>{err}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {activeScanJobId && scanJobStatus && scanJobStatus.status === 'COMPLETED' && (
+            <div className="bg-[#111827] border border-emerald-500/30 rounded-xl p-5 mb-6 shadow-[inset_0_0_20px_rgba(16,185,129,0.05)]">
+               <div className="flex items-center gap-3">
+                 <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
+                   <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                 </div>
+                 <div>
+                   <h3 className="text-sm font-semibold text-emerald-400">Quét hoàn tất!</h3>
+                   <p className="text-xs text-gray-400 mt-1">
+                     {scanJobStatus.summary?.new_mentions_created > 0 
+                       ? `Đã tạo ${scanJobStatus.summary.new_mentions_created} mentions mới từ lượt quét này.` 
+                       : scanJobStatus.summary?.duplicates_skipped > 0 
+                         ? `Không có mentions mới. Hệ thống tìm lại ${scanJobStatus.summary.duplicates_skipped} kết quả đã tồn tại trước đó.`
+                         : `Không tìm thấy bài viết/web page phù hợp với từ khóa này.`
+                     }
+                   </p>
+                 </div>
+                 <button onClick={() => { setActiveScanJobId(null); setScanJobStatus(null); }} className="ml-auto text-gray-500 hover:text-white"><X className="w-4 h-4" /></button>
+               </div>
+            </div>
+          )}
+          
           {loading && mentionsList.length === 0 ? (
             <div className="space-y-3">
               {[...Array(5)].map((_, i) => (
