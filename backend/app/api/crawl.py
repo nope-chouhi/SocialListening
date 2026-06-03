@@ -270,10 +270,11 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
                 
                 # INSERT IMMEDIATELY
                 for r in serp_results:
-                    url = r.get("url", "").lower().strip()
+                    url = r.get("url")
                     if not url: continue
-                    title = r.get("title", "")
-                    snippet = r.get("snippet", "")
+                    url = str(url).lower().strip()
+                    title = str(r.get("title") or "")
+                    snippet = str(r.get("snippet") or "")
                     
                     # Assign keyword (fallback to first keyword if exact match not found in snippet)
                     import unicodedata
@@ -349,10 +350,11 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
                     summary["youtube"]["raw_results_count"] += len(yt_res)
                     
                     for r in yt_res:
-                        url = r.get("url", "").lower().strip()
+                        url = r.get("url")
                         if not url: continue
-                        title = r.get("title", "")
-                        snippet = r.get("content", "")
+                        url = str(url).lower().strip()
+                        title = str(r.get("title") or "")
+                        snippet = str(r.get("content") or "")
                         
                         import unicodedata
                         matched_kw = None
