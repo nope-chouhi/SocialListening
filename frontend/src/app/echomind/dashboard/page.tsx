@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import { api } from '@/lib/api';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { MessageSquare, ThumbsUp, ThumbsDown, Activity } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -38,7 +38,7 @@ export default function DashboardPage() {
 
   const fetchAnalytics = async () => {
     try {
-      const res = await axios.get('http://localhost:8000/api/echomind/analytics/summary');
+      const res = await api.get('/api/echomind/analytics/summary');
       setAnalytics(res.data);
     } catch (error) {
       toast.error('Failed to load analytics');
@@ -49,8 +49,6 @@ export default function DashboardPage() {
 
   useEffect(() => {
     fetchAnalytics();
-    const interval = setInterval(fetchAnalytics, 10000);
-    return () => clearInterval(interval);
   }, []);
 
   if (loading && !analytics) {

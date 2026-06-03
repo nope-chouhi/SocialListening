@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import { api } from '@/lib/api';
 import { Trash2, Plus } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -18,7 +18,7 @@ export default function KeywordsPage() {
 
   const fetchKeywords = async () => {
     try {
-      const res = await axios.get('http://localhost:8000/api/echomind/keywords');
+      const res = await api.get('/api/echomind/keywords');
       setKeywords(res.data);
     } catch (error) {
       toast.error('Failed to load keywords');
@@ -35,7 +35,7 @@ export default function KeywordsPage() {
     e.preventDefault();
     if (!newKeyword.trim()) return;
     try {
-      await axios.post('http://localhost:8000/api/echomind/keywords', { keyword: newKeyword.trim() });
+      await api.post('/api/echomind/keywords', { keyword: newKeyword.trim() });
       setNewKeyword('');
       fetchKeywords();
       toast.success('Keyword added successfully');
@@ -46,7 +46,7 @@ export default function KeywordsPage() {
 
   const handleDelete = async (id: number) => {
     try {
-      await axios.delete(`http://localhost:8000/api/echomind/keywords/${id}`);
+      await api.delete(`/api/echomind/keywords/${id}`);
       fetchKeywords();
       toast.success('Keyword deleted');
     } catch (error) {

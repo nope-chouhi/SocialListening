@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import { api } from '@/lib/api';
 import { Twitter, MessageCircle, Globe, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -24,7 +24,7 @@ export default function MentionsPage() {
   const fetchMentions = async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
     try {
-      const res = await axios.get('http://localhost:8000/api/echomind/mentions');
+      const res = await api.get('/api/echomind/mentions');
       setMentions(res.data);
     } catch (error) {
       toast.error('Failed to load mentions');
@@ -34,11 +34,9 @@ export default function MentionsPage() {
     }
   };
 
-  // Poll every 10 seconds for real-time feel
+  // Poll every 10 seconds for real-time feel (Disabled to stop spam)
   useEffect(() => {
     fetchMentions();
-    const interval = setInterval(() => fetchMentions(true), 10000);
-    return () => clearInterval(interval);
   }, []);
 
   const getSourceIcon = (source: string) => {
