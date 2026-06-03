@@ -417,7 +417,7 @@ export default function MentionsPage() {
       } else {
         // Only apply other filters if NOT viewing a specific job history
         if (searchTerm) {
-          params.q = searchTerm;
+          params.keyword = searchTerm;
         }
         if (filters.sentiment) params.sentiment = filters.sentiment;
         if (filters.source_type) params.source_type = filters.source_type;
@@ -433,17 +433,17 @@ export default function MentionsPage() {
       setTotalPages(data.total_pages);
 
       // Auto-trigger scan if 0 results
-      if (data.total === 0 && params.q && !initialJobId && !activeScanJobId) {
-        const keywordLower = params.q.toLowerCase().trim();
+      if (data.total === 0 && searchTerm && !initialJobId && !activeScanJobId) {
+        const keywordLower = searchTerm.toLowerCase().trim();
         if (!scannedKeywordsRef.current?.has(keywordLower) && activeProject) {
           scannedKeywordsRef.current?.add(keywordLower);
           
           // Call scan immediately
           try {
-            toast.success(`Đang tự động quét mạng cho từ khóa: ${params.q}...`);
+            toast.success(`Đang tự động quét mạng cho từ khóa: ${searchTerm}...`);
             const res = await crawl.manualScan({
               project_id: activeProject.id,
-              keywords: [params.q],
+              keywords: [searchTerm],
               mode: 'AUTO_DISCOVERY',
               source_ids: [],
               max_results: 100,
