@@ -50,10 +50,10 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges }: any) {
   ];
 
   const reportsNav = [
-    { name: 'Email reports', href: '#', icon: Mail },
+    { name: 'Email reports', href: '/dashboard/reports/email', icon: Mail },
     { name: 'PDF report', href: '/dashboard/reports', icon: FileText },
-    { name: 'Excel report', href: '#', icon: FileSpreadsheet },
-    { name: 'Infographic', href: '#', icon: ImageIcon },
+    { name: 'Excel report', href: '/dashboard/reports/excel', icon: FileSpreadsheet },
+    { name: 'Infographic', href: '/dashboard/reports/infographic', icon: ImageIcon },
   ];
 
   const systemNav = [
@@ -206,7 +206,7 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges }: any) {
           <p className="text-[11px] text-zinc-500 mb-3">
             Date: <strong className="text-zinc-400">Wednesday, June 3, 2026</strong>
           </p>
-          <Link href="#" className="flex items-center text-xs font-bold text-blue-500 hover:text-blue-400">
+          <Link href="/dashboard/webinar" className="flex items-center text-xs font-bold text-blue-500 hover:text-blue-400">
             <Award className="w-4 h-4 mr-2" />
             Sign up for webinar
           </Link>
