@@ -433,11 +433,14 @@ def crawl_source(source: Source, keyword_texts: List[str], keywords: List[Keywor
                 title = entry.get('title', '')
                 content = entry.get('summary', '') or entry.get('description', '')
                 full_text = f"{title} {content}".lower()
+                import unicodedata
+                full_text_norm = unicodedata.normalize('NFC', full_text)
                 
                 # Check if any keyword matches
                 matched = []
                 for i, kw_text in enumerate(keyword_texts):
-                    if kw_text in full_text:
+                    kw_norm = unicodedata.normalize('NFC', kw_text.lower())
+                    if kw_norm in full_text_norm:
                         matched.append({
                             'keyword_id': keywords[i].id,
                             'keyword': keywords[i].keyword
