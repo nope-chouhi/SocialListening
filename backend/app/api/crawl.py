@@ -226,6 +226,8 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
         job.meta_data = {"summary": summary, "project_id": project_id, "keywords": keyword_texts}
         db.commit()
 
+        seen_hashes = set()
+        
         run_discovery = mode in ("AUTO_DISCOVERY", "HYBRID")
         
         def commit_summary():
@@ -308,12 +310,20 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
                     summary["web"]["results_after_keyword_match"] += 1
                     content_hash = hashlib.sha256(f"{project_id}_{matched_kw}_{url}_{title}".encode()).hexdigest()
                     
-                    existing = db.execute(select(Mention).where(Mention.project_id == project_id, Mention.keyword_text == matched_kw, Mention.url == url)).scalar_one_or_none()
+                    if content_hash in seen_hashes:
+                        summary["web"]["duplicates_skipped"] += 1
+                        summary["duplicates_skipped"] += 1
+                        continue
+                    
+                    existing = db.execute(select(Mention).where(Mention.content_hash == content_hash)).scalar_one_or_none()
                     if existing:
                         summary["web"]["duplicates_skipped"] += 1
                         summary["duplicates_skipped"] += 1
                         summary["old_mentions_existing"] += 1
+                        seen_hashes.add(content_hash)
                         continue
+                    
+                    seen_hashes.add(content_hash)
                         
                     parsed_domain = urlparse(url).netloc
                     
@@ -386,12 +396,20 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
                         
                         content_hash = hashlib.sha256(f"{project_id}_{matched_kw}_{url}_{title}".encode()).hexdigest()
                         
-                        existing = db.execute(select(Mention).where(Mention.project_id == project_id, Mention.keyword_text == matched_kw, Mention.url == url)).scalar_one_or_none()
+                        if content_hash in seen_hashes:
+                            summary["youtube"]["duplicates_skipped"] += 1
+                            summary["duplicates_skipped"] += 1
+                            continue
+                            
+                        existing = db.execute(select(Mention).where(Mention.content_hash == content_hash)).scalar_one_or_none()
                         if existing:
                             summary["youtube"]["duplicates_skipped"] += 1
                             summary["duplicates_skipped"] += 1
                             summary["old_mentions_existing"] += 1
+                            seen_hashes.add(content_hash)
                             continue
+                            
+                        seen_hashes.add(content_hash)
                             
                         mention = Mention(
                             project_id=project_id,
@@ -469,12 +487,20 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
                 
                 content_hash = hashlib.sha256(f"{project_id}_{matched_kw}_{url}_{title}".encode()).hexdigest()
                 
-                existing = db.execute(select(Mention).where(Mention.project_id == project_id, Mention.keyword_text == matched_kw, Mention.url == url)).scalar_one_or_none()
+                if content_hash in seen_hashes:
+                    summary["social"]["duplicates_skipped"] += 1
+                    summary["duplicates_skipped"] += 1
+                    continue
+                    
+                existing = db.execute(select(Mention).where(Mention.content_hash == content_hash)).scalar_one_or_none()
                 if existing:
                     summary["social"]["duplicates_skipped"] += 1
                     summary["duplicates_skipped"] += 1
                     summary["old_mentions_existing"] += 1
+                    seen_hashes.add(content_hash)
                     continue
+                    
+                seen_hashes.add(content_hash)
                     
                 mention = Mention(
                     project_id=project_id,
