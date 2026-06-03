@@ -8,7 +8,6 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 import { SidebarBadge } from '@/components/dashboard/Badges';
 import { canAccessAdmin, type User } from '@/lib/permissions';
 import { ProjectProvider, useProject } from '@/contexts/ProjectContext';
-import ThemeToggle from '@/components/ThemeToggle';
 import { 
   LayoutDashboard, 
   Globe, 
@@ -32,7 +31,11 @@ import {
   Mail,
   FileSpreadsheet,
   Image as ImageIcon,
-  Award
+  Award,
+  Search,
+  HelpCircle,
+  Package,
+  Zap
 } from 'lucide-react';
 
 function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges }: any) {
@@ -68,14 +71,13 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges }: any) {
 
   return (
     <div
-      className={`fixed inset-y-0 left-0 z-50 w-64 bg-[#030614] border-r border-white/5 shadow-[4px_0_24px_rgba(0,0,0,0.6)] transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${
+      className={`fixed inset-y-0 left-0 z-50 w-64 bg-[#1A202C] border-r border-gray-800 shadow-xl transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
       } flex flex-col`}
     >
-      <div className="absolute top-0 left-0 w-full h-64 bg-indigo-500/5 blur-3xl pointer-events-none" />
       
       {/* Logo */}
-      <div className="flex items-center justify-between h-[72px] px-6 border-b border-white/5 relative z-10">
+      <div className="flex items-center justify-between h-[64px] px-6 border-b border-gray-800 relative z-10 bg-[#1A202C]">
         <div className="flex items-center space-x-3">
           <div className="w-9 h-9 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-[0_0_15px_rgba(99,102,241,0.5)] border border-white/20">
             <span className="text-white font-bold text-lg leading-none">N</span>
@@ -108,7 +110,7 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges }: any) {
           <div className="relative mb-3">
             <button
               onClick={() => setProjectDropdownOpen(!projectDropdownOpen)}
-              className="w-full px-5 py-2 flex items-center justify-between group cursor-pointer hover:bg-white/5 transition-colors"
+              className="w-full px-5 py-2 flex items-center justify-between group cursor-pointer hover:bg-[#2D3748] transition-colors"
             >
               <div className="text-left flex-1 min-w-0">
                 <p className="text-sm font-bold text-white flex items-center gap-2">
@@ -137,7 +139,7 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges }: any) {
                         router.push('/dashboard/mentions');
                       }}
                       className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${
-                        activeProject?.id === p.id ? 'bg-indigo-500/20 text-indigo-400 font-medium' : 'text-gray-300 hover:bg-[#111827]'
+                        activeProject?.id === p.id ? 'bg-[#2D3748] text-emerald-400 font-medium' : 'text-gray-300 hover:bg-[#2D3748]'
                       }`}
                     >
                       {p.name}
@@ -157,12 +159,12 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges }: any) {
                   href={item.href}
                   className={`group flex items-center px-3 py-2 text-sm font-bold rounded-lg transition-all duration-200 ${
                     isActive
-                      ? 'text-white bg-white/5'
-                      : 'text-zinc-400 hover:text-white hover:bg-white/5'
+                      ? 'text-white bg-[#2D3748]'
+                      : 'text-gray-400 hover:text-white hover:bg-[#2D3748]'
                   }`}
                   onClick={() => setSidebarOpen(false)}
                 >
-                  <item.icon className={`w-4 h-4 mr-3 ${isActive ? 'text-emerald-400' : 'text-zinc-500'}`} />
+                  <item.icon className={`w-4 h-4 mr-3 ${isActive ? 'text-emerald-400' : 'text-gray-500'}`} />
                   <span className="truncate flex-1">{item.name}</span>
                   {(item as any).badge ? <SidebarBadge count={(item as any).badge} /> : null}
                 </Link>
@@ -185,12 +187,12 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges }: any) {
                   href={item.href}
                   className={`group flex items-center px-3 py-2 text-sm font-bold rounded-lg transition-all duration-200 ${
                     isActive
-                      ? 'text-white bg-white/5'
-                      : 'text-zinc-400 hover:text-white hover:bg-white/5'
+                      ? 'text-white bg-[#2D3748]'
+                      : 'text-gray-400 hover:text-white hover:bg-[#2D3748]'
                   }`}
                   onClick={() => setSidebarOpen(false)}
                 >
-                  <item.icon className={`w-4 h-4 mr-3 ${isActive ? 'text-emerald-400' : 'text-zinc-500'}`} />
+                  <item.icon className={`w-4 h-4 mr-3 ${isActive ? 'text-emerald-400' : 'text-gray-500'}`} />
                   <span className="truncate flex-1">{item.name}</span>
                 </Link>
               );
@@ -229,12 +231,12 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges }: any) {
                   href={item.href}
                   className={`group flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
                     isActive
-                      ? 'text-white bg-white/5'
-                      : 'text-zinc-400 hover:text-white hover:bg-white/5'
+                      ? 'text-white bg-[#2D3748]'
+                      : 'text-gray-400 hover:text-white hover:bg-[#2D3748]'
                   }`}
                   onClick={() => setSidebarOpen(false)}
                 >
-                  <item.icon className={`w-4 h-4 mr-3 ${isActive ? 'text-emerald-400' : 'text-zinc-500'}`} />
+                  <item.icon className={`w-4 h-4 mr-3 ${isActive ? 'text-emerald-400' : 'text-gray-500'}`} />
                   <span className="truncate flex-1">{item.name}</span>
                 </Link>
               );
@@ -244,29 +246,16 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges }: any) {
       </nav>
 
       {/* Legal Footer & User Profile Combine */}
-      <div className="p-4 border-t border-white/5 bg-[#030614] z-10 flex flex-col gap-4">
-        <div className="flex items-center gap-2 text-[11px] font-bold text-zinc-100">
-          <Link href="#" className="hover:underline">Legal Information</Link>
-          <span className="text-zinc-600">|</span>
-          <Link href="#" className="hover:underline">Customize cookie</Link>
-        </div>
-        <p className="text-[10px] text-zinc-500 leading-relaxed mb-2">
-          Copyrights © 2026 Nope, Inc. All rights reserved.
-        </p>
-
-        {/* Minimal User Profile */}
-        <div className="flex items-center justify-between group cursor-pointer border-t border-white/5 pt-3">
-          <div className="flex items-center space-x-2 flex-1 min-w-0">
-            <div className="w-6 h-6 bg-zinc-800 rounded flex items-center justify-center text-white font-bold text-xs">
-              {(user?.full_name || user?.email || 'U')[0].toUpperCase()}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium text-zinc-300 truncate">{user?.full_name || user?.email}</p>
-            </div>
+      <div className="p-4 bg-[#1A202C] z-10 flex flex-col gap-4 mt-auto">
+        <div className="flex flex-col items-center gap-1 text-[10px] font-bold text-gray-400 mb-2">
+          <div className="flex items-center gap-2">
+            <Link href="#" className="hover:text-white transition-colors">Legal Information</Link>
+            <span className="text-gray-600">|</span>
+            <Link href="#" className="hover:text-white transition-colors">Customize cookie</Link>
           </div>
-          <button onClick={handleLogout} className="p-1.5 text-zinc-500 hover:text-red-400 rounded-lg">
-            <LogOut className="w-3.5 h-3.5" />
-          </button>
+          <p className="text-[10px] text-gray-500 leading-relaxed mt-2">
+            Copyrights © 2026 Nope, Inc. All rights reserved.
+          </p>
         </div>
       </div>
     </div>
@@ -313,28 +302,55 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   }, [user]);
 
   useEffect(() => {
-    if (localStorage.getItem('theme') === 'dark') {
-      document.documentElement.classList.add('dark');
-    }
+    // Force light mode for Brand24 theme
+    document.documentElement.classList.remove('dark');
   }, []);
 
   if (loading) return <LoadingSpinner message="Đang khởi động..." />;
 
   return (
-    <div className="min-h-screen bg-[#050A15]">
+    <div className="min-h-screen bg-[#F4F5F7]">
       {sidebarOpen && (
-        <div className="fixed inset-0 z-40 bg-black/80 backdrop-blur-sm lg:hidden" onClick={() => setSidebarOpen(false)} />
+        <div className="fixed inset-0 z-40 bg-gray-900/50 lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
       
       <DashboardSidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} user={user} badges={badges} />
 
       <div className="lg:pl-64 flex flex-col min-h-screen">
-        <div className="sticky top-0 z-20 flex items-center justify-between h-16 px-4 bg-[#050A15]/70 backdrop-blur-2xl border-b border-white/5 lg:px-8">
-          <button onClick={() => setSidebarOpen(true)} className="lg:hidden p-2 -ml-2 text-gray-400 hover:text-white mr-2">
+        {/* Brand24 Top Header */}
+        <div className="sticky top-0 z-20 flex items-center h-16 px-4 bg-white border-b border-gray-200 lg:px-8 shadow-sm">
+          <button onClick={() => setSidebarOpen(true)} className="lg:hidden p-2 -ml-2 text-gray-500 hover:text-gray-900 mr-2">
             <Menu className="w-5 h-5" />
           </button>
-          <div className="ml-auto">
-            <ThemeToggle />
+
+          {/* Search bar */}
+          <div className="flex-1 flex items-center max-w-xl relative">
+            <Search className="w-4 h-4 text-gray-400 absolute left-3" />
+            <input 
+              type="text"
+              placeholder="Search through mentions, authors & domains..."
+              className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+            />
+          </div>
+
+          <div className="ml-auto flex items-center space-x-4">
+            <button className="hidden sm:flex items-center px-4 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-full transition-colors tracking-wide shadow-sm">
+              UPGRADE
+            </button>
+            <div className="h-6 w-px bg-gray-200 mx-2 hidden sm:block"></div>
+            <button className="text-gray-400 hover:text-gray-600">
+              <HelpCircle className="w-5 h-5" />
+            </button>
+            <button className="text-gray-400 hover:text-gray-600 hidden sm:block">
+              <Package className="w-5 h-5" />
+            </button>
+            <button className="text-gray-400 hover:text-gray-600 hidden sm:block">
+              <Zap className="w-5 h-5" />
+            </button>
+            
+            <div className="w-8 h-8 rounded-full bg-slate-800 text-white flex items-center justify-center text-xs font-bold ml-2 cursor-pointer shadow-sm">
+              {(user?.full_name || user?.email || 'K')[0].toUpperCase()}
+            </div>
           </div>
         </div>
         <main className="flex-1 p-4 lg:p-8 w-full max-w-[1920px] mx-auto">

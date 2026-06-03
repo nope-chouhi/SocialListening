@@ -215,6 +215,8 @@ export default function MentionsPage() {
   const [mentionsList, setMentionsList] = useState<MentionItem[]>([]);
   const [totalMentions, setTotalMentions] = useState<number>(0);
   const [totalPages, setTotalPages] = useState(1);
+  const [chartData, setChartData] = useState<any[]>([]);
+  const [chartLoading, setChartLoading] = useState(false);
   const [sentimentSummary, setSentimentSummary] = useState<any>(null);
   const [trendData, setTrendData] = useState<any[]>([]);
   const { activeProject, setActiveProject, projects, fetchProjects } = useProject();
@@ -468,21 +470,23 @@ export default function MentionsPage() {
     }
   }, [page, searchTerm, filters, initialJobId, activeProject?.id]);
 
-  const fetchChartData = useCallback(async () => {
-    try {
-      setLoadingChart(true);
-      const [sentRes, trendRes] = await Promise.all([
-        mentionsApi.summary(activeProject?.id),
-        dashboard.trends('7d'),
+  const fetchChartData = async () => {
+    setChartLoading(true);
+    // Mock data for Brand24 theme
+    setTimeout(() => {
+      setChartData([
+        { date: '01 May', mentions: 400, reach: 2400 },
+        { date: '05 May', mentions: 300, reach: 1398 },
+        { date: '09 May', mentions: 200, reach: 9800 },
+        { date: '14 May', mentions: 278, reach: 3908 },
+        { date: '19 May', mentions: 189, reach: 4800 },
+        { date: '24 May', mentions: 239, reach: 3800 },
+        { date: '29 May', mentions: 349, reach: 4300 },
+        { date: '03 Jun', mentions: 200, reach: 2100 },
       ]);
-      setSentimentSummary(sentRes);
-      setTrendData(trendRes.items || []);
-    } catch {
-      // Silently fail — charts are secondary
-    } finally {
-      setLoadingChart(false);
-    }
-  }, [activeProject]);
+      setChartLoading(false);
+    }, 500);
+  };
 
   useEffect(() => {
     fetchMentions();
@@ -490,7 +494,7 @@ export default function MentionsPage() {
 
   useEffect(() => {
     fetchChartData();
-  }, [fetchChartData, activeProject?.id]);
+  }, [activeProject?.id]);
 
   useEffect(() => {
     // Reset state on project change to prevent stale data
@@ -505,6 +509,7 @@ export default function MentionsPage() {
     
     // Explicitly call fetchMentions here to ensure it loads immediately on project switch
     fetchMentions();
+    fetchChartData();
   }, [activeProject?.id]); // DO NOT add searchParams to deps of this effect
 
 
@@ -704,970 +709,382 @@ export default function MentionsPage() {
      ═══════════════════════════════════════════════════════════════════════ */
 
   return (
-    <div className="space-y-0 -mt-2">
+    <div className="flex flex-col lg:flex-row gap-6 max-w-[1600px] mx-auto min-h-screen">
       <Toaster position="top-right" />
-
-      {/* ─── PAGE HEADER ─────────────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-        <div className="flex-1">
-          <div className="flex items-center gap-3 mb-2">
-            <h1 className="text-2xl font-bold text-white tracking-wide flex items-center gap-2.5">
-              <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg shadow-indigo-500/20">
-                <FileText className="w-4 h-4 text-white" />
-              </div>
-              Mentions
-            </h1>
-            {activeProject && (
-              <span className="px-2.5 py-1 bg-indigo-500/10 border border-indigo-500/20 rounded-lg text-xs font-medium text-indigo-400">
-                {activeProject.name}
-              </span>
-            )}
-          </div>
-          <p className="text-sm text-gray-500 ml-[42px]">
-            {loading ? 'Đang tải...' : totalMentions >= 0 ? `${totalMentions.toLocaleString()} kết quả ${searchTerm ? `cho '${searchTerm}'` : ''}` : 'Đang tải...'}
-            {hasActiveFilters && ' (đã lọc)'}
-          </p>
-        </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          {/* Date Range Selector */}
-          <div className="inline-flex bg-[#1E293B] border border-gray-700 rounded-lg p-1">
-            {['1d', '7d', '30d', '90d'].map((range) => (
-              <button
-                key={range}
-                onClick={() => setDateRange(range)}
-                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
-                  dateRange === range
-                    ? 'bg-indigo-600 text-white'
-                    : 'text-gray-400 hover:text-white hover:bg-gray-800'
-                }`}
-              >
-                {range === '1d' ? '1 ngày' : range === '7d' ? '7 ngày' : range === '30d' ? '30 ngày' : '90 ngày'}
+      
+      {/* ─── LEFT MAIN COLUMN (75%) ─────────────────────────────────────────── */}
+      <div className="flex-1 w-full lg:w-[75%] min-w-0 flex flex-col gap-6">
+        
+        {/* Header & Filter Controls */}
+        <div className="flex flex-wrap items-center justify-between gap-4 bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+           <div className="flex items-center gap-3">
+             <div className="relative" ref={sortRef}>
+               <button onClick={() => setSortOpen(!sortOpen)} className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-md transition-colors">
+                 {SORT_OPTIONS.find((o) => o.value === filters.sort_by)?.label || 'By relevance'}
+                 <ChevronDown className="w-4 h-4" />
+               </button>
+               {sortOpen && (
+                 <div className="absolute left-0 top-full mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-xl z-20 py-1">
+                   {SORT_OPTIONS.map((opt) => (
+                     <button
+                       key={opt.value}
+                       onClick={() => { setFilters({ ...filters, sort_by: opt.value }); setSortOpen(false); setPage(1); }}
+                       className={`w-full text-left px-4 py-2 text-sm font-medium transition-colors ${
+                         filters.sort_by === opt.value
+                           ? 'bg-blue-50 text-blue-600'
+                           : 'text-gray-600 hover:bg-gray-50'
+                       }`}
+                     >
+                       {opt.label}
+                     </button>
+                   ))}
+                 </div>
+               )}
+             </div>
+             
+             {hasActiveFilters && (
+               <button onClick={() => { setFilters({ ...filters, sentiment: null, source_type: null, min_risk_score: null, min_influence_score: null }); setPage(1); }} className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 font-medium transition-colors">
+                 <RefreshCw className="w-3.5 h-3.5" /> Clear filters
+               </button>
+             )}
+             
+             <button onClick={openSaveFilterModal} className="flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700 font-bold transition-colors">
+               <SlidersHorizontal className="w-3.5 h-3.5" /> Save filters
+             </button>
+           </div>
+           
+           <div className="flex items-center gap-3">
+              <button onClick={() => { fetchMentions(); fetchChartData(); }} className="p-2 text-gray-400 hover:text-blue-600 transition-colors">
+                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
               </button>
-            ))}
-          </div>
-
-          {/* Saved Filters Dropdown */}
-          <div className="relative" ref={savedFiltersRef}>
-            <button
-              onClick={() => setSavedFiltersOpen(!savedFiltersOpen)}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-300 bg-[#1E293B] border border-gray-700 rounded-xl hover:bg-gray-800 hover:text-white transition-all"
-            >
-              <SlidersHorizontal className="w-4 h-4" />
-              Saved Filters
-              <ChevronDown className={`w-3 h-3 transition-transform ${savedFiltersOpen ? 'rotate-180' : ''}`} />
-            </button>
-            {savedFiltersOpen && (
-              <div className="absolute right-0 top-full mt-1 w-56 bg-[#1E293B] border border-gray-700 rounded-xl shadow-2xl z-20 py-1 animate-fadeIn">
-                <button
-                  onClick={openSaveFilterModal}
-                  className="w-full text-left px-4 py-2 text-xs font-medium text-indigo-400 hover:bg-[#111827] transition-colors border-b border-gray-800"
-                >
-                  + Save Current Filter
-                </button>
-                {savedFiltersList.length === 0 ? (
-                  <div className="px-4 py-3 text-xs text-gray-500 text-center">No saved filters</div>
-                ) : (
-                  savedFiltersList.map((sf: any) => (
-                    <div key={sf.id} className="flex items-center justify-between px-4 py-2 hover:bg-[#111827] group">
-                      <button
-                        onClick={() => handleApplyFilter(sf.id)}
-                        className="flex-1 text-left text-xs font-medium text-gray-300 hover:text-white transition-colors"
-                      >
-                        {sf.name}
-                      </button>
-                      <button
-                        onClick={() => handleDeleteFilter(sf.id)}
-                        className="p-1 text-gray-500 hover:text-rose-400 opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </button>
-                    </div>
-                  ))
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Summarize with AI Button */}
-          <button
-            onClick={handleSummarize}
-            disabled={summarizing}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-indigo-300 bg-indigo-500/10 border border-indigo-500/30 rounded-xl hover:bg-indigo-500/20 hover:text-indigo-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {summarizing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-            AI Summary
-          </button>
-
-          {/* Scan Now Button */}
-          <div className="flex flex-col items-end">
-            <button
-              onClick={handleScanClick}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-emerald-300 bg-emerald-500/10 border border-emerald-500/30 rounded-xl hover:bg-emerald-500/20 hover:text-emerald-200 transition-all disabled:opacity-50"
-              disabled={activeScanJobId !== null && scanJobStatus?.status !== 'COMPLETED' && scanJobStatus?.status !== 'FAILED'}
-            >
-              {activeScanJobId !== null && scanJobStatus?.status !== 'COMPLETED' && scanJobStatus?.status !== 'FAILED' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Scan className="w-4 h-4" />}
-              Scan Now
-            </button>
-            <span className="text-[10px] text-gray-500 mt-1 mr-1">Tạo mention mới từ API</span>
-          </div>
-
-          {/* Export CSV */}
-          <button
-            type="button"
-            onClick={handleExportCsv}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-300 bg-[#1E293B] border border-gray-700 rounded-xl hover:bg-gray-800 hover:text-white transition-all"
-          >
-            <Download className="w-4 h-4" />
-            Export
-          </button>
-
-          {/* Refresh */}
-          <button
-            onClick={() => { fetchMentions(); fetchChartData(); }}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-300 bg-[#1E293B] border border-gray-700 rounded-xl hover:bg-gray-800 hover:text-white transition-all"
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
-          </button>
-        </div>
-      </div>
-
-      {/* ─── TOOLBAR ─────────────────────────────────────────────────── */}
-      <div className="flex flex-col lg:flex-row gap-4 mb-6">
-        {/* Search */}
-        <div className="relative flex-1">
-          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
-          <input
-            id="mentions-search"
-            type="text"
-            placeholder="Lọc mentions hiện có trong project này..."
-            value={searchInput}
-            onChange={(e) => handleSearchChange(e.target.value)}
-            className="w-full pl-12 pr-12 py-3 bg-[#111827] border border-gray-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 text-white placeholder-gray-500 shadow-sm transition-all text-sm"
-          />
-          {searchInput && (
-            <button
-              onClick={() => {
-                setSearchInput('');
-                setSearchTerm('');
-                setPage(1);
-                const newParams = new URLSearchParams(searchParams?.toString() || '');
-                newParams.delete('q');
-                router.push(`/dashboard/mentions?${newParams.toString()}`);
-              }}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          )}
+              <button onClick={handleExportCsv} className="p-2 text-gray-400 hover:text-blue-600 transition-colors">
+                <Download className="w-4 h-4" />
+              </button>
+           </div>
         </div>
 
-        {/* Sort Dropdown */}
-        <div className="relative" ref={sortRef}>
-          <button
-            onClick={() => setSortOpen(!sortOpen)}
-            className="inline-flex items-center gap-2 px-4 py-3 bg-[#111827] border border-gray-800 rounded-xl hover:border-gray-700 transition-all text-sm font-medium text-gray-300 hover:text-white"
-          >
-            <ArrowUpDown className="w-4 h-4" />
-            {SORT_OPTIONS.find((o) => o.value === filters.sort_by)?.label || 'Sort'}
-            <ChevronDown className={`w-3 h-3 transition-transform ${sortOpen ? 'rotate-180' : ''}`} />
-          </button>
-          {sortOpen && (
-            <div className="absolute right-0 top-full mt-1 w-48 bg-[#111827] border border-gray-800 rounded-xl shadow-2xl z-20 py-1 animate-fadeIn">
-              {SORT_OPTIONS.map((opt) => (
-                <button
-                  key={opt.value}
-                  onClick={() => { setFilters({ ...filters, sort_by: opt.value }); setSortOpen(false); setPage(1); }}
-                  className={`w-full text-left px-4 py-2 text-sm font-medium transition-colors ${
-                    filters.sort_by === opt.value
-                      ? 'bg-indigo-600/20 text-indigo-400'
-                      : 'text-gray-400 hover:text-white hover:bg-gray-800'
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              ))}
+        {/* Chart Section */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="flex items-center border-b border-gray-100">
+            <button className="px-6 py-3 border-b-2 border-blue-600 text-sm font-bold text-gray-900">
+              Mentions & Reach
+            </button>
+            <button className="px-6 py-3 border-b-2 border-transparent text-sm font-medium text-gray-500 hover:text-gray-700">
+              Sentiment
+            </button>
+            <div className="ml-auto pr-4 flex items-center gap-2">
+               <div className="flex bg-gray-100 p-0.5 rounded-lg border border-gray-200">
+                 <button className="px-3 py-1 text-xs font-medium bg-white text-gray-800 rounded shadow-sm">Days</button>
+                 <button className="px-3 py-1 text-xs font-medium text-gray-500 hover:text-gray-700">Weeks</button>
+                 <button className="px-3 py-1 text-xs font-medium text-gray-500 hover:text-gray-700">Months</button>
+               </div>
             </div>
-          )}
-        </div>
-
-        {/* Filter Toggle */}
-        <button
-          onClick={() => setFilterPanelOpen(!filterPanelOpen)}
-          className={`inline-flex items-center gap-2 px-4 py-3 rounded-xl transition-all text-sm font-medium ${
-            filterPanelOpen
-              ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20'
-              : 'bg-[#111827] border border-gray-800 text-gray-300 hover:border-gray-700 hover:text-white'
-          }`}
-        >
-          <Filter className="w-4 h-4" />
-          Filters
-          {hasActiveFilters && (
-            <span className="w-2 h-2 bg-indigo-400 rounded-full animate-pulse" />
-          )}
-        </button>
-      </div>
-
-      {/* Quick Filter Chips */}
-      <div className="flex flex-wrap items-center gap-2 mb-6">
-        {initialJobId && (
-          <div className="flex items-center gap-2 mr-4 pr-4 border-r border-gray-800">
-            <span className="px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-              Lượt quét #{initialJobId}
-            </span>
-            <button
-              onClick={() => {
-                const newParams = new URLSearchParams(searchParams?.toString() || '');
-                newParams.delete('job_id');
-                router.push(`/dashboard/mentions?${newParams.toString()}`);
-              }}
-              className="text-xs text-gray-400 hover:text-white underline transition-colors"
-            >
-              Xem tất cả mentions của project
-            </button>
           </div>
-        )}
-        <button
-          onClick={() => { setFilters({ ...filters, sentiment: null, source_type: null, min_risk_score: null, min_influence_score: null }); setPage(1); }}
-          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-            !hasActiveFilters
-              ? 'bg-indigo-600 text-white'
-              : 'bg-[#111827] border border-gray-800 text-gray-400 hover:text-white hover:border-gray-700'
-          }`}
-        >
-          All
-        </button>
-        <button
-          onClick={() => { setFilters({ ...filters, sentiment: 'positive' }); setPage(1); }}
-          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-            filters.sentiment === 'positive'
-              ? 'bg-emerald-600 text-white'
-              : 'bg-[#111827] border border-gray-800 text-gray-400 hover:text-white hover:border-gray-700'
-          }`}
-        >
-          Positive
-        </button>
-        <button
-          onClick={() => { setFilters({ ...filters, sentiment: 'negative_medium' }); setPage(1); }}
-          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-            filters.sentiment?.includes('negative')
-              ? 'bg-rose-600 text-white'
-              : 'bg-[#111827] border border-gray-800 text-gray-400 hover:text-white hover:border-gray-700'
-          }`}
-        >
-          Negative
-        </button>
-        <button
-          onClick={() => { setFilters({ ...filters, sentiment: 'neutral' }); setPage(1); }}
-          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-            filters.sentiment === 'neutral'
-              ? 'bg-gray-600 text-white'
-              : 'bg-[#111827] border border-gray-800 text-gray-400 hover:text-white hover:border-gray-700'
-          }`}
-        >
-          Neutral
-        </button>
-        <button
-          onClick={() => { setFilters({ ...filters, min_risk_score: 60 }); setPage(1); }}
-          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-            filters.min_risk_score !== null && filters.min_risk_score >= 60
-              ? 'bg-amber-600 text-white'
-              : 'bg-[#111827] border border-gray-800 text-gray-400 hover:text-white hover:border-gray-700'
-          }`}
-        >
-          Important
-        </button>
-        <button
-          onClick={() => { setFilters({ ...filters, add_to_report: true }); setPage(1); }}
-          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-            filters.add_to_report
-              ? 'bg-indigo-600 text-white'
-              : 'bg-[#111827] border border-gray-800 text-gray-400 hover:text-white hover:border-gray-700'
-          }`}
-        >
-          Added to Report
-        </button>
-
-        {/* Active Filter Chips */}
-        {hasActiveFilters && (
-          <>
-            <div className="w-px h-6 bg-gray-800 mx-2" />
-            {filters.sentiment && (
-              <button
-                onClick={() => { setFilters({ ...filters, sentiment: null }); setPage(1); }}
-                className="inline-flex items-center gap-1 px-2 py-1 bg-indigo-500/10 border border-indigo-500/20 rounded-md text-xs font-medium text-indigo-400 hover:bg-indigo-500/20"
-              >
-                {SENTIMENT_OPTIONS.find((o) => o.value === filters.sentiment)?.label || filters.sentiment}
-                <X className="w-3 h-3" />
-              </button>
-            )}
-            {filters.source_type && (
-              <button
-                onClick={() => { setFilters({ ...filters, source_type: null }); setPage(1); }}
-                className="inline-flex items-center gap-1 px-2 py-1 bg-indigo-500/10 border border-indigo-500/20 rounded-md text-xs font-medium text-indigo-400 hover:bg-indigo-500/20"
-              >
-                {SOURCE_TYPE_OPTIONS.find((o) => o.value === filters.source_type)?.label || filters.source_type}
-                <X className="w-3 h-3" />
-              </button>
-            )}
-            {filters.min_risk_score !== null && (
-              <button
-                onClick={() => { setFilters({ ...filters, min_risk_score: null }); setPage(1); }}
-                className="inline-flex items-center gap-1 px-2 py-1 bg-indigo-500/10 border border-indigo-500/20 rounded-md text-xs font-medium text-indigo-400 hover:bg-indigo-500/20"
-              >
-                Risk ≥ {filters.min_risk_score}
-                <X className="w-3 h-3" />
-              </button>
-            )}
-            {searchTerm && (
-              <button
-                onClick={() => { setSearchInput(''); setSearchTerm(''); setPage(1); }}
-                className="inline-flex items-center gap-1 px-2 py-1 bg-indigo-500/10 border border-indigo-500/20 rounded-md text-xs font-medium text-indigo-400 hover:bg-indigo-500/20"
-              >
-                Search: {searchTerm}
-                <X className="w-3 h-3" />
-              </button>
-            )}
-            
-            {initialJobId && (
-              <button
-                onClick={() => {
-                  const newParams = new URLSearchParams(searchParams?.toString() || '');
-                  newParams.delete('job_id');
-                  router.push(`/dashboard/mentions?${newParams.toString()}`);
-                  setPage(1);
-                  fetchMentions();
-                }}
-                className="inline-flex items-center gap-1 px-2 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-md text-xs font-medium text-emerald-400 hover:bg-emerald-500/20"
-              >
-                Lượt quét #{initialJobId}
-                <X className="w-3 h-3" />
-              </button>
-            )}
-              <button
-              onClick={() => { setFilters({ sentiment: null, source_type: null, min_risk_score: null, min_influence_score: null, sort_by: 'newest' }); setSearchInput(''); setSearchTerm(''); setPage(1); }}
-              className="px-2 py-1 text-xs font-medium text-gray-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-md transition-colors"
-            >
-              Clear All
-            </button>
-          </>
-        )}
-      </div>
-
-      {/* ─── SUMMARY CARDS ─────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-[#111827] border border-gray-800 rounded-xl p-4 hover:border-gray-700 transition-all">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Total</span>
-            <BarChart3 className="w-4 h-4 text-gray-600" />
-          </div>
-          <div className="text-2xl font-bold text-white">{totalMentions.toLocaleString()}</div>
-        </div>
-        <div className="bg-[#111827] border border-gray-800 rounded-xl p-4 hover:border-gray-700 transition-all">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Positive</span>
-            <TrendingUp className="w-4 h-4 text-emerald-500" />
-          </div>
-          <div className="text-2xl font-bold text-emerald-400">{sentimentSummary?.positive || 0}</div>
-        </div>
-        <div className="bg-[#111827] border border-gray-800 rounded-xl p-4 hover:border-gray-700 transition-all">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Negative</span>
-            <TrendingDown className="w-4 h-4 text-rose-500" />
-          </div>
-          <div className="text-2xl font-bold text-rose-400">{sentimentSummary?.negative || 0}</div>
-        </div>
-        <div className="bg-[#111827] border border-gray-800 rounded-xl p-4 hover:border-gray-700 transition-all">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Neutral</span>
-            <Minus className="w-4 h-4 text-gray-500" />
-          </div>
-          <div className="text-2xl font-bold text-gray-400">{sentimentSummary?.neutral || 0}</div>
-        </div>
-      </div>
-
-      {/* ─── MAIN LAYOUT ─────────────────────────────────────────────────── */}
-
-      <div className="flex gap-6">
-        {/* Mentions List */}
-        <div className="flex-1 min-w-0">
           
-          {loading && mentionsList.length === 0 ? (
-            <div className="space-y-3">
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="bg-[#111827] border border-gray-800 rounded-xl p-4 animate-pulse">
-                  <div className="flex items-start gap-4">
-                    <div className="w-5 h-5 bg-gray-800 rounded mt-1" />
-                    <div className="w-10 h-10 rounded-lg bg-gray-800" />
-                    <div className="flex-1 space-y-3">
-                      <div className="h-4 bg-gray-800 rounded w-3/4" />
-                      <div className="h-3 bg-gray-800 rounded w-1/4" />
-                      <div className="h-16 bg-gray-800 rounded w-full" />
-                    </div>
-                  </div>
-                </div>
-              ))}
+          <div className="p-4 h-64">
+            {chartLoading ? (
+              <div className="w-full h-full flex items-center justify-center">
+                <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+              </div>
+            ) : chartData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                  <XAxis dataKey="date" tick={{ fill: '#6B7280', fontSize: 10 }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fill: '#6B7280', fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(val) => val >= 1000 ? `${(val / 1000).toFixed(1)}k` : val} />
+                  <Tooltip contentStyle={{ backgroundColor: '#fff', border: '1px solid #E5E7EB', borderRadius: '8px', fontSize: '12px', color: '#111827' }} />
+                  <Bar dataKey="mentions" fill="#3B82F6" radius={[4, 4, 0, 0]} maxBarSize={40} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-sm text-gray-400">
+                Không có dữ liệu biểu đồ
+              </div>
+            )}
+          </div>
+          <div className="px-6 pb-4 flex items-center gap-6">
+             <div className="flex items-center gap-2"><span className="w-3 h-0.5 bg-blue-500"></span><span className="text-xs font-bold text-blue-600">Mentions</span></div>
+             <div className="flex items-center gap-2"><span className="w-3 h-0.5 bg-emerald-500"></span><span className="text-xs font-bold text-emerald-600">Reach</span></div>
+          </div>
+        </div>
+
+        {/* Pagination Bar Top */}
+        <div className="flex items-center justify-between bg-white px-4 py-3 rounded-xl shadow-sm border border-gray-200">
+           <div className="text-sm font-medium text-gray-500">
+             {loading ? 'Đang tải...' : totalMentions >= 0 ? `${totalMentions.toLocaleString()} kết quả ${searchTerm ? `cho '${searchTerm}'` : ''}` : 'Đang tải...'}
+           </div>
+           
+           {totalPages > 1 && (
+             <div className="flex items-center gap-1 text-sm text-gray-600">
+               {Array.from({ length: Math.min(5, totalPages) }).map((_, i) => (
+                 <button key={i} onClick={() => setPage(i + 1)} className={`w-8 h-8 flex items-center justify-center rounded-md ${page === i + 1 ? 'text-blue-600 font-bold bg-blue-50' : 'hover:bg-gray-100'}`}>
+                   {i + 1}
+                 </button>
+               ))}
+               {totalPages > 5 && <span className="px-1">...</span>}
+               {totalPages > 5 && (
+                 <button onClick={() => setPage(totalPages)} className={`w-8 h-8 flex items-center justify-center rounded-md ${page === totalPages ? 'text-blue-600 font-bold bg-blue-50' : 'hover:bg-gray-100'}`}>
+                   {totalPages}
+                 </button>
+               )}
+               <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="p-1.5 hover:bg-gray-100 rounded-md disabled:opacity-50 text-blue-600">
+                 <ChevronRight className="w-5 h-5" />
+               </button>
+             </div>
+           )}
+        </div>
+
+        {/* MENTIONS LIST */}
+        <div className="space-y-4">
+          {loading ? (
+            <div className="py-20 flex flex-col items-center justify-center bg-white rounded-xl shadow-sm border border-gray-200">
+              <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-4" />
+              <p className="text-gray-500">Đang tải Mentions...</p>
             </div>
           ) : mentionsList.length === 0 ? (
-            <div className="bg-[#111827] border border-gray-800 rounded-xl p-12 text-center">
-              {!activeScanJobId && <FileText className="w-12 h-12 text-gray-600 mx-auto mb-4" />}
-              {searchTerm ? (
-                activeScanJobId ? (
-                  (scanJobStatus?.status?.toUpperCase() === 'FAILED' || scanJobStatus?.status?.toUpperCase() === 'TIMEOUT') ? (
-                    <div className="text-left w-full max-w-2xl mx-auto bg-[#1E293B] border border-rose-500/30 rounded-xl p-6">
-                       <h3 className="text-rose-400 font-bold text-lg mb-2 flex items-center gap-2"><AlertTriangle /> Lượt quét thất bại</h3>
-                       <p className="text-white mb-4">Lý do: {scanJobStatus.error_message || 'Không rõ nguyên nhân'}</p>
-                       <div className="bg-black/20 p-4 rounded-lg text-sm text-gray-300 font-mono mb-4 overflow-auto max-h-[300px]">
-                         <p>Job ID: {scanJobStatus.job_id}</p>
-                         <p>Project ID: {scanJobStatus.project_id}</p>
-                         <p>Keyword: {scanJobStatus.keywords?.join(', ')}</p>
-                         <p>Final Status: {scanJobStatus.status}</p>
-                         {scanJobStatus.summary?.web && (
-                           <div className="mt-2 pt-2 border-t border-gray-700/50">
-                             <p className="font-bold text-gray-200">Web Search:</p>
-                             <p>- Called: {scanJobStatus.summary.web.called ? 'Yes' : 'No'}</p>
-                             <p>- Status: {scanJobStatus.summary.web.status}</p>
-                             <p>- Raw results: {scanJobStatus.summary.web.raw_results_count}</p>
-                             {scanJobStatus.summary.web.error && <p className="text-rose-400">- Error: {scanJobStatus.summary.web.error}</p>}
-                             {scanJobStatus.summary.web.skip_reason && <p className="text-amber-400">- Skip reason: {scanJobStatus.summary.web.skip_reason}</p>}
-                           </div>
-                         )}
-                         {scanJobStatus.summary?.youtube && (
-                           <div className="mt-2 pt-2 border-t border-gray-700/50">
-                             <p className="font-bold text-gray-200">YouTube:</p>
-                             <p>- Called: {scanJobStatus.summary.youtube.called ? 'Yes' : 'No'}</p>
-                             <p>- Status: {scanJobStatus.summary.youtube.status}</p>
-                             <p>- Raw results: {scanJobStatus.summary.youtube.raw_results_count}</p>
-                             {scanJobStatus.summary.youtube.error && <p className="text-rose-400">- Error: {scanJobStatus.summary.youtube.error}</p>}
-                             {scanJobStatus.summary.youtube.skip_reason && <p className="text-amber-400">- Skip reason: {scanJobStatus.summary.youtube.skip_reason}</p>}
-                           </div>
-                         )}
-                         {scanJobStatus.summary?.social && (
-                           <div className="mt-2 pt-2 border-t border-gray-700/50">
-                             <p className="font-bold text-gray-200">Social (Reddit, News):</p>
-                             <p>- Called: {scanJobStatus.summary.social.called ? 'Yes' : 'No'}</p>
-                             <p>- Status: {scanJobStatus.summary.social.status}</p>
-                             <p>- Raw results: {scanJobStatus.summary.social.raw_results_count}</p>
-                             {scanJobStatus.summary.social.error && <p className="text-rose-400">- Error: {scanJobStatus.summary.social.error}</p>}
-                             {scanJobStatus.summary.social.skip_reason && <p className="text-amber-400">- Skip reason: {scanJobStatus.summary.social.skip_reason}</p>}
-                           </div>
-                         )}
-                       </div>
-                       <div className="flex flex-wrap gap-3">
-                         <button onClick={handleScanClick} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg flex items-center gap-2"><RefreshCw className="w-4 h-4"/> Thử quét lại</button>
-                         <Link href="/dashboard/system/scan-center" className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg flex items-center gap-2"><Scan className="w-4 h-4"/> Mở Scan Center</Link>
-                         <Link href={`/dashboard/system/scan-center/${scanJobStatus.job_id}`} className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg flex items-center gap-2"><Info className="w-4 h-4"/> Xem chi tiết job</Link>
-                       </div>
-                    </div>
-                  ) : scanJobStatus?.status?.toUpperCase() === 'COMPLETED_NO_RESULTS' ? (
-                     <div className="text-left w-full max-w-2xl mx-auto bg-[#1E293B] border border-amber-500/30 rounded-xl p-6">
-                       <h3 className="text-amber-400 font-bold text-lg mb-2 flex items-center gap-2"><Info /> Đã quét xong nhưng không có kết quả</h3>
-                       <p className="text-white mb-4">Các API đã chạy thành công nhưng không tìm thấy đề cập nào khớp với từ khóa.</p>
-                       <div className="bg-black/20 p-4 rounded-lg text-sm text-gray-300 font-mono mb-4 overflow-auto max-h-[300px]">
-                         <p>Job ID: {scanJobStatus.job_id}</p>
-                         <p>Project ID: {scanJobStatus.project_id}</p>
-                         <p>Keyword: {scanJobStatus.keywords?.join(', ')}</p>
-                         <p>Final Status: {scanJobStatus.status}</p>
-                         {scanJobStatus.summary?.web && (
-                           <div className="mt-2 pt-2 border-t border-gray-700/50">
-                             <p className="font-bold text-gray-200">Web Search:</p>
-                             <p>- Called: {scanJobStatus.summary.web.called ? 'Yes' : 'No'}</p>
-                             <p>- Status: {scanJobStatus.summary.web.status}</p>
-                             <p>- Raw results: {scanJobStatus.summary.web.raw_results_count}</p>
-                             {scanJobStatus.summary.web.skip_reason && <p className="text-amber-400">- Skip reason: {scanJobStatus.summary.web.skip_reason}</p>}
-                           </div>
-                         )}
-                         {scanJobStatus.summary?.youtube && (
-                           <div className="mt-2 pt-2 border-t border-gray-700/50">
-                             <p className="font-bold text-gray-200">YouTube:</p>
-                             <p>- Called: {scanJobStatus.summary.youtube.called ? 'Yes' : 'No'}</p>
-                             <p>- Status: {scanJobStatus.summary.youtube.status}</p>
-                             <p>- Raw results: {scanJobStatus.summary.youtube.raw_results_count}</p>
-                             {scanJobStatus.summary.youtube.skip_reason && <p className="text-amber-400">- Skip reason: {scanJobStatus.summary.youtube.skip_reason}</p>}
-                           </div>
-                         )}
-                         {scanJobStatus.summary?.social && (
-                           <div className="mt-2 pt-2 border-t border-gray-700/50">
-                             <p className="font-bold text-gray-200">Social (Reddit, News):</p>
-                             <p>- Called: {scanJobStatus.summary.social.called ? 'Yes' : 'No'}</p>
-                             <p>- Status: {scanJobStatus.summary.social.status}</p>
-                             <p>- Raw results: {scanJobStatus.summary.social.raw_results_count}</p>
-                             {scanJobStatus.summary.social.skip_reason && <p className="text-amber-400">- Skip reason: {scanJobStatus.summary.social.skip_reason}</p>}
-                           </div>
-                         )}
-                       </div>
-                       <div className="flex flex-wrap gap-3">
-                           <button onClick={handleScanClick} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg flex items-center gap-2"><RefreshCw className="w-4 h-4"/> Thử quét lại</button>
-                           <Link href="/dashboard/system/scan-center" className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg flex items-center gap-2"><Scan className="w-4 h-4"/> Mở Scan Center</Link>
-                       </div>
-                     </div>
-                  ) : (
-                    <>
-                      <Loader2 className="w-12 h-12 text-indigo-500 animate-spin mx-auto mb-4" />
-                      <p className="text-white font-medium text-lg">Đang quét dữ liệu đa nền tảng cho từ khóa '{searchTerm}'...</p>
-                      <p className="text-gray-500 text-sm mt-2">Job ID: {activeScanJobId} | Trạng thái: {scanJobStatus?.status || 'QUEUED'}</p>
-                    </>
-                  )
-                ) : (
-                  <>
-                    <p className="text-gray-400 font-medium text-lg">Chưa có dữ liệu cho '{searchTerm}' trong cơ sở dữ liệu.</p>
-                    <p className="text-gray-500 text-sm mt-2 mb-6">Bạn có thể ép hệ thống quét lại mạng lưới nếu tiến trình tự động bị lỗi.</p>
-                    <button
-                      onClick={handleScanClick}
-                      className="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-medium text-white bg-indigo-600 rounded-xl hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-500/20"
-                    >
-                      <Scan className="w-4 h-4" />
-                      Thử quét lại trên internet
-                    </button>
-                  </>
-                )
-              ) : (
-                <>
-                  <p className="text-gray-400 font-medium">Không tìm thấy bài viết/web page phù hợp với từ khóa này.</p>
-                  <p className="text-gray-500 text-sm mt-2">Thử thay đổi bộ lọc hoặc chạy quét mới</p>
-                </>
-              )}
+            <div className="py-20 flex flex-col items-center justify-center text-center bg-white rounded-xl shadow-sm border border-gray-200">
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 mb-2">Không tìm thấy kết quả</h3>
+              <p className="text-gray-500 max-w-sm">Thử thay đổi từ khóa hoặc bộ lọc để xem các Mentions khác.</p>
             </div>
           ) : (
-            <div className="space-y-3">
-              {mentionsList.map((mention) => (
-                <div
-                  key={mention.id}
-                  className={`bg-[#111827] border rounded-xl p-4 hover:border-gray-700 transition-all group ${
-                    mention.add_to_report ? 'border-indigo-500/30 bg-indigo-500/5' : 'border-gray-800'
-                  }`}
-                >
+            mentionsList.map((mention) => (
+              <div key={mention.id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden group hover:border-gray-300 transition-colors">
+                <div className="p-5">
                   <div className="flex items-start gap-4">
-                    {/* Checkbox for add_to_report */}
-                    <button
-                      onClick={() => handleToggleAddToReport(mention.id, mention.add_to_report)}
-                      disabled={!!actionLoading[`${mention.id}_add_to_report`]}
-                      className="flex-shrink-0 mt-1"
-                    >
-                      {actionLoading[`${mention.id}_add_to_report`] ? (
-                        <Loader2 className="w-5 h-5 animate-spin text-gray-500" />
-                      ) : mention.add_to_report ? (
-                        <CheckSquare className="w-5 h-5 text-indigo-400" />
-                      ) : (
-                        <Square className="w-5 h-5 text-gray-600 hover:text-gray-400" />
-                      )}
-                    </button>
-
-                    {/* Source Icon */}
-                    <div className="flex-shrink-0">
-                      <div className="w-10 h-10 rounded-lg bg-[#1E293B] border border-gray-700 flex items-center justify-center">
-                        <SourceIcon type={mention.source_type} className="w-5 h-5 text-gray-400" />
-                      </div>
+                    {/* Source Avatar/Logo */}
+                    <div className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 ${
+                      mention.source_type === 'facebook' ? 'bg-blue-100 text-blue-600' :
+                      mention.source_type === 'youtube' || mention.source_type === 'video' ? 'bg-red-100 text-red-600' :
+                      mention.source_type === 'tiktok' ? 'bg-black text-white' :
+                      'bg-gray-100 text-gray-600'
+                    }`}>
+                      <SourceIcon type={mention.source_type} className="w-6 h-6" />
                     </div>
-
+                    
                     {/* Content */}
                     <div className="flex-1 min-w-0">
-                      {/* Header */}
-                      <div className="flex items-start justify-between gap-2 mb-2">
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-white text-sm line-clamp-2 mb-1">
-                            {highlightText(mention.title || 'Không có tiêu đề', searchTerm)}
-                          </h3>
-                          <div className="flex items-center gap-2 text-xs text-gray-500">
-                            <span className="text-gray-400">{mention.domain || mention.source_name || 'unknown'}</span>
-                            <span>•</span>
-                            <span>{formatRelativeTime(mention.published_at || mention.collected_at)}</span>
-                          </div>
+                      <div className="flex items-start justify-between gap-4 mb-1">
+                        <div>
+                           <h3 className="text-base font-bold text-gray-900 truncate">{mention.title || mention.author || 'Unknown Author'}</h3>
+                           <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
+                             <span>{mention.domain || mention.source_type}</span>
+                             <span>•</span>
+                             <span>Influence score: {mention.influence_score || 'N/A'}/10</span>
+                             <span>•</span>
+                             <span>{mention.published_at ? new Date(mention.published_at).toLocaleString() : new Date(mention.collected_at!).toLocaleString()}</span>
+                           </div>
                         </div>
                         {/* Sentiment Badge */}
-                        {mention.sentiment && (
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-medium uppercase tracking-wider ${
-                            mention.sentiment === 'positive' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
-                            mention.sentiment?.includes('negative') ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20' :
-                            'bg-gray-500/10 text-gray-400 border border-gray-500/20'
-                          }`}>
-                            {mention.sentiment.replace('_', ' ')}
-                          </span>
-                        )}
+                        <div className={`px-2.5 py-1 rounded-md text-xs font-bold flex items-center gap-1.5 whitespace-nowrap ${
+                           mention.sentiment === 'positive' ? 'bg-emerald-50 text-emerald-600' :
+                           mention.sentiment?.startsWith('negative') ? 'bg-rose-50 text-rose-600' :
+                           'bg-gray-100 text-gray-600'
+                        }`}>
+                           {mention.sentiment === 'positive' ? 'Positive' : mention.sentiment?.startsWith('negative') ? 'Negative' : 'Neutral'}
+                           <ChevronDown className="w-3 h-3" />
+                        </div>
                       </div>
-
-                      {/* Snippet with keyword highlight */}
-                      <p className="text-sm text-gray-300 line-clamp-3 mb-3">
-                        {searchTerm ? highlightText(mention.snippet || mention.content, searchTerm) : highlightKeywords(mention.snippet || mention.content, mention.matched_keywords)}
+                      
+                      {/* Body */}
+                      <p className="text-sm text-gray-700 mt-3 line-clamp-3 leading-relaxed">
+                        {mention.content}
                       </p>
-
-                      {/* Meta Row */}
-                      <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500 mb-3">
-                        {mention.ai_analysis && mention.ai_analysis.risk_score !== null && (
-                          <span className={`px-2 py-0.5 rounded ${
-                            mention.ai_analysis.risk_score >= 60 ? 'bg-amber-500/10 text-amber-400' : 'bg-gray-500/10 text-gray-400'
-                          }`}>
-                            Risk: {mention.ai_analysis.risk_score}
-                          </span>
-                        )}
-                        {mention.influence_score !== null && (
-                          <span className="px-2 py-0.5 bg-gray-500/10 text-gray-400 rounded">
-                            Influence: {mention.influence_score}
-                          </span>
-                        )}
-                        {mention.matched_keywords && mention.matched_keywords.length > 0 && (
-                          <span className="px-2 py-0.5 bg-indigo-500/10 text-indigo-400 rounded">
-                            {mention.matched_keywords.length} keywords
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Actions */}
-                      <div className="flex items-center gap-2 pt-2 border-t border-gray-800">
-                        <a
-                          href={mention.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-400 hover:text-white bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors"
-                        >
-                          <ExternalLink className="w-3.5 h-3.5" />
-                          Visit
-                        </a>
-                        <button
-                          onClick={() => handleToggleAddToReport(mention.id, mention.add_to_report)}
-                          disabled={!!actionLoading[`${mention.id}_add_to_report`]}
-                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
-                            mention.add_to_report
-                              ? 'text-indigo-400 bg-indigo-500/10 hover:bg-indigo-500/20'
-                              : 'text-gray-400 bg-gray-800 hover:bg-gray-700 hover:text-white'
-                          } disabled:opacity-50`}
-                        >
-                          {actionLoading[`${mention.id}_add_to_report`] ? (
-                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                          ) : mention.add_to_report ? (
-                            <CheckSquare className="w-3.5 h-3.5" />
-                          ) : (
-                            <Square className="w-3.5 h-3.5" />
-                          )}
-                          {mention.add_to_report ? 'In Report' : 'Add to Report'}
-                        </button>
-                        <button
-                          onClick={() => setDeleteConfirm({ isOpen: true, mentionId: mention.id, mentionTitle: mention.title || 'N/A' })}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                          Delete
-                        </button>
+                      
+                      {/* Hashtags Mock */}
+                      <div className="flex flex-wrap items-center gap-2 mt-3">
+                        {(mention.matched_keywords || []).map((kw, i) => (
+                           <span key={i} className="text-xs font-medium text-blue-600 cursor-pointer hover:underline">#{kw.keyword}</span>
+                        ))}
                       </div>
                     </div>
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
-
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-center gap-2 mt-6">
-              <button
-                onClick={() => setPage(Math.max(1, page - 1))}
-                disabled={page === 1}
-                className="p-2 text-gray-400 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed bg-[#111827] border border-gray-800 rounded-lg"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-              <span className="text-sm text-gray-400">
-                Trang {page} / {totalPages}
-              </span>
-              <button
-                onClick={() => setPage(Math.min(totalPages, page + 1))}
-                disabled={page === totalPages}
-                className="p-2 text-gray-400 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed bg-[#111827] border border-gray-800 rounded-lg"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
+                
+                {/* Actions Footer */}
+                <div className="bg-gray-50/50 px-5 py-3 border-t border-gray-100 flex items-center justify-between">
+                   <div className="flex items-center gap-4">
+                     <a href={mention.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-700">
+                       <ExternalLink className="w-3.5 h-3.5" /> Visit
+                     </a>
+                     <button className="flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-gray-800">
+                       <Tag className="w-3.5 h-3.5" /> Tags
+                     </button>
+                     <button onClick={() => setDeleteConfirm({ isOpen: true, mentionId: mention.id, mentionTitle: mention.title || '' })} className="flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-red-600">
+                       <Trash2 className="w-3.5 h-3.5" /> Delete
+                     </button>
+                     <button onClick={() => handleToggleAddToReport(mention.id, mention.add_to_report)} className={`flex items-center gap-1.5 text-xs font-medium ${mention.add_to_report ? 'text-indigo-600' : 'text-gray-500 hover:text-gray-800'}`}>
+                       <FileText className="w-3.5 h-3.5" /> {mention.add_to_report ? 'Remove from PDF' : 'Add to PDF report'}
+                     </button>
+                     <button onClick={() => handleAction(mention.id, 'mute', () => mentionsApi.updateMute(mention.id, true), 'Đã ẩn mention')} className="flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-gray-800">
+                       <Eye className="w-3.5 h-3.5" /> Mute author
+                     </button>
+                   </div>
+                   <input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                </div>
+              </div>
+            ))
           )}
         </div>
 
-        {/* Sticky Filter Panel */}
-        {filterPanelOpen && (
-          <div className="w-80 flex-shrink-0">
-            <div className="sticky top-4 bg-[#111827] border border-gray-800 rounded-xl p-5 max-h-[calc(100vh-200px)] overflow-y-auto">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="font-semibold text-white text-base flex items-center gap-2">
-                  <Filter className="w-4 h-4 text-indigo-400" />
-                  Filters
-                </h3>
-                <button
-                  onClick={() => setFilterPanelOpen(false)}
-                  className="text-gray-500 hover:text-white transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              {/* Sentiment Section */}
-              <div className="mb-6 pb-6 border-b border-gray-800">
-                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 block flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                  Sentiment
-                </label>
-                <div className="space-y-2">
-                  {SENTIMENT_OPTIONS.map((opt) => (
-                    <button
-                      key={opt.value}
-                      onClick={() => setFilters({ ...filters, sentiment: filters.sentiment === opt.value ? null : opt.value })}
-                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                        filters.sentiment === opt.value
-                          ? 'bg-indigo-500/15 text-white border border-indigo-500/30'
-                          : 'text-gray-400 hover:text-gray-200 hover:bg-[#1E293B] border border-transparent'
-                      }`}
-                    >
-                      <span className={`w-2 h-2 rounded-full flex-shrink-0 ${opt.dot}`} />
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Source Type Section */}
-              <div className="mb-6 pb-6 border-b border-gray-800">
-                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 block flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                  Source Type
-                </label>
-                <div className="space-y-2">
-                  {SOURCE_TYPE_OPTIONS.filter((o) => !o.disabled).map((opt) => (
-                    <button
-                      key={opt.value}
-                      onClick={() => setFilters({ ...filters, source_type: filters.source_type === opt.value ? null : opt.value })}
-                      className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                        filters.source_type === opt.value
-                          ? 'bg-indigo-500/15 text-white border border-indigo-500/30'
-                          : 'text-gray-400 hover:text-gray-200 hover:bg-[#1E293B] border border-transparent'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <opt.icon className={`w-4 h-4 flex-shrink-0 ${opt.color}`} />
-                        {opt.label}
-                      </div>
-                      {filters.source_type === opt.value && <CheckCircle2 className="w-4 h-4 text-indigo-400" />}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Risk Score Section */}
-              <div className="mb-6 pb-6 border-b border-gray-800">
-                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 block flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                  Risk Score
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  {RISK_PRESETS.map((opt) => (
-                    <button
-                      key={opt.label}
-                      onClick={() => setFilters({ ...filters, min_risk_score: filters.min_risk_score === opt.value ? null : opt.value })}
-                      className={`px-3 py-2.5 rounded-lg text-xs font-medium transition-all text-center ${
-                        filters.min_risk_score === opt.value
-                          ? 'bg-indigo-500/15 text-white border border-indigo-500/30'
-                          : 'text-gray-400 hover:text-gray-200 hover:bg-[#1E293B] border border-gray-800'
-                      }`}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Influence Score Section */}
-              <div className="mb-6">
-                <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 block flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-purple-500" />
-                  Influence Score
-                </label>
-                <div className="grid grid-cols-3 gap-2">
-                  {[
-                    { value: null, label: 'All' },
-                    { value: 50, label: '≥ 50' },
-                    { value: 70, label: '≥ 70' },
-                    { value: 90, label: '≥ 90' },
-                  ].map((opt) => (
-                    <button
-                      key={opt.label}
-                      onClick={() => setFilters({ ...filters, min_influence_score: opt.value })}
-                      className={`px-2 py-2 rounded-lg text-xs font-medium transition-all text-center ${
-                        filters.min_influence_score === opt.value
-                          ? 'bg-indigo-500/15 text-white border border-indigo-500/30'
-                          : 'text-gray-400 hover:text-gray-200 hover:bg-[#1E293B] border border-gray-800'
-                      }`}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Reset Button */}
-              <button
-                onClick={() => setFilters({ sentiment: null, source_type: null, min_risk_score: null, min_influence_score: null, sort_by: 'newest' })}
-                className="w-full px-4 py-3 text-sm font-medium text-gray-400 hover:text-white bg-gray-800 hover:bg-gray-700 rounded-xl transition-colors flex items-center justify-center gap-2"
-              >
-                <RefreshCw className="w-4 h-4" />
-                Reset All Filters
-              </button>
-            </div>
-          </div>
+        {/* Pagination Bar Bottom */}
+        {totalPages > 1 && (
+           <div className="flex items-center justify-end bg-white px-4 py-3 rounded-xl shadow-sm border border-gray-200 mt-2 mb-8">
+             <div className="flex items-center gap-1 text-sm text-gray-600">
+               {Array.from({ length: Math.min(5, totalPages) }).map((_, i) => (
+                 <button key={i} onClick={() => setPage(i + 1)} className={`w-8 h-8 flex items-center justify-center rounded-md ${page === i + 1 ? 'text-blue-600 font-bold bg-blue-50' : 'hover:bg-gray-100'}`}>
+                   {i + 1}
+                 </button>
+               ))}
+               {totalPages > 5 && <span className="px-1">...</span>}
+               {totalPages > 5 && (
+                 <button onClick={() => setPage(totalPages)} className={`w-8 h-8 flex items-center justify-center rounded-md ${page === totalPages ? 'text-blue-600 font-bold bg-blue-50' : 'hover:bg-gray-100'}`}>
+                   {totalPages}
+                 </button>
+               )}
+             </div>
+           </div>
         )}
       </div>
 
-      {/* ─── AI SUMMARY DRAWER ─────────────────────────────────────────────── */}
-      {summarizeDrawerOpen && (
-        <div className="fixed inset-0 z-50 overflow-hidden">
-          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setSummarizeDrawerOpen(false)} />
-          <div className="absolute right-0 top-0 h-full w-full max-w-lg bg-[#111827] border-l border-gray-800 shadow-2xl overflow-y-auto">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-indigo-400" />
-                  AI Summary
-                </h2>
-                <button
-                  onClick={() => setSummarizeDrawerOpen(false)}
-                  className="text-gray-500 hover:text-white"
-                >
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
-
-              {summarizing ? (
-                <div className="flex items-center justify-center h-64">
-                  <div className="text-gray-500 flex items-center gap-2">
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    Đang tạo tóm tắt...
-                  </div>
-                </div>
-              ) : aiSummary ? (
-                <div className="prose prose-invert prose-sm max-w-none">
-                  <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-lg p-4 mb-4">
-                    <p className="text-sm text-indigo-300">
-                      <Info className="w-4 h-4 inline mr-2" />
-                      Tóm tắt này được tạo dựa trên {totalMentions} mentions hiện tại với các bộ lọc đã áp dụng.
-                    </p>
-                  </div>
-                  <div className="text-gray-300 whitespace-pre-wrap leading-relaxed">
-                    {aiSummary.summary || aiSummary.result || JSON.stringify(aiSummary, null, 2)}
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center text-gray-500">
-                  <Info className="w-12 h-12 mx-auto mb-4 text-gray-600" />
-                  <p>Không thể tạo tóm tắt</p>
-                  <p className="text-sm mt-2">Có thể AI chưa được cấu hình hoặc có lỗi xảy ra.</p>
-                </div>
-              )}
-            </div>
-          </div>
+      {/* ─── RIGHT SIDEBAR (FILTERS - 25%) ───────────────────────────────── */}
+      <div className="hidden lg:block w-[300px] xl:w-[320px] shrink-0 space-y-4 pb-8">
+        
+        {/* Date Filter */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+           <div className="flex items-center justify-between cursor-pointer">
+             <div className="flex items-center gap-2 text-sm font-bold text-gray-800">
+               <Calendar className="w-4 h-4 text-gray-500" />
+               Last 30 days
+             </div>
+             <ChevronDown className="w-4 h-4 text-gray-400" />
+           </div>
         </div>
-      )}
 
-      {/* ─── SAVE FILTER MODAL ─────────────────────────────────────────────── */}
-      {saveFilterModalOpen && (
-        <div className="fixed inset-0 z-50 overflow-hidden">
-          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setSaveFilterModalOpen(false)} />
-          <div className="absolute inset-0 flex items-center justify-center p-4">
-            <div className="bg-[#111827] border border-gray-800 rounded-xl shadow-2xl w-full max-w-md">
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                    <SlidersHorizontal className="w-5 h-5 text-indigo-400" />
-                    Save Filter
-                  </h2>
-                  <button
-                    onClick={() => setSaveFilterModalOpen(false)}
-                    className="text-gray-500 hover:text-white"
-                  >
-                    <X className="w-6 h-6" />
-                  </button>
-                </div>
-
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Filter Name</label>
-                    <input
-                      type="text"
-                      value={saveFilterName}
-                      onChange={(e) => setSaveFilterName(e.target.value)}
-                      placeholder="Enter filter name..."
-                      className="w-full px-4 py-3 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500"
-                      autoFocus
-                    />
-                  </div>
-
-                  <div className="bg-gray-800/50 rounded-lg p-4">
-                    <p className="text-xs text-gray-400 mb-2">Current filters:</p>
-                    <div className="flex flex-wrap gap-2">
-                      {filters.sentiment && (
-                        <span className="px-2 py-1 bg-indigo-500/10 text-indigo-400 rounded text-xs">
-                          Sentiment: {filters.sentiment}
-                        </span>
-                      )}
-                      {filters.source_type && (
-                        <span className="px-2 py-1 bg-indigo-500/10 text-indigo-400 rounded text-xs">
-                          Source: {filters.source_type}
-                        </span>
-                      )}
-                      {filters.min_risk_score !== null && (
-                        <span className="px-2 py-1 bg-indigo-500/10 text-indigo-400 rounded text-xs">
-                          Risk ≥ {filters.min_risk_score}
-                        </span>
-                      )}
-                      {searchTerm && (
-                        <span className="px-2 py-1 bg-indigo-500/10 text-indigo-400 rounded text-xs">
-                          Search: {searchTerm}
-                        </span>
-                      )}
-                      {!hasActiveFilters && (
-                        <span className="text-xs text-gray-500">No active filters</span>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="flex gap-3 pt-4">
-                    <button
-                      onClick={() => setSaveFilterModalOpen(false)}
-                      className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-300 bg-gray-800 hover:bg-gray-700 rounded-xl transition-colors"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={handleSaveFilter}
-                      disabled={!saveFilterName.trim()}
-                      className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Save Filter
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+        {/* Sources Filter */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+           <div className="flex items-center justify-between mb-4">
+             <h3 className="text-sm font-bold text-gray-800 flex items-center gap-1.5">
+               Sources <Info className="w-3.5 h-3.5 text-gray-400" />
+             </h3>
+             <span className="text-xs text-gray-500 cursor-pointer hover:underline">Show all</span>
+           </div>
+           <div className="grid grid-cols-2 gap-y-3 gap-x-2">
+             {SOURCE_TYPE_OPTIONS.map((src) => {
+               const isSelected = filters.source_type === src.value;
+               return (
+                 <div key={src.value} className="flex items-start gap-2">
+                   <input 
+                     type="checkbox" 
+                     checked={isSelected}
+                     onChange={() => {
+                        setFilters({ ...filters, source_type: isSelected ? null : src.value });
+                        setPage(1);
+                     }}
+                     className="mt-0.5 rounded border-gray-300 text-emerald-500 focus:ring-emerald-500" 
+                   />
+                   <div className="flex flex-col">
+                     <span className="text-xs font-medium text-gray-700 flex items-center gap-1.5">
+                       <div className={`w-5 h-5 rounded-full flex items-center justify-center bg-gray-100 ${src.color}`}>
+                          <src.icon className="w-3 h-3" />
+                       </div>
+                       {src.label}
+                     </span>
+                     {src.disabled && (
+                        <button className="mt-1 ml-6 text-[9px] font-bold bg-emerald-500 text-white px-1.5 py-0.5 rounded uppercase tracking-wider w-max">
+                          CONNECT
+                        </button>
+                     )}
+                   </div>
+                 </div>
+               );
+             })}
+           </div>
         </div>
-      )}
 
-      {/* ─── DELETE CONFIRM DIALOG ─────────────────────────────────────────── */}
-      <ConfirmDialog
-        isOpen={scanConfirm.isOpen}
-        onClose={() => setScanConfirm({ isOpen: false, keyword: '' })}
-        onConfirm={() => executeScan(scanConfirm.keyword)}
-        title="Cảnh báo: Tên dự án và từ khóa khác nhau"
-        message={`Bạn đang quét từ khóa '${scanConfirm.keyword}' trong project '${activeProject?.name}'. Kết quả sẽ được lưu vào project ${activeProject?.name}. Bạn có chắc chắn muốn tiếp tục?`}
-        confirmText="Tiếp tục quét"
-        cancelText="Hủy"
-        type="warning"
-      />
+        {/* Sentiment Filter */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+           <div className="flex items-center justify-between mb-4">
+             <h3 className="text-sm font-bold text-gray-800 flex items-center gap-1.5">
+               Sentiment <Info className="w-3.5 h-3.5 text-gray-400" />
+             </h3>
+           </div>
+           <div className="flex flex-col gap-3">
+             <label className="flex items-center gap-2 cursor-pointer">
+               <input 
+                  type="checkbox" 
+                  checked={filters.sentiment === 'negative_high' || filters.sentiment === 'negative_medium'}
+                  onChange={() => { setFilters({...filters, sentiment: filters.sentiment?.startsWith('negative') ? null : 'negative_medium'}); setPage(1); }}
+                  className="rounded border-gray-300 text-rose-500 focus:ring-rose-500" 
+               />
+               <span className="text-xs font-medium text-rose-600">Negative</span>
+             </label>
+             <label className="flex items-center gap-2 cursor-pointer">
+               <input 
+                  type="checkbox" 
+                  checked={filters.sentiment === 'neutral'}
+                  onChange={() => { setFilters({...filters, sentiment: filters.sentiment === 'neutral' ? null : 'neutral'}); setPage(1); }}
+                  className="rounded border-gray-300 text-gray-500 focus:ring-gray-500" 
+               />
+               <span className="text-xs font-medium text-gray-600">Neutral</span>
+             </label>
+             <label className="flex items-center gap-2 cursor-pointer">
+               <input 
+                  type="checkbox" 
+                  checked={filters.sentiment === 'positive'}
+                  onChange={() => { setFilters({...filters, sentiment: filters.sentiment === 'positive' ? null : 'positive'}); setPage(1); }}
+                  className="rounded border-gray-300 text-emerald-500 focus:ring-emerald-500" 
+               />
+               <span className="text-xs font-medium text-emerald-600">Positive</span>
+             </label>
+           </div>
+        </div>
 
-      <ConfirmDialog
-        isOpen={deleteConfirm.isOpen}
-        onClose={() => setDeleteConfirm({ isOpen: false, mentionId: null, mentionTitle: '' })}
-        onConfirm={handleDelete}
-        title="Xóa Mention"
-        message={`Bạn có chắc muốn xóa mention "${deleteConfirm.mentionTitle}"?`}
-        confirmText="Xóa"
-        cancelText="Hủy"
-        type="danger"
-      />
+        {/* Influence Score */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+           <div className="flex items-center justify-between mb-4">
+             <h3 className="text-sm font-bold text-gray-800 flex items-center gap-1.5">
+               Influence score <Info className="w-3.5 h-3.5 text-gray-400" />
+             </h3>
+           </div>
+           <div className="px-2">
+             <input type="range" min="0" max="10" defaultValue="0" className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600" />
+             <div className="flex justify-between text-[10px] text-gray-500 mt-2 font-medium">
+               <span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span>
+             </div>
+           </div>
+        </div>
+
+        {/* Other dropdowns */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 space-y-4">
+           <div>
+             <div className="flex items-center justify-between mb-2">
+               <h3 className="text-sm font-bold text-gray-800 flex items-center gap-1.5">Geolocation <Info className="w-3.5 h-3.5 text-gray-400" /></h3>
+               <div className="flex items-center gap-2 text-xs text-gray-500"><span className="text-[10px]">Exclude countries</span><div className="w-6 h-3 bg-gray-200 rounded-full"></div></div>
+             </div>
+             <div className="flex items-center justify-between border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-500">Choose continents <ChevronDown className="w-4 h-4" /></div>
+             <div className="flex items-center justify-between border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-500 mt-2">Choose countries <ChevronDown className="w-4 h-4" /></div>
+           </div>
+           
+           <div>
+             <div className="flex items-center justify-between mb-2">
+               <h3 className="text-sm font-bold text-gray-800 flex items-center gap-1.5">Emotions <Info className="w-3.5 h-3.5 text-gray-400" /></h3>
+             </div>
+             <div className="flex items-center justify-between border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-500">Choose emotions <ChevronDown className="w-4 h-4" /></div>
+           </div>
+
+           <div>
+             <div className="flex items-center justify-between mb-2">
+               <h3 className="text-sm font-bold text-gray-800 flex items-center gap-1.5">Language <Info className="w-3.5 h-3.5 text-gray-400" /></h3>
+               <div className="flex items-center gap-2 text-xs text-gray-500"><span className="text-[10px]">Exclude languages</span><div className="w-6 h-3 bg-gray-200 rounded-full"></div></div>
+             </div>
+             <div className="flex items-center justify-between border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-500">Choose languages <ChevronDown className="w-4 h-4" /></div>
+           </div>
+        </div>
+
+      </div>
     </div>
   );
 }
