@@ -257,6 +257,7 @@ export default function MentionsPage() {
   const [scanJobStatus, setScanJobStatus] = useState<any>(null);
 
   const searchTimeout = useRef<NodeJS.Timeout | null>(null);
+  const scanStartTimeRef = useRef<number | null>(null);
   const sortRef = useRef<HTMLDivElement>(null);
   const savedFiltersRef = useRef<HTMLDivElement>(null);
 
@@ -449,6 +450,7 @@ export default function MentionsPage() {
             setActiveScanJobId(res.job_id);
             setActiveScanKeyword(params.q);
             setScanJobStatus({ status: 'QUEUED' });
+            scanStartTimeRef.current = Date.now();
           } catch (err) {
             console.error('Scan error:', err);
             toast.error('Lỗi khi tự động quét dữ liệu');
@@ -548,6 +550,15 @@ export default function MentionsPage() {
   useEffect(() => {
     if (!activeScanJobId) return;
     const interval = setInterval(async () => {
+      // Check for frontend timeout (2.5 minutes) in case the backend job hangs or server restarts
+      if (scanStartTimeRef.current && Date.now() - scanStartTimeRef.current > 150000) {
+        clearInterval(interval);
+        setActiveScanJobId(null);
+        setScanJobStatus(null);
+        toast.error('Quá thời gian chờ phản hồi từ máy chủ (Timeout).');
+        return;
+      }
+
       try {
         const data = await crawl.getJob(activeScanJobId);
         setScanJobStatus(data);
@@ -556,6 +567,7 @@ export default function MentionsPage() {
           clearInterval(interval);
           setActiveScanJobId(null);
           setScanJobStatus(null);
+          scanStartTimeRef.current = null;
           if (status === 'FAILED') {
             toast.error(`Lượt quét thất bại: ${data.error_message || ''}`);
           } else {
