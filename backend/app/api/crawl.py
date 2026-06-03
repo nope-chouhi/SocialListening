@@ -230,7 +230,13 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
                 }
                 disc_job = create_discovery_job(db, user_id=user_id, request_data=req_data)
                 db.commit()
-                # Run discovery asynchronously to prevent blocking manual scan
+                def _run_discovery_bg(d_id):
+                    from app.core.database import SessionLocal
+                    bg_db = SessionLocal()
+                    try:
+                        run_discovery_job(bg_db, d_id)
+                    finally:
+                        bg_db.close()
                 import threading
                 threading.Thread(target=_run_discovery_bg, args=(disc_job.id,)).start()
             except Exception as e:
@@ -284,7 +290,7 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
                     summary["web"]["results_after_keyword_match"] += 1
                     content_hash = hashlib.sha256(f"{url}_{title}".encode()).hexdigest()
                     
-                    existing = db.execute(apply_tenant_filter(select(Mention), Mention, current_user).where(Mention.project_id == project_id, Mention.url == url)).scalar_one_or_none()
+                    existing = db.execute(select(Mention).where(Mention.project_id == project_id, Mention.url == url)).scalar_one_or_none()
                     if existing:
                         summary["web"]["duplicates_skipped"] += 1
                         summary["duplicates_skipped"] += 1
@@ -361,7 +367,7 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
                         
                         content_hash = hashlib.sha256(f"{url}_{title}".encode()).hexdigest()
                         
-                        existing = db.execute(apply_tenant_filter(select(Mention), Mention, current_user).where(Mention.project_id == project_id, Mention.url == url)).scalar_one_or_none()
+                        existing = db.execute(select(Mention).where(Mention.project_id == project_id, Mention.url == url)).scalar_one_or_none()
                         if existing:
                             summary["youtube"]["duplicates_skipped"] += 1
                             summary["duplicates_skipped"] += 1
