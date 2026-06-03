@@ -549,6 +549,18 @@ export default function MentionsPage() {
 
   /* ─── PROJECT / SCAN ACTIONS ─────────────────────────────────────────── */
 
+  const scannedKeywordsRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (!loading && totalMentions === 0 && searchTerm && !initialJobId && !activeScanJobId) {
+      const keywordLower = searchTerm.toLowerCase().trim();
+      if (!scannedKeywordsRef.current.has(keywordLower)) {
+        scannedKeywordsRef.current.add(keywordLower);
+        executeScan(searchTerm);
+      }
+    }
+  }, [loading, totalMentions, searchTerm, initialJobId, activeScanJobId]);
+
 
   const handleSearchChange = (val: string) => {
     setSearchInput(val);
@@ -1260,19 +1272,27 @@ export default function MentionsPage() {
             </div>
           ) : mentionsList.length === 0 ? (
             <div className="bg-[#111827] border border-gray-800 rounded-xl p-12 text-center">
-              <FileText className="w-12 h-12 text-gray-600 mx-auto mb-4" />
+              {!activeScanJobId && <FileText className="w-12 h-12 text-gray-600 mx-auto mb-4" />}
               {searchTerm ? (
-                <>
-                  <p className="text-gray-400 font-medium text-lg">Không có mentions hiện có trong project {activeProject?.name} khớp với từ khóa '{searchTerm}'.</p>
-                  <p className="text-gray-500 text-sm mt-2 mb-6">Bạn có thể dùng nút Scan Now để quét dữ liệu mới từ internet cho từ khóa này.</p>
-                  <button
-                    onClick={handleScanClick}
-                    className="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-medium text-white bg-indigo-600 rounded-xl hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-500/20"
-                  >
-                    <Scan className="w-4 h-4" />
-                    Scan dữ liệu mới cho từ khóa {searchTerm}
-                  </button>
-                </>
+                activeScanJobId ? (
+                  <>
+                    <Loader2 className="w-12 h-12 text-indigo-500 animate-spin mx-auto mb-4" />
+                    <p className="text-white font-medium text-lg">Đang tự động quét toàn mạng cho từ khóa '{searchTerm}'...</p>
+                    <p className="text-gray-500 text-sm mt-2">Vui lòng đợi trong giây lát, hệ thống đang thu thập dữ liệu từ đa nền tảng.</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-gray-400 font-medium text-lg">Không có mentions hiện có trong project {activeProject?.name} khớp với từ khóa '{searchTerm}'.</p>
+                    <p className="text-gray-500 text-sm mt-2 mb-6">Hệ thống đang tự động kích hoạt tiến trình quét dữ liệu mới từ internet...</p>
+                    <button
+                      onClick={handleScanClick}
+                      className="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-medium text-white bg-indigo-600 rounded-xl hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-500/20"
+                    >
+                      <Scan className="w-4 h-4" />
+                      Scan dữ liệu mới cho từ khóa {searchTerm}
+                    </button>
+                  </>
+                )
               ) : (
                 <>
                   <p className="text-gray-400 font-medium">Không tìm thấy bài viết/web page phù hợp với từ khóa này.</p>
