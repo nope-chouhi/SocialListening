@@ -434,26 +434,26 @@ export default function MentionsPage() {
       // Auto-trigger scan if 0 results
       if (data.total === 0 && params.q && !initialJobId && !activeScanJobId) {
         const keywordLower = params.q.toLowerCase().trim();
-        if (!scannedKeywordsRef.current?.has(keywordLower)) {
+        if (!scannedKeywordsRef.current?.has(keywordLower) && activeProject) {
           scannedKeywordsRef.current?.add(keywordLower);
           
           // Call scan immediately
-          if (activeProject) {
-            try {
-              toast.success(`Đang tự động quét mạng cho từ khóa: ${params.q}...`);
-              const res = await crawl.manualScan({
-                project_id: activeProject.id,
-                keywords: [params.q],
-                mode: 'AUTO_DISCOVERY',
-                source_ids: [],
-              });
-              setActiveScanJobId(res.job_id);
-              setActiveScanKeyword(params.q);
-              setScanJobStatus({ status: 'QUEUED' });
-            } catch (err) {
-              console.error('Scan error:', err);
-              toast.error('Lỗi khi tự động quét dữ liệu');
-            }
+          try {
+            toast.success(`Đang tự động quét mạng cho từ khóa: ${params.q}...`);
+            const res = await crawl.manualScan({
+              project_id: activeProject.id,
+              keywords: [params.q],
+              mode: 'AUTO_DISCOVERY',
+              source_ids: [],
+            });
+            setActiveScanJobId(res.job_id);
+            setActiveScanKeyword(params.q);
+            setScanJobStatus({ status: 'QUEUED' });
+          } catch (err) {
+            console.error('Scan error:', err);
+            toast.error('Lỗi khi tự động quét dữ liệu');
+            // Allow retry if failed
+            scannedKeywordsRef.current?.delete(keywordLower);
           }
         }
       }
