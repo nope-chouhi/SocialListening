@@ -240,6 +240,7 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
                 import threading
                 threading.Thread(target=_run_discovery_bg, args=(disc_job.id,)).start()
             except Exception as e:
+                db.rollback()
                 import logging
                 logging.getLogger(__name__).error(f"Failed to create discovery job from scan: {e}")
             
@@ -427,12 +428,16 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
         db.commit()
     except Exception as e:
         if 'job' in locals() and job:
-            job.status = CrawlJobStatus.FAILED
-            job.error_message = str(e)
+            db.rollback()
             try:
-                db.commit()
+                # Need to fetch job again because session was rolled back
+                job = db.execute(select(CrawlJob).where(CrawlJob.id == job_id)).scalar_one_or_none()
+                if job:
+                    job.status = CrawlJobStatus.FAILED
+                    job.error_message = str(e)[:2000]
+                    db.commit()
             except:
-                db.rollback()
+                pass
     finally:
         db.close()
 
