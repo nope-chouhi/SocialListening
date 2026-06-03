@@ -30,20 +30,33 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
   const [activeProject, setActiveProject] = useState<KeywordGroup | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const setAndSaveActiveProject = useCallback((project: KeywordGroup | null) => {
+    setActiveProject(project);
+    if (project) {
+      localStorage.setItem('nope_active_project_id', project.id.toString());
+    } else {
+      localStorage.removeItem('nope_active_project_id');
+    }
+  }, []);
+
   const fetchProjects = useCallback(async () => {
     try {
       setLoading(true);
       const data = await keywordsApi.listGroups();
       setProjects(data);
       
-      // If we have projects but no active project, we could auto-select the first one.
-      // But let's leave it null to mean "All Projects" or prompt user to select.
-      // Actually, Brand24 requires a project to be selected. Let's auto-select the first one if none selected.
       if (data.length > 0) {
         setActiveProject((prev) => {
-          if (!prev) return data[0];
-          const stillExists = data.find((p: KeywordGroup) => p.id === prev.id);
-          return stillExists || data[0];
+          if (prev) {
+            const stillExists = data.find((p: KeywordGroup) => p.id === prev.id);
+            return stillExists || data[0];
+          }
+          const savedId = localStorage.getItem('nope_active_project_id');
+          if (savedId) {
+             const found = data.find((p: KeywordGroup) => p.id.toString() === savedId);
+             if (found) return found;
+          }
+          return data[0];
         });
       } else {
         setActiveProject(null);
@@ -64,7 +77,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
       projects,
       activeProject,
       loading,
-      setActiveProject,
+      setActiveProject: setAndSaveActiveProject,
       fetchProjects,
       refreshProjects: fetchProjects
     }}>

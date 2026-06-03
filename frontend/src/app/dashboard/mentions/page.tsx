@@ -430,6 +430,33 @@ export default function MentionsPage() {
       setMentionsList(data.items);
       setTotalMentions(data.total);
       setTotalPages(data.total_pages);
+
+      // Auto-trigger scan if 0 results
+      if (data.total === 0 && params.q && !initialJobId && !activeScanJobId) {
+        const keywordLower = params.q.toLowerCase().trim();
+        if (!scannedKeywordsRef.current?.has(keywordLower)) {
+          scannedKeywordsRef.current?.add(keywordLower);
+          
+          // Call scan immediately
+          if (activeProject) {
+            try {
+              toast.success(`Đang tự động quét mạng cho từ khóa: ${params.q}...`);
+              const res = await crawl.manualScan({
+                project_id: activeProject.id,
+                keywords: [params.q],
+                mode: 'AUTO_DISCOVERY',
+                source_ids: [],
+              });
+              setActiveScanJobId(res.job_id);
+              setActiveScanKeyword(params.q);
+              setScanJobStatus({ status: 'QUEUED' });
+            } catch (err) {
+              console.error('Scan error:', err);
+              toast.error('Lỗi khi tự động quét dữ liệu');
+            }
+          }
+        }
+      }
     } catch (error: any) {
       console.error('Error fetching mentions:', error);
       toast.error(error.response?.data?.detail || 'Lỗi khi tải mentions');
@@ -550,16 +577,6 @@ export default function MentionsPage() {
   /* ─── PROJECT / SCAN ACTIONS ─────────────────────────────────────────── */
 
   const scannedKeywordsRef = useRef<Set<string>>(new Set());
-
-  useEffect(() => {
-    if (!loading && totalMentions === 0 && searchTerm && !initialJobId && !activeScanJobId) {
-      const keywordLower = searchTerm.toLowerCase().trim();
-      if (!scannedKeywordsRef.current.has(keywordLower)) {
-        scannedKeywordsRef.current.add(keywordLower);
-        executeScan(searchTerm);
-      }
-    }
-  }, [loading, totalMentions, searchTerm, initialJobId, activeScanJobId]);
 
 
   const handleSearchChange = (val: string) => {
@@ -1282,14 +1299,14 @@ export default function MentionsPage() {
                   </>
                 ) : (
                   <>
-                    <p className="text-gray-400 font-medium text-lg">Không có mentions hiện có trong project {activeProject?.name} khớp với từ khóa '{searchTerm}'.</p>
-                    <p className="text-gray-500 text-sm mt-2 mb-6">Hệ thống đang tự động kích hoạt tiến trình quét dữ liệu mới từ internet...</p>
+                    <p className="text-gray-400 font-medium text-lg">Chưa có dữ liệu cho '{searchTerm}' trong cơ sở dữ liệu.</p>
+                    <p className="text-gray-500 text-sm mt-2 mb-6">Bạn có thể ép hệ thống quét lại mạng lưới nếu tiến trình tự động bị lỗi.</p>
                     <button
                       onClick={handleScanClick}
                       className="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-medium text-white bg-indigo-600 rounded-xl hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-500/20"
                     >
                       <Scan className="w-4 h-4" />
-                      Scan dữ liệu mới cho từ khóa {searchTerm}
+                      Thử quét lại trên internet
                     </button>
                   </>
                 )
