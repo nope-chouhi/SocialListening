@@ -205,6 +205,15 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
                 "error": None,
                 "skip_reason": "Not configured" if not has_youtube else None
             },
+            "social": {
+                "status": "READY",
+                "called": False,
+                "raw_results_count": 0,
+                "mentions_created": 0,
+                "duplicates_skipped": 0,
+                "error": None,
+                "skip_reason": None
+            },
             "adapters_ready": [],
             "serpapi_result_count": 0,
             "urls_crawled": 0,
@@ -413,6 +422,89 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
                 
             job.meta_data = {"summary": summary, "project_id": project_id, "keywords": keyword_texts}
             commit_summary()
+
+        # -------------- SOCIAL ADAPTER (REDDIT, NEWS) --------------
+        summary["adapters_ready"].append("social")
+        summary["social"]["called"] = True
+        summary["social"]["status"] = "RUNNING"
+        job.meta_data = {"summary": summary, "project_id": project_id, "keywords": keyword_texts}
+        commit_summary()
+        
+        try:
+            if is_timeout():
+                raise TimeoutError("Scan timeout reached before Social")
+                
+            from app.services.social_crawler_service import social_crawler_service
+            import asyncio
+            
+            # Run the async crawler synchronously
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                # We crawl Reddit and News for manual scan (Twitter needs bearer token)
+                social_res = loop.run_until_complete(social_crawler_service.crawl_keywords(keyword_texts, ["reddit", "news"]))
+            finally:
+                loop.close()
+                
+            summary["social"]["raw_results_count"] += len(social_res)
+            
+            for r in social_res:
+                url = r.get("url")
+                if not url: continue
+                url = str(url).lower().strip()
+                title = str(r.get("title") or "")
+                snippet = str(r.get("content") or "")
+                
+                import unicodedata
+                matched_kw = None
+                search_text = unicodedata.normalize('NFC', (title + " " + snippet + " " + url).lower())
+                for kw in keyword_texts:
+                    kw_norm = unicodedata.normalize('NFC', kw.lower())
+                    if kw_norm in search_text:
+                        matched_kw = kw
+                        break
+                
+                if not matched_kw:
+                    continue # Skip irrelevant result that doesn't contain the keyword
+                
+                content_hash = hashlib.sha256(f"{project_id}_{matched_kw}_{url}_{title}".encode()).hexdigest()
+                
+                existing = db.execute(select(Mention).where(Mention.project_id == project_id, Mention.keyword_text == matched_kw, Mention.url == url)).scalar_one_or_none()
+                if existing:
+                    summary["social"]["duplicates_skipped"] += 1
+                    summary["duplicates_skipped"] += 1
+                    summary["old_mentions_existing"] += 1
+                    continue
+                    
+                mention = Mention(
+                    project_id=project_id,
+                    job_id=job_id,
+                    keyword_text=matched_kw,
+                    source_type=r.get("source_type", "social"),
+                    platform=r.get("platform", "social"),
+                    domain=r.get("platform", "social") + ".com",
+                    title=title[:500] if title else None,
+                    snippet=snippet[:1000] if snippet else None,
+                    content=snippet[:10000] if snippet else None,
+                    url=url,
+                    content_hash=content_hash,
+                    collected_at=datetime.now(timezone.utc),
+                    is_reviewed=False,
+                    author=r.get("author", "")[:500],
+                    published_at=r.get("timestamp")
+                )
+                db.add(mention)
+                summary["social"]["mentions_created"] += 1
+                summary["new_mentions_created"] += 1
+            db.flush()
+            summary["social"]["status"] = "COMPLETED"
+        except Exception as e:
+            summary["errors"].append(f"Social: {e}")
+            summary["social"]["error"] = str(e)
+            summary["social"]["status"] = "ERROR"
+            
+        job.meta_data = {"summary": summary, "project_id": project_id, "keywords": keyword_texts}
+        commit_summary()
 
         db.commit()
 

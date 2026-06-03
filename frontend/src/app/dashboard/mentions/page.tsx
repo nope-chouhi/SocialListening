@@ -1142,6 +1142,16 @@ export default function MentionsPage() {
                              {scanJobStatus.summary.youtube.skip_reason && <p className="text-amber-400">- Skip reason: {scanJobStatus.summary.youtube.skip_reason}</p>}
                            </div>
                          )}
+                         {scanJobStatus.summary?.social && (
+                           <div className="mt-2 pt-2 border-t border-gray-700/50">
+                             <p className="font-bold text-gray-200">Social (Reddit, News):</p>
+                             <p>- Called: {scanJobStatus.summary.social.called ? 'Yes' : 'No'}</p>
+                             <p>- Status: {scanJobStatus.summary.social.status}</p>
+                             <p>- Raw results: {scanJobStatus.summary.social.raw_results_count}</p>
+                             {scanJobStatus.summary.social.error && <p className="text-rose-400">- Error: {scanJobStatus.summary.social.error}</p>}
+                             {scanJobStatus.summary.social.skip_reason && <p className="text-amber-400">- Skip reason: {scanJobStatus.summary.social.skip_reason}</p>}
+                           </div>
+                         )}
                        </div>
                        <div className="flex flex-wrap gap-3">
                          <button onClick={handleScanClick} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg flex items-center gap-2"><RefreshCw className="w-4 h-4"/> Thử quét lại</button>
@@ -1174,6 +1184,15 @@ export default function MentionsPage() {
                              <p>- Status: {scanJobStatus.summary.youtube.status}</p>
                              <p>- Raw results: {scanJobStatus.summary.youtube.raw_results_count}</p>
                              {scanJobStatus.summary.youtube.skip_reason && <p className="text-amber-400">- Skip reason: {scanJobStatus.summary.youtube.skip_reason}</p>}
+                           </div>
+                         )}
+                         {scanJobStatus.summary?.social && (
+                           <div className="mt-2 pt-2 border-t border-gray-700/50">
+                             <p className="font-bold text-gray-200">Social (Reddit, News):</p>
+                             <p>- Called: {scanJobStatus.summary.social.called ? 'Yes' : 'No'}</p>
+                             <p>- Status: {scanJobStatus.summary.social.status}</p>
+                             <p>- Raw results: {scanJobStatus.summary.social.raw_results_count}</p>
+                             {scanJobStatus.summary.social.skip_reason && <p className="text-amber-400">- Skip reason: {scanJobStatus.summary.social.skip_reason}</p>}
                            </div>
                          )}
                        </div>
