@@ -428,7 +428,7 @@ export default function MentionsPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, searchTerm, filters, initialJobId]);
+  }, [page, searchTerm, filters, initialJobId, activeProject?.id]);
 
   const fetchChartData = useCallback(async () => {
     try {
@@ -452,16 +452,26 @@ export default function MentionsPage() {
 
   useEffect(() => {
     fetchChartData();
-  }, [fetchChartData, activeProject]);
+  }, [fetchChartData, activeProject?.id]);
 
-  
-  /* ─── SCAN NOW LOGIC ────────────────────────────────────────────────── */
-  const handleScanNow = async () => {
-    if (!activeProject) {
-      toast.error('Vui lòng chọn project trước.');
-      return;
+  useEffect(() => {
+    // Reset state on project change to prevent stale data
+    setMentionsList([]);
+    setPage(1);
+    // Note: We don't reset searchTerm here because user might be typing before switching,
+    // or we might want to keep the filter. But we must clear stale job_id to prevent showing wrong job.
+    const newParams = new URLSearchParams(searchParams?.toString() || '');
+    if (newParams.has('job_id')) {
+      newParams.delete('job_id');
+      router.push(`/dashboard/mentions?${newParams.toString()}`);
     }
-    const keyword = searchTerm || 'TTH'; // fallback
+  }, [activeProject?.id]);
+
+  /* ─── SCAN NOW LOGIC ────────────────────────────────────────────────── */
+  const [scanConfirm, setScanConfirm] = useState({ isOpen: false, keyword: '' });
+
+  const executeScan = async (keyword: string) => {
+    if (!activeProject) return;
     try {
       const res = await crawl.manualScan({
         project_id: activeProject.id,
@@ -472,9 +482,28 @@ export default function MentionsPage() {
       setActiveScanJobId(res.job_id);
       setActiveScanKeyword(keyword);
       setScanJobStatus({ status: 'QUEUED' });
+      setScanConfirm({ isOpen: false, keyword: '' });
       toast.success(`Đang quét dữ liệu mới cho từ khóa ${keyword}...`);
     } catch (err: any) {
       toast.error('Lỗi khi bắt đầu quét');
+    }
+  };
+
+  const handleScanClick = () => {
+    if (!activeProject) {
+      toast.error('Vui lòng chọn project trước.');
+      return;
+    }
+    const keyword = searchTerm || activeProject.name || 'TTH';
+    
+    // Warn if scanning a keyword that differs from the project name
+    const projectNameStr = activeProject.name.toLowerCase().trim();
+    const keywordStr = keyword.toLowerCase().trim();
+    
+    if (projectNameStr !== keywordStr && !projectNameStr.includes(keywordStr)) {
+      setScanConfirm({ isOpen: true, keyword });
+    } else {
+      executeScan(keyword);
     }
   };
 
@@ -716,14 +745,17 @@ export default function MentionsPage() {
           </button>
 
           {/* Scan Now Button */}
-          <button
-            onClick={handleScanNow}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-emerald-300 bg-emerald-500/10 border border-emerald-500/30 rounded-xl hover:bg-emerald-500/20 hover:text-emerald-200 transition-all disabled:opacity-50"
-            disabled={activeScanJobId !== null && scanJobStatus?.status !== 'COMPLETED' && scanJobStatus?.status !== 'FAILED'}
-          >
-            {activeScanJobId !== null && scanJobStatus?.status !== 'COMPLETED' && scanJobStatus?.status !== 'FAILED' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Scan className="w-4 h-4" />}
-            Scan Now
-          </button>
+          <div className="flex flex-col items-end">
+            <button
+              onClick={handleScanClick}
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-emerald-300 bg-emerald-500/10 border border-emerald-500/30 rounded-xl hover:bg-emerald-500/20 hover:text-emerald-200 transition-all disabled:opacity-50"
+              disabled={activeScanJobId !== null && scanJobStatus?.status !== 'COMPLETED' && scanJobStatus?.status !== 'FAILED'}
+            >
+              {activeScanJobId !== null && scanJobStatus?.status !== 'COMPLETED' && scanJobStatus?.status !== 'FAILED' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Scan className="w-4 h-4" />}
+              Scan Now
+            </button>
+            <span className="text-[10px] text-gray-500 mt-1 mr-1">Tạo mention mới từ API</span>
+          </div>
 
           {/* Export CSV */}
           <button
@@ -754,7 +786,7 @@ export default function MentionsPage() {
           <input
             id="mentions-search"
             type="text"
-            placeholder="Tìm kiếm mentions..."
+            placeholder="Lọc mentions hiện có trong project này..."
             value={searchInput}
             onChange={(e) => handleSearchChange(e.target.value)}
             className="w-full pl-12 pr-12 py-3 bg-[#111827] border border-gray-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 text-white placeholder-gray-500 shadow-sm transition-all text-sm"
@@ -1125,8 +1157,15 @@ export default function MentionsPage() {
               <FileText className="w-12 h-12 text-gray-600 mx-auto mb-4" />
               {searchTerm ? (
                 <>
-                  <p className="text-gray-400 font-medium">Không tìm thấy mentions nào cho '{searchTerm}'</p>
-                  <p className="text-gray-500 text-sm mt-2">Thử thay đổi từ khóa hoặc mở rộng bộ lọc.</p>
+                  <p className="text-gray-400 font-medium text-lg">Không có mentions hiện có trong project {activeProject?.name} khớp với từ khóa '{searchTerm}'.</p>
+                  <p className="text-gray-500 text-sm mt-2 mb-6">Bạn có thể dùng nút Scan Now để quét dữ liệu mới từ internet cho từ khóa này.</p>
+                  <button
+                    onClick={handleScanClick}
+                    className="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-medium text-white bg-indigo-600 rounded-xl hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-500/20"
+                  >
+                    <Scan className="w-4 h-4" />
+                    Scan dữ liệu mới cho từ khóa {searchTerm}
+                  </button>
                 </>
               ) : (
                 <>
