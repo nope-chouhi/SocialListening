@@ -296,6 +296,14 @@ def list_mentions(
             
             if search_query and not job_id:
                 search_pattern = f"%{search_query}%"
+                query = query.where(
+                    or_(
+                        Mention.title.ilike(search_pattern),
+                        Mention.content.ilike(search_pattern),
+                        Mention.author.ilike(search_pattern),
+                        Mention.url.ilike(search_pattern)
+                    )
+                )
                 count_base = count_base.where(
                     or_(
                         Mention.title.ilike(search_pattern),
@@ -307,6 +315,15 @@ def list_mentions(
 
             if q and not job_id:
                 search_term = f"%{q}%"
+                query = query.filter(
+                    or_(
+                        Mention.title.ilike(search_term),
+                        Mention.snippet.ilike(search_term),
+                        Mention.content.ilike(search_term),
+                        Mention.url.ilike(search_term),
+                        Mention.domain.ilike(search_term),
+                    )
+                )
                 count_base = count_base.where(
                     or_(
                         Mention.title.ilike(search_term),
