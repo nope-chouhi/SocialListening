@@ -300,7 +300,7 @@ export const crawl = {
     const response = await api.get('/api/crawl/capabilities');
     return response.data;
   },
-  manualScan: async (data: { keyword_group_ids?: number[]; keywords?: string[]; source_ids?: number[]; url?: string; mode?: string }) => {
+  manualScan: async (data: { keyword_group_ids?: number[]; keywords?: string[]; source_ids?: number[]; url?: string; mode?: string; project_id?: number; max_results?: number }) => {
     // Sent as a single JSON object — backend expects ManualScanRequest body
     const response = await api.post('/api/crawl/manual-scan', data);
     return response.data;
@@ -311,6 +311,10 @@ export const crawl = {
   },
   getJobs: async (page: number = 1, page_size: number = 20, status?: string) => {
     const response = await api.get('/api/crawl/jobs', { params: { page, page_size, status } });
+    return response.data;
+  },
+  getJob: async (id: number) => {
+    const response = await api.get(`/api/crawl/jobs/${id}`);
     return response.data;
   },
   retryJob: async (jobId: number) => {
