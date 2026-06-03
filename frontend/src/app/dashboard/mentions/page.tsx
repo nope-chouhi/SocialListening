@@ -716,15 +716,15 @@ export default function MentionsPage() {
       <div className="flex-1 w-full lg:w-[75%] min-w-0 flex flex-col gap-6">
         
         {/* Header & Filter Controls */}
-        <div className="flex flex-wrap items-center justify-between gap-4 bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+        <div className="flex flex-wrap items-center justify-between gap-4 bg-white dark:bg-[#050A15] p-4 rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
            <div className="flex items-center gap-3">
              <div className="relative" ref={sortRef}>
-               <button onClick={() => setSortOpen(!sortOpen)} className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-md transition-colors">
+               <button onClick={() => setSortOpen(!sortOpen)} className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-gray-800 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-md transition-colors">
                  {SORT_OPTIONS.find((o) => o.value === filters.sort_by)?.label || 'By relevance'}
                  <ChevronDown className="w-4 h-4" />
                </button>
                {sortOpen && (
-                 <div className="absolute left-0 top-full mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-xl z-20 py-1">
+                 <div className="absolute left-0 top-full mt-1 w-48 bg-white dark:bg-[#050A15] border border-gray-200 dark:border-white/10 rounded-lg shadow-xl z-20 py-1">
                    {SORT_OPTIONS.map((opt) => (
                      <button
                        key={opt.value}
@@ -732,7 +732,7 @@ export default function MentionsPage() {
                        className={`w-full text-left px-4 py-2 text-sm font-medium transition-colors ${
                          filters.sort_by === opt.value
                            ? 'bg-blue-50 text-blue-600'
-                           : 'text-gray-600 hover:bg-gray-50'
+                           : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-[#0a0f1c] dark:bg-[#0a0f1c]'
                        }`}
                      >
                        {opt.label}
@@ -743,7 +743,7 @@ export default function MentionsPage() {
              </div>
              
              {hasActiveFilters && (
-               <button onClick={() => { setFilters({ ...filters, sentiment: null, source_type: null, min_risk_score: null, min_influence_score: null }); setPage(1); }} className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 font-medium transition-colors">
+               <button onClick={() => { setFilters({ ...filters, sentiment: null, source_type: null, min_risk_score: null, min_influence_score: null }); setPage(1); }} className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 dark:text-gray-100 font-medium transition-colors">
                  <RefreshCw className="w-3.5 h-3.5" /> Clear filters
                </button>
              )}
@@ -764,19 +764,19 @@ export default function MentionsPage() {
         </div>
 
         {/* Chart Section */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="flex items-center border-b border-gray-100">
-            <button className="px-6 py-3 border-b-2 border-blue-600 text-sm font-bold text-gray-900">
+        <div className="bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10 overflow-hidden">
+          <div className="flex items-center border-b border-gray-100 dark:border-white/5">
+            <button className="px-6 py-3 border-b-2 border-blue-600 text-sm font-bold text-gray-900 dark:text-white">
               Mentions & Reach
             </button>
-            <button className="px-6 py-3 border-b-2 border-transparent text-sm font-medium text-gray-500 hover:text-gray-700">
+            <button className="px-6 py-3 border-b-2 border-transparent text-sm font-medium text-gray-500 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 dark:text-gray-300">
               Sentiment
             </button>
             <div className="ml-auto pr-4 flex items-center gap-2">
-               <div className="flex bg-gray-100 p-0.5 rounded-lg border border-gray-200">
-                 <button className="px-3 py-1 text-xs font-medium bg-white text-gray-800 rounded shadow-sm">Days</button>
-                 <button className="px-3 py-1 text-xs font-medium text-gray-500 hover:text-gray-700">Weeks</button>
-                 <button className="px-3 py-1 text-xs font-medium text-gray-500 hover:text-gray-700">Months</button>
+               <div className="flex bg-gray-100 dark:bg-white/10 p-0.5 rounded-lg border border-gray-200 dark:border-white/10">
+                 <button className="px-3 py-1 text-xs font-medium bg-white dark:bg-[#050A15] text-gray-800 dark:text-gray-100 rounded shadow-sm">Days</button>
+                 <button className="px-3 py-1 text-xs font-medium text-gray-500 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 dark:text-gray-300">Weeks</button>
+                 <button className="px-3 py-1 text-xs font-medium text-gray-500 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 dark:text-gray-300">Months</button>
                </div>
             </div>
           </div>
@@ -809,25 +809,25 @@ export default function MentionsPage() {
         </div>
 
         {/* Pagination Bar Top */}
-        <div className="flex items-center justify-between bg-white px-4 py-3 rounded-xl shadow-sm border border-gray-200">
-           <div className="text-sm font-medium text-gray-500">
+        <div className="flex items-center justify-between bg-white dark:bg-[#050A15] px-4 py-3 rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+           <div className="text-sm font-medium text-gray-500 dark:text-gray-500">
              {loading ? 'Đang tải...' : totalMentions >= 0 ? `${totalMentions.toLocaleString()} kết quả ${searchTerm ? `cho '${searchTerm}'` : ''}` : 'Đang tải...'}
            </div>
            
            {totalPages > 1 && (
-             <div className="flex items-center gap-1 text-sm text-gray-600">
+             <div className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400">
                {Array.from({ length: Math.min(5, totalPages) }).map((_, i) => (
-                 <button key={i} onClick={() => setPage(i + 1)} className={`w-8 h-8 flex items-center justify-center rounded-md ${page === i + 1 ? 'text-blue-600 font-bold bg-blue-50' : 'hover:bg-gray-100'}`}>
+                 <button key={i} onClick={() => setPage(i + 1)} className={`w-8 h-8 flex items-center justify-center rounded-md ${page === i + 1 ? 'text-blue-600 font-bold bg-blue-50' : 'hover:bg-gray-100 dark:hover:bg-gray-800 dark:bg-white/10'}`}>
                    {i + 1}
                  </button>
                ))}
                {totalPages > 5 && <span className="px-1">...</span>}
                {totalPages > 5 && (
-                 <button onClick={() => setPage(totalPages)} className={`w-8 h-8 flex items-center justify-center rounded-md ${page === totalPages ? 'text-blue-600 font-bold bg-blue-50' : 'hover:bg-gray-100'}`}>
+                 <button onClick={() => setPage(totalPages)} className={`w-8 h-8 flex items-center justify-center rounded-md ${page === totalPages ? 'text-blue-600 font-bold bg-blue-50' : 'hover:bg-gray-100 dark:hover:bg-gray-800 dark:bg-white/10'}`}>
                    {totalPages}
                  </button>
                )}
-               <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="p-1.5 hover:bg-gray-100 rounded-md disabled:opacity-50 text-blue-600">
+               <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 dark:bg-white/10 rounded-md disabled:opacity-50 text-blue-600">
                  <ChevronRight className="w-5 h-5" />
                </button>
              </div>
@@ -837,21 +837,21 @@ export default function MentionsPage() {
         {/* MENTIONS LIST */}
         <div className="space-y-4">
           {loading ? (
-            <div className="py-20 flex flex-col items-center justify-center bg-white rounded-xl shadow-sm border border-gray-200">
+            <div className="py-20 flex flex-col items-center justify-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
               <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-4" />
-              <p className="text-gray-500">Đang tải Mentions...</p>
+              <p className="text-gray-500 dark:text-gray-500">Đang tải Mentions...</p>
             </div>
           ) : mentionsList.length === 0 ? (
-            <div className="py-20 flex flex-col items-center justify-center text-center bg-white rounded-xl shadow-sm border border-gray-200">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+            <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
                 <Search className="w-8 h-8 text-gray-400" />
               </div>
-              <h3 className="text-lg font-bold text-gray-800 mb-2">Không tìm thấy kết quả</h3>
-              <p className="text-gray-500 max-w-sm">Thử thay đổi từ khóa hoặc bộ lọc để xem các Mentions khác.</p>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Không tìm thấy kết quả</h3>
+              <p className="text-gray-500 dark:text-gray-500 max-w-sm">Thử thay đổi từ khóa hoặc bộ lọc để xem các Mentions khác.</p>
             </div>
           ) : (
             mentionsList.map((mention) => (
-              <div key={mention.id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden group hover:border-gray-300 transition-colors">
+              <div key={mention.id} className="bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10 overflow-hidden group hover:border-gray-300 transition-colors">
                 <div className="p-5">
                   <div className="flex items-start gap-4">
                     {/* Source Avatar/Logo */}
@@ -859,7 +859,7 @@ export default function MentionsPage() {
                       mention.source_type === 'facebook' ? 'bg-blue-100 text-blue-600' :
                       mention.source_type === 'youtube' || mention.source_type === 'video' ? 'bg-red-100 text-red-600' :
                       mention.source_type === 'tiktok' ? 'bg-black text-white' :
-                      'bg-gray-100 text-gray-600'
+                      'bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-gray-400'
                     }`}>
                       <SourceIcon type={mention.source_type} className="w-6 h-6" />
                     </div>
@@ -868,8 +868,8 @@ export default function MentionsPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-4 mb-1">
                         <div>
-                           <h3 className="text-base font-bold text-gray-900 truncate">{mention.title || mention.author || 'Unknown Author'}</h3>
-                           <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
+                           <h3 className="text-base font-bold text-gray-900 dark:text-white truncate">{mention.title || mention.author || 'Unknown Author'}</h3>
+                           <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-500 mt-1">
                              <span>{mention.domain || mention.source_type}</span>
                              <span>•</span>
                              <span>Influence score: {mention.influence_score || 'N/A'}/10</span>
@@ -881,7 +881,7 @@ export default function MentionsPage() {
                         <div className={`px-2.5 py-1 rounded-md text-xs font-bold flex items-center gap-1.5 whitespace-nowrap ${
                            mention.sentiment === 'positive' ? 'bg-emerald-50 text-emerald-600' :
                            mention.sentiment?.startsWith('negative') ? 'bg-rose-50 text-rose-600' :
-                           'bg-gray-100 text-gray-600'
+                           'bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-gray-400'
                         }`}>
                            {mention.sentiment === 'positive' ? 'Positive' : mention.sentiment?.startsWith('negative') ? 'Negative' : 'Neutral'}
                            <ChevronDown className="w-3 h-3" />
@@ -889,7 +889,7 @@ export default function MentionsPage() {
                       </div>
                       
                       {/* Body */}
-                      <p className="text-sm text-gray-700 mt-3 line-clamp-3 leading-relaxed">
+                      <p className="text-sm text-gray-700 dark:text-gray-300 mt-3 line-clamp-3 leading-relaxed">
                         {mention.content}
                       </p>
                       
@@ -904,21 +904,21 @@ export default function MentionsPage() {
                 </div>
                 
                 {/* Actions Footer */}
-                <div className="bg-gray-50/50 px-5 py-3 border-t border-gray-100 flex items-center justify-between">
+                <div className="bg-gray-50 dark:bg-[#0a0f1c]/50 px-5 py-3 border-t border-gray-100 dark:border-white/5 flex items-center justify-between">
                    <div className="flex items-center gap-4">
                      <a href={mention.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-700">
                        <ExternalLink className="w-3.5 h-3.5" /> Visit
                      </a>
-                     <button className="flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-gray-800">
+                     <button className="flex items-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 dark:text-gray-100">
                        <Tag className="w-3.5 h-3.5" /> Tags
                      </button>
-                     <button onClick={() => setDeleteConfirm({ isOpen: true, mentionId: mention.id, mentionTitle: mention.title || '' })} className="flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-red-600">
+                     <button onClick={() => setDeleteConfirm({ isOpen: true, mentionId: mention.id, mentionTitle: mention.title || '' })} className="flex items-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-500 hover:text-red-600">
                        <Trash2 className="w-3.5 h-3.5" /> Delete
                      </button>
-                     <button onClick={() => handleToggleAddToReport(mention.id, mention.add_to_report)} className={`flex items-center gap-1.5 text-xs font-medium ${mention.add_to_report ? 'text-indigo-600' : 'text-gray-500 hover:text-gray-800'}`}>
+                     <button onClick={() => handleToggleAddToReport(mention.id, mention.add_to_report)} className={`flex items-center gap-1.5 text-xs font-medium ${mention.add_to_report ? 'text-indigo-600' : 'text-gray-500 dark:text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 dark:text-gray-100'}`}>
                        <FileText className="w-3.5 h-3.5" /> {mention.add_to_report ? 'Remove from PDF' : 'Add to PDF report'}
                      </button>
-                     <button onClick={() => handleAction(mention.id, 'mute', () => mentionsApi.updateMute(mention.id, true), 'Đã ẩn mention')} className="flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-gray-800">
+                     <button onClick={() => handleAction(mention.id, 'mute', () => mentionsApi.updateMute(mention.id, true), 'Đã ẩn mention')} className="flex items-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 dark:text-gray-100">
                        <Eye className="w-3.5 h-3.5" /> Mute author
                      </button>
                    </div>
@@ -931,16 +931,16 @@ export default function MentionsPage() {
 
         {/* Pagination Bar Bottom */}
         {totalPages > 1 && (
-           <div className="flex items-center justify-end bg-white px-4 py-3 rounded-xl shadow-sm border border-gray-200 mt-2 mb-8">
-             <div className="flex items-center gap-1 text-sm text-gray-600">
+           <div className="flex items-center justify-end bg-white dark:bg-[#050A15] px-4 py-3 rounded-xl shadow-sm border border-gray-200 dark:border-white/10 mt-2 mb-8">
+             <div className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400">
                {Array.from({ length: Math.min(5, totalPages) }).map((_, i) => (
-                 <button key={i} onClick={() => setPage(i + 1)} className={`w-8 h-8 flex items-center justify-center rounded-md ${page === i + 1 ? 'text-blue-600 font-bold bg-blue-50' : 'hover:bg-gray-100'}`}>
+                 <button key={i} onClick={() => setPage(i + 1)} className={`w-8 h-8 flex items-center justify-center rounded-md ${page === i + 1 ? 'text-blue-600 font-bold bg-blue-50' : 'hover:bg-gray-100 dark:hover:bg-gray-800 dark:bg-white/10'}`}>
                    {i + 1}
                  </button>
                ))}
                {totalPages > 5 && <span className="px-1">...</span>}
                {totalPages > 5 && (
-                 <button onClick={() => setPage(totalPages)} className={`w-8 h-8 flex items-center justify-center rounded-md ${page === totalPages ? 'text-blue-600 font-bold bg-blue-50' : 'hover:bg-gray-100'}`}>
+                 <button onClick={() => setPage(totalPages)} className={`w-8 h-8 flex items-center justify-center rounded-md ${page === totalPages ? 'text-blue-600 font-bold bg-blue-50' : 'hover:bg-gray-100 dark:hover:bg-gray-800 dark:bg-white/10'}`}>
                    {totalPages}
                  </button>
                )}
@@ -953,10 +953,10 @@ export default function MentionsPage() {
       <div className="hidden lg:block w-[300px] xl:w-[320px] shrink-0 space-y-4 pb-8">
         
         {/* Date Filter */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+        <div className="bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10 p-4">
            <div className="flex items-center justify-between cursor-pointer">
-             <div className="flex items-center gap-2 text-sm font-bold text-gray-800">
-               <Calendar className="w-4 h-4 text-gray-500" />
+             <div className="flex items-center gap-2 text-sm font-bold text-gray-800 dark:text-gray-100">
+               <Calendar className="w-4 h-4 text-gray-500 dark:text-gray-500" />
                Last 30 days
              </div>
              <ChevronDown className="w-4 h-4 text-gray-400" />
@@ -964,12 +964,12 @@ export default function MentionsPage() {
         </div>
 
         {/* Sources Filter */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+        <div className="bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10 p-4">
            <div className="flex items-center justify-between mb-4">
-             <h3 className="text-sm font-bold text-gray-800 flex items-center gap-1.5">
+             <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100 flex items-center gap-1.5">
                Sources <Info className="w-3.5 h-3.5 text-gray-400" />
              </h3>
-             <span className="text-xs text-gray-500 cursor-pointer hover:underline">Show all</span>
+             <span className="text-xs text-gray-500 dark:text-gray-500 cursor-pointer hover:underline">Show all</span>
            </div>
            <div className="grid grid-cols-2 gap-y-3 gap-x-2">
              {SOURCE_TYPE_OPTIONS.map((src) => {
@@ -986,8 +986,8 @@ export default function MentionsPage() {
                      className="mt-0.5 rounded border-gray-300 text-emerald-500 focus:ring-emerald-500" 
                    />
                    <div className="flex flex-col">
-                     <span className="text-xs font-medium text-gray-700 flex items-center gap-1.5">
-                       <div className={`w-5 h-5 rounded-full flex items-center justify-center bg-gray-100 ${src.color}`}>
+                     <span className="text-xs font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+                       <div className={`w-5 h-5 rounded-full flex items-center justify-center bg-gray-100 dark:bg-white/10 ${src.color}`}>
                           <src.icon className="w-3 h-3" />
                        </div>
                        {src.label}
@@ -1005,9 +1005,9 @@ export default function MentionsPage() {
         </div>
 
         {/* Sentiment Filter */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+        <div className="bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10 p-4">
            <div className="flex items-center justify-between mb-4">
-             <h3 className="text-sm font-bold text-gray-800 flex items-center gap-1.5">
+             <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100 flex items-center gap-1.5">
                Sentiment <Info className="w-3.5 h-3.5 text-gray-400" />
              </h3>
            </div>
@@ -1026,9 +1026,9 @@ export default function MentionsPage() {
                   type="checkbox" 
                   checked={filters.sentiment === 'neutral'}
                   onChange={() => { setFilters({...filters, sentiment: filters.sentiment === 'neutral' ? null : 'neutral'}); setPage(1); }}
-                  className="rounded border-gray-300 text-gray-500 focus:ring-gray-500" 
+                  className="rounded border-gray-300 text-gray-500 dark:text-gray-500 focus:ring-gray-500" 
                />
-               <span className="text-xs font-medium text-gray-600">Neutral</span>
+               <span className="text-xs font-medium text-gray-600 dark:text-gray-400">Neutral</span>
              </label>
              <label className="flex items-center gap-2 cursor-pointer">
                <input 
@@ -1043,44 +1043,44 @@ export default function MentionsPage() {
         </div>
 
         {/* Influence Score */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+        <div className="bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10 p-4">
            <div className="flex items-center justify-between mb-4">
-             <h3 className="text-sm font-bold text-gray-800 flex items-center gap-1.5">
+             <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100 flex items-center gap-1.5">
                Influence score <Info className="w-3.5 h-3.5 text-gray-400" />
              </h3>
            </div>
            <div className="px-2">
-             <input type="range" min="0" max="10" defaultValue="0" className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600" />
-             <div className="flex justify-between text-[10px] text-gray-500 mt-2 font-medium">
+             <input type="range" min="0" max="10" defaultValue="0" className="w-full h-1 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer accent-blue-600" />
+             <div className="flex justify-between text-[10px] text-gray-500 dark:text-gray-500 mt-2 font-medium">
                <span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span>
              </div>
            </div>
         </div>
 
         {/* Other dropdowns */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 space-y-4">
+        <div className="bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10 p-4 space-y-4">
            <div>
              <div className="flex items-center justify-between mb-2">
-               <h3 className="text-sm font-bold text-gray-800 flex items-center gap-1.5">Geolocation <Info className="w-3.5 h-3.5 text-gray-400" /></h3>
-               <div className="flex items-center gap-2 text-xs text-gray-500"><span className="text-[10px]">Exclude countries</span><div className="w-6 h-3 bg-gray-200 rounded-full"></div></div>
+               <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100 flex items-center gap-1.5">Geolocation <Info className="w-3.5 h-3.5 text-gray-400" /></h3>
+               <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-500"><span className="text-[10px]">Exclude countries</span><div className="w-6 h-3 bg-gray-200 dark:bg-gray-800 rounded-full"></div></div>
              </div>
-             <div className="flex items-center justify-between border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-500">Choose continents <ChevronDown className="w-4 h-4" /></div>
-             <div className="flex items-center justify-between border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-500 mt-2">Choose countries <ChevronDown className="w-4 h-4" /></div>
+             <div className="flex items-center justify-between border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-gray-500 dark:text-gray-500">Choose continents <ChevronDown className="w-4 h-4" /></div>
+             <div className="flex items-center justify-between border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-gray-500 dark:text-gray-500 mt-2">Choose countries <ChevronDown className="w-4 h-4" /></div>
            </div>
            
            <div>
              <div className="flex items-center justify-between mb-2">
-               <h3 className="text-sm font-bold text-gray-800 flex items-center gap-1.5">Emotions <Info className="w-3.5 h-3.5 text-gray-400" /></h3>
+               <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100 flex items-center gap-1.5">Emotions <Info className="w-3.5 h-3.5 text-gray-400" /></h3>
              </div>
-             <div className="flex items-center justify-between border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-500">Choose emotions <ChevronDown className="w-4 h-4" /></div>
+             <div className="flex items-center justify-between border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-gray-500 dark:text-gray-500">Choose emotions <ChevronDown className="w-4 h-4" /></div>
            </div>
 
            <div>
              <div className="flex items-center justify-between mb-2">
-               <h3 className="text-sm font-bold text-gray-800 flex items-center gap-1.5">Language <Info className="w-3.5 h-3.5 text-gray-400" /></h3>
-               <div className="flex items-center gap-2 text-xs text-gray-500"><span className="text-[10px]">Exclude languages</span><div className="w-6 h-3 bg-gray-200 rounded-full"></div></div>
+               <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100 flex items-center gap-1.5">Language <Info className="w-3.5 h-3.5 text-gray-400" /></h3>
+               <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-500"><span className="text-[10px]">Exclude languages</span><div className="w-6 h-3 bg-gray-200 dark:bg-gray-800 rounded-full"></div></div>
              </div>
-             <div className="flex items-center justify-between border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-500">Choose languages <ChevronDown className="w-4 h-4" /></div>
+             <div className="flex items-center justify-between border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-gray-500 dark:text-gray-500">Choose languages <ChevronDown className="w-4 h-4" /></div>
            </div>
         </div>
 

@@ -8,6 +8,7 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 import { SidebarBadge } from '@/components/dashboard/Badges';
 import { canAccessAdmin, type User } from '@/lib/permissions';
 import { ProjectProvider, useProject } from '@/contexts/ProjectContext';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { 
   LayoutDashboard, 
   Globe, 
@@ -302,14 +303,12 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   }, [user]);
 
   useEffect(() => {
-    // Force light mode for Brand24 theme
-    document.documentElement.classList.remove('dark');
   }, []);
 
   if (loading) return <LoadingSpinner message="Đang khởi động..." />;
 
   return (
-    <div className="min-h-screen bg-[#F4F5F7]">
+    <div className="min-h-screen bg-[#F4F5F7] dark:bg-[#000511]">
       {sidebarOpen && (
         <div className="fixed inset-0 z-40 bg-gray-900/50 lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
@@ -318,7 +317,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
 
       <div className="lg:pl-64 flex flex-col min-h-screen">
         {/* Brand24 Top Header */}
-        <div className="sticky top-0 z-20 flex items-center h-16 px-4 bg-white border-b border-gray-200 lg:px-8 shadow-sm">
+        <div className="sticky top-0 z-20 flex items-center h-16 px-4 bg-white dark:bg-[#050A15] border-b border-gray-200 dark:border-white/10 lg:px-8 shadow-sm">
           <button onClick={() => setSidebarOpen(true)} className="lg:hidden p-2 -ml-2 text-gray-500 hover:text-gray-900 mr-2">
             <Menu className="w-5 h-5" />
           </button>
@@ -329,7 +328,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
             <input 
               type="text"
               placeholder="Search through mentions, authors & domains..."
-              className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+              className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg text-sm text-gray-700 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
             />
           </div>
 
@@ -344,9 +343,10 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
             <button className="text-gray-400 hover:text-gray-600 hidden sm:block">
               <Package className="w-5 h-5" />
             </button>
-            <button className="text-gray-400 hover:text-gray-600 hidden sm:block">
+            <button className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hidden sm:block">
               <Zap className="w-5 h-5" />
             </button>
+            <ThemeToggle />
             
             <div className="w-8 h-8 rounded-full bg-slate-800 text-white flex items-center justify-center text-xs font-bold ml-2 cursor-pointer shadow-sm">
               {(user?.full_name || user?.email || 'K')[0].toUpperCase()}
