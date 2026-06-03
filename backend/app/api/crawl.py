@@ -31,6 +31,8 @@ class ManualScanRequest(BaseModel):
     source_ids: Optional[List[int]] = []
     url: Optional[str] = None
     mode: Optional[str] = "HYBRID"
+    project_id: Optional[int] = None
+    max_results: Optional[int] = 50
 
 def run_manual_scan_task(job_id: int, source_ids: List[int], keyword_texts: List[str], keyword_ids: List[int]):
     db = SessionLocal()
@@ -228,6 +230,7 @@ def debug_auto_discovery(
     except Exception as e:
         return {"success": False, "error": str(e)}
 
+
 @router.post("/manual-scan")
 def manual_scan(
     body: ManualScanRequest,
@@ -236,27 +239,9 @@ def manual_scan(
     current_user: User = Depends(get_current_active_user)
 ):
     """
-    Manual scan: User selects keyword groups and either:
-    - Selects existing sources, OR
-    - Enters a custom URL to scan
+    Manual scan: Live pipeline for API adapters.
     """
-    
-    keyword_groups = []
-    if body.keyword_group_ids:
-        keyword_groups = db.execute(
-            select(KeywordGroup).where(KeywordGroup.id.in_(body.keyword_group_ids))
-        ).scalars().all()
-
-    all_keywords = []
-    for group in keyword_groups:
-        keywords_in_group = db.execute(
-            select(Keyword).where(Keyword.group_id == group.id, Keyword.is_active == True)
-        ).scalars().all()
-        all_keywords.extend(keywords_in_group)
-
-    keyword_texts = [kw.keyword.lower() for kw in all_keywords]
-    keyword_ids = [kw.id for kw in all_keywords]
-
+    keyword_texts = []
     if body.keywords:
         for kw in body.keywords:
             kw_lower = kw.lower().strip()
@@ -264,98 +249,169 @@ def manual_scan(
                 keyword_texts.append(kw_lower)
 
     if not keyword_texts:
-        raise HTTPException(status_code=400, detail="Vui lòng cung cấp ít nhất một từ khóa (qua keyword_group_ids hoặc keywords)")
+        raise HTTPException(status_code=400, detail="Vui lòng cung cấp ít nhất một từ khóa (qua keywords)")
 
     mode = getattr(body, "mode", "HYBRID") or "HYBRID"
-    run_discovery = mode in ("AUTO_DISCOVERY", "HYBRID")
+    project_id = body.project_id
+    max_results = body.max_results or 50
 
-    if run_discovery:
-        from app.core.config import settings
-        if not settings.SERPAPI_API_KEY:
-            if mode == "AUTO_DISCOVERY":
-                raise HTTPException(status_code=400, detail="CONFIG_REQUIRED: Chưa cấu hình Web Search provider (SerpAPI).")
-            else:
-                run_discovery = False
+    job = CrawlJob(
+        job_type='manual',
+        status=CrawlJobStatus.PENDING,
+        total_sources=0,
+        processed_sources=0,
+        mentions_found=0,
+        started_at=datetime.now(timezone.utc),
+        meta_data={"project_id": project_id, "mode": mode, "keywords": keyword_texts}
+    )
+    db.add(job)
+    db.commit()
+    db.refresh(job)
 
-    sources_to_scan = []
+    background_tasks.add_task(run_manual_scan_task, job.id, project_id, keyword_texts, mode, max_results)
 
-    if body.url:
-        temp_source = Source(
-            name=f"Manual scan: {body.url}",
-            url=body.url,
-            source_type="website",
-            is_active=True
-        )
-        db.add(temp_source)
-        db.commit()
-        db.refresh(temp_source)
-        sources_to_scan.append(temp_source)
-    elif mode == "ALL_ACTIVE_SOURCES":
-        sources_to_scan = db.execute(
-            select(Source).where(
-                Source.is_active == True,
-                Source.source_type.in_([SourceType.WEBSITE, SourceType.RSS])
-            )
-        ).scalars().all()
-    elif mode in ("SELECTED_SOURCES", "HYBRID") and body.source_ids:
-        sources_to_scan = db.execute(
-            select(Source).where(
-                Source.id.in_(body.source_ids),
-                Source.is_active == True,
-                Source.source_type.in_([SourceType.WEBSITE, SourceType.RSS])
-            )
-        ).scalars().all()
-
-    if not sources_to_scan and mode == "SELECTED_SOURCES":
-        raise HTTPException(status_code=400, detail="Phải cung cấp source_ids cho chế độ SELECTED_SOURCES")
-
-    if not sources_to_scan and not run_discovery and not body.url:
-        raise HTTPException(status_code=404, detail="Không tìm thấy nguồn hoạt động và không thể chạy Auto Discovery")
-
-    job_id = None
-    if sources_to_scan:
-        source_ids = [s.id for s in sources_to_scan]
-        job = CrawlJob(
-            source_ids=source_ids,
-            keyword_group_ids=body.keyword_group_ids,
-            job_type='manual',
-            status=CrawlJobStatus.RUNNING,
-            total_sources=len(sources_to_scan),
-            processed_sources=0,
-            mentions_found=0,
-            started_at=datetime.now(timezone.utc)
-        )
-        db.add(job)
-        db.commit()
-        db.refresh(job)
-        job_id = job.id
-        background_tasks.add_task(run_manual_scan_task, job.id, source_ids, keyword_texts, keyword_ids)
-
-    if run_discovery:
-        from app.services.discovery_service import create_discovery_job
-        request_data = {
-            "keyword_group_id": body.keyword_group_ids[0] if body.keyword_group_ids else None,
-            "keywords": keyword_texts,
-        }
-        discovery_job = create_discovery_job(db, current_user.id, request_data)
-        db.commit()
-        background_tasks.add_task(_run_discovery_bg, discovery_job.id)
-
-    msg_parts = []
-    if sources_to_scan:
-        msg_parts.append(f"quét {len(sources_to_scan)} nguồn")
-    if run_discovery:
-        msg_parts.append("tìm nguồn mới (SerpAPI)")
-        
     return {
-        "success": True,
-        "job_id": job_id,
-        "status": "running",
-        "sources_queued": len(sources_to_scan),
-        "message": f"Đã khởi tạo scan: {' và '.join(msg_parts)}."
-    }                
+        "job_id": job.id,
+        "status": "QUEUED",
+        "mode": mode,
+        "project_id": project_id,
+        "keywords": keyword_texts
+    }
 
 
+def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str], mode: str, max_results: int):
+    from app.core.database import SessionLocal
+    from app.models.crawl import CrawlJob, CrawlJobStatus
+    from app.models.mention import Mention
+    from app.core.config import settings
+    import hashlib
+    
+    db = SessionLocal()
+    try:
+        job = db.execute(select(CrawlJob).where(CrawlJob.id == job_id)).scalar_one_or_none()
+        if not job: return
+        
+        job.status = CrawlJobStatus.RUNNING
+        job.started_at = datetime.now(timezone.utc)
+        db.commit()
+
+        summary = {
+            "adapters_ready": [],
+            "serpapi_result_count": 0,
+            "urls_crawled": 0,
+            "new_mentions_created": 0,
+            "duplicates_skipped": 0,
+            "old_mentions_existing": 0,
+            "errors": []
+        }
+
+        run_discovery = mode in ("AUTO_DISCOVERY", "HYBRID")
+        results = []
+        
+        if run_discovery:
+            # Web Search (SerpAPI)
+            if settings.SERPAPI_API_KEY:
+                summary["adapters_ready"].append("web")
+                try:
+                    from app.services.serpapi_provider import search
+                    serp_results = search(
+                        keywords=keyword_texts,
+                        language="vi", country="vn",
+                        limit=max_results, date_range="last_30_days"
+                    )
+                    summary["serpapi_result_count"] += len(serp_results)
+                    for r in serp_results:
+                        results.append({
+                            "url": r["url"],
+                            "title": r.get("title", ""),
+                            "snippet": r.get("snippet", ""),
+                            "source_type": "web",
+                            "platform": "google",
+                            "published_at": None,
+                            "author": ""
+                        })
+                except Exception as e:
+                    summary["errors"].append(f"SerpAPI: {e}")
+
+            # YouTube (if configured)
+            try:
+                from app.services.connectors.youtube_connector import YouTubeConnector
+                yt = YouTubeConnector()
+                if yt.validate_config():
+                    summary["adapters_ready"].append("youtube")
+                    yt_res = yt.search_keywords(keywords=keyword_texts, max_results=10)
+                    for r in yt_res:
+                        results.append({
+                            "url": r["url"],
+                            "title": r.get("title", ""),
+                            "snippet": r.get("content", ""),
+                            "source_type": "video",
+                            "platform": "youtube",
+                            "published_at": r.get("published_at"),
+                            "author": r.get("author", "")
+                        })
+            except Exception as e:
+                pass
+
+        # Deduplication and Insertion
+        for res in results:
+            url = res["url"].lower().strip()
+            summary["urls_crawled"] += 1
+            
+            content_hash = hashlib.sha256(f"{url}_{res['title']}".encode()).hexdigest()
+            
+            # Check duplication in this project
+            existing = db.execute(
+                select(Mention).where(
+                    Mention.project_id == project_id,
+                    Mention.url == url
+                )
+            ).scalar_one_or_none()
+            
+            if existing:
+                summary["duplicates_skipped"] += 1
+                summary["old_mentions_existing"] += 1
+                continue
+                
+            # Create NEW mention
+            try:
+                mention = Mention(
+                    project_id=project_id,
+                    job_id=job_id,
+                    keyword_text=keyword_texts[0] if keyword_texts else "",
+                    source_type=res["source_type"],
+                    platform=res["platform"],
+                    domain=url.split("/")[2] if "//" in url else url.split("/")[0],
+                    title=res["title"][:500] if res["title"] else None,
+                    snippet=res["snippet"][:1000] if res["snippet"] else None,
+                    content=res["snippet"][:10000] if res["snippet"] else None,
+                    url=url,
+                    content_hash=content_hash,
+                    collected_at=datetime.now(timezone.utc),
+                    is_reviewed=False,
+                    author=res.get("author", "")[:500],
+                    published_at=res.get("published_at")
+                )
+                db.add(mention)
+                db.flush()
+                summary["new_mentions_created"] += 1
+            except Exception as e:
+                summary["errors"].append(f"DB Insert error: {e}")
+
+        db.commit()
+
+        job.status = CrawlJobStatus.COMPLETED
+        job.completed_at = datetime.now(timezone.utc)
+        job.meta_data = {"summary": summary, "project_id": project_id, "keywords": keyword_texts}
+        job.mentions_found = summary["new_mentions_created"]
+        db.commit()
+    except Exception as e:
+        if 'job' in locals() and job:
+            job.status = CrawlJobStatus.FAILED
+            job.error_message = str(e)
+            db.commit()
+    finally:
+        db.close()
 
 def crawl_source(source: Source, keyword_texts: List[str], keywords: List[Keyword], db: Session) -> List[dict]:
     """Crawl a source and extract mentions matching keywords"""
@@ -572,6 +628,27 @@ def get_crawl_jobs(
         "total_pages": ceil(total / page_size) if total > 0 else 1
     }
 
+
+
+@router.get("/jobs/{job_id}")
+def get_crawl_job(
+    job_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    job = db.execute(select(CrawlJob).where(CrawlJob.id == job_id)).scalar_one_or_none()
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+        
+    meta = job.meta_data or {}
+    
+    return {
+        "job_id": job.id,
+        "status": job.status.value if hasattr(job.status, 'value') else job.status,
+        "project_id": meta.get("project_id"),
+        "keywords": meta.get("keywords", []),
+        "summary": meta.get("summary", {})
+    }
 
 @router.post("/jobs/{job_id}/retry")
 def retry_crawl_job(
