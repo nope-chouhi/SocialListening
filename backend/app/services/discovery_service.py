@@ -82,7 +82,8 @@ def _match_keywords(
     if not text or not text.strip():
         return {"matched": False, "matched_keywords": [], "excluded": False, "excluded_by": None, "match_context": ""}
 
-    text_lower = text.lower().strip()
+    import unicodedata
+    text_lower = unicodedata.normalize('NFC', text.lower().strip())
 
     # Check exclude keywords first
     if exclude_keywords:
@@ -90,7 +91,8 @@ def _match_keywords(
             ex_kw = ex_kw.strip()
             if not ex_kw:
                 continue
-            if ex_kw.lower() in text_lower:
+            ex_kw_norm = unicodedata.normalize('NFC', ex_kw.lower())
+            if ex_kw_norm in text_lower:
                 return {
                     "matched": False,
                     "matched_keywords": [],
@@ -106,7 +108,7 @@ def _match_keywords(
         kw = kw.strip()
         if not kw:
             continue
-        kw_lower = kw.lower()
+        kw_lower = unicodedata.normalize('NFC', kw.lower())
         count = text_lower.count(kw_lower)
         if count > 0:
             matched.append({"keyword": kw, "count": count})

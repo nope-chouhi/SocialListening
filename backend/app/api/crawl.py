@@ -246,11 +246,13 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
                     snippet = r.get("snippet", "")
                     
                     # Verify keyword match
+                    import unicodedata
                     matched = False
                     matched_kw = ""
-                    search_text = (title + " " + snippet + " " + url).lower()
+                    search_text = unicodedata.normalize('NFC', (title + " " + snippet + " " + url).lower())
                     for kw in keyword_texts:
-                        if kw.lower() in search_text:
+                        kw_norm = unicodedata.normalize('NFC', kw.lower())
+                        if kw_norm in search_text:
                             matched = True
                             matched_kw = kw
                             break
@@ -322,11 +324,13 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
                         title = r.get("title", "")
                         snippet = r.get("content", "")
                         
+                        import unicodedata
                         matched = False
                         matched_kw = ""
-                        search_text = (title + " " + snippet + " " + url).lower()
+                        search_text = unicodedata.normalize('NFC', (title + " " + snippet + " " + url).lower())
                         for kw in keyword_texts:
-                            if kw.lower() in search_text:
+                            kw_norm = unicodedata.normalize('NFC', kw.lower())
+                            if kw_norm in search_text:
                                 matched = True
                                 matched_kw = kw
                                 break
