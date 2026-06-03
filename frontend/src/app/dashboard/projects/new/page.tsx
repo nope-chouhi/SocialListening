@@ -21,7 +21,7 @@ export default function NewProjectPage() {
   // Form State
   const [projectName, setProjectName] = useState('');
   const [keywords, setKeywords] = useState('');
-  const [excludedKeywords, setExcludedKeywords] = useState('');
+
   
   const [sources, setSources] = useState({
     web: true,
@@ -33,7 +33,7 @@ export default function NewProjectPage() {
     tiktok: false,
   });
 
-  const handleNext = () => setStep(s => Math.min(s + 1, 5));
+  const handleNext = () => setStep(s => Math.min(s + 1, 3));
   const handlePrev = () => setStep(s => Math.max(s - 1, 1));
 
   const handleCreate = async () => {
@@ -58,17 +58,7 @@ export default function NewProjectPage() {
         });
       }
 
-      // 3. Add Excluded Keywords
-      const excludedList = excludedKeywords.split(',').map(k => k.trim()).filter(Boolean);
-      if (excludedList.length > 0) {
-        await keywordsApi.createKeywordsBulk({
-          group_id: newGroup.id,
-          keywords: excludedList,
-          keyword_type: 'negative_phrase',
-          is_excluded: true,
-          is_active: true
-        });
-      }
+
 
       // 4. Trigger Web Scan
       const payload = {
@@ -116,9 +106,9 @@ export default function NewProjectPage() {
         <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-gray-800 -z-10 rounded-full" />
         <div 
           className="absolute left-0 top-1/2 -translate-y-1/2 h-1 bg-indigo-500 -z-10 rounded-full transition-all duration-300"
-          style={{ width: `${((step - 1) / 3) * 100}%` }}
+          style={{ width: `${((step - 1) / 2) * 100}%` }}
         />
-        {[1, 2, 3, 4].map(i => (
+        {[1, 2, 3].map(i => (
           <div 
             key={i}
             className={`w-10 h-10 rounded-full flex items-center justify-center font-bold border-4 transition-colors ${
@@ -166,24 +156,6 @@ export default function NewProjectPage() {
         )}
 
         {step === 3 && (
-          <div className="animate-fadeIn">
-            <h2 className="text-xl font-semibold text-white mb-2">Từ khóa loại trừ (Tùy chọn)</h2>
-            <p className="text-sm text-gray-400 mb-6">Bài viết sẽ bị bỏ qua nếu chứa bất kỳ từ khóa nào dưới đây. Phân cách bằng dấu phẩy (,).</p>
-            <textarea
-              value={excludedKeywords}
-              onChange={(e) => setExcludedKeywords(e.target.value)}
-              placeholder="VD: tuyển dụng, xả hàng, khuyến mãi..."
-              className="w-full px-5 py-4 bg-[#1E293B] border border-gray-700 rounded-xl text-white text-lg focus:outline-none focus:ring-2 focus:ring-rose-500/50 focus:border-transparent transition-all placeholder-gray-600 min-h-[150px]"
-              autoFocus
-            />
-            <div className="mt-4 p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl flex gap-3 text-blue-400">
-              <AlertCircle className="w-5 h-5 flex-shrink-0" />
-              <p className="text-sm">Bỏ trống nếu bạn muốn thu thập mọi bài viết có chứa từ khóa chính.</p>
-            </div>
-          </div>
-        )}
-
-        {step === 4 && (
           <div className="animate-fadeIn">
             <h2 className="text-xl font-semibold text-white mb-2">Nguồn dữ liệu</h2>
             <p className="text-sm text-gray-400 mb-6">Chọn các nền tảng bạn muốn hệ thống quét dữ liệu.</p>
@@ -266,7 +238,7 @@ export default function NewProjectPage() {
           <ArrowLeft className="w-5 h-5" /> Quay lại
         </button>
 
-        {step < 4 ? (
+        {step < 3 ? (
           <button
             onClick={handleNext}
             disabled={isNextDisabled()}
