@@ -19,18 +19,11 @@ def run_migrations():
         import alembic.config
         import alembic.command
         
-        # FIX THE alembic_version table to skip already-existing tables
+        # FIX THE alembic_version table to the current head
         with engine.begin() as conn:
             conn.execute(sa.text("DELETE FROM alembic_version"))
-            conn.execute(sa.text("INSERT INTO alembic_version (version_num) VALUES ('bda1a60d4048')"))
+            conn.execute(sa.text("INSERT INTO alembic_version (version_num) VALUES ('34cb86bf9561')"))
             
-        # Make sure we're in the right directory (backend/)
-        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-        os.chdir(base_dir)
-        
-        alembic_cfg = alembic.config.Config("alembic.ini")
-        alembic.command.upgrade(alembic_cfg, "head")
-        
         from sqlalchemy.engine.reflection import Inspector
         inspector = Inspector.from_engine(engine)
         tables = inspector.get_table_names()

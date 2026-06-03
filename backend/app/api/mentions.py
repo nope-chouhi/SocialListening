@@ -149,6 +149,7 @@ def list_mentions(
     sentiments: Optional[List[str]] = Query(None),
     min_risk_score: Optional[float] = Query(None, ge=0, le=100),
     search_query: Optional[str] = None,
+    q: Optional[str] = Query(None),
     author: Optional[str] = None,
     domain: Optional[str] = None,
     date_from: Optional[datetime] = None,
@@ -230,6 +231,18 @@ def list_mentions(
                 )
             )
 
+        if q:
+            search_term = f"%{q}%"
+            query = query.filter(
+                or_(
+                    Mention.title.ilike(search_term),
+                    Mention.snippet.ilike(search_term),
+                    Mention.content.ilike(search_term),
+                    Mention.url.ilike(search_term),
+                    Mention.domain.ilike(search_term),
+                )
+            )
+
         if need_ai_join:
             if has_ai_filter:
                 query = query.join(AIAnalysis, AIAnalysis.mention_id == Mention.id)
@@ -289,6 +302,18 @@ def list_mentions(
                         Mention.content.ilike(search_pattern),
                         Mention.author.ilike(search_pattern),
                         Mention.url.ilike(search_pattern)
+                    )
+                )
+
+            if q:
+                search_term = f"%{q}%"
+                count_base = count_base.filter(
+                    or_(
+                        Mention.title.ilike(search_term),
+                        Mention.snippet.ilike(search_term),
+                        Mention.content.ilike(search_term),
+                        Mention.url.ilike(search_term),
+                        Mention.domain.ilike(search_term),
                     )
                 )
             

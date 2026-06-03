@@ -187,6 +187,18 @@ function highlightKeywords(text: string, keywords: any[] | null) {
   });
 }
 
+function highlightText(text: string, query: string): React.ReactNode {
+  if (!query || !text) return text;
+  const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const regex = new RegExp(`(${escaped})`, 'gi');
+  const parts = text.split(regex);
+  return parts.map((part, i) =>
+    regex.test(part)
+      ? <mark key={i} className="bg-yellow-200 dark:bg-yellow-800 rounded px-0.5 font-medium">{part}</mark>
+      : part
+  );
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════
    MAIN COMPONENT
    ═══════════════════════════════════════════════════════════════════════════ */
@@ -195,7 +207,7 @@ export default function MentionsPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const initialJobId = searchParams?.get('job_id');
-  const initialKeyword = searchParams?.get('keyword');
+  const initialSearch = searchParams?.get('q') || searchParams?.get('keyword');
 
   // Data
   const [mentionsList, setMentionsList] = useState<MentionItem[]>([]);
@@ -208,8 +220,8 @@ export default function MentionsPage() {
   const [loading, setLoading] = useState(true);
   const [loadingChart, setLoadingChart] = useState(true);
   const [page, setPage] = useState(1);
-  const [searchTerm, setSearchTerm] = useState(initialKeyword || '');
-  const [searchInput, setSearchInput] = useState(initialKeyword || '');
+  const [searchTerm, setSearchTerm] = useState(initialSearch || '');
+  const [searchInput, setSearchInput] = useState(initialSearch || '');
   const [filters, setFilters] = useState<Filters>({
     sentiment: null,
     source_type: null,
@@ -391,7 +403,9 @@ export default function MentionsPage() {
         sort_by: filters.sort_by,
       };
       if (initialJobId) params.job_id = initialJobId;
-      if (searchTerm) params.search_query = searchTerm;
+      if (searchTerm) {
+        params.q = searchTerm;
+      }
       if (activeProject) params.project_id = activeProject.id;
       if (filters.sentiment) params.sentiment = filters.sentiment;
       if (filters.source_type) params.source_type = filters.source_type;
@@ -442,6 +456,14 @@ export default function MentionsPage() {
     searchTimeout.current = setTimeout(() => {
       setSearchTerm(val);
       setPage(1);
+      
+      const newParams = new URLSearchParams(searchParams?.toString() || '');
+      if (val) {
+        newParams.set('q', val);
+      } else {
+        newParams.delete('q');
+      }
+      router.push(`/dashboard/mentions?${newParams.toString()}`);
     }, 400);
   };
 
@@ -559,7 +581,7 @@ export default function MentionsPage() {
             )}
           </div>
           <p className="text-sm text-gray-500 ml-[42px]">
-            {totalMentions >= 0 ? `${totalMentions.toLocaleString()} kết quả` : 'Đang tải...'}
+            {loading ? 'Đang tải...' : totalMentions >= 0 ? `${totalMentions.toLocaleString()} kết quả ${searchTerm ? `cho '${searchTerm}'` : ''}` : 'Đang tải...'}
             {hasActiveFilters && ' (đã lọc)'}
           </p>
         </div>
@@ -678,7 +700,14 @@ export default function MentionsPage() {
           />
           {searchInput && (
             <button
-              onClick={() => { setSearchInput(''); setSearchTerm(''); setPage(1); }}
+              onClick={() => {
+                setSearchInput('');
+                setSearchTerm('');
+                setPage(1);
+                const newParams = new URLSearchParams(searchParams?.toString() || '');
+                newParams.delete('q');
+                router.push(`/dashboard/mentions?${newParams.toString()}`);
+              }}
               className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
             >
               <X className="w-4 h-4" />
@@ -882,17 +911,35 @@ export default function MentionsPage() {
         {/* Mentions List */}
         <div className="flex-1 min-w-0">
           {loading && mentionsList.length === 0 ? (
-            <div className="flex items-center justify-center h-64">
-              <div className="text-gray-500 flex items-center gap-2">
-                <Loader2 className="w-5 h-5 animate-spin" />
-                Đang tải mentions...
-              </div>
+            <div className="space-y-3">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="bg-[#111827] border border-gray-800 rounded-xl p-4 animate-pulse">
+                  <div className="flex items-start gap-4">
+                    <div className="w-5 h-5 bg-gray-800 rounded mt-1" />
+                    <div className="w-10 h-10 rounded-lg bg-gray-800" />
+                    <div className="flex-1 space-y-3">
+                      <div className="h-4 bg-gray-800 rounded w-3/4" />
+                      <div className="h-3 bg-gray-800 rounded w-1/4" />
+                      <div className="h-16 bg-gray-800 rounded w-full" />
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           ) : mentionsList.length === 0 ? (
             <div className="bg-[#111827] border border-gray-800 rounded-xl p-12 text-center">
               <FileText className="w-12 h-12 text-gray-600 mx-auto mb-4" />
-              <p className="text-gray-400 font-medium">Không tìm thấy mentions nào</p>
-              <p className="text-gray-500 text-sm mt-2">Thử thay đổi bộ lọc hoặc chạy quét mới</p>
+              {searchTerm ? (
+                <>
+                  <p className="text-gray-400 font-medium">Không tìm thấy mentions nào cho '{searchTerm}'</p>
+                  <p className="text-gray-500 text-sm mt-2">Thử thay đổi từ khóa hoặc mở rộng bộ lọc.</p>
+                </>
+              ) : (
+                <>
+                  <p className="text-gray-400 font-medium">Không tìm thấy mentions nào</p>
+                  <p className="text-gray-500 text-sm mt-2">Thử thay đổi bộ lọc hoặc chạy quét mới</p>
+                </>
+              )}
             </div>
           ) : (
             <div className="space-y-3">
@@ -932,7 +979,7 @@ export default function MentionsPage() {
                       <div className="flex items-start justify-between gap-2 mb-2">
                         <div className="flex-1 min-w-0">
                           <h3 className="font-semibold text-white text-sm line-clamp-2 mb-1">
-                            {mention.title || 'Không có tiêu đề'}
+                            {highlightText(mention.title || 'Không có tiêu đề', searchTerm)}
                           </h3>
                           <div className="flex items-center gap-2 text-xs text-gray-500">
                             <span className="text-gray-400">{mention.domain || mention.source_name || 'unknown'}</span>
@@ -954,7 +1001,7 @@ export default function MentionsPage() {
 
                       {/* Snippet with keyword highlight */}
                       <p className="text-sm text-gray-300 line-clamp-3 mb-3">
-                        {highlightKeywords(mention.snippet || mention.content, mention.matched_keywords)}
+                        {searchTerm ? highlightText(mention.snippet || mention.content, searchTerm) : highlightKeywords(mention.snippet || mention.content, mention.matched_keywords)}
                       </p>
 
                       {/* Meta Row */}
