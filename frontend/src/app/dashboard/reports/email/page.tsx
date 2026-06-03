@@ -49,7 +49,7 @@ export default function EmailReportsPage() {
             <label className="text-sm font-bold text-zinc-300">Email nhận báo cáo (Cách nhau bằng dấu phẩy)</label>
             <input 
               type="text" 
-              placeholder="admin@brand24.com, marketing@brand24.com" 
+              placeholder="admin@nope.com, marketing@nope.com" 
               className="w-full bg-[#050A15] border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-indigo-500"
             />
           </div>

@@ -77,7 +77,10 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges }: any) {
       {/* Logo */}
       <div className="flex items-center justify-between h-[72px] px-6 border-b border-white/5 relative z-10">
         <div className="flex items-center space-x-3">
-          <h1 className="text-xl font-black text-white uppercase tracking-wider">BRAND24</h1>
+          <div className="w-9 h-9 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-[0_0_15px_rgba(99,102,241,0.5)] border border-white/20">
+            <span className="text-white font-bold text-lg leading-none">N</span>
+          </div>
+          <h1 className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-zinc-400">Nope</h1>
         </div>
         <button
           onClick={() => setSidebarOpen(false)}
@@ -201,7 +204,7 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges }: any) {
             UPCOMING WEBINAR
           </div>
           <p className="text-xs text-zinc-300 mb-2 leading-relaxed font-medium">
-            Get a Social Listening certificate with Brand24
+            Get a Social Listening certificate with Nope
           </p>
           <p className="text-[11px] text-zinc-500 mb-3">
             Date: <strong className="text-zinc-400">Wednesday, June 3, 2026</strong>
@@ -248,7 +251,7 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges }: any) {
           <Link href="#" className="hover:underline">Customize cookie</Link>
         </div>
         <p className="text-[10px] text-zinc-500 leading-relaxed mb-2">
-          Copyrights © 2026 Brand24, Inc. All rights reserved.
+          Copyrights © 2026 Nope, Inc. All rights reserved.
         </p>
 
         {/* Minimal User Profile */}
