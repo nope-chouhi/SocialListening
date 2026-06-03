@@ -306,16 +306,16 @@ def list_mentions(
                 )
 
             if q and not job_id:
-            search_term = f"%{q}%"
-            query = query.filter(
-                or_(
-                    Mention.title.ilike(search_term),
-                    Mention.snippet.ilike(search_term),
-                    Mention.content.ilike(search_term),
-                    Mention.url.ilike(search_term),
-                    Mention.domain.ilike(search_term),
+                search_term = f"%{q}%"
+                query = query.filter(
+                    or_(
+                        Mention.title.ilike(search_term),
+                        Mention.snippet.ilike(search_term),
+                        Mention.content.ilike(search_term),
+                        Mention.url.ilike(search_term),
+                        Mention.domain.ilike(search_term),
+                    )
                 )
-            )
             
             # Execute count
             total = db.execute(select(func.count()).select_from(count_base.subquery())).scalar() or 0

@@ -18,7 +18,7 @@ class SocialCrawlerService:
 
     def __init__(self):
         self.timeout = 30.0
-        self.user_agent = "SocialListeningBot/1.0"
+        self.user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 
     async def crawl_twitter(self, keyword: str) -> List[Dict[str, Any]]:
         token = settings.TWITTER_BEARER_TOKEN or os.getenv("TWITTER_BEARER_TOKEN", "")
