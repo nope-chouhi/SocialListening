@@ -456,6 +456,7 @@ def export_mentions_csv(
     source_type: Optional[str] = None,
     project_id: Optional[int] = Query(None),
     keyword: Optional[str] = Query(None),
+    q: Optional[str] = Query(None),
     date_from: Optional[datetime] = None,
     date_to: Optional[datetime] = None,
     limit: int = Query(5000, ge=1, le=10000),
@@ -472,10 +473,21 @@ def export_mentions_csv(
         query = query.where(Mention.source_type == source_type)
     if keyword:
         query = query.where(Mention.keyword_text.ilike(f"%{keyword}%"))
-    if date_from and not job_id:
-            query = query.where(Mention.collected_at >= date_from)
-    if date_to and not job_id:
-            query = query.where(Mention.collected_at <= date_to)
+    if q:
+        search_term = f"%{q}%"
+        query = query.filter(
+            or_(
+                Mention.title.ilike(search_term),
+                Mention.snippet.ilike(search_term),
+                Mention.content.ilike(search_term),
+                Mention.url.ilike(search_term),
+                Mention.domain.ilike(search_term),
+            )
+        )
+    if date_from:
+        query = query.where(Mention.collected_at >= date_from)
+    if date_to:
+        query = query.where(Mention.collected_at <= date_to)
 
     query = query.order_by(Mention.collected_at.desc()).limit(limit)
     rows = db.execute(query).scalars().all()

@@ -121,8 +121,10 @@ export default function ReportsPage() {
             </button>
             <div className="absolute right-0 mt-2 w-48 bg-[#1E293B] border border-gray-700 rounded-xl shadow-xl py-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
               <button onClick={() => handleExport('PDF')} className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-800 transition-colors">PDF Report</button>
-              <button onClick={() => handleExport('PowerPoint')} className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-800 transition-colors">PowerPoint (PPTX)</button>
-              <button onClick={() => handleExport('Excel')} className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-800 transition-colors">Excel (XLSX)</button>
+              <button disabled className="w-full text-left px-4 py-2 text-sm text-gray-500 cursor-not-allowed flex items-center gap-2">
+                PowerPoint (PPTX) <span className="text-[9px] bg-gray-600 text-gray-400 px-1.5 py-0.5 rounded uppercase">Coming soon</span>
+              </button>
+              <button onClick={() => window.location.href = '/dashboard/reports/excel'} className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-800 transition-colors">Excel / CSV Export</button>
             </div>
           </div>
         </div>
@@ -251,22 +253,12 @@ export default function ReportsPage() {
               <div className="p-2 bg-indigo-500/20 rounded-lg border border-indigo-500/30">
                 <CheckCircle className="w-5 h-5 text-indigo-400" />
               </div>
-              <h3 className="text-sm font-black text-indigo-300 uppercase tracking-widest">Khuyến nghị Chiến lược từ AI</h3>
+              <h3 className="text-sm font-black text-indigo-300 uppercase tracking-widest">Ghi chú báo cáo</h3>
             </div>
-            <ul className="space-y-3 text-sm text-zinc-300 leading-relaxed font-medium">
-              <li className="flex items-start gap-2">
-                <span className="text-indigo-400 mt-0.5">✦</span>
-                Tỷ lệ thảo luận tiêu cực đang ở mức kiểm soát được. Cần tiếp tục theo dõi sát sao các nền tảng tin tức tổng hợp.
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-indigo-400 mt-0.5">✦</span>
-                Đề xuất kích hoạt chiến dịch PR tích cực trên Facebook & TikTok để pha loãng luồng thảo luận trung lập.
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-indigo-400 mt-0.5">✦</span>
-                Các từ khóa liên quan đến "chất lượng dịch vụ" đang có xu hướng tăng nhẹ, đội ngũ CSKH cần chú ý phản hồi nhanh hơn.
-              </li>
-            </ul>
+            <p className="text-sm text-zinc-300 leading-relaxed">
+              Báo cáo này được tạo tự động từ dữ liệu Social Listening thu thập bởi hệ thống Nope.
+              Để xem phân tích AI chi tiết, vui lòng truy cập trang <strong>Analysis Summary</strong> và nhấn "Tạo AI Summary".
+            </p>
           </div>
 
           <div className="mt-16 pt-6 border-t border-white/5 text-center flex flex-col items-center justify-center">

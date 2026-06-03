@@ -437,9 +437,9 @@ function MentionsPageContent() {
       if (initialJobId) {
         params.job_id = initialJobId;
       } else {
-        // Only apply other filters if NOT viewing a specific job history
+        // Apply q instead of keyword to allow searching across title, snippet, content, url, domain
         if (searchTerm) {
-          params.keyword = searchTerm;
+          params.q = searchTerm;
         }
         if (filters.sentiment) params.sentiment = filters.sentiment;
         if (filters.source_type) params.source_type = filters.source_type;
@@ -721,7 +721,7 @@ function MentionsPageContent() {
       if (activeProject) params.project_id = activeProject.id;
       if (filters.sentiment) params.sentiment = filters.sentiment;
       if (filters.source_type) params.source_type = filters.source_type;
-      if (searchTerm) params.keyword = searchTerm;
+      if (searchTerm) params.q = searchTerm;
       if (dateRange && dateRange !== 'all') {
         const now = new Date();
         const from = new Date();

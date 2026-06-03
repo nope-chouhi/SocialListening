@@ -9,6 +9,7 @@ import { SidebarBadge } from '@/components/dashboard/Badges';
 import { canAccessAdmin, type User } from '@/lib/permissions';
 import { ProjectProvider, useProject } from '@/contexts/ProjectContext';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import toast, { Toaster } from 'react-hot-toast';
 import { 
   LayoutDashboard, 
   Globe, 
@@ -35,7 +36,6 @@ import {
   Award,
   Search,
   HelpCircle,
-  Package,
   Zap
 } from 'lucide-react';
 
@@ -51,6 +51,8 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges }: any) {
     { name: 'Analysis', href: '/dashboard/summary', icon: PieChart },
     { name: 'Comparison', href: '/dashboard/comparison', icon: Scale },
     { name: 'Influencers & Sources', href: '/dashboard/influencers', icon: Users },
+    { name: 'Integrations', href: '/dashboard/integrations', icon: Link2 },
+    { name: 'Project Settings', href: '/dashboard/project-settings', icon: SearchCode },
   ];
 
   const reportsNav = [
@@ -317,8 +319,9 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
       
       <DashboardSidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} user={user} badges={badges} />
 
+      <Toaster position="top-right" toastOptions={{ duration: 4000 }} />
       <div className="lg:pl-64 flex flex-col min-h-screen">
-        {/* Brand24 Top Header */}
+        {/* Top Header */}
         <div className="sticky top-0 z-20 flex items-center h-16 px-4 bg-white dark:bg-[#050A15] border-b border-gray-200 dark:border-white/10 lg:px-8 shadow-sm">
           <button onClick={() => setSidebarOpen(true)} className="lg:hidden p-2 -ml-2 text-gray-500 hover:text-gray-900 mr-2">
             <Menu className="w-5 h-5" />
@@ -357,23 +360,36 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
           </div>
 
           <div className="ml-auto flex items-center space-x-4">
-            <button className="hidden sm:flex items-center px-4 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-full transition-colors tracking-wide shadow-sm">
+            <button onClick={() => toast('Billing/Upgrade coming soon', { icon: '⏳' })} className="hidden sm:flex items-center px-4 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-full transition-colors tracking-wide shadow-sm">
               UPGRADE
             </button>
             <div className="h-6 w-px bg-gray-200 mx-2 hidden sm:block"></div>
-            <button className="text-gray-400 hover:text-gray-600">
+            <button onClick={() => toast.success('Vui lòng gửi email hỗ trợ đến support@nope.com')} title="Help Center" className="text-gray-400 hover:text-gray-600">
               <HelpCircle className="w-5 h-5" />
             </button>
-            <button className="text-gray-400 hover:text-gray-600 hidden sm:block">
-              <Package className="w-5 h-5" />
-            </button>
-            <button className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hidden sm:block">
+            <button disabled title="Quick Actions (Coming soon)" className="text-gray-400 opacity-50 cursor-not-allowed hidden sm:block">
               <Zap className="w-5 h-5" />
             </button>
             <ThemeToggle />
             
-            <div className="w-8 h-8 rounded-full bg-slate-800 text-white flex items-center justify-center text-xs font-bold ml-2 cursor-pointer shadow-sm">
-              {(user?.full_name || user?.email || 'K')[0].toUpperCase()}
+            <div className="relative group">
+              <div className="w-8 h-8 rounded-full bg-slate-800 text-white flex items-center justify-center text-xs font-bold ml-2 cursor-pointer shadow-sm hover:ring-2 hover:ring-indigo-500 transition-all">
+                {(user?.full_name || user?.email || 'K')[0].toUpperCase()}
+              </div>
+              <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-[#1E293B] rounded-lg shadow-xl border border-gray-100 dark:border-gray-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+                <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{user?.full_name || 'User'}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user?.email}</p>
+                </div>
+                <div className="py-1">
+                  <Link href="/dashboard/settings" className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">
+                    System Settings
+                  </Link>
+                  <button onClick={() => { auth.logout(); router.push('/login'); }} className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50 dark:hover:bg-gray-800 font-medium">
+                    Log out
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
