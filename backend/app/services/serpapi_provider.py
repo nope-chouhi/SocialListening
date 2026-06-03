@@ -115,11 +115,14 @@ def search(
             params = {
                 "api_key": api_key,
                 "q": keyword.strip(),
-                "hl": language,
-                "gl": country,
-                "num": min(per_keyword_limit, 20),
                 "engine": "google",
             }
+            if language:
+                params["hl"] = language
+            if country:
+                params["gl"] = country
+            if per_keyword_limit > 0:
+                params["num"] = min(per_keyword_limit, 100)
 
             tbs = _build_date_restrict(date_range)
             if tbs:

@@ -232,8 +232,8 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
                 from app.services.serpapi_provider import search
                 serp_results = search(
                     keywords=keyword_texts,
-                    language="vi", country="vn",
-                    limit=max_results, date_range="last_30_days"
+                    language="", country="",
+                    limit=max_results, date_range=""
                 )
                 summary["serpapi_result_count"] += len(serp_results)
                 summary["web"]["raw_results_count"] += len(serp_results)
@@ -313,7 +313,7 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
                 from app.services.connectors.youtube_connector import YouTubeConnector
                 yt = YouTubeConnector()
                 if yt.validate_config():
-                    yt_res = yt.search_keywords(keywords=keyword_texts, max_results=10)
+                    yt_res = yt.search_keywords(keywords=keyword_texts, max_results=max_results)
                     summary["youtube"]["raw_results_count"] += len(yt_res)
                     
                     for r in yt_res:
