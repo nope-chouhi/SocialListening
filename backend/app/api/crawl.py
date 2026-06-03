@@ -232,7 +232,7 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
                 from app.services.serpapi_provider import search
                 serp_results = search(
                     keywords=keyword_texts,
-                    language="", country="",
+                    language="vi", country="vn",
                     limit=max_results, date_range=""
                 )
                 summary["serpapi_result_count"] += len(serp_results)

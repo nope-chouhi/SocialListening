@@ -358,8 +358,8 @@ def create_discovery_job(db: Session, user_id: int, request_data: dict) -> Disco
         status=DiscoveryJobStatus.QUEUED,
         query_keywords=request_data.get("keywords", []),
         exclude_keywords=request_data.get("exclude_keywords", []),
-        language=request_data.get("language", ""),
-        country=request_data.get("country", ""),
+        language=request_data.get("language", "vi"),
+        country=request_data.get("country", "vn"),
         date_range=request_data.get("date_range", ""),
         limit=request_data.get("limit", 50),
         created_by_user_id=user_id,
@@ -418,8 +418,8 @@ def run_discovery_job(db: Session, job_id: int) -> DiscoveryJob:
         from app.services.serpapi_provider import search, SerpAPINotConfigured, SerpAPIRateLimitError
         search_results = search(
             keywords=keywords,
-            language=job.language or "",
-            country=job.country or "",
+            language=job.language or "vi",
+            country=job.country or "vn",
             limit=job.limit or 50,
             date_range=job.date_range or "",
         )
