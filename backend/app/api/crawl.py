@@ -441,8 +441,8 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
             try:
-                # We crawl Reddit and News for manual scan (Twitter needs bearer token)
-                social_res = loop.run_until_complete(social_crawler_service.crawl_keywords(keyword_texts, ["reddit", "news"]))
+                # We crawl Reddit, News API, and Google News RSS for manual scan
+                social_res = loop.run_until_complete(social_crawler_service.crawl_keywords(keyword_texts, ["reddit", "news", "google_news"]))
             finally:
                 loop.close()
                 

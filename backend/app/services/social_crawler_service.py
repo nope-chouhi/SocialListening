@@ -7,6 +7,9 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 import httpx
+import xml.etree.ElementTree as ET
+import urllib.parse
+import email.utils
 
 from app.core.config import settings
 
@@ -99,6 +102,57 @@ class SocialCrawlerService:
             })
         return results
 
+    async def crawl_google_news(self, keyword: str) -> List[Dict[str, Any]]:
+        encoded_kw = urllib.parse.quote(keyword)
+        url = f"https://news.google.com/rss/search?q={encoded_kw}&hl=vi&gl=VN&ceid=VN:vi"
+        
+        try:
+            async with httpx.AsyncClient(timeout=self.timeout, follow_redirects=True) as client:
+                response = await client.get(url)
+                response.raise_for_status()
+                xml_data = response.text
+        except Exception as e:
+            logger.warning(f"Google News crawler failed for '{keyword}'. Reason: {e}")
+            return []
+            
+        try:
+            root = ET.fromstring(xml_data)
+            items = root.findall('.//item')
+            results = []
+            for item in items:
+                title = item.findtext('title', '')
+                link = item.findtext('link', '')
+                pubDate = item.findtext('pubDate', '')
+                description = item.findtext('description', '')
+                source = item.find('source')
+                source_name = source.text if source is not None else 'Google News'
+                
+                ts = datetime.now(timezone.utc)
+                if pubDate:
+                    try:
+                        parsed_time = email.utils.parsedate_to_datetime(pubDate)
+                        ts = parsed_time.astimezone(timezone.utc)
+                    except Exception:
+                        pass
+                        
+                results.append({
+                    "source": "google_news",
+                    "platform": "news",
+                    "source_type": "news",
+                    "author": source_name,
+                    "title": title,
+                    "content": description or title,
+                    "url": link,
+                    "timestamp": ts,
+                    "interactions": 0,
+                    "reach_estimate": 500,
+                    "platform_post_id": None,
+                })
+            return results
+        except Exception as e:
+            logger.warning(f"Google News XML parse failed for '{keyword}'. Reason: {e}")
+            return []
+
     async def crawl_news(self, keyword: str) -> List[Dict[str, Any]]:
         api_key = settings.NEWS_API_KEY or os.getenv("NEWS_API_KEY", "")
         if not api_key:
@@ -143,7 +197,7 @@ class SocialCrawlerService:
         keywords: List[str],
         platforms: Optional[List[str]] = None,
     ) -> List[Dict[str, Any]]:
-        platforms = platforms or ["twitter", "reddit", "news"]
+        platforms = platforms or ["twitter", "reddit", "news", "google_news"]
         mentions: List[Dict[str, Any]] = []
 
         for keyword in keywords:
@@ -155,6 +209,8 @@ class SocialCrawlerService:
                         batch = await self.crawl_reddit(keyword)
                     elif platform == "news":
                         batch = await self.crawl_news(keyword)
+                    elif platform == "google_news":
+                        batch = await self.crawl_google_news(keyword)
                     else:
                         continue
                     for m in batch:
