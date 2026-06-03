@@ -649,3 +649,34 @@ def test_rss_feed(
     """Test an RSS feed URL without saving anything"""
     from app.services.crawl_service import test_rss_feed as test_feed
     return test_feed(url)
+
+
+@router.post("/debug/test-crawl")
+async def test_crawl(
+    keyword: str,
+    platform: str = "web",
+    limit: int = 5,
+    db: Session = Depends(get_db)
+):
+    import logging
+    logger = logging.getLogger(__name__)
+    try:
+        from app.services.social_crawler_service import social_crawler_service
+        from app.services.social_crawl_job import _persist_mentions
+        
+        raw = await social_crawler_service.crawl_keywords([keyword], [platform])
+        # Note: crawl_keywords in social_crawler_service.py doesn't seem to take `limit`, so I omitted it
+        
+        logger.info(f"[DEBUG] Raw results from crawler: {len(raw)}")
+        
+        success_count, error_count, errors, created = _persist_mentions(db, raw)
+        
+        return {
+            "raw_count": len(raw),
+            "inserted": success_count,
+            "failed": error_count,
+            "errors": errors[:10]
+        }
+    except Exception as e:
+        logger.error(f"[DEBUG] test-crawl failed: {e}")
+        return { "error": str(e) }

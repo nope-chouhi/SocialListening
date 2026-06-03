@@ -1,35 +1,33 @@
 @echo off
 chcp 65001 > nul
 echo ========================================
-echo   Deploying to GitHub and forcing Vercel/Render build...
+echo   QUICK DEPLOY TO GITHUB / VERCEL
 echo ========================================
 echo.
 
-echo 1. Creating a real change to force deployment...
+echo 1. Tao thay doi de ep Vercel build...
 echo Deploy triggered at %date% %time% > deploy_trigger.txt
 
 echo.
-echo 2. Adding changes...
+echo 2. Add va Commit code...
 git add .
-
-echo.
-echo 3. Committing changes...
 git commit -m "Auto deploy update (forced)"
 
 echo.
-echo 4. Syncing with remote...
+echo 3. Dong bo code moi nhat (Pull)...
 git pull origin main --rebase
 
 echo.
-echo 5. Pushing to GitHub...
+echo 4. Day code len mang (Push)...
 git push origin main
 
 echo.
 echo ========================================
-echo   DEPLOYED SUCCESSFULLY!
+echo   DA DAY CODE LEN THANH CONG!
 echo ========================================
 echo Backend:  https://social-listening-backend.onrender.com
 echo Frontend: https://social-listening-azure.vercel.app
 echo.
-echo Doi di may
+echo Vercel dang bat dau build, doi mot chut la len nhe!
+echo.
 pause
