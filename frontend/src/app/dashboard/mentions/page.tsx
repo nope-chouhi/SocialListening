@@ -446,6 +446,7 @@ export default function MentionsPage() {
               keywords: [params.q],
               mode: 'AUTO_DISCOVERY',
               source_ids: [],
+              max_results: 100,
             });
             setActiveScanJobId(res.job_id);
             setActiveScanKeyword(params.q);
@@ -518,6 +519,7 @@ export default function MentionsPage() {
         keywords: [keyword],
         mode: 'AUTO_DISCOVERY',
         source_ids: [],
+        max_results: 100,
       });
       setActiveScanJobId(res.job_id);
       setActiveScanKeyword(keyword);
