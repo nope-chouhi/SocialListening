@@ -34,136 +34,6 @@ class ManualScanRequest(BaseModel):
     project_id: Optional[int] = None
     max_results: Optional[int] = 50
 
-def run_manual_scan_task(job_id: int, source_ids: List[int], keyword_texts: List[str], keyword_ids: List[int]):
-    db = SessionLocal()
-    try:
-        job = db.execute(select(CrawlJob).where(CrawlJob.id == job_id)).scalar_one_or_none()
-        if not job:
-            return
-
-        sources_to_scan = db.execute(select(Source).where(Source.id.in_(source_ids))).scalars().all()
-        all_keywords = db.execute(select(Keyword).where(Keyword.id.in_(keyword_ids))).scalars().all()
-
-        # Get project_id from the first keyword's group (since keywords are project-specific)
-        project_id = None
-        if all_keywords:
-            first_keyword = all_keywords[0]
-            project_id = first_keyword.group_id  # In Nope, keyword groups act as projects
-
-        total_mentions = 0
-
-        for source in sources_to_scan:
-            try:
-                mentions = crawl_source(source, keyword_texts, all_keywords, db)
-
-                for mention_data in mentions:
-                    content_hash = hashlib.sha256(mention_data['content'].encode()).hexdigest()
-                    existing = db.execute(select(Mention).where(Mention.content_hash == content_hash)).scalar_one_or_none()
-                    if existing:
-                        continue
-
-                    mention = Mention(
-                        project_id=project_id,  # Set project_id from keyword group
-                        job_id=job.id,
-                        source_id=source.id,
-                        title=mention_data.get('title'),
-                        content=mention_data['content'],
-                        content_hash=content_hash,
-                        url=mention_data['url'],
-                        author=mention_data.get('author'),
-                        published_at=mention_data.get('published_at'),
-                        matched_keywords=mention_data.get('matched_keywords', [])
-                    )
-                    db.add(mention)
-                    db.commit()
-                    db.refresh(mention)
-                    
-                    # Use common AI abstraction instead of forcing dummy
-                    from app.core.config import settings
-                    ai_provider = settings.AI_PROVIDER.lower()
-                    model_version = "gpt-4" if ai_provider == "openai" else ("gemini-pro" if ai_provider == "gemini" else "keyword-v1.0")
-
-                    try:
-                        analysis_result = analyze_mention(mention.content, mention.title)
-                        ai_analysis = AIAnalysis(
-                            mention_id=mention.id,
-                            sentiment=analysis_result['sentiment'],
-                            risk_score=analysis_result['risk_score'],
-                            crisis_level=analysis_result['crisis_level'],
-                            summary_vi=analysis_result['summary_vi'],
-                            suggested_action=analysis_result['suggested_action'],
-                            responsible_department=analysis_result['responsible_department'],
-                            confidence_score=analysis_result['confidence_score'],
-                            ai_provider=ai_provider,
-                            model_version=model_version,
-                            processing_time_ms=analysis_result['processing_time_ms']
-                        )
-                        db.add(ai_analysis)
-                        db.commit()
-                    except Exception as e:
-                        db.rollback()
-                        err_str = str(e)
-                        if "ai_provider_not_configured" in err_str or "openai_dependency_missing" in err_str or "API key is missing" in err_str or "not configured" in err_str:
-                            msg = "AI chưa cấu hình, mention đã được lưu nhưng chưa phân tích AI."
-                            prov = "skipped"
-                        else:
-                            msg = f"Lỗi phân tích AI: {err_str}"
-                            prov = "failed"
-                        
-                        ai_analysis = AIAnalysis(
-                            mention_id=mention.id,
-                            sentiment="neutral",
-                            risk_score=0.0,
-                            crisis_level=1,
-                            summary_vi=msg,
-                            suggested_action="monitor",
-                            responsible_department="customer_service",
-                            confidence_score=0.0,
-                            ai_provider=prov,
-                            model_version=model_version,
-                            processing_time_ms=0
-                        )
-                        db.add(ai_analysis)
-                        db.commit()
-                        analysis_result = {'risk_score': 0}
-                    
-                    if analysis_result['risk_score'] >= 70:
-                        severity = AlertSeverity.CRITICAL if analysis_result['risk_score'] >= 85 else AlertSeverity.HIGH
-                        alert = Alert(
-                            mention_id=mention.id,
-                            severity=severity,
-                            status=AlertStatus.NEW,
-                            title=f"High risk mention detected: {mention.title or 'No title'}",
-                            message=f"Risk score: {analysis_result['risk_score']}, Crisis level: {analysis_result['crisis_level']}"
-                        )
-                        db.add(alert)
-                        db.commit()
-                    
-                    total_mentions += 1
-                
-                source.last_crawled_at = datetime.now(timezone.utc)
-                source.last_success_at = datetime.now(timezone.utc)
-                source.crawl_count = (source.crawl_count or 0) + 1
-                source.last_error = None
-                source.error_count = 0
-                job.processed_sources = (job.processed_sources or 0) + 1
-                db.commit()
-                
-            except Exception as e:
-                source.last_error = str(e)
-                source.error_count = (source.error_count or 0) + 1
-                job.processed_sources = (job.processed_sources or 0) + 1
-                db.commit()
-                continue
-        
-        job.status = CrawlJobStatus.COMPLETED
-        job.completed_at = datetime.now(timezone.utc)
-        job.mentions_found = total_mentions
-        db.commit()
-        
-    finally:
-        db.close()
-
 def _run_discovery_bg(job_id: int):
     db = SessionLocal()
     try:
@@ -296,6 +166,23 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
         db.commit()
 
         summary = {
+            "web": {
+                "status": "READY" if settings.SERPAPI_API_KEY else "CONFIG_REQUIRED",
+                "called": False,
+                "provider": "serpapi",
+                "raw_results_count": 0,
+                "results_after_keyword_match": 0,
+                "mentions_created": 0,
+                "duplicates_skipped": 0,
+                "error": None
+            },
+            "youtube": {
+                "status": "CONFIG_REQUIRED",
+                "called": False,
+                "raw_results_count": 0,
+                "mentions_created": 0,
+                "error": None
+            },
             "adapters_ready": [],
             "serpapi_result_count": 0,
             "urls_crawled": 0,
@@ -312,6 +199,7 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
             # Web Search (SerpAPI)
             if settings.SERPAPI_API_KEY:
                 summary["adapters_ready"].append("web")
+                summary["web"]["called"] = True
                 try:
                     from app.services.serpapi_provider import search
                     serp_results = search(
@@ -320,6 +208,7 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
                         limit=max_results, date_range="last_30_days"
                     )
                     summary["serpapi_result_count"] += len(serp_results)
+                    summary["web"]["raw_results_count"] += len(serp_results)
                     for r in serp_results:
                         results.append({
                             "url": r["url"],
@@ -332,14 +221,18 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
                         })
                 except Exception as e:
                     summary["errors"].append(f"SerpAPI: {e}")
+                    summary["web"]["error"] = str(e)
 
             # YouTube (if configured)
             try:
                 from app.services.connectors.youtube_connector import YouTubeConnector
                 yt = YouTubeConnector()
                 if yt.validate_config():
+                    summary["youtube"]["status"] = "READY"
+                    summary["youtube"]["called"] = True
                     summary["adapters_ready"].append("youtube")
                     yt_res = yt.search_keywords(keywords=keyword_texts, max_results=10)
+                    summary["youtube"]["raw_results_count"] += len(yt_res)
                     for r in yt_res:
                         results.append({
                             "url": r["url"],
@@ -351,12 +244,31 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
                             "author": r.get("author", "")
                         })
             except Exception as e:
-                pass
+                summary["youtube"]["error"] = str(e)
 
         # Deduplication and Insertion
         for res in results:
             url = res["url"].lower().strip()
             summary["urls_crawled"] += 1
+            
+            # Verify keyword match
+            title_text = (res.get("title") or "").lower()
+            snippet_text = (res.get("snippet") or "").lower()
+            url_text = url.lower()
+            
+            matched = False
+            matched_kw = ""
+            for kw in keyword_texts:
+                if kw in title_text or kw in snippet_text or kw in url_text:
+                    matched = True
+                    matched_kw = kw
+                    break
+            
+            if not matched:
+                continue
+                
+            if res["source_type"] == "web":
+                summary["web"]["results_after_keyword_match"] += 1
             
             content_hash = hashlib.sha256(f"{url}_{res['title']}".encode()).hexdigest()
             
@@ -371,6 +283,8 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
             if existing:
                 summary["duplicates_skipped"] += 1
                 summary["old_mentions_existing"] += 1
+                if res["source_type"] == "web":
+                    summary["web"]["duplicates_skipped"] += 1
                 continue
                 
             # Create NEW mention
@@ -378,7 +292,7 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
                 mention = Mention(
                     project_id=project_id,
                     job_id=job_id,
-                    keyword_text=keyword_texts[0] if keyword_texts else "",
+                    keyword_text=matched_kw,
                     source_type=res["source_type"],
                     platform=res["platform"],
                     domain=url.split("/")[2] if "//" in url else url.split("/")[0],
@@ -395,6 +309,10 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
                 db.add(mention)
                 db.flush()
                 summary["new_mentions_created"] += 1
+                if res["source_type"] == "web":
+                    summary["web"]["mentions_created"] += 1
+                elif res["source_type"] == "video":
+                    summary["youtube"]["mentions_created"] += 1
             except Exception as e:
                 summary["errors"].append(f"DB Insert error: {e}")
 

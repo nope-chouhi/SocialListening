@@ -999,44 +999,100 @@ export default function MentionsPage() {
             )}
           </div>
           
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            <div className="bg-[#0F172A] rounded-lg p-3">
-              <span className="text-xs text-gray-500 block mb-1">SerpAPI</span>
-              <span className="text-lg text-white font-medium">{scanJobStatus?.summary?.serpapi_result_count || 0}</span>
+          <div className="mb-4 flex flex-wrap gap-4 text-sm text-gray-300">
+            <div className="bg-[#0F172A] px-3 py-1.5 rounded-lg border border-gray-800">
+              <span className="text-gray-500 mr-2">Keyword:</span>
+              <span className="font-medium text-white">{scanJobStatus?.keywords?.[0] || activeScanKeyword}</span>
             </div>
-            <div className="bg-[#0F172A] rounded-lg p-3">
-              <span className="text-xs text-gray-500 block mb-1">Đã crawl URL</span>
-              <span className="text-lg text-white font-medium">{scanJobStatus?.summary?.urls_crawled || 0}</span>
+            <div className="bg-[#0F172A] px-3 py-1.5 rounded-lg border border-gray-800">
+              <span className="text-gray-500 mr-2">Project ID:</span>
+              <span className="font-medium text-white">{scanJobStatus?.project_id || activeProject?.id}</span>
             </div>
-            <div className="bg-[#0F172A] rounded-lg p-3">
-              <span className="text-xs text-emerald-500 block mb-1">Mentions mới</span>
-              <span className="text-lg text-emerald-400 font-medium">{scanJobStatus?.summary?.new_mentions_created || 0}</span>
-            </div>
-            <div className="bg-[#0F172A] rounded-lg p-3">
-              <span className="text-xs text-orange-500 block mb-1">Trùng lặp (bỏ qua)</span>
-              <span className="text-lg text-orange-400 font-medium">{scanJobStatus?.summary?.duplicates_skipped || 0}</span>
-            </div>
-            <div className="bg-[#0F172A] rounded-lg p-3">
-              <span className="text-xs text-rose-500 block mb-1">Lỗi</span>
-              <span className="text-lg text-rose-400 font-medium">{scanJobStatus?.summary?.errors?.length || 0}</span>
+            <div className="bg-[#0F172A] px-3 py-1.5 rounded-lg border border-emerald-900/50">
+              <span className="text-gray-500 mr-2">Mentions Mới:</span>
+              <span className="font-medium text-emerald-400">{scanJobStatus?.summary?.new_mentions_created || 0}</span>
             </div>
           </div>
           
-          {scanJobStatus?.status === 'COMPLETED' && scanJobStatus?.summary?.new_mentions_created > 0 && (
-            <p className="mt-4 text-emerald-400 font-medium">Đã tạo {scanJobStatus.summary.new_mentions_created} mentions mới từ lượt quét này.</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* Web Search / SerpAPI */}
+            <div className="bg-[#0F172A] rounded-lg p-3 border border-gray-800">
+              <div className="flex items-center gap-2 mb-2">
+                <Globe className="w-4 h-4 text-blue-400" />
+                <span className="font-medium text-white">Web Search</span>
+                <span className={`text-xs px-2 py-0.5 rounded-full ${scanJobStatus?.summary?.web?.status === 'READY' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-orange-500/10 text-orange-400 border border-orange-500/20'}`}>
+                  {scanJobStatus?.summary?.web?.status || 'UNKNOWN'}
+                </span>
+              </div>
+              <div className="text-xs text-gray-400 space-y-1">
+                <div>Called: <span className="text-white">{scanJobStatus?.summary?.web?.called ? 'Yes' : 'No'}</span></div>
+                <div>Raw Results: <span className="text-white">{scanJobStatus?.summary?.web?.raw_results_count || 0}</span></div>
+                <div>Keyword Matched: <span className="text-white">{scanJobStatus?.summary?.web?.results_after_keyword_match || 0}</span></div>
+                <div>Mentions Created: <span className="text-emerald-400">{scanJobStatus?.summary?.web?.mentions_created || 0}</span></div>
+                {scanJobStatus?.summary?.web?.error && <div className="text-rose-400 line-clamp-1" title={scanJobStatus?.summary?.web?.error}>Error: {scanJobStatus?.summary?.web?.error}</div>}
+              </div>
+            </div>
+
+            {/* YouTube */}
+            <div className="bg-[#0F172A] rounded-lg p-3 border border-gray-800">
+              <div className="flex items-center gap-2 mb-2">
+                <Youtube className="w-4 h-4 text-red-400" />
+                <span className="font-medium text-white">YouTube</span>
+                <span className={`text-xs px-2 py-0.5 rounded-full ${scanJobStatus?.summary?.youtube?.status === 'READY' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-orange-500/10 text-orange-400 border border-orange-500/20'}`}>
+                  {scanJobStatus?.summary?.youtube?.status || 'UNKNOWN'}
+                </span>
+              </div>
+              <div className="text-xs text-gray-400 space-y-1">
+                <div>Called: <span className="text-white">{scanJobStatus?.summary?.youtube?.called ? 'Yes' : 'No'}</span></div>
+                <div>Raw Results: <span className="text-white">{scanJobStatus?.summary?.youtube?.raw_results_count || 0}</span></div>
+                <div>Mentions Created: <span className="text-emerald-400">{scanJobStatus?.summary?.youtube?.mentions_created || 0}</span></div>
+                {scanJobStatus?.summary?.youtube?.error && <div className="text-rose-400 line-clamp-1" title={scanJobStatus?.summary?.youtube?.error}>Error: {scanJobStatus?.summary?.youtube?.error}</div>}
+              </div>
+            </div>
+
+            {/* Other Integrations */}
+            <div className="bg-[#0F172A] rounded-lg p-3 border border-gray-800">
+              <div className="flex items-center gap-2 mb-2">
+                <BrainCircuit className="w-4 h-4 text-indigo-400" />
+                <span className="font-medium text-white">Other Connectors</span>
+              </div>
+              <div className="text-xs text-gray-400 space-y-2 mt-2">
+                <div className="flex justify-between"><span>RSS:</span><span className="text-gray-500">No sources</span></div>
+                <div className="flex justify-between"><span>Facebook:</span><span className="text-orange-400">Connect required</span></div>
+                <div className="flex justify-between"><span>Instagram:</span><span className="text-orange-400">Connect required</span></div>
+                <div className="flex justify-between"><span>TikTok:</span><span className="text-orange-400">Connector required</span></div>
+                <div className="flex justify-between"><span>Twitter:</span><span className="text-orange-400">Config required</span></div>
+              </div>
+            </div>
+          </div>
+          
+          {scanJobStatus?.summary?.errors?.length > 0 && (
+            <div className="mt-4 p-3 bg-rose-500/10 border border-rose-500/20 rounded-lg">
+              <span className="text-sm font-medium text-rose-400 flex items-center gap-2 mb-2"><AlertTriangle className="w-4 h-4" /> Errors Log</span>
+              <ul className="text-xs text-rose-300 space-y-1 list-disc pl-4">
+                {scanJobStatus.summary.errors.map((err: string, idx: number) => (
+                  <li key={idx}>{err}</li>
+                ))}
+              </ul>
+            </div>
           )}
-          {scanJobStatus?.status === 'COMPLETED' && scanJobStatus?.summary?.new_mentions_created === 0 && scanJobStatus?.summary?.duplicates_skipped > 0 && (
+
+          {scanJobStatus?.status === 'COMPLETED' && scanJobStatus?.summary?.new_mentions_created === 0 && (
             <div className="mt-4 flex items-center justify-between">
-              <p className="text-orange-400 font-medium">Không có mentions mới. Hệ thống tìm lại {scanJobStatus.summary.duplicates_skipped} kết quả đã tồn tại trước đó.</p>
+              <p className="text-orange-400 text-sm font-medium">
+                {scanJobStatus?.summary?.web?.raw_results_count > 0 
+                  ? "Đã tìm thấy kết quả nhưng không khớp chính xác với từ khóa, hoặc tất cả đều đã bị trùng lặp."
+                  : "Không tìm thấy mentions mới trên các nguồn được kết nối."}
+              </p>
               <button
                 onClick={() => {
                   const newParams = new URLSearchParams(searchParams?.toString() || '');
                   newParams.delete('job_id');
                   router.push(`/dashboard/mentions?${newParams.toString()}`);
                 }}
-                className="px-3 py-1.5 text-xs font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700"
+                className="px-3 py-1.5 text-xs font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors"
               >
-                Xem tất cả mentions của project
+                Xem tất cả mentions cũ
               </button>
             </div>
           )}

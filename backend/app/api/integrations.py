@@ -24,6 +24,71 @@ class SelectAccountRequest(BaseModel):
     account_id: str
     selected: bool
 
+@router.get("/capabilities")
+def get_integrations_capabilities(db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
+    from app.core.config import settings
+    from app.models.source import Source
+    
+    # Web Search
+    has_serpapi = bool(settings.SERPAPI_API_KEY)
+    is_serpapi_provider = getattr(settings, "WEB_SEARCH_PROVIDER", "").lower() == "serpapi"
+    auto_discovery = getattr(settings, "AUTO_DISCOVERY_ENABLED", False)
+    
+    web_ready = has_serpapi and is_serpapi_provider and auto_discovery
+    
+    # YouTube
+    has_youtube = bool(getattr(settings, "YOUTUBE_API_KEY", ""))
+    
+    # Meta (Facebook/Instagram)
+    meta_integration = db.execute(
+        select(SocialIntegration).where(
+            SocialIntegration.user_id == current_user.id,
+            SocialIntegration.provider == "meta"
+        )
+    ).scalar_one_or_none()
+    
+    meta_accounts = []
+    if meta_integration:
+        meta_accounts = db.execute(
+            select(SocialIntegrationAccount).where(
+                SocialIntegrationAccount.integration_id == meta_integration.id
+            )
+        ).scalars().all()
+        
+    has_fb = any(acc.account_type == "page" for acc in meta_accounts)
+    has_ig = any(acc.account_type == "instagram_business" for acc in meta_accounts)
+    
+    # RSS
+    rss_count = db.execute(select(Source).where(Source.source_type == "rss")).scalars().all()
+    has_rss = len(rss_count) > 0
+    
+    # Twitter
+    has_twitter = bool(getattr(settings, "TWITTER_API_KEY", ""))
+    
+    return {
+        "web": {
+            "status": "READY" if web_ready else "CONFIG_REQUIRED"
+        },
+        "youtube": {
+            "status": "READY" if has_youtube else "CONFIG_REQUIRED"
+        },
+        "facebook": {
+            "status": "READY" if has_fb else "CONNECT_REQUIRED"
+        },
+        "instagram": {
+            "status": "READY" if has_ig else "CONNECT_REQUIRED"
+        },
+        "rss": {
+            "status": "READY" if has_rss else "NO_SOURCES"
+        },
+        "tiktok": {
+            "status": "CONNECTOR_REQUIRED"
+        },
+        "twitter": {
+            "status": "READY" if has_twitter else "CONFIG_REQUIRED"
+        }
+    }
+
 @router.get("/meta/status")
 def get_meta_status(db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
     """Check Meta integration status and return account details."""
