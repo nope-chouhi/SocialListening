@@ -236,56 +236,54 @@ def run_rss_collector(db: Session, source_ids: List[int] = None) -> Dict:
                 matched_kws = []
                 text_to_match = strip_accents(f"{item['title']} {item['snippet']} {norm_url}".lower())
                 
+                project_id = None
+                
                 for kw in active_keywords:
                     kw_norm = strip_accents(kw.keyword.lower())
                     if kw_norm in text_to_match:
                         matched_kws.append({"keyword": kw.keyword, "count": text_to_match.count(kw_norm)})
                         
                 if matched_kws:
-                    # Check deduplication for Mention (project_id + keyword_text + normalized_url)
-                    # We will create one mention per matched keyword group (project)
-                    # For simplicity, assign to the project of the first matched keyword
-                    # And store all matched keywords
+                    # Assign to the project of the first matched keyword
                     first_kw = active_keywords[0]
                     kw_group = db.query(KeywordGroup).get(first_kw.group_id)
                     project_id = kw_group.project_id if kw_group else None
                     
-                    if project_id:
-                        m_exists = db.execute(
-                            select(Mention.id).where(
-                                Mention.project_id == project_id,
-                                Mention.url == norm_url
-                            )
-                        ).scalar_one_or_none()
-                        
-                        if not m_exists:
-                            mention = Mention(
-                                project_id=project_id,
-                                keyword_text=matched_kws[0]["keyword"],
-                                source_id=source.id,
-                                source_type="rss",
-                                platform=source.platform or "web",
-                                domain=source.domain or "vnexpress.net",
-                                title=item["title"],
-                                url=norm_url,
-                                snippet=item["snippet"],
-                                content=item["html_description"],
-                                content_hash=content_hash,
-                                published_at=item["published_at"],
-                                collected_at=datetime.now(timezone.utc),
-                                extraction_source="rss",
-                                sentiment="neutral",
-                                confidence="medium",
-                                matched_keywords=matched_kws,
-                                meta_data={
-                                    "image_url": item.get("image_url"),
-                                    "media_url": item.get("media_url"),
-                                    "media_thumbnail": item.get("media_thumbnail")
-                                }
-                            )
-                            db.add(mention)
-                            result["mentions_created"] += 1
-                            source_item.status = "matched"
+                # Always create mention so user can search for broader keywords on the web
+                m_exists = db.execute(
+                    select(Mention.id).where(
+                        Mention.url == norm_url
+                    )
+                ).scalar_one_or_none()
+                
+                if not m_exists:
+                    mention = Mention(
+                        project_id=project_id,
+                        keyword_text=matched_kws[0]["keyword"] if matched_kws else "Tất cả tin tức",
+                        source_id=source.id,
+                        source_type="rss",
+                        platform=source.platform or "web",
+                        domain=source.domain or "vnexpress.net",
+                        title=item["title"],
+                        url=norm_url,
+                        snippet=item["snippet"],
+                        content=item["html_description"],
+                        content_hash=content_hash,
+                        published_at=item["published_at"],
+                        collected_at=datetime.now(timezone.utc),
+                        extraction_source="rss",
+                        sentiment="neutral",
+                        confidence="medium",
+                        matched_keywords=matched_kws if matched_kws else None,
+                        meta_data={
+                            "image_url": item.get("image_url"),
+                            "media_url": item.get("media_url"),
+                            "media_thumbnail": item.get("media_thumbnail")
+                        }
+                    )
+                    db.add(mention)
+                    result["mentions_created"] += 1
+                    source_item.status = "matched" if matched_kws else "collected"
                 
             db.commit()
             
