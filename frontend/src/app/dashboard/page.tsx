@@ -10,10 +10,12 @@ import { dashboard, auth } from '@/lib/api';
 import toast, { Toaster } from 'react-hot-toast';
 import { withTimeout } from '@/lib/utils/timeout';
 
-import DashboardKpiCard from '@/components/dashboard/DashboardKpiCard';
-import TrendChart from '@/components/dashboard/TrendChart';
-import SentimentDonutChart from '@/components/dashboard/SentimentDonutChart';
-import HotKeywordsWidget from '@/components/dashboard/HotKeywordsWidget';
+import dynamic from 'next/dynamic';
+
+const DashboardKpiCard = dynamic(() => import('@/components/dashboard/DashboardKpiCard'), { ssr: false });
+const TrendChart = dynamic(() => import('@/components/dashboard/TrendChart'), { ssr: false, loading: () => <div className="animate-pulse bg-gray-800/50 rounded-xl h-full w-full"></div> });
+const SentimentDonutChart = dynamic(() => import('@/components/dashboard/SentimentDonutChart'), { ssr: false, loading: () => <div className="animate-pulse bg-gray-800/50 rounded-xl h-full w-full"></div> });
+const HotKeywordsWidget = dynamic(() => import('@/components/dashboard/HotKeywordsWidget'), { ssr: false, loading: () => <div className="animate-pulse bg-gray-800/50 rounded-xl h-full w-full"></div> });
 import MentionCard from '@/components/dashboard/MentionCard';
 import AlertCard from '@/components/dashboard/AlertCard';
 import RealtimeStatsSection from '@/components/dashboard/RealtimeStatsSection';
@@ -32,21 +34,23 @@ export default function DashboardPage() {
   const [timeRange, setTimeRange] = useState('7d');
 
   useEffect(() => {
-    // Try to load cached summary if available
-    const cacheKey = `dash_summary_${activeProject?.id || 'all'}`;
+    // Stale-While-Revalidate: Load from cache instantly
+    const cacheKey = `dash_data_${activeProject?.id || 'all'}_${timeRange}`;
     const cached = localStorage.getItem(cacheKey);
     if (cached) {
       try {
         const parsed = JSON.parse(cached);
-        if (Date.now() - parsed.timestamp < 30000) {
-          setMetrics(parsed.data);
-          setLoadingMetrics(false);
-        }
+        if (parsed.metrics) setMetrics(parsed.metrics);
+        if (parsed.trends) setTrends(parsed.trends);
+        if (parsed.sentiment) setSentiment(parsed.sentiment);
+        if (parsed.hotKeywords) setHotKeywords(parsed.hotKeywords);
+        setLoadingMetrics(false);
+        setLoadingCharts(false);
       } catch (e) {}
     }
 
     fetchUserRole();
-    fetchDashboardData();
+    fetchDashboardData(cacheKey);
   }, [activeProject?.id, timeRange]);
 
   const fetchUserRole = async () => {
@@ -58,31 +62,43 @@ export default function DashboardPage() {
     } catch (error) {}
   };
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = async (cacheKey?: string) => {
     try {
       if (!metrics) setLoadingMetrics(true);
       if (!trends) setLoadingCharts(true);
 
       const [summaryRes, trendsRes, sentimentRes, keywordsRes] = await Promise.allSettled([
-        withTimeout(dashboard.summary(activeProject?.id), 10000),
-        withTimeout(dashboard.trends(timeRange, activeProject?.id), 10000),
-        withTimeout(dashboard.sentimentSummary(timeRange, activeProject?.id), 10000),
-        withTimeout(dashboard.hotKeywords(timeRange === '30d' ? '7d' : 'today', activeProject?.id), 10000),
+        withTimeout(dashboard.summary(activeProject?.id), 15000),
+        withTimeout(dashboard.trends(timeRange, activeProject?.id), 15000),
+        withTimeout(dashboard.sentimentSummary(timeRange, activeProject?.id), 15000),
+        withTimeout(dashboard.hotKeywords(timeRange === '30d' ? '7d' : 'today', activeProject?.id), 15000),
       ]);
+
+      const newData: any = {};
 
       if (summaryRes.status === 'fulfilled') {
         setMetrics(summaryRes.value);
-        localStorage.setItem(`dash_summary_${activeProject?.id || 'all'}`, JSON.stringify({
-          timestamp: Date.now(),
-          data: summaryRes.value
-        }));
+        newData.metrics = summaryRes.value;
       } else {
         toast.error('Không tải được dữ liệu tổng quan');
       }
 
-      if (trendsRes.status === 'fulfilled') setTrends(trendsRes.value);
-      if (sentimentRes.status === 'fulfilled') setSentiment(sentimentRes.value);
-      if (keywordsRes.status === 'fulfilled') setHotKeywords(keywordsRes.value);
+      if (trendsRes.status === 'fulfilled') {
+        setTrends(trendsRes.value);
+        newData.trends = trendsRes.value;
+      }
+      if (sentimentRes.status === 'fulfilled') {
+        setSentiment(sentimentRes.value);
+        newData.sentiment = sentimentRes.value;
+      }
+      if (keywordsRes.status === 'fulfilled') {
+        setHotKeywords(keywordsRes.value);
+        newData.hotKeywords = keywordsRes.value;
+      }
+      
+      // Update cache
+      const key = cacheKey || `dash_data_${activeProject?.id || 'all'}_${timeRange}`;
+      localStorage.setItem(key, JSON.stringify(newData));
       
     } catch (error: any) {
       console.error('Lỗi khi tải dữ liệu dashboard', error);
@@ -93,7 +109,10 @@ export default function DashboardPage() {
   };
 
   const handleRefresh = () => {
-    fetchDashboardData();
+    const cacheKey = `dash_data_${activeProject?.id || 'all'}_${timeRange}`;
+    setLoadingMetrics(true);
+    setLoadingCharts(true);
+    fetchDashboardData(cacheKey);
   };
 
   // Removed blocking loading spinner to render shell immediately
