@@ -5,6 +5,7 @@ import { Settings, Plus, Trash2, RefreshCcw, Save, Tag, Search } from 'lucide-re
 import { keywords as keywordsApi } from '@/lib/api';
 import { useProject } from '@/contexts/ProjectContext';
 import toast from 'react-hot-toast';
+import { useDialog } from '@/components/ui/Dialog';
 
 interface KeywordGroup {
   id: number;
@@ -22,6 +23,7 @@ interface Keyword {
 
 export default function ProjectSettingsPage() {
   const { activeProject, projects } = useProject();
+  const { confirm } = useDialog();
   const [groups, setGroups] = useState<KeywordGroup[]>([]);
   const [loading, setLoading] = useState(true);
   const [newGroupName, setNewGroupName] = useState('');
@@ -73,7 +75,14 @@ export default function ProjectSettingsPage() {
   };
 
   const handleDeleteGroup = async (groupId: number, groupName: string) => {
-    if (!window.confirm(`Xóa nhóm "${groupName}" và tất cả keywords bên trong?`)) return;
+    const ok = await confirm({
+      title: 'Xóa nhóm keyword',
+      message: `Xóa nhóm "${groupName}" và tất cả keywords bên trong? Thao tác này không thể hoàn tác.`,
+      confirmText: 'Xóa nhóm',
+      cancelText: 'Hủy',
+      variant: 'danger',
+    });
+    if (!ok) return;
     try {
       await keywordsApi.deleteGroup(groupId);
       toast.success('Đã xóa nhóm');

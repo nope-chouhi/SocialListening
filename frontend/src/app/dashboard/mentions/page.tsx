@@ -17,6 +17,7 @@ import { useProject } from '@/contexts/ProjectContext';
 import toast, { Toaster } from 'react-hot-toast';
 import Link from 'next/link';
 import ConfirmDialog from '@/components/ConfirmDialog';
+import { useDialog } from '@/components/ui/Dialog';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
 } from 'recharts';
@@ -223,6 +224,7 @@ function MentionsPageContent() {
   const [sentimentSummary, setSentimentSummary] = useState<any>(null);
   const [trendData, setTrendData] = useState<any[]>([]);
   const { activeProject, setActiveProject, projects, fetchProjects } = useProject();
+  const { confirm, prompt } = useDialog();
   // UI state
   const [loading, setLoading] = useState(true);
   const [loadingChart, setLoadingChart] = useState(true);
@@ -295,7 +297,13 @@ function MentionsPageContent() {
 
   const handleBulkDelete = async () => {
     if (selectedIds.size === 0) return;
-    if (!window.confirm(`Xóa ${selectedIds.size} mention đã chọn?`)) return;
+    const ok = await confirm({
+      title: `Xóa ${selectedIds.size} mention?`,
+      message: `Bạn sắp xóa vĩnh viễn ${selectedIds.size} mention đã chọn. Thao tác này không thể hoàn tác.`,
+      confirmText: 'Xóa tất cả',
+      variant: 'danger',
+    });
+    if (!ok) return;
     let success = 0;
     for (const id of Array.from(selectedIds)) {
       try { await mentionsApi.delete(id); success++; } catch {}
@@ -363,7 +371,14 @@ function MentionsPageContent() {
       const existingFilter = savedFiltersList.find((sf: any) => sf.name === saveFilterName.trim());
       
       if (existingFilter && !saveFilterOverwrite) {
-        if (!confirm(`Bộ lọc "${saveFilterName}" đã tồn tại. Bạn có muốn ghi đè không?`)) {
+        const ok = await confirm({
+          title: 'Ghi đè bộ lọc',
+          message: `Bộ lọc "${saveFilterName}" đã tồn tại. Bạn có muốn ghi đè không?`,
+          confirmText: 'Ghi đè',
+          cancelText: 'Hủy',
+          variant: 'warning',
+        });
+        if (!ok) {
           return;
         }
         setSaveFilterOverwrite(true);
@@ -416,7 +431,14 @@ function MentionsPageContent() {
   };
 
   const handleDeleteFilter = async (filterId: number) => {
-    if (!confirm('Bạn có chắc muốn xóa bộ lọc này?')) return;
+    const ok = await confirm({
+      title: 'Xóa bộ lọc',
+      message: 'Bạn có chắc muốn xóa bộ lọc này? Thao tác này không thể hoàn tác.',
+      confirmText: 'Xóa',
+      cancelText: 'Hủy',
+      variant: 'danger'
+    });
+    if (!ok) return;
 
     try {
       await savedFilters.delete(filterId);
@@ -1185,10 +1207,8 @@ function MentionsPageContent() {
                             </div>
                           );
                         }
-                        
                         return null;
                       })()}
-                      
                       {/* Hashtags Mock */}
                       <div className="flex flex-wrap items-center gap-2 mt-3">
                         {(mention.matched_keywords || []).map((kw, i) => (
@@ -1231,9 +1251,15 @@ function MentionsPageContent() {
                        </button>
                      )}
                      <button 
-                       onClick={() => {
+                       onClick={async () => {
                          const currentTags = mention.tags ? (Array.isArray(mention.tags) ? mention.tags.join(', ') : mention.tags) : '';
-                         const input = window.prompt('Nhập các tags (cách nhau bởi dấu phẩy):', currentTags);
+                         const input = await prompt({
+                           title: 'Cập nhật tags',
+                           message: 'Nhập các tags, cách nhau bằng dấu phẩy.',
+                           placeholder: 'tag1, tag2, tag3...',
+                           defaultValue: currentTags,
+                           confirmText: 'Lưu tags',
+                         });
                          if (input !== null) {
                            const newTags = input.split(',').map((t) => t.trim()).filter(Boolean);
                            handleAction(mention.id, 'tags', () => mentionsApi.updateTags(mention.id, newTags), 'Đã cập nhật tags');

@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import { ThemeProvider } from '@/components/ThemeProvider'
 import { AuthProvider } from '@/contexts/AuthContext'
+import { DialogProvider } from '@/components/ui/Dialog'
 
 const inter = Inter({ subsets: ['latin', 'vietnamese'] })
 
@@ -31,7 +32,9 @@ export default function RootLayout({
       <body className={inter.className}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <AuthProvider>
-            {children}
+            <DialogProvider>
+              {children}
+            </DialogProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>
