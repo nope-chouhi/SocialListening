@@ -46,6 +46,8 @@ interface MentionItem {
   influence_score: number | null;
   tags?: string[] | string;
   tags_json: string[] | null;
+  risk_score?: number;
+  crisis_level?: number;
   ai_analysis: {
     sentiment: string | null;
     risk_score: number | null;
@@ -227,6 +229,8 @@ function MentionsPageContent() {
   const [page, setPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState(initialSearch || '');
   const [searchInput, setSearchInput] = useState(initialSearch || '');
+  const [activeChartTab, setActiveChartTab] = useState<'reach' | 'sentiment'>('reach');
+  const [chartTimeRange, setChartTimeRange] = useState<'days' | 'weeks' | 'months'>('days');
 
   const [searchState, setSearchState] = useState<'IDLE' | 'TYPING' | 'SEARCHING_DB' | 'LOCAL_RESULTS_FOUND' | 'NO_LOCAL_RESULTS' | 'AUTO_SCAN_STARTING' | 'AUTO_SCAN_RUNNING' | 'AUTO_SCAN_COMPLETED' | 'AUTO_SCAN_NO_RESULTS' | 'AUTO_SCAN_FAILED'>('IDLE');
 
@@ -856,17 +860,32 @@ function MentionsPageContent() {
         {/* Chart Section */}
         <div className="bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10 overflow-hidden">
           <div className="flex items-center border-b border-gray-100 dark:border-white/5">
-            <button className="px-6 py-3 border-b-2 border-blue-600 text-sm font-bold text-gray-900 dark:text-white">
+            <button 
+              onClick={() => setActiveChartTab('reach')}
+              className={`px-6 py-3 border-b-2 text-sm font-bold ${activeChartTab === 'reach' ? 'border-blue-600 text-gray-900 dark:text-white' : 'border-transparent text-gray-500 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+            >
               Mentions & Reach
             </button>
-            <button className="px-6 py-3 border-b-2 border-transparent text-sm font-medium text-gray-500 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 dark:text-gray-300">
+            <button 
+              onClick={() => setActiveChartTab('sentiment')}
+              className={`px-6 py-3 border-b-2 text-sm font-bold ${activeChartTab === 'sentiment' ? 'border-blue-600 text-gray-900 dark:text-white' : 'border-transparent text-gray-500 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+            >
               Sentiment
             </button>
             <div className="ml-auto pr-4 flex items-center gap-2">
                <div className="flex bg-gray-100 dark:bg-white/10 p-0.5 rounded-lg border border-gray-200 dark:border-white/10">
-                 <button className="px-3 py-1 text-xs font-medium bg-white dark:bg-[#050A15] text-gray-800 dark:text-gray-100 rounded shadow-sm">Days</button>
-                 <button className="px-3 py-1 text-xs font-medium text-gray-500 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 dark:text-gray-300">Weeks</button>
-                 <button className="px-3 py-1 text-xs font-medium text-gray-500 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 dark:text-gray-300">Months</button>
+                 <button 
+                   onClick={() => setChartTimeRange('days')}
+                   className={`px-3 py-1 text-xs font-medium rounded shadow-sm ${chartTimeRange === 'days' ? 'bg-white dark:bg-[#050A15] text-gray-800 dark:text-gray-100' : 'text-gray-500 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+                 >Days</button>
+                 <button 
+                   onClick={() => setChartTimeRange('weeks')}
+                   className={`px-3 py-1 text-xs font-medium rounded shadow-sm ${chartTimeRange === 'weeks' ? 'bg-white dark:bg-[#050A15] text-gray-800 dark:text-gray-100' : 'text-gray-500 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+                 >Weeks</button>
+                 <button 
+                   onClick={() => setChartTimeRange('months')}
+                   className={`px-3 py-1 text-xs font-medium rounded shadow-sm ${chartTimeRange === 'months' ? 'bg-white dark:bg-[#050A15] text-gray-800 dark:text-gray-100' : 'text-gray-500 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+                 >Months</button>
                </div>
             </div>
           </div>
@@ -883,7 +902,15 @@ function MentionsPageContent() {
                   <XAxis dataKey="date" tick={{ fill: '#6B7280', fontSize: 10 }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fill: '#6B7280', fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(val) => val >= 1000 ? `${(val / 1000).toFixed(1)}k` : val} />
                   <Tooltip contentStyle={{ backgroundColor: '#fff', border: '1px solid #E5E7EB', borderRadius: '8px', fontSize: '12px', color: '#111827' }} />
-                  <Bar dataKey="mentions" fill="#3B82F6" radius={[4, 4, 0, 0]} maxBarSize={40} />
+                  {activeChartTab === 'reach' ? (
+                    <Bar dataKey="mentions" fill="#3B82F6" radius={[4, 4, 0, 0]} maxBarSize={40} />
+                  ) : (
+                    <>
+                      <Bar dataKey="positive" stackId="a" fill="#10B981" maxBarSize={40} />
+                      <Bar dataKey="neutral" stackId="a" fill="#9CA3AF" maxBarSize={40} />
+                      <Bar dataKey="negative" stackId="a" fill="#F43F5E" radius={[4, 4, 0, 0]} maxBarSize={40} />
+                    </>
+                  )}
                 </BarChart>
               </ResponsiveContainer>
             ) : (
@@ -893,8 +920,18 @@ function MentionsPageContent() {
             )}
           </div>
           <div className="px-6 pb-4 flex items-center gap-6">
-             <div className="flex items-center gap-2"><span className="w-3 h-0.5 bg-blue-500"></span><span className="text-xs font-bold text-blue-600">Mentions</span></div>
-             <div className="flex items-center gap-2"><span className="w-3 h-0.5 bg-emerald-500"></span><span className="text-xs font-bold text-emerald-600">Reach</span></div>
+             {activeChartTab === 'reach' ? (
+               <>
+                 <div className="flex items-center gap-2"><span className="w-3 h-0.5 bg-blue-500"></span><span className="text-xs font-bold text-blue-600">Mentions</span></div>
+                 <div className="flex items-center gap-2"><span className="w-3 h-0.5 bg-emerald-500"></span><span className="text-xs font-bold text-emerald-600">Reach</span></div>
+               </>
+             ) : (
+               <>
+                 <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-sm bg-emerald-500"></span><span className="text-xs font-bold text-emerald-600">Tích cực</span></div>
+                 <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-sm bg-gray-400"></span><span className="text-xs font-bold text-gray-500">Trung lập</span></div>
+                 <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-sm bg-rose-500"></span><span className="text-xs font-bold text-rose-600">Tiêu cực</span></div>
+               </>
+             )}
           </div>
         </div>
 
@@ -1163,11 +1200,36 @@ function MentionsPageContent() {
                 </div>
                 
                 {/* Actions Footer */}
-                <div className="bg-gray-50 dark:bg-[#0a0f1c]/50 px-5 py-3 border-t border-gray-100 dark:border-white/5 flex items-center justify-between">
-                   <div className="flex items-center gap-4">
+                <div className="bg-gray-50 dark:bg-[#0a0f1c]/50 px-5 py-3 border-t border-gray-100 dark:border-white/5 flex flex-wrap items-center justify-between gap-3">
+                   <div className="flex flex-wrap items-center gap-4">
                      <a href={mention.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-700">
                        <ExternalLink className="w-3.5 h-3.5" /> Visit
                      </a>
+                     <button 
+                       onClick={() => handleAction(mention.id, 'review', () => mentionsApi.markReviewed(mention.id), 'Đã đánh dấu xem')}
+                       className="flex items-center gap-1.5 text-xs font-medium text-emerald-600 hover:text-emerald-700 transition-colors"
+                       title="Đánh dấu đã xem"
+                     >
+                       <CheckCircle2 className="w-3.5 h-3.5" /> Đã xem
+                     </button>
+                     {(!mention.sentiment || !mention.risk_score) && (
+                       <button 
+                         onClick={() => handleAction(mention.id, 'analyze', () => mentionsApi.analyze(mention.id), 'Đã phân tích xong')}
+                         className="flex items-center gap-1.5 text-xs font-medium text-purple-600 hover:text-purple-700 transition-colors"
+                         title="Phân tích AI"
+                       >
+                         <BrainCircuit className="w-3.5 h-3.5" /> Phân tích AI
+                       </button>
+                     )}
+                     {(mention.risk_score !== undefined && mention.risk_score >= 50) && (
+                       <button 
+                         onClick={() => handleAction(mention.id, 'alert', () => mentionsApi.createAlert(mention.id), 'Đã tạo cảnh báo rủi ro')}
+                         className="flex items-center gap-1.5 text-xs font-medium text-rose-600 hover:text-rose-700 transition-colors"
+                         title="Tạo cảnh báo"
+                       >
+                         <AlertTriangle className="w-3.5 h-3.5" /> Tạo cảnh báo
+                       </button>
+                     )}
                      <button 
                        onClick={() => {
                          const currentTags = mention.tags ? (Array.isArray(mention.tags) ? mention.tags.join(', ') : mention.tags) : '';
@@ -1180,9 +1242,6 @@ function MentionsPageContent() {
                        className="flex items-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 dark:text-gray-100"
                      >
                        <Tag className="w-3.5 h-3.5" /> Tags
-                     </button>
-                     <button onClick={() => setDeleteConfirm({ isOpen: true, mentionId: mention.id, mentionTitle: mention.title || '' })} className="flex items-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-500 hover:text-red-600">
-                       <Trash2 className="w-3.5 h-3.5" /> Delete
                      </button>
                      <button onClick={() => handleToggleAddToReport(mention.id, mention.add_to_report)} className={`flex items-center gap-1.5 text-xs font-medium ${mention.add_to_report ? 'text-indigo-600' : 'text-gray-500 dark:text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 dark:text-gray-100'}`}>
                        <FileText className="w-3.5 h-3.5" /> {mention.add_to_report ? 'Remove from PDF' : 'Add to PDF report'}
@@ -1200,6 +1259,9 @@ function MentionsPageContent() {
                        className="flex items-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 disabled:opacity-50"
                      >
                        <Eye className="w-3.5 h-3.5" /> Mute site
+                     </button>
+                     <button onClick={() => setDeleteConfirm({ isOpen: true, mentionId: mention.id, mentionTitle: mention.title || '' })} className="flex items-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-500 hover:text-red-600">
+                       <Trash2 className="w-3.5 h-3.5" /> Delete
                      </button>
                    </div>
                    <input
