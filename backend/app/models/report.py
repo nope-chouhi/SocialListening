@@ -22,7 +22,8 @@ class Report(Base):
     __tablename__ = "reports"
     
     id = Column(Integer, primary_key=True, index=True)
-    
+    organization_id = Column(Integer, index=True, nullable=True) # Added for multi-tenancy
+    project_id = Column(Integer, index=True, nullable=True)
     # Report details
     report_type = Column(SQLEnum(ReportType, values_callable=lambda x: [e.value for e in x]), nullable=False, index=True)
     title = Column(String(500), nullable=False)

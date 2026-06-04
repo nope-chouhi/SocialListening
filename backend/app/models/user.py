@@ -13,5 +13,6 @@ class User(Base):
     is_active = Column(Boolean, default=True)
     is_superuser = Column(Boolean, default=False)
     role = Column(String(50), default="viewer", index=True)  # admin, super_admin, viewer, manager, analyst, communication, legal, customer_care
+    current_organization_id = Column(Integer, index=True, nullable=True)  # The organization currently being viewed
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())

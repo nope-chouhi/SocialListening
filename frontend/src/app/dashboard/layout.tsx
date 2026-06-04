@@ -7,6 +7,7 @@ import { auth } from '@/lib/api';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { SidebarBadge } from '@/components/dashboard/Badges';
 import { canAccessAdmin, type User } from '@/lib/permissions';
+import { useAuth } from '@/contexts/AuthContext';
 import { ProjectProvider, useProject } from '@/contexts/ProjectContext';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import toast, { Toaster } from 'react-hot-toast';
@@ -65,6 +66,8 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges }: any) {
 
   const systemNav = [
     { name: 'Services', href: '/dashboard/services', icon: Briefcase },
+    { name: 'Organization', href: '/dashboard/organization', icon: Users },
+    { name: 'Global Admin', href: '/dashboard/admin', icon: Award, adminOnly: true },
     { name: 'System Settings', href: '/dashboard/settings', icon: Settings },
   ];
 
@@ -228,14 +231,16 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges }: any) {
           </div>
           <div className="px-2">
             {systemNav.map((item) => {
-              const isActive = pathname === item.href;
+              if (item.adminOnly && !user?.is_superuser) return null;
+              
+              const isActive = pathname.startsWith(item.href);
               return (
                 <Link
                   key={item.name}
                   href={item.href}
-                  className={`group flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
+                  className={`flex items-center px-5 py-2.5 text-sm font-medium transition-all group ${
                     isActive
-                      ? 'text-white bg-[#2D3748]'
+                      ? 'text-white bg-[#2D3748] border-r-2 border-emerald-400'
                       : 'text-gray-400 hover:text-white hover:bg-[#2D3748]'
                   }`}
                   onClick={() => setSidebarOpen(false)}
@@ -308,27 +313,17 @@ function SearchBar() {
 function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { user, isLoading: authLoading, currentOrganization } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [badges, setBadges] = useState<{ new_alerts: number, open_incidents: number, unreviewed_mentions: number }>({
     new_alerts: 0, open_incidents: 0, unreviewed_mentions: 0
   });
 
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const token = localStorage.getItem('access_token');
-        if (!token) return router.push('/login');
-        const userData = await withTimeout(auth.getCurrentUser(), 8000);
-        setUser(userData);
-        setLoading(false);
-      } catch (error: any) {
-        if (error?.response?.status !== 401) setLoading(false);
-      }
-    };
-    checkAuth();
-  }, [router]);
+    if (!authLoading && !user) {
+      router.push('/login');
+    }
+  }, [authLoading, user, router]);
 
   useEffect(() => {
     if (user) {
@@ -383,7 +378,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
             
             <div className="relative group">
               <div className="w-8 h-8 rounded-full bg-slate-800 text-white flex items-center justify-center text-xs font-bold ml-2 cursor-pointer shadow-sm hover:ring-2 hover:ring-indigo-500 transition-all">
-                {loading ? '...' : (user?.full_name || user?.email || 'K')[0].toUpperCase()}
+                {authLoading ? '...' : (user?.full_name || user?.email || 'K')[0].toUpperCase()}
               </div>
               <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-[#1E293B] rounded-lg shadow-xl border border-gray-100 dark:border-gray-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
                 <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">

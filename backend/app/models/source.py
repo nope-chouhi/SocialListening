@@ -31,6 +31,7 @@ class SourceGroup(Base):
     __tablename__ = "source_groups"
     
     id = Column(Integer, primary_key=True, index=True)
+    organization_id = Column(Integer, index=True, nullable=True) # Added for multi-tenancy
     user_id = Column(Integer, index=True, nullable=True)
     name = Column(String(255), nullable=False, index=True)
     description = Column(Text)
@@ -41,9 +42,11 @@ class SourceGroup(Base):
 
 
 class Source(Base):
+    """Specific sources (e.g., a specific Facebook page URL or YouTube channel)"""
     __tablename__ = "sources"
     
     id = Column(Integer, primary_key=True, index=True)
+    organization_id = Column(Integer, index=True, nullable=True) # Added for multi-tenancy
     user_id = Column(Integer, index=True, nullable=True)
     group_id = Column(Integer, index=True)
     name = Column(String(500), nullable=False)

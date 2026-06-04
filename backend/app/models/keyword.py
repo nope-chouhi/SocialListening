@@ -26,6 +26,7 @@ class KeywordGroup(Base):
     __tablename__ = "keyword_groups"
     
     id = Column(Integer, primary_key=True, index=True)
+    organization_id = Column(Integer, index=True, nullable=True) # Added for multi-tenancy
     user_id = Column(Integer, index=True, nullable=True)
     name = Column(String(255), nullable=False, index=True)
     description = Column(Text)

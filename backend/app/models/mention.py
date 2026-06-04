@@ -16,6 +16,7 @@ class Mention(Base):
     __tablename__ = "mentions"
     
     id = Column(Integer, primary_key=True, index=True)
+    organization_id = Column(Integer, index=True, nullable=True) # Added for multi-tenancy
     user_id = Column(Integer, index=True, nullable=True)
     project_id = Column(Integer, nullable=True, index=True)
     keyword_id = Column(Integer, nullable=True, index=True)

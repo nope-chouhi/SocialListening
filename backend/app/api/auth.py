@@ -19,7 +19,10 @@ from app.schemas.user_settings import (
 from pydantic import BaseModel, EmailStr
 from sqlalchemy import select
 
+from app.api.auth_context import setup_context_endpoint
+
 router = APIRouter()
+setup_context_endpoint(router)
 
 
 class UserCreate(BaseModel):

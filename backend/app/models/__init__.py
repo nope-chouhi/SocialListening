@@ -59,6 +59,13 @@ from app.models.discovery import (
 # Integration models
 from app.models.integration import SocialIntegration, SocialIntegrationAccount, OAuthState
 
+# Organization and Team models
+from app.models.organization import Organization, OrganizationMember
+from app.models.team import Team, TeamMember
+
+# Billing and Plan models
+from app.models.billing import Plan, OrganizationPlan, UsageEvent
+
 __all__ = [
     "Base",
     "User",
@@ -81,6 +88,9 @@ __all__ = [
     "DiscoveryJob", "DiscoveryJobStatus", "DiscoveredSource", "DiscoveredSourceStatus",
     "BlockedDomain", "RecommendedMonitoringType",
     "SocialIntegration", "SocialIntegrationAccount", "OAuthState",
+    "SocialIntegration", "SocialIntegrationAccount", "OAuthState",
+    "Organization", "OrganizationMember", "Team", "TeamMember",
+    "Plan", "OrganizationPlan", "UsageEvent",
 ]
 
 

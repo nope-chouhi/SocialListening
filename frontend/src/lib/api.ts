@@ -148,6 +148,10 @@ export const auth = {
     }
     return response.data;
   },
+  getContext: async () => {
+    const response = await api.get('/api/auth/me/context');
+    return response.data;
+  },
   register: async (email: string, password: string, full_name: string) => {
     const response = await api.post('/api/auth/register', { email, password, full_name });
     return response.data;
