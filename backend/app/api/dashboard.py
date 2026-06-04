@@ -54,9 +54,10 @@ def get_dashboard_summary(
         month_start = now - timedelta(days=30)
         try:
             from app.models.mention import SentimentScore
-            query = select(func.count(AIAnalysis.id))
+            query = select(func.count(AIAnalysis.id)).join(Mention, AIAnalysis.mention_id == Mention.id)
+            query = apply_tenant_filter(query, Mention, current_user)
             if project_id:
-                query = query.join(Mention, AIAnalysis.mention_id == Mention.id).where(Mention.project_id == project_id)
+                query = query.where(Mention.project_id == project_id)
             
             negative_mentions = db.execute(
                 query.where(
@@ -360,9 +361,10 @@ def get_dashboard_trends(
         try:
             from app.models.mention import SentimentScore
             date_col = cast(AIAnalysis.analyzed_at, Date)
-            query = select(date_col.label("d"), func.count(AIAnalysis.id))
+            query = select(date_col.label("d"), func.count(AIAnalysis.id)).join(Mention, AIAnalysis.mention_id == Mention.id)
+            query = apply_tenant_filter(query, Mention, current_user)
             if project_id:
-                query = query.join(Mention, AIAnalysis.mention_id == Mention.id).where(Mention.project_id == project_id)
+                query = query.where(Mention.project_id == project_id)
             
             query = query.where(
                 and_(
