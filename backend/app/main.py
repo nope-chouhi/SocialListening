@@ -210,3 +210,20 @@ def root():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+@app.get("/api/debug/migrate")
+def debug_migrate():
+    import traceback
+    import alembic.config
+    import alembic.command
+    import os
+    try:
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        original_cwd = os.getcwd()
+        os.chdir(base_dir)
+        alembic_cfg = alembic.config.Config("alembic.ini")
+        alembic.command.upgrade(alembic_cfg, "head")
+        os.chdir(original_cwd)
+        return {"status": "success"}
+    except Exception as e:
+        os.chdir(original_cwd)
+        return {"status": "error", "message": str(e), "traceback": traceback.format_exc()}
