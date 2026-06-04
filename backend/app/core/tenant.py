@@ -20,7 +20,7 @@ def apply_tenant_filter(query: Select, model, current_user: User, user_col: str 
             
     # Fallback to legacy user_id filtering if no organization_id is found
     # Special case for legacy Mentions, Alerts, etc.
-    if model.__name__ in ['Mention', 'Alert', 'Incident']:
+    if model.__name__ in ['Mention', 'Alert']:
         from app.models.keyword import KeywordGroup
         from sqlalchemy import select
         allowed_projects = select(KeywordGroup.id).where(KeywordGroup.user_id == current_user.id)
