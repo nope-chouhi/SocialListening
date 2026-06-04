@@ -1,7 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { auth } from '@/lib/api';
+import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 
 interface User {
@@ -35,49 +34,136 @@ const AuthContext = createContext<AuthContextType>({
   organizations: [],
   currentOrganization: null,
   permissions: [],
-  isLoading: true,
+  isLoading: false,
   hasPermission: () => false,
   switchOrganization: async () => {},
   refreshContext: async () => {},
 });
 
+/** Parse JWT payload without verifying signature — fast, no network */
+function parseJwt(token: string): any {
+  try {
+    const base64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+    return JSON.parse(atob(base64));
+  } catch {
+    return null;
+  }
+}
+
+/** Read cached user from localStorage (set at login time) */
+function getCachedUser(): User | null {
+  try {
+    const raw = localStorage.getItem('cached_user');
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return null;
+}
+
+function setCachedUser(user: User | null) {
+  try {
+    if (user) localStorage.setItem('cached_user', JSON.stringify(user));
+    else localStorage.removeItem('cached_user');
+  } catch {}
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  // Initialize from cache IMMEDIATELY — no async, no loading state
+  const [user, setUser] = useState<User | null>(() => {
+    if (typeof window === 'undefined') return null;
+    const token = localStorage.getItem('access_token');
+    if (!token) return null;
+    // Check token not expired
+    const payload = parseJwt(token);
+    if (payload?.exp && payload.exp * 1000 < Date.now()) {
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('cached_user');
+      return null;
+    }
+    return getCachedUser();
+  });
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [permissions, setPermissions] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  
+  const [isLoading, setIsLoading] = useState(false); // Never blocks initial render
+
   const router = useRouter();
   const pathname = usePathname();
+  const bgFetchRef = useRef<AbortController | null>(null);
 
-  const fetchContext = async () => {
+  const fetchContext = async (showLoader = false) => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+    if (!token) {
+      setUser(null);
+      setCachedUser(null);
+      return;
+    }
+
+    if (showLoader) setIsLoading(true);
+
+    // Cancel any in-flight request
+    bgFetchRef.current?.abort();
+    bgFetchRef.current = new AbortController();
+
     try {
-      const data = await auth.getContext();
-      setUser(data.user);
-      setOrganizations(data.organizations);
-      setPermissions(data.permissions);
-    } catch (error) {
-      console.error('Failed to fetch auth context', error);
-      // If we are in dashboard, redirect to login
-      if (pathname.startsWith('/dashboard')) {
-        router.push('/login');
+      const res = await fetch('/api/auth/me/context', {
+        headers: { Authorization: `Bearer ${token}` },
+        signal: bgFetchRef.current.signal,
+      });
+
+      if (res.status === 401) {
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('cached_user');
+        setUser(null);
+        if (pathname.startsWith('/dashboard')) {
+          window.location.href = '/login?expired=1';
+        }
+        return;
       }
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.user) {
+          setUser(data.user);
+          setCachedUser(data.user);
+        }
+        if (data.organizations) setOrganizations(data.organizations);
+        if (data.permissions) setPermissions(data.permissions);
+      }
+    } catch (err: any) {
+      if (err?.name === 'AbortError') return; // Intentional cancel
+      // Network error — keep cached user, don't block
+      console.warn('[Auth] Background context fetch failed, using cached data');
     } finally {
-      setIsLoading(false);
+      if (showLoader) setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    // Only fetch if we have a token
     const token = localStorage.getItem('access_token');
-    if (token) {
-      fetchContext();
-    } else {
-      setIsLoading(false);
+    if (!token) {
+      // No token — clear everything instantly, no loading
+      setUser(null);
+      if (pathname.startsWith('/dashboard')) {
+        router.replace('/login');
+      }
+      return;
     }
-  }, [pathname]);
 
-  const currentOrganization = user?.current_organization_id 
+    // Check expiry instantly from JWT without network
+    const payload = parseJwt(token);
+    if (payload?.exp && payload.exp * 1000 < Date.now()) {
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('cached_user');
+      setUser(null);
+      router.replace('/login?expired=1');
+      return;
+    }
+
+    // Fetch fresh context in background WITHOUT blocking UI
+    fetchContext(false);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only on mount — not on every pathname change
+
+  const currentOrganization = user?.current_organization_id
     ? organizations.find(o => o.id === user.current_organization_id) || null
     : null;
 
@@ -88,16 +174,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const switchOrganization = async (orgId: number) => {
-    try {
-      setIsLoading(true);
-      // We would call a backend endpoint to switch org, then fetch context again
-      // For now, let's just pretend we have a `auth.switchOrg` API
-      // await api.post(`/api/auth/me/switch-organization/${orgId}`);
-      // await fetchContext();
-      console.warn("Switch organization API not implemented yet");
-    } finally {
-      setIsLoading(false);
-    }
+    console.warn('Switch organization API not implemented yet');
   };
 
   return (
@@ -109,7 +186,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isLoading,
       hasPermission,
       switchOrganization,
-      refreshContext: fetchContext
+      refreshContext: () => fetchContext(true),
     }}>
       {children}
     </AuthContext.Provider>

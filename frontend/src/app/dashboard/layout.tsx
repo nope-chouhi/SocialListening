@@ -320,10 +320,12 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   });
 
   useEffect(() => {
-    if (!authLoading && !user) {
-      router.push('/login');
+    // If no token at all, redirect immediately
+    const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+    if (!token) {
+      router.replace('/login');
     }
-  }, [authLoading, user, router]);
+  }, [router]);
 
   useEffect(() => {
     if (user) {
@@ -408,9 +410,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <ProjectProvider>
-      <Suspense fallback={<LoadingSpinner message="Khởi tạo không gian làm việc..." submessage="Đang nạp các thiết lập và dữ liệu môi trường." />}>
-        <DashboardLayoutContent>{children}</DashboardLayoutContent>
-      </Suspense>
+      <DashboardLayoutContent>{children}</DashboardLayoutContent>
     </ProjectProvider>
   );
 }

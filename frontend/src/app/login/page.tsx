@@ -5,6 +5,21 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { auth, resetAuthRedirectLock } from '@/lib/api';
 import LoadingSpinner from '@/components/LoadingSpinner';
 
+/** Cache user profile after login so AuthContext reads instantly on next page */
+function cacheUserAfterLogin(token: string) {
+  try {
+    const base64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+    const payload = JSON.parse(atob(base64));
+    // sub is the user id — fetch /api/auth/me and cache result
+    fetch('/api/auth/me', { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.ok ? r.json() : null)
+      .then(user => {
+        if (user) localStorage.setItem('cached_user', JSON.stringify(user));
+      })
+      .catch(() => {});
+  } catch {}
+}
+
 function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -27,29 +42,19 @@ function LoginContent() {
 
     try {
       const result = await auth.login(email, password);
-      console.log('Login successful:', result);
-      resetAuthRedirectLock(); // Allow future 401s to redirect again
-      
-      // Show success and redirect
-      setTimeout(() => {
-        window.location.replace('/dashboard');
-      }, 100);
-      
+      resetAuthRedirectLock();
+      // Cache user in background, then redirect immediately
+      if (result.access_token) {
+        cacheUserAfterLogin(result.access_token);
+      }
+      // Instant redirect — no setTimeout delay
+      router.replace('/dashboard');
     } catch (err: any) {
-      console.error('Login error:', err);
       setError(err.response?.data?.detail || 'Đăng nhập thất bại. Vui lòng thử lại.');
       setLoading(false);
     }
   };
 
-  if (loading) {
-    return (
-      <LoadingSpinner 
-        message="Đang đăng nhập..."
-        submessage="Vui lòng đợi trong giây lát"
-      />
-    );
-  }
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-50">
