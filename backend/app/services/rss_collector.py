@@ -2,6 +2,7 @@ import logging
 import hashlib
 from datetime import datetime, timezone, timedelta
 from typing import Dict, List, Optional
+import unicodedata
 import feedparser
 import requests
 from bs4 import BeautifulSoup
@@ -55,6 +56,11 @@ def clean_html(raw_html: str) -> str:
     soup = BeautifulSoup(raw_html, "html.parser")
     return soup.get_text(separator=' ', strip=True)
     
+def strip_accents(s: str) -> str:
+    if not s: return ""
+    s = s.replace('đ', 'd').replace('Đ', 'D')
+    return ''.join(c for c in unicodedata.normalize('NFD', s) if unicodedata.category(c) != 'Mn')
+
 def generate_content_hash(text: str) -> str:
     return hashlib.sha256(text.strip().encode('utf-8')).hexdigest()
 
@@ -228,11 +234,12 @@ def run_rss_collector(db: Session, source_ids: List[int] = None) -> Dict:
                 
                 # Matching engine
                 matched_kws = []
-                text_to_match = f"{item['title']} {item['snippet']} {norm_url}".lower()
+                text_to_match = strip_accents(f"{item['title']} {item['snippet']} {norm_url}".lower())
                 
                 for kw in active_keywords:
-                    if kw.keyword.lower() in text_to_match:
-                        matched_kws.append({"keyword": kw.keyword, "count": text_to_match.count(kw.keyword.lower())})
+                    kw_norm = strip_accents(kw.keyword.lower())
+                    if kw_norm in text_to_match:
+                        matched_kws.append({"keyword": kw.keyword, "count": text_to_match.count(kw_norm)})
                         
                 if matched_kws:
                     # Check deduplication for Mention (project_id + keyword_text + normalized_url)

@@ -10,6 +10,8 @@ import httpx
 import xml.etree.ElementTree as ET
 import urllib.parse
 import email.utils
+import re
+import html
 
 from app.core.config import settings
 
@@ -135,13 +137,16 @@ class SocialCrawlerService:
                     except Exception:
                         pass
                         
+                clean_description = html.unescape(re.sub(r'<[^>]+>', '', description)) if description else ''
+                clean_content = clean_description or title
+                        
                 results.append({
                     "source": "google_news",
                     "platform": "news",
                     "source_type": "news",
                     "author": source_name,
                     "title": title,
-                    "content": description or title,
+                    "content": clean_content,
                     "url": link,
                     "timestamp": ts,
                     "interactions": 0,

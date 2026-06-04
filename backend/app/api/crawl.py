@@ -164,7 +164,13 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
     from app.core.config import settings
     import hashlib
     import time
+    import unicodedata
     from urllib.parse import urlparse
+    
+    def strip_accents(s: str) -> str:
+        if not s: return ""
+        s = s.replace('đ', 'd').replace('Đ', 'D')
+        return ''.join(c for c in unicodedata.normalize('NFD', s) if unicodedata.category(c) != 'Mn')
     
     db = SessionLocal()
     start_time = time.time()
@@ -295,11 +301,10 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
                     snippet = str(r.get("snippet") or "")
                     
                     # Assign keyword (fallback to first keyword if exact match not found in snippet)
-                    import unicodedata
                     matched_kw = None
-                    search_text = unicodedata.normalize('NFC', (title + " " + snippet + " " + url).lower())
+                    search_text = strip_accents((title + " " + snippet + " " + url).lower())
                     for kw in keyword_texts:
-                        kw_norm = unicodedata.normalize('NFC', kw.lower())
+                        kw_norm = strip_accents(kw.lower())
                         if kw_norm in search_text:
                             matched_kw = kw
                             break
@@ -382,11 +387,10 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
                         title = str(r.get("title") or "")
                         snippet = str(r.get("content") or "")
                         
-                        import unicodedata
                         matched_kw = None
-                        search_text = unicodedata.normalize('NFC', (title + " " + snippet + " " + url).lower())
+                        search_text = strip_accents((title + " " + snippet + " " + url).lower())
                         for kw in keyword_texts:
-                            kw_norm = unicodedata.normalize('NFC', kw.lower())
+                            kw_norm = strip_accents(kw.lower())
                             if kw_norm in search_text:
                                 matched_kw = kw
                                 break
@@ -473,11 +477,10 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
                 title = str(r.get("title") or "")
                 snippet = str(r.get("content") or "")
                 
-                import unicodedata
                 matched_kw = None
-                search_text = unicodedata.normalize('NFC', (title + " " + snippet + " " + url).lower())
+                search_text = strip_accents((title + " " + snippet + " " + url).lower())
                 for kw in keyword_texts:
-                    kw_norm = unicodedata.normalize('NFC', kw.lower())
+                    kw_norm = strip_accents(kw.lower())
                     if kw_norm in search_text:
                         matched_kw = kw
                         break
