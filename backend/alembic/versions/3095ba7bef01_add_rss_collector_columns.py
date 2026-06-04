@@ -26,21 +26,10 @@ def upgrade() -> None:
         batch_op.create_index(batch_op.f('ix_sources_category'), ['category'], unique=False)
         batch_op.create_index(batch_op.f('ix_sources_domain'), ['domain'], unique=False)
 
-    # Add columns to source_items
-    with op.batch_alter_table('source_items', schema=None) as batch_op:
-        batch_op.add_column(sa.Column('guid', sa.String(length=500), nullable=True))
-        batch_op.add_column(sa.Column('image_url', sa.Text(), nullable=True))
-        batch_op.add_column(sa.Column('media_url', sa.Text(), nullable=True))
-        batch_op.add_column(sa.Column('media_thumbnail', sa.Text(), nullable=True))
-        batch_op.create_index(batch_op.f('ix_source_items_guid'), ['guid'], unique=False)
+
 
 def downgrade() -> None:
-    with op.batch_alter_table('source_items', schema=None) as batch_op:
-        batch_op.drop_index(batch_op.f('ix_source_items_guid'))
-        batch_op.drop_column('media_thumbnail')
-        batch_op.drop_column('media_url')
-        batch_op.drop_column('image_url')
-        batch_op.drop_column('guid')
+
 
     with op.batch_alter_table('sources', schema=None) as batch_op:
         batch_op.drop_index(batch_op.f('ix_sources_domain'))
