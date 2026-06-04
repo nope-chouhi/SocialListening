@@ -266,10 +266,47 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges }: any) {
   );
 }
 
-function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
+function SearchBar() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const q = searchParams.get('q') || '';
+
+  return (
+    <div className="flex-1 max-w-xl relative group">
+      <div className="flex items-center relative">
+        <Search className="w-4 h-4 text-gray-400 absolute left-3" />
+        <input 
+          name="q"
+          type="text"
+          defaultValue={q}
+          onChange={(e) => {
+            const val = e.target.value;
+            window.dispatchEvent(new CustomEvent('topbar_search_typing'));
+            // Clear previous timeout
+            if ((window as any).searchTimeout) clearTimeout((window as any).searchTimeout);
+            
+            // Set new timeout for debounce
+            (window as any).searchTimeout = setTimeout(() => {
+              if (val) {
+                router.push(`/dashboard/mentions?q=${encodeURIComponent(val)}`);
+              } else {
+                router.push('/dashboard/mentions');
+              }
+            }, 1000);
+          }}
+          placeholder="Tìm từ khóa và tự động quét nếu chưa có dữ liệu..."
+          className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg text-sm text-gray-700 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm"
+        />
+      </div>
+      <div className="absolute top-full left-0 mt-1 hidden group-hover:block w-full bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 text-[11px] px-3 py-1.5 rounded-md border border-blue-100 dark:border-blue-800/50 shadow-sm z-50">
+        Nhập từ khóa, hệ thống sẽ tìm trong DB trước. Nếu chưa có dữ liệu, Nope sẽ tự quét internet.
+      </div>
+    </div>
+  );
+}
+
+function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
   const pathname = usePathname();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -327,36 +364,9 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
           </button>
 
           {/* Search bar */}
-          <div className="flex-1 max-w-xl relative group">
-            <div className="flex items-center relative">
-              <Search className="w-4 h-4 text-gray-400 absolute left-3" />
-              <input 
-                name="q"
-                type="text"
-                defaultValue={q}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  window.dispatchEvent(new CustomEvent('topbar_search_typing'));
-                  // Clear previous timeout
-                  if ((window as any).searchTimeout) clearTimeout((window as any).searchTimeout);
-                  
-                  // Set new timeout for debounce
-                  (window as any).searchTimeout = setTimeout(() => {
-                    if (val) {
-                      router.push(`/dashboard/mentions?q=${encodeURIComponent(val)}`);
-                    } else {
-                      router.push('/dashboard/mentions');
-                    }
-                  }, 1000);
-                }}
-                placeholder="Tìm từ khóa và tự động quét nếu chưa có dữ liệu..."
-                className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg text-sm text-gray-700 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
-              />
-            </div>
-            <div className="absolute top-full left-0 mt-1 hidden group-hover:block w-full bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 text-[11px] px-3 py-1.5 rounded-md border border-blue-100 dark:border-blue-800/50 shadow-sm z-50">
-              Nhập từ khóa, hệ thống sẽ tìm trong DB trước. Nếu chưa có dữ liệu, Nope sẽ tự quét internet.
-            </div>
-          </div>
+          <Suspense fallback={<div className="flex-1 max-w-xl animate-pulse bg-gray-100 dark:bg-gray-800 h-10 rounded-lg" />}>
+            <SearchBar />
+          </Suspense>
 
           <div className="ml-auto flex items-center space-x-4">
             <button onClick={() => toast('Billing/Upgrade coming soon', { icon: '⏳' })} className="hidden sm:flex items-center px-4 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-full transition-colors tracking-wide shadow-sm">
@@ -403,7 +413,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <ProjectProvider>
-      <Suspense fallback={<LoadingSpinner message="Đang khởi động..." />}>
+      <Suspense fallback={<LoadingSpinner message="Khởi tạo không gian làm việc..." submessage="Đang nạp các thiết lập và dữ liệu môi trường." />}>
         <DashboardLayoutContent>{children}</DashboardLayoutContent>
       </Suspense>
     </ProjectProvider>
