@@ -90,15 +90,15 @@ const SENTIMENT_OPTIONS = [
 ];
 
 const SOURCE_TYPE_OPTIONS = [
-  { value: 'web', label: 'Web', icon: Globe, color: 'text-blue-400', disabled: false },
+  { value: 'website', label: 'Web', icon: Globe, color: 'text-blue-400', disabled: false },
   { value: 'news', label: 'News', icon: FileText, color: 'text-gray-400', disabled: false },
-  { value: 'blog', label: 'Blogs', icon: FileText, color: 'text-green-400', disabled: false },
-  { value: 'video', label: 'Videos (YouTube)', icon: Youtube, color: 'text-red-400', disabled: false },
+  { value: 'forum', label: 'Blogs/Forums', icon: FileText, color: 'text-green-400', disabled: false },
+  { value: 'youtube_video', label: 'Videos (YouTube)', icon: Youtube, color: 'text-red-400', disabled: false },
   { value: 'rss', label: 'RSS', icon: Rss, color: 'text-orange-400', disabled: false },
-  { value: 'facebook', label: 'Facebook', icon: Facebook, color: 'text-blue-500', disabled: true, msg: 'Connect required' },
+  { value: 'facebook_page', label: 'Facebook', icon: Facebook, color: 'text-blue-500', disabled: true, msg: 'Connect required' },
   { value: 'instagram', label: 'Instagram', icon: Instagram, color: 'text-fuchsia-500', disabled: true, msg: 'Connect required' },
-  { value: 'twitter', label: 'X/Twitter', icon: Twitter, color: 'text-sky-400', disabled: false },
-  { value: 'reddit', label: 'Reddit', icon: Globe, color: 'text-orange-400', disabled: false },
+  { value: 'twitter', label: 'X/Twitter', icon: Twitter, color: 'text-sky-400', disabled: true, msg: 'Coming soon' },
+  { value: 'reddit', label: 'Reddit', icon: Globe, color: 'text-orange-400', disabled: true, msg: 'Coming soon' },
   { value: 'tiktok', label: 'TikTok', icon: Video, color: 'text-pink-400', disabled: true, msg: 'Connector required' },
   { value: 'podcast', label: 'Podcasts', icon: Mic, color: 'text-purple-400', disabled: true, msg: 'Coming soon' },
 ];
@@ -1100,8 +1100,8 @@ function MentionsPageContent() {
                   <div className="flex items-start gap-4">
                     {/* Source Avatar/Logo */}
                     <div className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 ${
-                      mention.source_type === 'facebook' ? 'bg-blue-100 text-blue-600' :
-                      mention.source_type === 'youtube' || mention.source_type === 'video' ? 'bg-red-100 text-red-600' :
+                      mention.source_type?.startsWith('facebook') ? 'bg-blue-100 text-blue-600' :
+                      mention.source_type?.startsWith('youtube') || mention.source_type === 'video' ? 'bg-red-100 text-red-600' :
                       mention.source_type === 'tiktok' ? 'bg-black text-white' :
                       'bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-gray-400'
                     }`}>
