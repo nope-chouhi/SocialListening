@@ -1,7 +1,8 @@
 from fastapi import Depends, HTTPException, status
 from typing import List, Optional
 from app.models.user import User
-from app.api.deps import get_current_active_user, get_db
+from app.core.security import get_current_active_user
+from app.core.database import get_db
 from app.models.organization import OrganizationMember, Organization
 from sqlalchemy.orm import Session
 

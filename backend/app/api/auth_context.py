@@ -1,7 +1,7 @@
 from fastapi import Depends
 from sqlalchemy.orm import Session
 from app.core.database import get_db
-from app.api.deps import get_current_active_user
+from app.core.security import get_current_active_user
 from app.models.user import User
 from app.models.organization import OrganizationMember, Organization
 from app.core.rbac import get_effective_permissions

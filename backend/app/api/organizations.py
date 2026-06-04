@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import select
 from typing import List, Any
 from app.core.database import get_db
-from app.api.deps import get_current_active_user
+from app.core.security import get_current_active_user
 from app.models.user import User
 from app.models.organization import Organization, OrganizationMember
 from app.models.team import Team, TeamMember

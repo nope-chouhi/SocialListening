@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from app.core.database import get_db
-from app.api.deps import get_current_active_user
+from app.core.security import get_current_active_user
 from app.models.user import User
 from app.models.billing import Plan, UsageEvent, OrganizationPlan
 from app.core.rbac import RequirePermission
