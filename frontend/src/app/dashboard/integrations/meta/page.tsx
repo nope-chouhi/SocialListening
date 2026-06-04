@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Shield, Facebook, Instagram, CheckCircle2, XCircle, Loader2, ArrowLeft, Plug, LogOut, CheckSquare, Square } from 'lucide-react';
 import Link from 'next/link';
+import { useDialog } from '@/components/ui/Dialog';
 
 interface MetaAccount {
   id: number;
@@ -23,6 +24,7 @@ interface MetaStatus {
 }
 
 export default function MetaIntegrationPage() {
+  const { confirm } = useDialog();
   const [metaStatus, setMetaStatus] = useState<MetaStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
@@ -72,7 +74,12 @@ export default function MetaIntegrationPage() {
   };
 
   const handleDisconnect = async () => {
-    if (!confirm('Bạn có chắc muốn ngắt kết nối Meta? Mọi tài khoản đang đồng bộ sẽ bị dừng.')) return;
+    const ok = await confirm({
+      title: 'Ngắt kết nối Meta',
+      message: 'Bạn có chắc muốn ngắt kết nối Meta? Mọi tài khoản đang đồng bộ sẽ bị dừng.',
+      variant: 'danger'
+    });
+    if (!ok) return;
     try {
       setActionLoading(true);
       await fetch(`/api/integrations/meta/disconnect`, {

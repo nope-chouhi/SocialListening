@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Palette, RotateCcw, Save } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { useDialog } from '@/components/ui/Dialog';
 
 interface BrandingData {
   id: number;
@@ -18,6 +19,7 @@ interface BrandingData {
 }
 
 export default function BrandingSettings() {
+  const { confirm } = useDialog();
   const [settings, setSettings] = useState<BrandingData | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -92,7 +94,12 @@ export default function BrandingSettings() {
   };
 
   const handleReset = async () => {
-    if (!confirm('Bạn có chắc muốn khôi phục cài đặt mặc định?')) return;
+    const ok = await confirm({
+      title: 'Khôi phục cài đặt',
+      message: 'Bạn có chắc muốn khôi phục cài đặt mặc định?',
+      variant: 'warning'
+    });
+    if (!ok) return;
 
     try {
       const token = localStorage.getItem('access_token');

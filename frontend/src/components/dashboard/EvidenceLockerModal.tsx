@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Lock, Plus, Trash2, ExternalLink, Link2, FileText, CameraOff } from 'lucide-react';
 import { evidence, getErrorMessage } from '@/lib/api';
 import toast from 'react-hot-toast';
+import { useDialog } from '@/components/ui/Dialog';
 
 interface EvidenceLockerModalProps {
   isOpen: boolean;
@@ -13,6 +14,7 @@ export default function EvidenceLockerModal({ isOpen, onClose, incident }: Evide
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const { confirm } = useDialog();
   
   // New evidence form
   const [showAdd, setShowAdd] = useState(false);
@@ -70,7 +72,12 @@ export default function EvidenceLockerModal({ isOpen, onClose, incident }: Evide
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Bạn có chắc chắn muốn xóa bằng chứng này?')) return;
+    const ok = await confirm({
+      title: 'Xóa bằng chứng',
+      message: 'Bạn có chắc chắn muốn xóa bằng chứng này?',
+      variant: 'danger',
+    });
+    if (!ok) return;
     try {
       await evidence.delete(id);
       toast.success('Xóa thành công');

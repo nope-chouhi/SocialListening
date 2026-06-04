@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Key, Plus, Copy, Eye, EyeOff, Trash2, Power, PowerOff, Calendar } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { api } from '@/lib/api';
+import { useDialog } from '@/components/ui/Dialog';
 
 interface APIKey {
   id: number;
@@ -21,6 +22,7 @@ interface APIKeyCreateResponse extends APIKey {
 }
 
 export default function APIWebhooks() {
+  const { confirm } = useDialog();
   const [apiKeys, setApiKeys] = useState<APIKey[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -75,7 +77,12 @@ export default function APIWebhooks() {
   };
 
   const handleRevoke = async (keyId: number) => {
-    if (!confirm('Bạn có chắc muốn thu hồi API key này? Hành động này không thể hoàn tác.')) return;
+    const ok = await confirm({
+      title: 'Thu hồi API Key',
+      message: 'Bạn có chắc muốn thu hồi API key này? Hành động này không thể hoàn tác.',
+      variant: 'danger'
+    });
+    if (!ok) return;
 
     try {
       await api.delete(`/api/api-keys/${keyId}`);

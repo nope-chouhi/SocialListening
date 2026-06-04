@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Search, Edit, Trash2, Key, Power, Crown, User as UserIcon, X } from 'lucide-react';
 import ConfirmDialog from '@/components/ConfirmDialog';
+import toast from 'react-hot-toast';
 
 interface User {
   id: number;
@@ -111,11 +112,11 @@ export default function UserManagement() {
         fetchStats();
       } else {
         const error = await response.json();
-        alert(error.detail || 'Lỗi khi tạo người dùng');
+        toast.error(error.detail || 'Lỗi khi tạo người dùng');
       }
     } catch (error) {
       console.error('Error creating user:', error);
-      alert('Lỗi khi tạo người dùng');
+      toast.error('Lỗi khi tạo người dùng');
     }
   };
 
@@ -140,11 +141,11 @@ export default function UserManagement() {
         fetchUsers();
       } else {
         const error = await response.json();
-        alert(error.detail || 'Lỗi khi cập nhật người dùng');
+        toast.error(error.detail || 'Lỗi khi cập nhật người dùng');
       }
     } catch (error) {
       console.error('Error updating user:', error);
-      alert('Lỗi khi cập nhật người dùng');
+      toast.error('Lỗi khi cập nhật người dùng');
     }
   };
 
@@ -164,11 +165,11 @@ export default function UserManagement() {
         fetchStats();
       } else {
         const error = await response.json();
-        alert(error.detail || 'Lỗi khi xóa người dùng');
+        toast.error(error.detail || 'Lỗi khi xóa người dùng');
       }
     } catch (error) {
       console.error('Error deleting user:', error);
-      alert('Lỗi khi xóa người dùng');
+      toast.error('Lỗi khi xóa người dùng');
     }
   };
 
@@ -188,11 +189,11 @@ export default function UserManagement() {
         fetchStats();
       } else {
         const error = await response.json();
-        alert(error.detail || 'Lỗi khi thay đổi trạng thái');
+        toast.error(error.detail || 'Lỗi khi thay đổi trạng thái');
       }
     } catch (error) {
       console.error('Error toggling active:', error);
-      alert('Lỗi khi thay đổi trạng thái');
+      toast.error('Lỗi khi thay đổi trạng thái');
     }
   };
 
@@ -214,14 +215,14 @@ export default function UserManagement() {
       if (response.ok) {
         setShowResetPasswordModal(false);
         setSelectedUser(null);
-        alert('Đặt lại mật khẩu thành công');
+        toast.success('Đặt lại mật khẩu thành công');
       } else {
         const error = await response.json();
-        alert(error.detail || 'Lỗi khi đặt lại mật khẩu');
+        toast.error(error.detail || 'Lỗi khi đặt lại mật khẩu');
       }
     } catch (error) {
       console.error('Error resetting password:', error);
-      alert('Lỗi khi đặt lại mật khẩu');
+      toast.error('Lỗi khi đặt lại mật khẩu');
     }
   };
 
@@ -629,11 +630,11 @@ function ResetPasswordModal({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (password !== confirmPassword) {
-      alert('Mật khẩu xác nhận không khớp');
+      toast.error('Mật khẩu xác nhận không khớp');
       return;
     }
     if (password.length < 6) {
-      alert('Mật khẩu phải có ít nhất 6 ký tự');
+      toast.error('Mật khẩu phải có ít nhất 6 ký tự');
       return;
     }
     onSubmit(password);

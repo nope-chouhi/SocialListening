@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import toast from 'react-hot-toast';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -48,7 +49,7 @@ export default function RegisterPage() {
 
       if (response.ok) {
         // Registration successful, redirect to login
-        alert('Đăng ký thành công! Vui lòng đăng nhập.');
+        toast.success('Đăng ký thành công! Vui lòng đăng nhập.');
         router.push('/login');
       } else {
         const data = await response.json();

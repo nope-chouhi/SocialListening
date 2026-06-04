@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Clock, Monitor, LogOut, AlertCircle, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useDialog } from '@/components/ui/Dialog';
 
 interface Session {
   id: number;
@@ -16,6 +17,7 @@ interface Session {
 }
 
 export default function SessionsSettings() {
+  const { confirm } = useDialog();
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
   const [revoking, setRevoking] = useState<number | null>(null);
@@ -50,7 +52,12 @@ export default function SessionsSettings() {
   const revokeSession = async (sessionId: number) => {
     if (revoking) return;
 
-    if (!confirm('Bạn có chắc muốn đăng xuất phiên này?')) {
+    const ok = await confirm({
+      title: 'Đăng xuất phiên',
+      message: 'Bạn có chắc muốn đăng xuất phiên này?',
+      variant: 'warning'
+    });
+    if (!ok) {
       return;
     }
 
@@ -79,7 +86,12 @@ export default function SessionsSettings() {
   };
 
   const logoutAllOtherSessions = async () => {
-    if (!confirm('Bạn có chắc muốn đăng xuất tất cả các phiên khác?')) {
+    const ok = await confirm({
+      title: 'Đăng xuất tất cả',
+      message: 'Bạn có chắc muốn đăng xuất tất cả các phiên khác?',
+      variant: 'warning'
+    });
+    if (!ok) {
       return;
     }
 

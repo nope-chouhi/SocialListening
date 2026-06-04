@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Shield, Plus, Edit2, Trash2, X, Check, Users } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { useDialog } from '@/components/ui/Dialog';
 
 interface Role {
   id: number;
@@ -24,6 +25,7 @@ interface RoleFormData {
 }
 
 export default function RoleManagement() {
+  const { confirm } = useDialog();
   const [roles, setRoles] = useState<Role[]>([]);
   const [availablePermissions, setAvailablePermissions] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -141,7 +143,12 @@ export default function RoleManagement() {
   };
 
   const handleDelete = async (role: Role) => {
-    if (!confirm(`Bạn có chắc muốn xóa vai trò "${role.display_name}"?`)) return;
+    const ok = await confirm({
+      title: 'Xóa vai trò',
+      message: `Bạn có chắc muốn xóa vai trò "${role.display_name}"?`,
+      variant: 'danger',
+    });
+    if (!ok) return;
 
     try {
       const token = localStorage.getItem('access_token');
