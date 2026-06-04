@@ -891,4 +891,12 @@ export const discoveredSources = {
 
 export const collectors = {
   run: (projectId?: number) => api.post(`/api/collectors/run${projectId ? `?project_id=${projectId}` : ''}`),
+  runRss: async () => {
+    const response = await api.post('/api/collectors/run/rss');
+    return response.data;
+  },
+  getStatus: async () => {
+    const response = await api.get('/api/collectors/status');
+    return response.data;
+  },
 };
