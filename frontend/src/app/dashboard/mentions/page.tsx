@@ -270,6 +270,36 @@ function MentionsPageContent() {
     mentionTitle: '',
   });
   const [actionLoading, setActionLoading] = useState<Record<string, boolean>>({});
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+
+  const toggleSelect = (id: number) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === mentionsList.length && mentionsList.length > 0) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(mentionsList.map((m) => m.id)));
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    if (!window.confirm(`Xóa ${selectedIds.size} mention đã chọn?`)) return;
+    let success = 0;
+    for (const id of Array.from(selectedIds)) {
+      try { await mentionsApi.delete(id); success++; } catch {}
+    }
+    toast.success(`Đã xóa ${success}/${selectedIds.size} mentions`);
+    setSelectedIds(new Set());
+    fetchMentions();
+  };
 
   const hasSyncedUrlProject = useRef(false);
   
@@ -896,7 +926,20 @@ function MentionsPageContent() {
 
         {/* MENTIONS LIST */}
         <div className="space-y-4">
-          {searchState === 'TYPING' ? (
+          {loading && !mentionsList.length && searchState !== 'AUTO_SCAN_STARTING' && searchState !== 'AUTO_SCAN_RUNNING' ? (
+            <div className="py-4 space-y-4">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="animate-pulse flex flex-col sm:flex-row gap-4 p-5 bg-white dark:bg-[#050A15] border border-gray-200 dark:border-white/10 rounded-xl">
+                  <div className="w-12 h-12 bg-gray-200 dark:bg-white/10 rounded-xl"></div>
+                  <div className="flex-1 space-y-3">
+                    <div className="h-4 bg-gray-200 dark:bg-white/10 rounded w-3/4"></div>
+                    <div className="h-3 bg-gray-200 dark:bg-white/10 rounded w-full"></div>
+                    <div className="h-3 bg-gray-200 dark:bg-white/10 rounded w-5/6"></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : searchState === 'TYPING' ? (
             <div className="py-20 flex flex-col items-center justify-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
               <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-4" />
               <p className="text-gray-500 dark:text-gray-500">Đang nhập từ khóa...</p>
@@ -985,6 +1028,35 @@ function MentionsPageContent() {
                   </div>
                 </div>
               )}
+              {/* Bulk Action Bar */}
+              {selectedIds.size > 0 && (
+                <div className="flex items-center justify-between px-4 py-3 bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-500/30 rounded-xl mb-2">
+                  <div className="flex items-center gap-4 text-sm font-bold text-indigo-700 dark:text-indigo-300">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.size === mentionsList.length && mentionsList.length > 0}
+                      onChange={toggleSelectAll}
+                      className="w-4 h-4 rounded border-indigo-400 text-indigo-600 cursor-pointer"
+                    />
+                    <span>{selectedIds.size} đã chọn</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={handleBulkDelete}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-lg hover:bg-red-100 dark:hover:bg-red-500/20 transition-colors"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      Xóa đã chọn
+                    </button>
+                    <button
+                      onClick={() => setSelectedIds(new Set())}
+                      className="px-3 py-1.5 text-xs font-bold text-gray-500 hover:text-gray-700 transition-colors"
+                    >
+                      Bỏ chọn
+                    </button>
+                  </div>
+                </div>
+              )}
               {mentionsList.map((mention) => (
               <div key={mention.id} className="bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10 overflow-hidden group hover:border-gray-300 transition-colors">
                 <div className="p-5">
@@ -1036,6 +1108,50 @@ function MentionsPageContent() {
                         {mention.content}
                       </p>
                       
+                      {/* Media Rendering */}
+                      {(() => {
+                        const meta = mention.metadata || (mention as any).meta_data;
+                        if (!meta) return null;
+                        
+                        const mediaUrl = meta.media_url;
+                        const imageUrl = meta.image_url || meta.media_thumbnail;
+                        
+                        if (mediaUrl) {
+                          // Check if it's a video file (mp4, webm, etc)
+                          if (mediaUrl.match(/\.(mp4|webm|ogg)$/i)) {
+                            return (
+                              <div className="mt-3 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-black max-w-md">
+                                <video controls className="w-full h-auto max-h-64 object-cover" poster={imageUrl}>
+                                  <source src={mediaUrl} type="video/mp4" />
+                                  Trình duyệt không hỗ trợ video.
+                                </video>
+                              </div>
+                            );
+                          }
+                          // Otherwise assume audio or other media, provide a link or iframe if needed.
+                          // VnE GO mostly uses audio or video.
+                          if (mediaUrl.match(/\.(mp3|wav|m4a)$/i)) {
+                             return (
+                               <div className="mt-3 p-3 rounded-lg border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-white/5 max-w-md">
+                                 <audio controls className="w-full h-10">
+                                   <source src={mediaUrl} type="audio/mpeg" />
+                                 </audio>
+                               </div>
+                             );
+                          }
+                        }
+                        
+                        if (imageUrl) {
+                          return (
+                            <div className="mt-3 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-800 max-w-sm">
+                              <img src={imageUrl} alt="Media thumbnail" className="w-full h-auto max-h-48 object-cover" loading="lazy" />
+                            </div>
+                          );
+                        }
+                        
+                        return null;
+                      })()}
+                      
                       {/* Hashtags Mock */}
                       <div className="flex flex-wrap items-center gap-2 mt-3">
                         {(mention.matched_keywords || []).map((kw, i) => (
@@ -1086,7 +1202,12 @@ function MentionsPageContent() {
                        <Eye className="w-3.5 h-3.5" /> Mute site
                      </button>
                    </div>
-                   <input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                   <input
+                      type="checkbox"
+                      checked={selectedIds.has(mention.id)}
+                      onChange={() => toggleSelect(mention.id)}
+                      className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                    />
                 </div>
                </div>
             ))

@@ -10,6 +10,7 @@ import { canAccessAdmin, type User } from '@/lib/permissions';
 import { ProjectProvider, useProject } from '@/contexts/ProjectContext';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import toast, { Toaster } from 'react-hot-toast';
+import { withTimeout } from '@/lib/utils/timeout';
 import { 
   LayoutDashboard, 
   Globe, 
@@ -121,7 +122,7 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges }: any) {
                 </p>
                 <p className="text-xs text-zinc-400 flex items-center gap-1.5 mt-0.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                  &gt;100 New mentions
+                  {activeProject ? `${badges.unreviewed_mentions > 0 ? `${badges.unreviewed_mentions} mentions chưa xem` : 'Không có mention mới'}` : 'Chọn project để xem'}
                 </p>
               </div>
               <div className="flex items-center gap-3 text-zinc-400">
@@ -282,7 +283,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
       try {
         const token = localStorage.getItem('access_token');
         if (!token) return router.push('/login');
-        const userData = await auth.getCurrentUser();
+        const userData = await withTimeout(auth.getCurrentUser(), 8000);
         setUser(userData);
         setLoading(false);
       } catch (error: any) {
@@ -297,7 +298,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
       const fetchBadges = async () => {
         try {
           const { dashboard } = await import('@/lib/api');
-          setBadges(await dashboard.sidebarBadges());
+          setBadges(await withTimeout(dashboard.sidebarBadges(), 8000));
         } catch (error) {}
       };
       fetchBadges();
@@ -306,10 +307,8 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
     }
   }, [user]);
 
-  useEffect(() => {
-  }, []);
-
-  if (loading) return <LoadingSpinner message="Đang khởi động..." />;
+  // Remove blocking loader to render app shell immediately
+  // if (loading) return <LoadingSpinner message="Đang khởi động..." />;
 
   return (
     <div className="min-h-screen bg-[#F4F5F7] dark:bg-[#000511]">
@@ -374,7 +373,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
             
             <div className="relative group">
               <div className="w-8 h-8 rounded-full bg-slate-800 text-white flex items-center justify-center text-xs font-bold ml-2 cursor-pointer shadow-sm hover:ring-2 hover:ring-indigo-500 transition-all">
-                {(user?.full_name || user?.email || 'K')[0].toUpperCase()}
+                {loading ? '...' : (user?.full_name || user?.email || 'K')[0].toUpperCase()}
               </div>
               <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-[#1E293B] rounded-lg shadow-xl border border-gray-100 dark:border-gray-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
                 <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">

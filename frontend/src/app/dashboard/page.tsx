@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { dashboard, auth } from '@/lib/api';
 import toast, { Toaster } from 'react-hot-toast';
+import { withTimeout } from '@/lib/utils/timeout';
 
 import DashboardKpiCard from '@/components/dashboard/DashboardKpiCard';
 import TrendChart from '@/components/dashboard/TrendChart';
@@ -31,78 +32,71 @@ export default function DashboardPage() {
   const [timeRange, setTimeRange] = useState('7d');
 
   useEffect(() => {
-    fetchUserRole();
-    fetchDashboardSummary();
-  }, [activeProject?.id]);
+    // Try to load cached summary if available
+    const cacheKey = `dash_summary_${activeProject?.id || 'all'}`;
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached);
+        if (Date.now() - parsed.timestamp < 30000) {
+          setMetrics(parsed.data);
+          setLoadingMetrics(false);
+        }
+      } catch (e) {}
+    }
 
-  useEffect(() => {
-    fetchChartData();
-  }, [timeRange, activeProject?.id]);
+    fetchUserRole();
+    fetchDashboardData();
+  }, [activeProject?.id, timeRange]);
 
   const fetchUserRole = async () => {
     try {
-      const user = await auth.getCurrentUser();
+      const user = await withTimeout(auth.getCurrentUser(), 5000);
       if (user && user.role) {
         setUserRole(user.role);
       }
-    } catch (error) {
-      console.error('Failed to fetch user role', error);
-    }
+    } catch (error) {}
   };
 
-  const fetchDashboardSummary = async () => {
+  const fetchDashboardData = async () => {
     try {
-      setLoadingMetrics(true);
-      const data = await dashboard.summary(activeProject?.id);
-      setMetrics(data);
-    } catch (error: any) {
-      console.error('Error fetching dashboard summary:', error);
-      // Don't toast for 401 — global interceptor handles redirect
-      if (error?.response?.status !== 401) {
-        toast.error('Lỗi khi tải dữ liệu tổng quan');
+      if (!metrics) setLoadingMetrics(true);
+      if (!trends) setLoadingCharts(true);
+
+      const [summaryRes, trendsRes, sentimentRes, keywordsRes] = await Promise.allSettled([
+        withTimeout(dashboard.summary(activeProject?.id), 10000),
+        withTimeout(dashboard.trends(timeRange, activeProject?.id), 10000),
+        withTimeout(dashboard.sentimentSummary(timeRange, activeProject?.id), 10000),
+        withTimeout(dashboard.hotKeywords(timeRange === '30d' ? '7d' : 'today', activeProject?.id), 10000),
+      ]);
+
+      if (summaryRes.status === 'fulfilled') {
+        setMetrics(summaryRes.value);
+        localStorage.setItem(`dash_summary_${activeProject?.id || 'all'}`, JSON.stringify({
+          timestamp: Date.now(),
+          data: summaryRes.value
+        }));
+      } else {
+        toast.error('Không tải được dữ liệu tổng quan');
       }
+
+      if (trendsRes.status === 'fulfilled') setTrends(trendsRes.value);
+      if (sentimentRes.status === 'fulfilled') setSentiment(sentimentRes.value);
+      if (keywordsRes.status === 'fulfilled') setHotKeywords(keywordsRes.value);
+      
+    } catch (error: any) {
+      console.error('Lỗi khi tải dữ liệu dashboard', error);
     } finally {
       setLoadingMetrics(false);
-    }
-  };
-
-  const fetchChartData = async () => {
-    try {
-      setLoadingCharts(true);
-      const [trendsData, sentimentData, keywordsData] = await Promise.all([
-        dashboard.trends(timeRange, activeProject?.id),
-        dashboard.sentimentSummary(timeRange, activeProject?.id),
-        dashboard.hotKeywords(timeRange === '30d' ? '7d' : 'today', activeProject?.id),
-      ]);
-      setTrends(trendsData);
-      setSentiment(sentimentData);
-      setHotKeywords(keywordsData);
-    } catch (error: any) {
-      console.error('Error fetching chart data:', error);
-      // Don't toast for 401 — global interceptor handles redirect
-      if (error?.response?.status !== 401) {
-        toast.error('Lỗi khi tải dữ liệu biểu đồ');
-      }
-    } finally {
       setLoadingCharts(false);
     }
   };
 
   const handleRefresh = () => {
-    fetchDashboardSummary();
-    fetchChartData();
+    fetchDashboardData();
   };
 
-  if (loadingMetrics && !metrics) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-lg text-gray-500 flex items-center">
-          <RefreshCcw className="w-5 h-5 mr-2 animate-spin" />
-          Đang tải dữ liệu...
-        </div>
-      </div>
-    );
-  }
+  // Removed blocking loading spinner to render shell immediately
 
   return (
     <div className="space-y-6">
@@ -160,7 +154,22 @@ export default function DashboardPage() {
             <span className="text-[10px] font-black tracking-[0.1em] uppercase bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 px-3 py-1.5 rounded-lg shadow-sm">Top 10</span>
           </div>
           <div className="p-4 overflow-y-auto flex-1 space-y-3 custom-scrollbar">
-            {!metrics?.latest_mentions || metrics.latest_mentions.length === 0 ? (
+            {loadingMetrics ? (
+              <div className="space-y-4">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="animate-pulse flex space-x-4 p-4 border border-white/5 rounded-lg bg-white/5">
+                    <div className="rounded-full bg-white/10 h-10 w-10"></div>
+                    <div className="flex-1 space-y-3 py-1">
+                      <div className="h-2 bg-white/10 rounded w-3/4"></div>
+                      <div className="space-y-2">
+                        <div className="h-2 bg-white/10 rounded"></div>
+                        <div className="h-2 bg-white/10 rounded w-5/6"></div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : !metrics?.latest_mentions || metrics.latest_mentions.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-zinc-400 font-medium tracking-wide">
                 <div className="w-16 h-16 mb-4 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 shadow-lg shadow-black/20">
                   <FileText className="w-8 h-8 text-zinc-500" />
@@ -174,7 +183,7 @@ export default function DashboardPage() {
                   key={mention.id} 
                   mention={mention} 
                   userRole={userRole}
-                  onActionComplete={fetchDashboardSummary} 
+                  onActionComplete={fetchDashboardData} 
                 />
               ))
             )}
@@ -188,7 +197,22 @@ export default function DashboardPage() {
             <span className="text-[10px] font-black tracking-[0.1em] uppercase bg-rose-500/20 border border-rose-500/30 text-rose-300 px-3 py-1.5 rounded-lg shadow-sm animate-pulse">Top 10</span>
           </div>
           <div className="p-4 overflow-y-auto flex-1 space-y-3 custom-scrollbar">
-            {!metrics?.latest_alerts || metrics.latest_alerts.length === 0 ? (
+            {loadingMetrics ? (
+              <div className="space-y-4">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="animate-pulse flex space-x-4 p-4 border border-white/5 rounded-lg bg-white/5">
+                    <div className="rounded-full bg-white/10 h-10 w-10"></div>
+                    <div className="flex-1 space-y-3 py-1">
+                      <div className="h-2 bg-white/10 rounded w-3/4"></div>
+                      <div className="space-y-2">
+                        <div className="h-2 bg-white/10 rounded"></div>
+                        <div className="h-2 bg-white/10 rounded w-5/6"></div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : !metrics?.latest_alerts || metrics.latest_alerts.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-zinc-400 font-medium tracking-wide">
                 <div className="w-16 h-16 mb-4 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 shadow-lg shadow-black/20">
                   <AlertTriangle className="w-8 h-8 text-zinc-500" />
@@ -201,7 +225,7 @@ export default function DashboardPage() {
                   key={alert.id} 
                   alert={alert} 
                   userRole={userRole}
-                  onActionComplete={fetchDashboardSummary} 
+                  onActionComplete={fetchDashboardData} 
                 />
               ))
             )}

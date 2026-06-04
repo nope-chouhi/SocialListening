@@ -19,6 +19,9 @@ interface Source {
   name: string;
   url: string;
   source_type: string;
+  category?: string;
+  platform?: string;
+  domain?: string;
   is_active: boolean;
   crawl_frequency: string;
   crawl_time: string | null;
@@ -577,8 +580,13 @@ export default function SourcesPage() {
                           }
                         })()}
                       </div>
-                      <div className="flex items-center gap-2 mb-1">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
                         <p className="text-[11px] font-medium tracking-wider uppercase text-gray-500">{getSourceTypeText(source.source_type)}</p>
+                        {source.category && (
+                          <span className="text-[10px] font-medium tracking-wider uppercase text-indigo-400 bg-indigo-500/10 px-1.5 py-0.5 rounded border border-indigo-500/20">
+                            {source.category}
+                          </span>
+                        )}
                         {(() => {
                           if (isUnsupported || isTest) return null;
                           

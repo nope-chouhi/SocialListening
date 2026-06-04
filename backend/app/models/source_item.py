@@ -23,6 +23,11 @@ class SourceItem(Base):
     published_at = Column(DateTime(timezone=True), index=True, nullable=True)
     collected_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
     
+    guid = Column(String(500), index=True, nullable=True)
+    image_url = Column(Text, nullable=True)
+    media_url = Column(Text, nullable=True)
+    media_thumbnail = Column(Text, nullable=True)
+    
     content_hash = Column(String(64), unique=True, index=True)
     language = Column(String(50), nullable=True)
     country = Column(String(50), nullable=True)

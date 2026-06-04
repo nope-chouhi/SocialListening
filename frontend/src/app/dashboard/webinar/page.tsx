@@ -27,7 +27,18 @@ export default function WebinarPage() {
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 relative z-10">
-          <button className="px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold transition-all shadow-[0_0_30px_rgba(37,99,235,0.4)] flex items-center justify-center gap-2 text-lg">
+          <button
+            onClick={() => {
+              const email = prompt('Nhập email để đăng ký:');
+              if (email && email.includes('@')) {
+                localStorage.setItem('webinar_registered', email);
+                alert(`Đã đăng ký thành công! Link Zoom sẽ được gửi đến: ${email}`);
+              } else if (email !== null) {
+                alert('Email không hợp lệ');
+              }
+            }}
+            className="px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold transition-all shadow-[0_0_30px_rgba(37,99,235,0.4)] flex items-center justify-center gap-2 text-lg"
+          >
             <CheckCircle2 className="w-5 h-5" />
             Đăng ký giữ chỗ ngay
           </button>

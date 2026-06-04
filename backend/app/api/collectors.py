@@ -78,73 +78,13 @@ def match_and_create_mentions(db: Session, source_item: SourceItem, active_keywo
     return mentions_created
 
 # --- RSS COLLECTOR ---
-def run_rss_collector(project_id: Optional[int] = None) -> Dict[str, Any]:
+def run_rss_collector_api(project_id: Optional[int] = None) -> Dict[str, Any]:
+    from app.services.rss_collector import run_rss_collector as service_run_rss
     db = SessionLocal()
-    result = {"status": "NO_SOURCES", "source_items_created": 0, "mentions_created": 0, "duplicates_skipped": 0, "errors": []}
     try:
-        query = select(Source).where(and_(Source.source_type == "rss", Source.is_active == True))
-        sources = db.execute(query).scalars().all()
-        if not sources:
-            return result
-            
-        result["status"] = "COMPLETED"
-        active_keywords = db.execute(select(Keyword).where(Keyword.is_active == True)).scalars().all()
-        
-        import feedparser
-        for src in sources:
-            try:
-                feed = feedparser.parse(src.url)
-                if getattr(feed, 'bozo', False) and not feed.entries:
-                    continue
-                for entry in feed.entries[:20]:
-                    url = entry.get('link', getattr(src, 'url', ''))
-                    title = entry.get('title', '')
-                    content = entry.get('summary', '') or entry.get('description', '')
-                    content_hash = hashlib.sha256(f"{url}_{title}".encode()).hexdigest()
-                    
-                    # Deduplicate in source_items
-                    existing_item = db.execute(select(SourceItem).where(SourceItem.content_hash == content_hash)).scalar_one_or_none()
-                    if existing_item:
-                        result["duplicates_skipped"] += 1
-                        continue
-                        
-                    from urllib.parse import urlparse
-                    domain = urlparse(url).netloc
-                    
-                    item = SourceItem(
-                        source_type="rss",
-                        platform="rss",
-                        source_id=src.id,
-                        source_name=src.name,
-                        url=url,
-                        normalized_url=url,
-                        domain=domain,
-                        title=title,
-                        content=content,
-                        snippet=content[:1000],
-                        author=entry.get('author', ''),
-                        published_at=datetime.now(timezone.utc),
-                        content_hash=content_hash,
-                        status="collected"
-                    )
-                    db.add(item)
-                    db.flush()
-                    result["source_items_created"] += 1
-                    
-                    # Match
-                    m_count = match_and_create_mentions(db, item, active_keywords, project_id)
-                    result["mentions_created"] += m_count
-                    
-            except Exception as e:
-                result["errors"].append(f"RSS {src.url}: {e}")
-                
-        db.commit()
-    except Exception as e:
-        result["status"] = "FAILED"
-        result["errors"].append(str(e))
+        return service_run_rss(db)
     finally:
         db.close()
-    return result
 
 # --- SERPAPI COLLECTOR ---
 def run_serpapi_collector(project_id: Optional[int] = None) -> Dict[str, Any]:
@@ -274,7 +214,7 @@ def run_youtube_collector(project_id: Optional[int] = None) -> Dict[str, Any]:
 # --- ENDPOINTS ---
 @router.post("/run")
 def run_all_collectors(project_id: Optional[int] = Query(None), current_user: User = Depends(get_current_active_user)):
-    rss_res = run_rss_collector(project_id)
+    rss_res = run_rss_collector_api(project_id)
     serp_res = run_serpapi_collector(project_id)
     yt_res = run_youtube_collector(project_id)
     
@@ -295,7 +235,7 @@ def run_all_collectors(project_id: Optional[int] = Query(None), current_user: Us
 
 @router.post("/run/rss")
 def run_rss(project_id: Optional[int] = Query(None), current_user: User = Depends(get_current_active_user)):
-    return run_rss_collector(project_id)
+    return run_rss_collector_api(project_id)
 
 @router.post("/run/serpapi")
 def run_serpapi(project_id: Optional[int] = Query(None), current_user: User = Depends(get_current_active_user)):

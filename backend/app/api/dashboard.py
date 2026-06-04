@@ -664,7 +664,13 @@ def get_dashboard_overview(
     mentions_7d = db.execute(apply_tenant_filter(select(func.count(Mention.id)), Mention, current_user).where(and_(Mention.project_id == project_id, Mention.collected_at >= d7_start))).scalar() or 0
     mentions_30d = db.execute(apply_tenant_filter(select(func.count(Mention.id)), Mention, current_user).where(and_(Mention.project_id == project_id, Mention.collected_at >= d30_start))).scalar() or 0
     
-    last_job = db.execute(select(CrawlJob).where(and_(CrawlJob.status == "completed", CrawlJob.meta_data.op('->>')('project_id') == str(project_id))).order_by(CrawlJob.completed_at.desc())).scalar_one_or_none()
+    # Fetch recent jobs to avoid full table scan on JSON field
+    recent_all_jobs = db.execute(
+        select(CrawlJob).order_by(CrawlJob.id.desc()).limit(200)
+    ).scalars().all()
+    
+    project_jobs = [j for j in recent_all_jobs if j.meta_data and str(j.meta_data.get('project_id')) == str(project_id)]
+    last_job = next((j for j in project_jobs if j.status == 'completed'), None)
     new_mentions_last_scan = last_job.mentions_found if last_job else 0
     
     # Actually wait, source_items_total doesn't have project_id, it's global
@@ -708,14 +714,11 @@ def get_dashboard_overview(
         "twitter": {"status": "CONFIG_REQUIRED"}
     }
     
-    # Recent mentions
     recent_mentions = db.execute(
         apply_tenant_filter(select(Mention), Mention, current_user).where(Mention.project_id == project_id).order_by(Mention.collected_at.desc()).limit(5)
     ).scalars().all()
     
-    recent_jobs = db.execute(
-        select(CrawlJob).filter(CrawlJob.meta_data.op('->>')('project_id') == str(project_id)).order_by(CrawlJob.created_at.desc()).limit(5)
-    ).scalars().all()
+    recent_jobs_limited = project_jobs[:5]
     
     return {
         "project": {"id": project.id, "name": project.name},
@@ -746,7 +749,7 @@ def get_dashboard_overview(
                 "started_at": j.started_at.isoformat() if j.started_at else None,
                 "completed_at": j.completed_at.isoformat() if j.completed_at else None,
                 "mentions_found": j.mentions_found
-            } for j in recent_jobs
+            } for j in recent_jobs_limited
         ],
         "alerts": []
     }

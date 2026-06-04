@@ -50,6 +50,11 @@ class Source(Base):
     source_type = Column(SQLEnum(SourceType, values_callable=lambda x: [e.value for e in x]), nullable=False, index=True)
     url = Column(Text, nullable=False)
     
+    # Discovery Info
+    platform = Column(String(100), index=True)
+    category = Column(String(100), index=True)
+    domain = Column(String(500), index=True)
+    
     # Metadata
     platform_id = Column(String(255))  # Facebook ID, YouTube channel ID, etc.
     meta_data = Column(JSON)  # Additional platform-specific data (renamed from metadata)

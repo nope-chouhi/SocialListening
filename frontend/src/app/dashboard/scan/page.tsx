@@ -509,6 +509,24 @@ export default function ScanPage() {
             <RefreshCw className={`w-3.5 h-3.5 ${scanning ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-500'}`} />
             Đồng bộ
           </button>
+          <button
+            onClick={async () => {
+              try {
+                const toastId = toast.loading('Đang khởi chạy luồng thu thập RSS...');
+                const { collectors } = await import('@/lib/api');
+                await collectors.runRss();
+                toast.success('Đã khởi chạy thu thập RSS thành công!', { id: toastId });
+                fetchWorkerStatus();
+              } catch (error) {
+                const { getErrorMessage } = await import('@/lib/api');
+                toast.error(`Lỗi: ${getErrorMessage(error)}`);
+              }
+            }}
+            className="group relative flex items-center gap-2 px-4 py-2 text-xs font-medium text-orange-400 bg-gray-900 border border-orange-500/30 rounded-lg transition-all hover:bg-orange-900 hover:border-orange-400"
+          >
+            <Rss className="w-3.5 h-3.5" />
+            Cập nhật RSS
+          </button>
         </div>
       </div>
 
