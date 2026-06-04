@@ -900,3 +900,43 @@ export const collectors = {
     return response.data;
   },
 };
+
+// ─── Saved Filters ───────────────────────────────────────────────────────────
+export const savedFilters = {
+  list: async (projectId?: number) => {
+    const params: any = {};
+    if (projectId) params.project_id = projectId;
+    const response = await api.get('/api/saved-filters', { params });
+    return response.data;
+  },
+  get: async (id: number) => {
+    const response = await api.get(`/api/saved-filters/${id}`);
+    return response.data;
+  },
+  create: async (data: any, projectId?: number) => {
+    const params: any = {};
+    if (projectId) params.project_id = projectId;
+    const response = await api.post('/api/saved-filters', data, { params });
+    return response.data;
+  },
+  update: async (id: number, data: any) => {
+    const response = await api.put(`/api/saved-filters/${id}`, data);
+    return response.data;
+  },
+  delete: async (id: number) => {
+    const response = await api.delete(`/api/saved-filters/${id}`);
+    return response.data;
+  },
+};
+
+// ─── Crawl ───────────────────────────────────────────────────────────────────
+export const crawl = {
+  manualScan: async (data: any) => {
+    const response = await api.post('/api/crawl/manual-scan', data);
+    return response.data;
+  },
+  getJob: async (jobId: string) => {
+    const response = await api.get(`/api/crawl/jobs/${jobId}`);
+    return response.data;
+  }
+};
