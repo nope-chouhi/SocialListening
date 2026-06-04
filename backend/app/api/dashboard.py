@@ -106,20 +106,25 @@ def get_dashboard_summary(
             latest_mentions_query = latest_mentions_query.order_by(Mention.collected_at.desc()).limit(10)
             latest_mentions = db.execute(latest_mentions_query).scalars().all()
             
+            # Pre-fetch analysis and sources to avoid N+1
+            mention_ids = [m.id for m in latest_mentions]
+            source_ids = list(set([m.source_id for m in latest_mentions if m.source_id]))
+            
+            analyses_dict = {}
+            if mention_ids:
+                analyses = db.execute(select(AIAnalysis).where(AIAnalysis.mention_id.in_(mention_ids))).scalars().all()
+                for a in analyses:
+                    analyses_dict[a.mention_id] = a
+                    
+            sources_dict = {}
+            if source_ids:
+                sources = db.execute(select(Source).where(Source.id.in_(source_ids))).scalars().all()
+                for s in sources:
+                    sources_dict[s.id] = s
+            
             for m in latest_mentions:
-                try:
-                    analysis = db.execute(
-                        select(AIAnalysis).where(AIAnalysis.mention_id == m.id)
-                    ).scalar_one_or_none()
-                except Exception:
-                    analysis = None
-                
-                try:
-                    source = db.execute(
-                        apply_tenant_filter(select(Source), Source, current_user).where(Source.id == m.source_id)
-                    ).scalar_one_or_none()
-                except Exception:
-                    source = None
+                analysis = analyses_dict.get(m.id)
+                source = sources_dict.get(m.source_id)
                 
                 latest_mentions_data.append({
                     "id": m.id,
@@ -218,20 +223,26 @@ def get_latest_mentions(
         latest_mentions = db.execute(latest_mentions_query).scalars().all()
         
         latest_mentions_data = []
+        
+        # Pre-fetch analysis and sources to avoid N+1
+        mention_ids = [m.id for m in latest_mentions]
+        source_ids = list(set([m.source_id for m in latest_mentions if m.source_id]))
+        
+        analyses_dict = {}
+        if mention_ids:
+            analyses = db.execute(select(AIAnalysis).where(AIAnalysis.mention_id.in_(mention_ids))).scalars().all()
+            for a in analyses:
+                analyses_dict[a.mention_id] = a
+                
+        sources_dict = {}
+        if source_ids:
+            sources = db.execute(select(Source).where(Source.id.in_(source_ids))).scalars().all()
+            for s in sources:
+                sources_dict[s.id] = s
+                
         for m in latest_mentions:
-            try:
-                analysis = db.execute(
-                    select(AIAnalysis).where(AIAnalysis.mention_id == m.id)
-                ).scalar_one_or_none()
-            except Exception:
-                analysis = None
-            
-            try:
-                source = db.execute(
-                    apply_tenant_filter(select(Source), Source, current_user).where(Source.id == m.source_id)
-                ).scalar_one_or_none()
-            except Exception:
-                source = None
+            analysis = analyses_dict.get(m.id)
+            source = sources_dict.get(m.source_id)
             
             latest_mentions_data.append({
                 "id": m.id,
@@ -316,83 +327,87 @@ def get_dashboard_trends(
             start_date = now - timedelta(days=30)
             days = 30
         
-        items = []
-        
-        for i in range(days if days <= 30 else 30):
-            if time_range == "today":
-                day_start = start_date
-                day_end = now
-            else:
-                day_start = start_date + timedelta(days=i)
-                day_end = day_start + timedelta(days=1)
-            
+        items_dict = {}
+        for i in range(days):
+            day_start = start_date + timedelta(days=i)
             date_str = day_start.strftime("%Y-%m-%d")
-            
-            # Total mentions for this day
-            try:
-                base_query = apply_tenant_filter(select(func.count(Mention.id)), Mention, current_user).where(
-                    and_(
-                        Mention.collected_at >= day_start,
-                        Mention.collected_at < day_end
-                    )
-                )
-                if project_id:
-                    base_query = base_query.where(Mention.project_id == project_id)
-                total_mentions = db.execute(base_query).scalar() or 0
-            except Exception:
-                total_mentions = 0
-            
-            try:
-                from app.models.mention import SentimentScore
-                query = select(func.count(AIAnalysis.id))
-                if project_id:
-                    query = query.join(Mention, AIAnalysis.mention_id == Mention.id).where(Mention.project_id == project_id)
-                
-                negative_mentions = db.execute(
-                    query.where(
-                        and_(
-                            AIAnalysis.analyzed_at >= day_start,
-                            AIAnalysis.analyzed_at < day_end,
-                            AIAnalysis.sentiment.in_([SentimentScore.NEGATIVE_LOW, SentimentScore.NEGATIVE_MEDIUM, SentimentScore.NEGATIVE_HIGH])
-                        )
-                    )
-                ).scalar() or 0
-            except Exception:
-                negative_mentions = 0
-            
-            # Alerts for this day
-            try:
-                alerts_count = db.execute(
-                    apply_tenant_filter(select(func.count(Alert.id)), Alert, current_user).where(
-                        and_(
-                            Alert.created_at >= day_start,
-                            Alert.created_at < day_end
-                        )
-                    )
-                ).scalar() or 0
-            except Exception:
-                alerts_count = 0
-            
-            # Incidents for this day
-            try:
-                incidents_count = db.execute(
-                    apply_tenant_filter(select(func.count(Incident.id)), Incident, current_user).where(
-                        and_(
-                            Incident.created_at >= day_start,
-                            Incident.created_at < day_end
-                        )
-                    )
-                ).scalar() or 0
-            except Exception:
-                incidents_count = 0
-            
-            items.append({
+            items_dict[date_str] = {
                 "date": date_str,
-                "total_mentions": total_mentions,
-                "negative_mentions": negative_mentions,
-                "alerts": alerts_count,
-                "incidents": incidents_count
-            })
+                "total_mentions": 0,
+                "negative_mentions": 0,
+                "alerts": 0,
+                "incidents": 0
+            }
+
+        # 1. Total mentions by date
+        try:
+            date_col = cast(Mention.collected_at, Date)
+            query = select(date_col.label("d"), func.count(Mention.id))
+            query = apply_tenant_filter(query, Mention, current_user)
+            query = query.where(Mention.collected_at >= start_date)
+            if project_id:
+                query = query.where(Mention.project_id == project_id)
+            query = query.group_by(date_col)
+            
+            for row in db.execute(query):
+                d_str = row.d.strftime("%Y-%m-%d") if hasattr(row.d, 'strftime') else str(row.d)
+                if d_str in items_dict:
+                    items_dict[d_str]["total_mentions"] = row[1]
+        except Exception as e:
+            logger.error(f"Error mentions trend: {e}")
+
+        # 2. Negative mentions by date
+        try:
+            from app.models.mention import SentimentScore
+            date_col = cast(AIAnalysis.analyzed_at, Date)
+            query = select(date_col.label("d"), func.count(AIAnalysis.id))
+            if project_id:
+                query = query.join(Mention, AIAnalysis.mention_id == Mention.id).where(Mention.project_id == project_id)
+            
+            query = query.where(
+                and_(
+                    AIAnalysis.analyzed_at >= start_date,
+                    AIAnalysis.sentiment.in_([SentimentScore.NEGATIVE_LOW, SentimentScore.NEGATIVE_MEDIUM, SentimentScore.NEGATIVE_HIGH])
+                )
+            ).group_by(date_col)
+            
+            for row in db.execute(query):
+                d_str = row.d.strftime("%Y-%m-%d") if hasattr(row.d, 'strftime') else str(row.d)
+                if d_str in items_dict:
+                    items_dict[d_str]["negative_mentions"] = row[1]
+        except Exception as e:
+            logger.error(f"Error negative mentions trend: {e}")
+
+        # 3. Alerts by date
+        try:
+            date_col = cast(Alert.created_at, Date)
+            query = select(date_col.label("d"), func.count(Alert.id))
+            query = apply_tenant_filter(query, Alert, current_user)
+            query = query.where(Alert.created_at >= start_date).group_by(date_col)
+            
+            for row in db.execute(query):
+                d_str = row.d.strftime("%Y-%m-%d") if hasattr(row.d, 'strftime') else str(row.d)
+                if d_str in items_dict:
+                    items_dict[d_str]["alerts"] = row[1]
+        except Exception as e:
+            logger.error(f"Error alerts trend: {e}")
+
+        # 4. Incidents by date
+        try:
+            date_col = cast(Incident.created_at, Date)
+            query = select(date_col.label("d"), func.count(Incident.id))
+            query = apply_tenant_filter(query, Incident, current_user)
+            query = query.where(Incident.created_at >= start_date).group_by(date_col)
+            
+            for row in db.execute(query):
+                d_str = row.d.strftime("%Y-%m-%d") if hasattr(row.d, 'strftime') else str(row.d)
+                if d_str in items_dict:
+                    items_dict[d_str]["incidents"] = row[1]
+        except Exception as e:
+            logger.error(f"Error incidents trend: {e}")
+
+        items = list(items_dict.values())
+        items.sort(key=lambda x: x["date"])
             
         return {
             "range": time_range,
@@ -540,6 +555,22 @@ def get_hot_keywords(
         
         # Count keyword occurrences
         keyword_counts = {}
+        
+        # Pre-fetch AIAnalysis for all recent mentions to prevent N+1 queries in loops
+        analysis_dict = {}
+        if recent_mentions:
+            mention_ids = [m.id for m in recent_mentions]
+            # Chunking list to avoid very large IN clauses
+            chunk_size = 1000
+            for i in range(0, len(mention_ids), chunk_size):
+                chunk = mention_ids[i:i + chunk_size]
+                try:
+                    analyses = db.execute(select(AIAnalysis).where(AIAnalysis.mention_id.in_(chunk))).scalars().all()
+                    for a in analyses:
+                        analysis_dict[a.mention_id] = a
+                except Exception as e:
+                    logger.error(f"Error fetching AI analysis batch: {e}")
+
         for kw in all_keywords:
             count = 0
             negative_count = 0
@@ -559,18 +590,14 @@ def get_hot_keywords(
                         
                 if matched:
                     count += 1
-                    # Check if this mention has negative analysis
-                    try:
-                        analysis = db.execute(
-                            select(AIAnalysis).where(AIAnalysis.mention_id == m.id)
-                        ).scalar_one_or_none()
-                    except Exception:
-                        analysis = None
+                    # Use pre-fetched analysis
+                    analysis = analysis_dict.get(m.id)
                     if analysis:
                         sentiment_val = analysis.sentiment.value if hasattr(analysis.sentiment, 'value') else analysis.sentiment
                         if sentiment_val in ['negative_low', 'negative_medium', 'negative_high', 'negative']:
                             negative_count += 1
-                        risk_scores.append(analysis.risk_score)
+                        if analysis.risk_score is not None:
+                            risk_scores.append(analysis.risk_score)
             
             if count > 0:
                 keyword_counts[kw.keyword] = {
