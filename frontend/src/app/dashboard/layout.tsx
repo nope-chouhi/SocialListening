@@ -66,9 +66,6 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges }: any) {
 
   const systemNav = [
     { name: 'Services', href: '/dashboard/services', icon: Briefcase },
-    { name: 'Organization', href: '/dashboard/organization', icon: Users },
-    { name: 'Global Admin', href: '/dashboard/admin', icon: Award, adminOnly: true },
-    { name: 'System Settings', href: '/dashboard/settings', icon: Settings },
   ];
 
   const handleLogout = () => {
