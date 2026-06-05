@@ -33,6 +33,41 @@ def send_email_notification(
     env_smtp_from_email = os.getenv("SMTP_FROM_EMAIL", "").strip() or env_smtp_user
     env_smtp_from_name = os.getenv("SMTP_FROM_NAME", "").strip()
     
+    # Check for Resend API Key
+    resend_api_key = os.getenv("RESEND_API_KEY", "re_BVeXv8Pn_DnJk8g6m2uNrQ2oSCohi8EQy").strip()
+    if resend_api_key:
+        try:
+            headers = {
+                "Authorization": f"Bearer {resend_api_key}",
+                "Content-Type": "application/json"
+            }
+            from_email_resend = os.getenv("RESEND_FROM_EMAIL", "onboarding@resend.dev").strip()
+            
+            data = {
+                "from": f"Social Listening Platform <{from_email_resend}>",
+                "to": [to_email],
+                "subject": subject,
+                "html": body_html
+            }
+            if body_text:
+                data["text"] = body_text
+
+            response = requests.post("https://api.resend.com/emails", headers=headers, json=data, timeout=15)
+            
+            if not response.ok:
+                error_data = response.json()
+                error_msg = error_data.get("message", response.text)
+                print(f"[Email-Resend API Error] {error_msg}")
+                return {"success": False, "message": f"Resend API Error: {error_msg}"}
+                
+            print(f"[Email-Resend] ✅ Sent to {to_email}: {subject}")
+            return {"success": True, "message": "Email sent successfully via Resend API"}
+            
+        except Exception as e:
+            print(f"[Email-Resend Exception] {e}")
+            return {"success": False, "message": f"Resend HTTP Error: {str(e)}"}
+    
+    # Fallback to SMTP
     # Get email settings
     settings = db.execute(
         select(EmailSettings).limit(1)
