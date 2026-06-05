@@ -168,8 +168,8 @@ export const auth = {
 // ─── Dashboard ────────────────────────────────────────────────────────────────
 export const dashboard = {
   overview: async (projectId: number): Promise<any> => { const response = await api.get('/api/dashboard/overview', { params: { project_id: projectId } }); return response.data; },
-  summary: async (projectId?: number) => {
-    const params: any = {};
+  summary: async (range: string = '30d', projectId?: number) => {
+    const params: any = { range };
     if (projectId) params.project_id = projectId;
     const response = await api.get('/api/dashboard/summary', { params });
     return response.data;
@@ -904,4 +904,5 @@ export const collectors = {
     return response.data;
   },
 };
+
 

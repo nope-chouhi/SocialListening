@@ -68,7 +68,7 @@ export default function DashboardPage() {
       if (!trends) setLoadingCharts(true);
 
       const [summaryRes, trendsRes, sentimentRes, keywordsRes] = await Promise.allSettled([
-        withTimeout(dashboard.summary(activeProject?.id), 15000),
+        withTimeout(dashboard.summary(timeRange, activeProject?.id), 15000),
         withTimeout(dashboard.trends(timeRange, activeProject?.id), 15000),
         withTimeout(dashboard.sentimentSummary(timeRange, activeProject?.id), 15000),
         withTimeout(dashboard.hotKeywords(timeRange === '30d' ? '7d' : 'today', activeProject?.id), 15000),
@@ -255,3 +255,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+

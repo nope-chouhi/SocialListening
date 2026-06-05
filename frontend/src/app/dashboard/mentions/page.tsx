@@ -572,20 +572,32 @@ function MentionsPageContent() {
 
   const fetchChartData = async () => {
     setChartLoading(true);
-    // Mock data for Brand24 theme
-    setTimeout(() => {
-      setChartData([
-        { date: '01 May', mentions: 400, reach: 2400 },
-        { date: '05 May', mentions: 300, reach: 1398 },
-        { date: '09 May', mentions: 200, reach: 9800 },
-        { date: '14 May', mentions: 278, reach: 3908 },
-        { date: '19 May', mentions: 189, reach: 4800 },
-        { date: '24 May', mentions: 239, reach: 3800 },
-        { date: '29 May', mentions: 349, reach: 4300 },
-        { date: '03 Jun', mentions: 200, reach: 2100 },
-      ]);
+    try {
+      let range = '30d';
+      if (dateRange === '1d') range = 'today';
+      else if (dateRange === '7d') range = '7d';
+      
+      const res = await dashboard.trends(range, activeProject?.id);
+      if (res && res.items) {
+        const mappedData = res.items.map((item: any) => {
+          const dateObj = new Date(item.date);
+          const formattedDate = dateObj.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+          return {
+            date: formattedDate,
+            mentions: item.total_mentions,
+            reach: item.total_mentions * 10 // Placeholder for reach
+          };
+        });
+        setChartData(mappedData);
+      } else {
+        setChartData([]);
+      }
+    } catch (err) {
+      console.error('Failed to fetch chart data', err);
+      setChartData([]);
+    } finally {
       setChartLoading(false);
-    }, 500);
+    }
   };
 
   useEffect(() => {

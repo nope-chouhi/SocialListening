@@ -19,7 +19,7 @@ router = APIRouter()
 
 @router.get("/summary")
 def get_dashboard_summary(
-    days: int = Query(30, ge=1, le=365),
+    time_range: str = Query("30d", alias="range", pattern="^(today|7d|30d)$"),
     project_id: Optional[int] = Query(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
@@ -29,11 +29,19 @@ def get_dashboard_summary(
     logger = logging.getLogger(__name__)
     try:
         now = datetime.now(timezone.utc)
+        if time_range == "today":
+            start_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        elif time_range == "7d":
+            start_date = now - timedelta(days=7)
+        else:
+            start_date = now - timedelta(days=30)
+            
         today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
         
         # Total mentions
         try:
             base_query = apply_tenant_filter(select(func.count(Mention.id)), Mention, current_user)
+            base_query = base_query.where(Mention.collected_at >= start_date)
             if project_id:
                 base_query = base_query.where(Mention.project_id == project_id)
             total_mentions = db.execute(base_query).scalar() or 0
@@ -50,8 +58,7 @@ def get_dashboard_summary(
             logger.error(f"Error querying mentions today: {e}")
             mentions_today = 0
         
-        # Negative mentions (last 30 days)
-        month_start = now - timedelta(days=30)
+        # Negative mentions
         try:
             from app.models.mention import SentimentScore
             query = select(func.count(AIAnalysis.id)).join(Mention, AIAnalysis.mention_id == Mention.id)
@@ -63,7 +70,7 @@ def get_dashboard_summary(
                 query.where(
                     and_(
                         AIAnalysis.sentiment.in_([SentimentScore.NEGATIVE_LOW, SentimentScore.NEGATIVE_MEDIUM, SentimentScore.NEGATIVE_HIGH]),
-                        AIAnalysis.analyzed_at >= month_start
+                        AIAnalysis.analyzed_at >= start_date
                     )
                 )
             ).scalar() or 0
@@ -73,27 +80,26 @@ def get_dashboard_summary(
         
         # Alerts
         try:
-            total_alerts = db.execute(
-                apply_tenant_filter(select(func.count(Alert.id)), Alert, current_user).where(Alert.status != 'resolved')
-            ).scalar() or 0
+            alerts_query = apply_tenant_filter(select(func.count(Alert.id)), Alert, current_user).where(Alert.status != 'resolved')
+            alerts_query = alerts_query.where(Alert.created_at >= start_date)
+            total_alerts = db.execute(alerts_query).scalar() or 0
         except Exception as e:
             logger.error(f"Error querying total alerts: {e}")
             total_alerts = 0
         
         # Incidents
         try:
-            total_incidents = db.execute(
-                apply_tenant_filter(select(func.count(Incident.id)), Incident, current_user).where(Incident.status != 'closed')
-            ).scalar() or 0
+            incidents_query = apply_tenant_filter(select(func.count(Incident.id)), Incident, current_user).where(Incident.status != 'closed')
+            incidents_query = incidents_query.where(Incident.created_at >= start_date)
+            total_incidents = db.execute(incidents_query).scalar() or 0
         except Exception as e:
             logger.error(f"Error querying total incidents: {e}")
             total_incidents = 0
         
         # Sources
         try:
-            total_sources = db.execute(
-                apply_tenant_filter(select(func.count(Source.id)), Source, current_user).where(Source.is_active == True)
-            ).scalar() or 0
+            sources_query = apply_tenant_filter(select(func.count(Source.id)), Source, current_user).where(Source.is_active == True)
+            total_sources = db.execute(sources_query).scalar() or 0
         except Exception as e:
             logger.error(f"Error querying active sources: {e}")
             total_sources = 0
@@ -782,3 +788,4 @@ def get_dashboard_overview(
         ],
         "alerts": []
     }
+
