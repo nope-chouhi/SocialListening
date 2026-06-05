@@ -216,7 +216,7 @@ def root():
 
 
 from sqlalchemy import text
-from app.api.deps import get_db
+from app.core.database import get_db
 from sqlalchemy.orm import Session
 from fastapi import Depends
 
