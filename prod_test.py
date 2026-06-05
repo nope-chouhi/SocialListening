@@ -31,15 +31,29 @@ def login():
 
 def get_project_id(token):
     """Get the first project_id belonging to this user/tenant"""
-    r = requests.get(f"{base_url}/projects/", headers={'Authorization': f'Bearer {token}'})
-    if r.status_code == 200:
-        data = r.json()
-        projects = data if isinstance(data, list) else data.get('items', [])
-        if projects:
-            pid = projects[0].get('id')
-            safe_print(f"  Using project_id={pid} (name='{projects[0].get('name')}')")
-            return pid
-    safe_print(f"  Could not get project: {r.status_code} {r.text[:200]}")
+    # Try different endpoints
+    for path in ['/projects/', '/projects', '/projects/?limit=5']:
+        r = requests.get(f"{base_url}{path}", headers={'Authorization': f'Bearer {token}'})
+        if r.status_code == 200:
+            data = r.json()
+            projects = data if isinstance(data, list) else data.get('items', data.get('results', []))
+            if projects:
+                pid = projects[0].get('id')
+                safe_print(f"  Using project_id={pid} (name='{projects[0].get('name')}')")
+                return pid
+    
+    # Try to create a test project
+    safe_print("  No projects found, creating one...")
+    r = requests.post(f"{base_url}/projects/", 
+                      json={'name': 'Test Project', 'description': 'Auto-created for testing'},
+                      headers={'Authorization': f'Bearer {token}'})
+    if r.status_code in (200, 201):
+        pid = r.json().get('id')
+        safe_print(f"  Created project_id={pid}")
+        return pid
+    
+    safe_print(f"  Could not create project: {r.status_code} {r.text[:200]}")
+    safe_print("  Falling back to project_id=1")
     return 1
 
 def run_test(q, token, project_id):

@@ -235,6 +235,7 @@ def list_mentions(
                     Mention.content.ilike(search_term),
                     Mention.url.ilike(search_term),
                     Mention.domain.ilike(search_term),
+                    Mention.keyword_text.ilike(search_term),
                 )
             )
 
@@ -309,6 +310,7 @@ def list_mentions(
                         Mention.content.ilike(search_term),
                         Mention.url.ilike(search_term),
                         Mention.domain.ilike(search_term),
+                        Mention.keyword_text.ilike(search_term),
                     )
                 )
             
