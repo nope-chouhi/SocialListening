@@ -342,6 +342,8 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
         run_discovery = mode in ("AUTO_DISCOVERY", "HYBRID")
         
         def commit_summary():
+            from sqlalchemy.orm.attributes import flag_modified
+            flag_modified(job, "meta_data")
             db.commit()
             
         if run_discovery:
