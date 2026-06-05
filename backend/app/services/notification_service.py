@@ -91,10 +91,10 @@ def send_email_notification(
         socket.getaddrinfo = getaddrinfo_ipv4
         try:
             if smtp_use_tls:
-                server = smtplib.SMTP(smtp_host, smtp_port, timeout=10)
+                server = smtplib.SMTP(smtp_host, smtp_port, timeout=30)
                 server.starttls()
             else:
-                server = smtplib.SMTP_SSL(smtp_host, smtp_port, timeout=10)
+                server = smtplib.SMTP_SSL(smtp_host, smtp_port, timeout=30)
             
             # Login
             server.login(smtp_user, smtp_password)
