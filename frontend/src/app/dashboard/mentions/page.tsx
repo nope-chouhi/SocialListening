@@ -541,6 +541,11 @@ function MentionsPageContent() {
                 mode: 'AUTO_DISCOVERY',
                 source_ids: [],
               });
+              if (res.message === "Returned existing running job to prevent duplicate crawl") {
+                toast.success("Đang có job quét tương tự đang chạy. Tự động theo dõi tiến độ...");
+              } else {
+                toast.success(`Đang tự động quét thêm dữ liệu cho '${searchTerm}'...`);
+              }
               setActiveScanJobId(res.job_id);
               setActiveScanKeyword(searchTerm);
               setScanJobStatus({ status: 'QUEUED' });
@@ -643,11 +648,15 @@ function MentionsPageContent() {
         source_ids: [],
         max_results: 100,
       });
+      if (res.message === "Returned existing running job to prevent duplicate crawl") {
+        toast.success("Đang có job quét tương tự đang chạy. Tự động theo dõi tiến độ...");
+      } else {
+        toast.success(`Đang quét dữ liệu mới cho từ khóa ${keyword}...`);
+      }
       setActiveScanJobId(res.job_id);
       setActiveScanKeyword(keyword);
       setScanJobStatus({ status: 'QUEUED' });
       setScanConfirm({ isOpen: false, keyword: '' });
-      toast.success(`Đang quét dữ liệu mới cho từ khóa ${keyword}...`);
     } catch (err: any) {
       toast.error('Lỗi khi bắt đầu quét');
     }
@@ -1088,20 +1097,39 @@ function MentionsPageContent() {
           ) : (
             <div className="space-y-4">
               {searchState === 'AUTO_SCAN_COMPLETED' && scanJobStatus && (
-                <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/50 rounded-lg p-3 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-                    <span className="text-sm text-emerald-800 dark:text-emerald-300 font-medium">
-                      {scanJobStatus.summary?.new_mentions_created > 0 
-                        ? `Đã tìm thấy ${scanJobStatus.summary.new_mentions_created} kết quả mới liên quan đến '${searchTerm}'.`
-                        : `Không có mentions mới. Hệ thống tìm lại ${scanJobStatus.summary?.duplicates_skipped || 0} kết quả đã tồn tại trước đó.`
-                      }
-                    </span>
+                <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/50 rounded-lg p-4 mb-4">
+                  <div className="flex items-center justify-between mb-3 border-b border-emerald-200/50 dark:border-emerald-800/30 pb-2">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                      <span className="text-sm text-emerald-800 dark:text-emerald-300 font-bold">
+                        Quét hoàn tất (Job #{scanJobStatus.job_id})
+                      </span>
+                    </div>
+                    {scanJobStatus.summary?.errors?.length > 0 && (
+                      <span className="px-2 py-1 bg-red-100 text-red-700 text-xs font-bold rounded-md flex items-center gap-1">
+                        <AlertTriangle className="w-3 h-3" /> Có lỗi nguồn
+                      </span>
+                    )}
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="px-2 py-1 bg-emerald-100 dark:bg-emerald-800 text-emerald-700 dark:text-emerald-200 text-xs font-bold rounded-md">
-                      Lượt quét #{scanJobStatus.job_id}
-                    </span>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 text-sm text-emerald-800 dark:text-emerald-200/80">
+                    <div><span className="font-semibold text-emerald-900 dark:text-emerald-100">Query gốc:</span> {scanJobStatus.meta_data?.query || searchTerm}</div>
+                    <div><span className="font-semibold text-emerald-900 dark:text-emerald-100">Từ khóa (Expanded):</span> {scanJobStatus.meta_data?.keywords?.join(', ')}</div>
+                    <div><span className="font-semibold text-emerald-900 dark:text-emerald-100">Nguồn quét:</span> {scanJobStatus.summary?.adapters_ready?.join(', ') || 'Tất cả'}</div>
+                    <div>
+                      <span className="font-semibold text-emerald-900 dark:text-emerald-100">Kết quả (Raw):</span> {scanJobStatus.summary?.serpapi_result_count || 0}
+                    </div>
+                    <div>
+                      <span className="font-semibold text-emerald-900 dark:text-emerald-100">Tạo mới:</span> <span className="font-bold text-emerald-600 dark:text-emerald-400">{scanJobStatus.summary?.new_mentions_created || 0} mentions</span>
+                    </div>
+                    <div>
+                      <span className="font-semibold text-emerald-900 dark:text-emerald-100">Bỏ qua (Duplicate):</span> {scanJobStatus.summary?.duplicates_skipped || 0}
+                    </div>
+                    {scanJobStatus.summary?.errors?.length > 0 && (
+                      <div className="col-span-1 md:col-span-2 text-red-600 dark:text-red-400">
+                        <span className="font-semibold">Chi tiết lỗi:</span> {scanJobStatus.summary.errors.join('; ')}
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

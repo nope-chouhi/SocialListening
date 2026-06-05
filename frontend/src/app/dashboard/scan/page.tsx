@@ -323,7 +323,11 @@ export default function ScanPage() {
       }));
 
       toast.dismiss(loadingToast);
-      toast.success(result.message || 'Đã tạo job scan. Hệ thống đang quét trong nền.');
+      if (result.message === "Returned existing running job to prevent duplicate crawl") {
+        toast.success("Đang có job quét tương tự đang chạy. Hệ thống đang theo dõi...");
+      } else {
+        toast.success(result.message || 'Đã tạo job scan. Hệ thống đang quét trong nền.');
+      }
       
       setQuickKeyword('');
       setShowHistory(true);

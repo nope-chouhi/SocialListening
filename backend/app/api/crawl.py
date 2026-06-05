@@ -128,29 +128,51 @@ def manual_scan(
         
         # Try AI expansion first
         try:
-            # Check cache (24 hours = 86400 seconds)
-            if q_lower in _EXPANDED_KEYWORDS_CACHE:
-                timestamp, cached_expansions = _EXPANDED_KEYWORDS_CACHE[q_lower]
+            cache_key = f"expand_keyword_v2:{q_lower}"
+            cached_expansions = None
+            
+            # Try Redis first
+            try:
+                from app.core.config import settings
+                import redis
+                import json
+                if hasattr(settings, "REDIS_URL") and settings.REDIS_URL:
+                    r = redis.from_url(settings.REDIS_URL, decode_responses=True)
+                    cached_val = r.get(cache_key)
+                    if cached_val:
+                        cached_expansions = json.loads(cached_val)
+            except Exception as e:
+                import logging
+                logging.error(f"Redis cache error: {e}")
+                
+            # Try RAM cache fallback
+            if cached_expansions is None and q_lower in _EXPANDED_KEYWORDS_CACHE:
+                timestamp, cached_val = _EXPANDED_KEYWORDS_CACHE[q_lower]
                 if time.time() - timestamp < 86400:
-                    for e in cached_expansions:
-                        if e and e not in expansions:
-                            expansions.append(e)
-                    ai_expansions = cached_expansions
-                else:
-                    from app.services.ai_service import get_ai_provider
-                    ai = get_ai_provider()
-                    ai_expansions = ai.expand_keyword(q)[:8]  # Limit max 8 words
-                    _EXPANDED_KEYWORDS_CACHE[q_lower] = (time.time(), ai_expansions or [])
-                    if ai_expansions:
-                        for e in ai_expansions:
-                            e_lower = e.lower().strip()
-                            if e_lower and e_lower not in expansions:
-                                expansions.append(e_lower)
+                    cached_expansions = cached_val
+                    
+            if cached_expansions is not None:
+                for e in cached_expansions:
+                    if e and e not in expansions:
+                        expansions.append(e)
+                ai_expansions = cached_expansions
             else:
                 from app.services.ai_service import get_ai_provider
                 ai = get_ai_provider()
                 ai_expansions = ai.expand_keyword(q)[:8]  # Limit max 8 words
+                
+                # Save to caches (24 hours = 86400 seconds)
+                try:
+                    from app.core.config import settings
+                    import redis
+                    import json
+                    if hasattr(settings, "REDIS_URL") and settings.REDIS_URL:
+                        r = redis.from_url(settings.REDIS_URL, decode_responses=True)
+                        r.setex(cache_key, 86400, json.dumps(ai_expansions or []))
+                except Exception:
+                    pass
                 _EXPANDED_KEYWORDS_CACHE[q_lower] = (time.time(), ai_expansions or [])
+                
                 if ai_expansions:
                     for e in ai_expansions:
                         e_lower = e.lower().strip()
@@ -199,7 +221,17 @@ def manual_scan(
 
     mode = getattr(body, "mode", "HYBRID") or "HYBRID"
     project_id = body.project_id
-    max_results = body.max_results or 50
+    
+    import os
+    env_max = os.getenv("CRAWL_MAX_RESULTS_PER_SOURCE")
+    try:
+        default_max = int(env_max) if env_max else 20
+    except ValueError:
+        default_max = 20
+    
+    # Cap max_results at 50 to avoid overload
+    req_max = body.max_results or default_max
+    max_results = min(req_max, 50)
 
     from datetime import timedelta
     recent_limit = datetime.now(timezone.utc) - timedelta(minutes=15)
@@ -238,6 +270,7 @@ def manual_scan(
         mentions_found=0,
         started_at=datetime.now(timezone.utc),
         meta_data={
+            "query": body.query,
             "project_id": project_id, 
             "mode": mode, 
             "keywords": keyword_texts,
@@ -334,7 +367,15 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
             "errors": []
         }
         
-        job.meta_data = {"summary": summary, "project_id": project_id, "keywords": keyword_texts}
+        # Ensure we keep existing keys from DB meta_data
+        current_meta = job.meta_data or {}
+        current_meta.update({
+            "summary": summary,
+            "project_id": project_id,
+            "keywords": keyword_texts,
+            "started_at": job.started_at.isoformat() if job.started_at else None
+        })
+        job.meta_data = current_meta
         db.commit()
 
         seen_hashes = set()
