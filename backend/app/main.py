@@ -215,6 +215,41 @@ def root():
     return {"message": "Vietnamese Social Listening Platform API", "docs": "/docs", "health": "/health"}
 
 
+from sqlalchemy import text
+from app.api.deps import get_db
+from sqlalchemy.orm import Session
+from fastapi import Depends
+
+@app.get("/api/sys/db-stats")
+def get_db_stats(db: Session = Depends(get_db)):
+    # Count sentiments
+    stats = {}
+    mentions = db.execute(text("SELECT sentiment, COUNT(*) as count FROM mentions GROUP BY sentiment")).fetchall()
+    for row in mentions:
+        stats[row[0] if row[0] is not None else "null"] = row[1]
+    return {"status": "ok", "stats": stats}
+
+@app.get("/api/sys/run-backfill")
+def run_prod_backfill(db: Session = Depends(get_db)):
+    try:
+        db.execute(text("UPDATE mentions SET sentiment = 'negative' WHERE sentiment IN ('negative_low', 'negative_medium', 'negative_high')"))
+        db.execute(text("UPDATE ai_analysis SET sentiment = 'negative' WHERE sentiment IN ('negative_low', 'negative_medium', 'negative_high')"))
+        db.execute(text("""
+            UPDATE mentions
+            SET sentiment = (
+                SELECT sentiment FROM ai_analysis 
+                WHERE ai_analysis.mention_id = mentions.id
+                LIMIT 1
+            )
+            WHERE sentiment IS NULL OR sentiment = ''
+        """))
+        db.execute(text("UPDATE mentions SET sentiment = 'neutral' WHERE sentiment IS NULL OR sentiment = ''"))
+        db.commit()
+        return {"status": "success"}
+    except Exception as e:
+        db.rollback()
+        return {"status": "error", "error": str(e)}
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
