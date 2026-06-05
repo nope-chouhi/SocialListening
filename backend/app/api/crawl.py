@@ -122,14 +122,36 @@ def manual_scan(
     def expand_keyword(q: str) -> List[str]:
         q_lower = q.lower().strip()
         expansions = [q_lower]
+        
+        # Try AI expansion first
+        try:
+            from app.services.ai_service import get_ai_provider
+            ai = get_ai_provider()
+            ai_expansions = ai.expand_keyword(q)
+            if ai_expansions:
+                for e in ai_expansions:
+                    e_lower = e.lower().strip()
+                    if e_lower and e_lower not in expansions:
+                        expansions.append(e_lower)
+        except Exception as e:
+            import logging
+            logging.error(f"AI expansion failed in manual_scan: {e}")
+            
+        # Hardcoded specific domain fallback/augmentation
+        hardcoded = []
         if q_lower == "báo":
-            expansions.extend(["báo chí", "tin tức", "news", "baonghean", "thanhnien", "vnexpress", "dantri", "tuoitre"])
+            hardcoded = ["báo chí", "tin tức", "news", "baonghean", "thanhnien", "vnexpress", "dantri", "tuoitre"]
         elif q_lower == "youtube":
-            expansions.extend(["video", "kênh", "channel", "clip"])
+            hardcoded = ["video", "kênh", "channel", "clip"]
         elif q_lower == "tth":
-            expansions.extend(["tth group", "tth hospital", "bệnh viện tth", "bệnh viện đa khoa tth"])
+            hardcoded = ["tth group", "tth hospital", "bệnh viện tth", "bệnh viện đa khoa tth"]
         elif q_lower == "bệnh viện":
-            expansions.extend(["phòng khám", "y tế", "hospital", "healthcare", "bác sĩ"])
+            hardcoded = ["phòng khám", "y tế", "hospital", "healthcare", "bác sĩ"]
+            
+        for h in hardcoded:
+            if h not in expansions:
+                expansions.append(h)
+                
         return list(set(expansions))
 
     if body.query:

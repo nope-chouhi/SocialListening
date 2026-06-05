@@ -61,6 +61,13 @@ class AIProvider(ABC):
             "deadline": "24h"
         }
 
+    def expand_keyword(self, keyword: str) -> list[str]:
+        """
+        Dynamically generate synonyms or related keywords for a given keyword
+        to improve search expansion coverage.
+        """
+        return []
+
 
 # ============================================================================
 # DUMMY AI PROVIDER (FOR TESTING)
@@ -187,6 +194,9 @@ class DummyAIProvider(AIProvider):
             "confidence_score": round(confidence_score, 2),
             "processing_time_ms": processing_time_ms
         }
+
+    def expand_keyword(self, keyword: str) -> list[str]:
+        return []
 
 
 # ============================================================================
@@ -337,6 +347,29 @@ Tuyệt đối chỉ trả về JSON, không có code block markdown:"""
             print(f"OpenAI brief generation failed: {e}")
             return super().generate_executive_brief(content)
 
+    def expand_keyword(self, keyword: str) -> list[str]:
+        prompt = f"""You are an SEO and search expert. Given the primary keyword '{keyword}', generate 5 highly relevant alternative keywords or synonyms (in Vietnamese if the keyword is Vietnamese) that a user might use to search for this entity/topic on the internet. Return ONLY a valid JSON array of strings. Do not include markdown formatting or any other text. Example: ["keyword1", "keyword2"]"""
+        try:
+            response = self.client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.7,
+                max_tokens=150
+            )
+            result_text = response.choices[0].message.content.strip()
+            if result_text.startswith("```"):
+                result_text = result_text.split("```")[1]
+                if result_text.startswith("json"):
+                    result_text = result_text[4:]
+                result_text = result_text.strip()
+            expansions = json.loads(result_text)
+            if isinstance(expansions, list):
+                return [str(e) for e in expansions]
+            return []
+        except Exception as e:
+            print(f"OpenAI Keyword expansion failed: {e}")
+            return []
+
 
 # ============================================================================
 # GEMINI PROVIDER
@@ -484,6 +517,24 @@ Tuyệt đối chỉ trả về JSON, không có code block markdown:"""
         except Exception as e:
             print(f"Gemini brief generation failed: {e}")
             return super().generate_executive_brief(content)
+
+    def expand_keyword(self, keyword: str) -> list[str]:
+        prompt = f"""You are an SEO and search expert. Given the primary keyword '{keyword}', generate 5 highly relevant alternative keywords or synonyms (in Vietnamese if the keyword is Vietnamese) that a user might use to search for this entity/topic on the internet. Return ONLY a valid JSON array of strings. Do not include markdown formatting or any other text. Example: ["keyword1", "keyword2"]"""
+        try:
+            response = self.model.generate_content(prompt)
+            result_text = response.text.strip()
+            if result_text.startswith("```"):
+                result_text = result_text.split("```")[1]
+                if result_text.startswith("json"):
+                    result_text = result_text[4:]
+                result_text = result_text.strip()
+            expansions = json.loads(result_text)
+            if isinstance(expansions, list):
+                return [str(e) for e in expansions]
+            return []
+        except Exception as e:
+            print(f"Gemini Keyword expansion failed: {e}")
+            return []
 
 
 # ============================================================================
@@ -640,6 +691,9 @@ class PhoBERTProvider(AIProvider):
             result = dummy.analyze_mention(content, title)
             result["ai_provider"] = "dummy_fallback"
             return result
+
+    def expand_keyword(self, keyword: str) -> list[str]:
+        return []
 
 
 
