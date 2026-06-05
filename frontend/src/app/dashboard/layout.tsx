@@ -228,7 +228,7 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges }: any) {
           </div>
           <div className="px-2">
             {systemNav.map((item) => {
-              if (item.adminOnly && !user?.is_superuser) return null;
+              if ((item as any).adminOnly && !user?.is_superuser) return null;
               
               const isActive = pathname.startsWith(item.href);
               return (
