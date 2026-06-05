@@ -13,6 +13,7 @@ export default function WebinarRegistrationModal({ isOpen, onClose, onSuccess }:
   const [name, setName] = useState('');
   const [time, setTime] = useState('3:00 PM');
   const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
@@ -20,15 +21,19 @@ export default function WebinarRegistrationModal({ isOpen, onClose, onSuccess }:
     e.preventDefault();
     if (!email || !name) return;
     setLoading(true);
+    setErrorMsg(null);
     try {
       await webinar.register({
         email,
         name,
-        time: `Wednesday, June 10, 2026 ${time}`
+        webinar_title: "Get a Social Listening certificate with Brand24",
+        webinar_time: `Wednesday, June 10, 2026 ${time}`,
+        timezone: "Asia/Bangkok"
       });
       onSuccess();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to register', error);
+      setErrorMsg(error.response?.data?.detail || "Không gửi được email xác nhận. Vui lòng thử lại.");
     } finally {
       setLoading(false);
     }
@@ -126,6 +131,15 @@ export default function WebinarRegistrationModal({ isOpen, onClose, onSuccess }:
                 />
               </div>
             </div>
+
+            {errorMsg && (
+              <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm mb-4 border border-red-100 flex items-start gap-2">
+                <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>{errorMsg}</span>
+              </div>
+            )}
 
             <div className="pt-4 flex justify-center pb-2">
               <button 

@@ -136,7 +136,7 @@ export function getUserFacingErrorMessage(
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 export const webinar = {
-  register: async (data: { email: string; name: string; time: string }) => {
+  register: async (data: { email: string; name: string; webinar_title: string; webinar_time: string; timezone: string }) => {
     const response = await api.post('/api/webinar/register', data);
     return response.data;
   }

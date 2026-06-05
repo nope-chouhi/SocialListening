@@ -95,3 +95,7 @@ __all__ = [
 
 
 from app.models.source_item import SourceItem
+
+# Webinar models
+from app.models.webinar import WebinarRegistration
+

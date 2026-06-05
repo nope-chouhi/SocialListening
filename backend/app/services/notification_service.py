@@ -14,6 +14,8 @@ from sqlalchemy import select
 from app.models.system_settings import EmailSettings, SystemNotificationSettings
 
 
+import os
+
 def send_email_notification(
     db: Session,
     to_email: str,
@@ -23,39 +25,47 @@ def send_email_notification(
 ) -> Dict:
     """
     Send email notification using SMTP
-    
-    Args:
-        db: Database session
-        to_email: Recipient email address
-        subject: Email subject
-        body_html: HTML email body
-        body_text: Plain text email body (optional)
-        
-    Returns:
-        dict with success status and message
     """
+    env_smtp_host = os.getenv("SMTP_HOST")
+    env_smtp_port = os.getenv("SMTP_PORT")
+    env_smtp_user = os.getenv("SMTP_USER")
+    env_smtp_password = os.getenv("SMTP_PASSWORD")
+    env_smtp_from_email = os.getenv("SMTP_FROM_EMAIL") or env_smtp_user
+    env_smtp_from_name = os.getenv("SMTP_FROM_NAME")
+    
     # Get email settings
     settings = db.execute(
         select(EmailSettings).limit(1)
     ).scalar_one_or_none()
     
-    if not settings or not settings.smtp_enabled:
+    use_env = bool(env_smtp_host and env_smtp_port and env_smtp_user and env_smtp_password)
+    db_configured = bool(settings and settings.smtp_enabled and all([settings.smtp_host, settings.smtp_port, settings.smtp_user, settings.smtp_password]))
+
+    if not use_env and not db_configured:
         return {
             "success": False,
-            "message": "Email notifications not configured or disabled"
+            "message": "Email notifications not configured or missing credentials"
         }
-    
-    if not all([settings.smtp_host, settings.smtp_port, settings.smtp_user, settings.smtp_password]):
-        return {
-            "success": False,
-            "message": "SMTP configuration incomplete"
-        }
+        
+    smtp_host = env_smtp_host if use_env else settings.smtp_host
+    smtp_port = int(env_smtp_port) if use_env else settings.smtp_port
+    smtp_user = env_smtp_user if use_env else settings.smtp_user
+    smtp_password = env_smtp_password if use_env else settings.smtp_password
+    smtp_from = env_smtp_from_email if use_env else (settings.smtp_from or settings.smtp_user)
+    smtp_use_tls = True # Assume true for env configuration as standard practice
+    if not use_env and settings:
+        smtp_use_tls = settings.smtp_use_tls
+        
+    if env_smtp_from_name and use_env:
+        smtp_from_str = f"{env_smtp_from_name} <{smtp_from}>"
+    else:
+        smtp_from_str = smtp_from
     
     try:
         # Create message
         msg = MIMEMultipart('alternative')
         msg['Subject'] = subject
-        msg['From'] = settings.smtp_from or settings.smtp_user
+        msg['From'] = smtp_from_str
         msg['To'] = to_email
         
         # Add plain text part
@@ -68,14 +78,14 @@ def send_email_notification(
         msg.attach(part2)
         
         # Connect to SMTP server
-        if settings.smtp_use_tls:
-            server = smtplib.SMTP(settings.smtp_host, settings.smtp_port, timeout=10)
+        if smtp_use_tls:
+            server = smtplib.SMTP(smtp_host, smtp_port, timeout=10)
             server.starttls()
         else:
-            server = smtplib.SMTP_SSL(settings.smtp_host, settings.smtp_port, timeout=10)
+            server = smtplib.SMTP_SSL(smtp_host, smtp_port, timeout=10)
         
         # Login
-        server.login(settings.smtp_user, settings.smtp_password)
+        server.login(smtp_user, smtp_password)
         
         # Send email
         server.send_message(msg)

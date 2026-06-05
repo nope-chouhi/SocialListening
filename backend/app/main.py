@@ -51,6 +51,13 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning(f"create_all skipped (tables may already exist via alembic): {e}")
 
+    try:
+        from app.models.webinar import WebinarRegistration
+        WebinarRegistration.metadata.create_all(bind=engine)
+        logger.info("Webinar table created/verified")
+    except Exception as e:
+        logger.warning(f"Webinar table creation failed: {e}")
+
     # Seed service data
     try:
         from app.scripts.seed_services import seed_services_if_empty
