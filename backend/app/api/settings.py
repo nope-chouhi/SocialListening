@@ -139,7 +139,7 @@ def test_email_settings(
         select(EmailSettings).where(EmailSettings.id == 1)
     ).scalar_one_or_none()
     
-    if not settings or not settings.smtp_enabled:
+    if not settings or not settings.is_configured:
         raise HTTPException(
             status_code=400,
             detail="Email settings not configured or disabled"
@@ -169,7 +169,7 @@ def test_email_settings(
     """.format(__import__('datetime').datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC'))
     
     # Send to configured from_email
-    recipient = settings.smtp_from or settings.smtp_user
+    recipient = settings.from_email or settings.smtp_username
     result = send_email_notification(db, recipient, test_subject, test_body_html, test_body_text)
     
     if result['success']:

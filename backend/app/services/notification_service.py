@@ -39,7 +39,7 @@ def send_email_notification(
     ).scalar_one_or_none()
     
     use_env = bool(env_smtp_host and env_smtp_port and env_smtp_user and env_smtp_password)
-    db_configured = bool(settings and settings.smtp_enabled and all([settings.smtp_host, settings.smtp_port, settings.smtp_user, settings.smtp_password]))
+    db_configured = bool(settings and settings.is_configured and all([settings.smtp_host, settings.smtp_port, settings.smtp_username, settings.smtp_password]))
 
     if not use_env and not db_configured:
         return {
@@ -49,12 +49,12 @@ def send_email_notification(
         
     smtp_host = env_smtp_host if use_env else settings.smtp_host
     smtp_port = int(env_smtp_port) if use_env else settings.smtp_port
-    smtp_user = env_smtp_user if use_env else settings.smtp_user
+    smtp_user = env_smtp_user if use_env else settings.smtp_username
     smtp_password = env_smtp_password if use_env else settings.smtp_password
-    smtp_from = env_smtp_from_email if use_env else (settings.smtp_from or settings.smtp_user)
+    smtp_from = env_smtp_from_email if use_env else (settings.from_email or settings.smtp_username)
     smtp_use_tls = True # Assume true for env configuration as standard practice
     if not use_env and settings:
-        smtp_use_tls = settings.smtp_use_tls
+        smtp_use_tls = settings.use_tls
         
     if env_smtp_from_name and use_env:
         smtp_from_str = f"{env_smtp_from_name} <{smtp_from}>"
@@ -250,9 +250,9 @@ def notify_high_risk_mention(db: Session, mention_id: int, analysis: Dict):
         select(EmailSettings).limit(1)
     ).scalar_one_or_none()
     
-    if email_settings and email_settings.smtp_enabled:
+    if email_settings and email_settings.is_configured:
         # Send to configured recipient or default
-        recipient = email_settings.smtp_from or "admin@sociallistening.com"
+        recipient = email_settings.from_email or "admin@sociallistening.com"
         send_email_notification(db, recipient, subject, body_html, body_text)
     
     # Webhook notification
@@ -311,8 +311,8 @@ def notify_alert_created(db: Session, alert_id: int):
         select(EmailSettings).limit(1)
     ).scalar_one_or_none()
     
-    if email_settings and email_settings.smtp_enabled:
-        recipient = email_settings.smtp_from or "admin@sociallistening.com"
+    if email_settings and email_settings.is_configured:
+        recipient = email_settings.from_email or "admin@sociallistening.com"
         send_email_notification(db, recipient, subject, body_html)
     
     # Webhook notification
