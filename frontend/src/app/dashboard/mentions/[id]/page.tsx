@@ -85,9 +85,7 @@ export default function MentionDetailPage() {
   const getSentimentColor = (sentiment: string) => {
     if (sentiment === 'positive') return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
     if (sentiment === 'neutral') return 'bg-gray-800 text-gray-400 border-gray-700';
-    if (sentiment === 'negative_low') return 'bg-amber-500/10 text-amber-400 border-amber-500/20';
-    if (sentiment === 'negative_medium') return 'bg-orange-500/10 text-orange-400 border-orange-500/20';
-    if (sentiment === 'negative_high') return 'bg-rose-500/10 text-rose-400 border-rose-500/20';
+    if (sentiment === 'negative') return 'bg-rose-500/10 text-rose-400 border-rose-500/20';
     return 'bg-gray-800 text-gray-400 border-gray-700';
   };
 
@@ -144,7 +142,7 @@ export default function MentionDetailPage() {
         <div className="lg:col-span-2 space-y-6">
           {/* Content Card */}
           <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-6 sm:p-8 relative overflow-hidden">
-            {mention.ai_analysis?.sentiment === 'negative_high' && <div className="absolute top-0 right-0 w-64 h-64 bg-rose-500/10 blur-3xl rounded-full" />}
+            {mention.ai_analysis?.sentiment === 'negative' && <div className="absolute top-0 right-0 w-64 h-64 bg-rose-500/10 blur-3xl rounded-full" />}
             {mention.ai_analysis?.sentiment === 'positive' && <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 blur-3xl rounded-full" />}
             <h2 className="text-xl font-bold text-white mb-6 leading-snug relative z-10">
               {mention.title || 'No title'}

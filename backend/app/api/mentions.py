@@ -50,30 +50,19 @@ def get_mentions_summary(
             logger.error(f"Error querying total mentions: {e}")
             total = 0
         
-        # Sentiment counts from AI analysis
+        # Sentiment counts
         try:
-            # Get mention IDs for filtering AI analysis
-            if project_id:
-                mention_ids = db.execute(
-                    select(Mention.id).where(and_(*base_filter))
-                ).scalars().all()
-                ai_filter = [AIAnalysis.mention_id.in_(mention_ids)] if mention_ids else [AIAnalysis.mention_id == -1]
-            else:
-                ai_filter = []
-            
             positive = db.execute(
-                select(func.count(AIAnalysis.id)).where(and_(*ai_filter, AIAnalysis.sentiment == SentimentScore.POSITIVE))
-            ).scalar() or 0 if ai_filter else 0
+                apply_tenant_filter(select(func.count(Mention.id)), Mention, current_user).where(and_(*base_filter, Mention.sentiment == 'positive'))
+            ).scalar() or 0
             
             neutral = db.execute(
-                select(func.count(AIAnalysis.id)).where(and_(*ai_filter, AIAnalysis.sentiment == SentimentScore.NEUTRAL))
-            ).scalar() or 0 if ai_filter else 0
+                apply_tenant_filter(select(func.count(Mention.id)), Mention, current_user).where(and_(*base_filter, Mention.sentiment == 'neutral'))
+            ).scalar() or 0
             
             negative = db.execute(
-                select(func.count(AIAnalysis.id)).where(
-                    and_(*ai_filter, AIAnalysis.sentiment.in_([SentimentScore.NEGATIVE_LOW, SentimentScore.NEGATIVE_MEDIUM, SentimentScore.NEGATIVE_HIGH]))
-                )
-            ).scalar() or 0 if ai_filter else 0
+                apply_tenant_filter(select(func.count(Mention.id)), Mention, current_user).where(and_(*base_filter, Mention.sentiment == 'negative'))
+            ).scalar() or 0
         except Exception as e:
             db.rollback()
             logger.error(f"Error querying sentiment counts: {e}")
@@ -172,7 +161,7 @@ def list_mentions(
         from app.models.source import Source
 
         query = apply_tenant_filter(select(Mention), Mention, current_user)
-        has_ai_filter = sentiment or sentiments or min_risk_score is not None
+        has_ai_filter = min_risk_score is not None
         need_source_join = bool(source_type or source_types or domain)
         need_ai_join = has_ai_filter or sort_by in ("risk_high", "risk_low")
 
@@ -210,7 +199,10 @@ def list_mentions(
         if domain and not need_source_join:
             query = query.where(Mention.domain.ilike(f"%{domain}%"))
         if sentiment:
-            query = query.where(Mention.sentiment == sentiment)
+            sentiments_list = [s.strip() for s in sentiment.split(",")]
+            query = query.where(Mention.sentiment.in_(sentiments_list))
+        elif sentiments:
+            query = query.where(Mention.sentiment.in_(sentiments))
 
         if author:
             query = query.where(Mention.author.ilike(f"%{author}%"))
@@ -250,10 +242,6 @@ def list_mentions(
             else:
                 query = query.outerjoin(AIAnalysis, AIAnalysis.mention_id == Mention.id)
                 
-            if sentiment:
-                query = query.where(AIAnalysis.sentiment == sentiment)
-            if sentiments:
-                query = query.where(AIAnalysis.sentiment.in_(sentiments))
             if min_risk_score is not None:
                 query = query.where(AIAnalysis.risk_score >= min_risk_score)
 
@@ -286,7 +274,10 @@ def list_mentions(
             if domain and not need_source_join:
                 count_base = count_base.where(Mention.domain.ilike(f"%{domain}%"))
             if sentiment:
-                count_base = count_base.where(Mention.sentiment == sentiment)
+                sentiments_list = [s.strip() for s in sentiment.split(",")]
+                count_base = count_base.where(Mention.sentiment.in_(sentiments_list))
+            elif sentiments:
+                count_base = count_base.where(Mention.sentiment.in_(sentiments))
             
             if author:
                 count_base = count_base.where(Mention.author.ilike(f"%{author}%"))
@@ -468,7 +459,8 @@ def export_mentions_csv(
     if project_id:
         query = query.where(Mention.project_id == project_id)
     if sentiment:
-        query = query.where(Mention.sentiment == sentiment)
+        sentiments_list = [s.strip() for s in sentiment.split(",")]
+        query = query.where(Mention.sentiment.in_(sentiments_list))
     if source_type:
         query = query.where(Mention.source_type == source_type)
     if keyword:

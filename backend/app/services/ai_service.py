@@ -114,13 +114,9 @@ class DummyAIProvider(AIProvider):
         
         # Calculate sentiment
         if crisis_count > 0:
-            sentiment = "negative_high"
-        elif negative_count > positive_count + 2:
-            sentiment = "negative_high"
+            sentiment = "negative"
         elif negative_count > positive_count:
-            sentiment = "negative_medium"
-        elif negative_count > 0:
-            sentiment = "negative_low"
+            sentiment = "negative"
         elif positive_count > 0:
             sentiment = "positive"
         else:
@@ -144,12 +140,10 @@ class DummyAIProvider(AIProvider):
             crisis_level = 1
         
         # Generate summary
-        if sentiment == "negative_high":
+        if sentiment == "negative" and crisis_count > 0:
             summary_vi = "Phát hiện nội dung tiêu cực nghiêm trọng. Cần xem xét và xử lý ngay."
-        elif sentiment == "negative_medium":
+        elif sentiment == "negative":
             summary_vi = "Nội dung có xu hướng tiêu cực. Nên theo dõi và phản hồi."
-        elif sentiment == "negative_low":
-            summary_vi = "Nội dung có một số ý kiến tiêu cực nhẹ."
         elif sentiment == "positive":
             summary_vi = "Nội dung tích cực, phản hồi tốt từ người dùng."
         else:
@@ -221,7 +215,7 @@ Nội dung:
 {full_text}
 
 Yêu cầu phân tích:
-1. sentiment: Đánh giá cảm xúc (positive, neutral, negative_low, negative_medium, negative_high)
+1. sentiment: Đánh giá cảm xúc (chỉ được trả về 1 trong 3 giá trị: positive, neutral, negative)
 2. risk_score: Điểm rủi ro từ 0-100 (0 = không rủi ro, 100 = rủi ro cực cao)
 3. crisis_level: Mức độ khủng hoảng từ 1-5 (1 = bình thường, 5 = khủng hoảng nghiêm trọng)
 4. summary_vi: Tóm tắt ngắn gọn bằng tiếng Việt (1-2 câu)
@@ -372,7 +366,7 @@ Nội dung:
 {full_text}
 
 Yêu cầu phân tích:
-1. sentiment: Đánh giá cảm xúc (positive, neutral, negative_low, negative_medium, negative_high)
+1. sentiment: Đánh giá cảm xúc (chỉ được trả về 1 trong 3 giá trị: positive, neutral, negative)
 2. risk_score: Điểm rủi ro từ 0-100 (0 = không rủi ro, 100 = rủi ro cực cao)
 3. crisis_level: Mức độ khủng hoảng từ 1-5 (1 = bình thường, 5 = khủng hoảng nghiêm trọng)
 4. summary_vi: Tóm tắt ngắn gọn bằng tiếng Việt (1-2 câu)
@@ -564,17 +558,15 @@ class PhoBERTProvider(AIProvider):
                 risk_score = 30 + (1 - score) * 10
                 crisis_level = 1
             else:  # NEG
-                # Phân loại mức độ tiêu cực dựa trên confidence score
+                sentiment = "negative"
+                # Phân loại mức độ tiêu cực dựa trên confidence score để tính risk_score
                 if score >= 0.9:
-                    sentiment = "negative_high"
                     risk_score = 80 + (score - 0.9) * 200  # 80-100
                     crisis_level = 4
                 elif score >= 0.7:
-                    sentiment = "negative_medium"
                     risk_score = 55 + (score - 0.7) * 125  # 55-80
                     crisis_level = 3
                 else:
-                    sentiment = "negative_low"
                     risk_score = 35 + (score - 0.5) * 100  # 35-55
                     crisis_level = 2
             
@@ -592,18 +584,19 @@ class PhoBERTProvider(AIProvider):
             if crisis_found > 0:
                 risk_score = min(risk_score + crisis_found * 15, 100)
                 crisis_level = max(crisis_level, 4)
-                if sentiment.startswith("negative"):
-                    sentiment = "negative_high"
+                if sentiment == "negative" or label == "NEG":
+                    sentiment = "negative"
             
             # Tạo summary tiếng Việt
             sentiment_labels = {
                 "positive": "Nội dung tích cực, phản hồi tốt từ người dùng.",
                 "neutral": "Nội dung trung lập, không có ý kiến rõ ràng.",
-                "negative_low": "Nội dung có một số ý kiến tiêu cực nhẹ.",
-                "negative_medium": "Nội dung có xu hướng tiêu cực. Nên theo dõi và phản hồi.",
-                "negative_high": "Phát hiện nội dung tiêu cực nghiêm trọng. Cần xem xét và xử lý ngay.",
+                "negative": "Nội dung tiêu cực. Có thể cần theo dõi và phản hồi.",
             }
             summary_vi = sentiment_labels.get(sentiment, "Đang phân tích...")
+            
+            if crisis_level >= 4:
+                summary_vi = "Phát hiện nội dung tiêu cực nghiêm trọng. Cần xem xét và xử lý ngay."
             
             # Suggested action
             if crisis_level >= 4:

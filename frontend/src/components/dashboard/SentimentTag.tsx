@@ -28,23 +28,11 @@ const SENTIMENT_CONFIG: Record<string, { bg: string; text: string; label: string
     label: 'Trung lập',
     dot: 'bg-gray-400',
   },
-  negative_low: {
-    bg: 'bg-orange-500/10 border-orange-500/20',
-    text: 'text-orange-600 dark:text-orange-400',
-    label: 'Tiêu cực nhẹ',
-    dot: 'bg-orange-500',
-  },
-  negative_medium: {
+  negative: {
     bg: 'bg-red-500/10 border-red-500/20',
     text: 'text-red-600 dark:text-red-400',
     label: 'Tiêu cực',
     dot: 'bg-red-500',
-  },
-  negative_high: {
-    bg: 'bg-red-600/15 border-red-600/30',
-    text: 'text-red-700 dark:text-red-400',
-    label: 'Nghiêm trọng',
-    dot: 'bg-red-600 animate-pulse',
   },
 };
 

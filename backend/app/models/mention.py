@@ -7,9 +7,7 @@ from app.core.database import Base
 class SentimentScore(str, Enum):
     POSITIVE = "positive"
     NEUTRAL = "neutral"
-    NEGATIVE_LOW = "negative_low"
-    NEGATIVE_MEDIUM = "negative_medium"
-    NEGATIVE_HIGH = "negative_high"
+    NEGATIVE = "negative"
 
 
 class Mention(Base):

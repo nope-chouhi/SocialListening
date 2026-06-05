@@ -21,9 +21,7 @@ export function SentimentBadge({ sentiment }: { sentiment: string }) {
   const colors: Record<string, string> = {
     positive: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
     neutral: 'bg-[#1E293B] text-gray-400 border-gray-700',
-    negative_low: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-    negative_medium: 'bg-rose-500/10 text-rose-400 border-rose-500/20',
-    negative_high: 'bg-red-500/20 text-red-400 border-red-500/30',
+    negative: 'bg-red-500/20 text-red-400 border-red-500/30',
   };
   
   const bgClass = colors[sentiment?.toLowerCase()] || 'bg-[#1E293B] text-gray-400 border-gray-700';

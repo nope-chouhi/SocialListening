@@ -85,9 +85,7 @@ interface Filters {
 const SENTIMENT_OPTIONS = [
   { value: 'positive', label: 'Tích cực', dot: 'bg-emerald-500', bg: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' },
   { value: 'neutral', label: 'Trung lập', dot: 'bg-gray-400', bg: 'bg-gray-500/10 border-gray-500/20 text-gray-400' },
-  { value: 'negative_low', label: 'Tiêu cực nhẹ', dot: 'bg-amber-500', bg: 'bg-amber-500/10 border-amber-500/20 text-amber-400' },
-  { value: 'negative_medium', label: 'Tiêu cực', dot: 'bg-orange-500', bg: 'bg-orange-500/10 border-orange-500/20 text-orange-400' },
-  { value: 'negative_high', label: 'Nghiêm trọng', dot: 'bg-rose-500 animate-pulse', bg: 'bg-rose-500/10 border-rose-500/20 text-rose-400' },
+  { value: 'negative', label: 'Tiêu cực', dot: 'bg-rose-500', bg: 'bg-rose-500/10 border-rose-500/20 text-rose-400' },
 ];
 
 const SOURCE_TYPE_OPTIONS = [
@@ -1158,17 +1156,17 @@ function MentionsPageContent() {
                         {/* Sentiment Badge */}
                         <div className={`px-2 py-0.5 rounded-md text-xs font-bold flex items-center whitespace-nowrap ${
                            mention.sentiment === 'positive' ? 'bg-emerald-50 text-emerald-600' :
-                           mention.sentiment?.startsWith('negative') ? 'bg-rose-50 text-rose-600' :
+                           mention.sentiment === 'negative' ? 'bg-rose-50 text-rose-600' :
                            'bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-gray-400'
                         }`}>
                            <select
-                             value={mention.sentiment === 'positive' ? 'positive' : mention.sentiment?.startsWith('negative') ? 'negative_medium' : 'neutral'}
+                             value={mention.sentiment === 'positive' ? 'positive' : mention.sentiment === 'negative' ? 'negative' : 'neutral'}
                              onChange={(e) => handleAction(mention.id, 'sentiment', () => mentionsApi.updateSentiment(mention.id, e.target.value), 'Đã cập nhật sentiment')}
                              className="bg-transparent border-none outline-none font-bold cursor-pointer appearance-none pr-1"
                            >
                              <option value="positive" className="text-emerald-600">Positive</option>
                              <option value="neutral" className="text-gray-600">Neutral</option>
-                             <option value="negative_medium" className="text-rose-600">Negative</option>
+                             <option value="negative" className="text-rose-600">Negative</option>
                            </select>
                            <ChevronDown className="w-3 h-3 pointer-events-none" />
                         </div>
@@ -1412,8 +1410,13 @@ function MentionsPageContent() {
              <label className="flex items-center gap-2 cursor-pointer">
                <input 
                   type="checkbox" 
-                  checked={filters.sentiment === 'negative_high' || filters.sentiment === 'negative_medium'}
-                  onChange={() => { setFilters({...filters, sentiment: filters.sentiment?.startsWith('negative') ? null : 'negative_medium'}); setPage(1); }}
+                  checked={filters.sentiment?.split(',').includes('negative') || false}
+                  onChange={() => {
+                    const current = filters.sentiment ? filters.sentiment.split(',') : [];
+                    const next = current.includes('negative') ? current.filter(s => s !== 'negative') : [...current, 'negative'];
+                    setFilters({...filters, sentiment: next.length ? next.join(',') : null});
+                    setPage(1);
+                  }}
                   className="rounded border-gray-300 text-rose-500 focus:ring-rose-500" 
                />
                <span className="text-xs font-medium text-rose-600">Negative</span>
@@ -1421,8 +1424,13 @@ function MentionsPageContent() {
              <label className="flex items-center gap-2 cursor-pointer">
                <input 
                   type="checkbox" 
-                  checked={filters.sentiment === 'neutral'}
-                  onChange={() => { setFilters({...filters, sentiment: filters.sentiment === 'neutral' ? null : 'neutral'}); setPage(1); }}
+                  checked={filters.sentiment?.split(',').includes('neutral') || false}
+                  onChange={() => {
+                    const current = filters.sentiment ? filters.sentiment.split(',') : [];
+                    const next = current.includes('neutral') ? current.filter(s => s !== 'neutral') : [...current, 'neutral'];
+                    setFilters({...filters, sentiment: next.length ? next.join(',') : null});
+                    setPage(1);
+                  }}
                   className="rounded border-gray-300 text-gray-500 dark:text-gray-500 focus:ring-gray-500" 
                />
                <span className="text-xs font-medium text-gray-600 dark:text-gray-400">Neutral</span>
@@ -1430,8 +1438,13 @@ function MentionsPageContent() {
              <label className="flex items-center gap-2 cursor-pointer">
                <input 
                   type="checkbox" 
-                  checked={filters.sentiment === 'positive'}
-                  onChange={() => { setFilters({...filters, sentiment: filters.sentiment === 'positive' ? null : 'positive'}); setPage(1); }}
+                  checked={filters.sentiment?.split(',').includes('positive') || false}
+                  onChange={() => {
+                    const current = filters.sentiment ? filters.sentiment.split(',') : [];
+                    const next = current.includes('positive') ? current.filter(s => s !== 'positive') : [...current, 'positive'];
+                    setFilters({...filters, sentiment: next.length ? next.join(',') : null});
+                    setPage(1);
+                  }}
                   className="rounded border-gray-300 text-emerald-500 focus:ring-emerald-500" 
                />
                <span className="text-xs font-medium text-emerald-600">Positive</span>
