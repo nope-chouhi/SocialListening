@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { webinar } from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Props {
   isOpen: boolean;
@@ -9,11 +10,20 @@ interface Props {
 }
 
 export default function WebinarRegistrationModal({ isOpen, onClose, onSuccess }: Props) {
+  const { user } = useAuth();
+  
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [time, setTime] = useState('3:00 PM');
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (user) {
+      if (user.email) setEmail(user.email);
+      if (user.full_name) setName(user.full_name);
+    }
+  }, [user, isOpen]);
 
   if (!isOpen) return null;
 
@@ -26,7 +36,7 @@ export default function WebinarRegistrationModal({ isOpen, onClose, onSuccess }:
       await webinar.register({
         email,
         name,
-        webinar_title: "Get a Social Listening certificate with Brand24",
+        webinar_title: "Get a Social Listening certificate with Nope",
         webinar_time: `Wednesday, June 10, 2026 ${time}`,
         timezone: "Asia/Bangkok"
       });
@@ -81,7 +91,7 @@ export default function WebinarRegistrationModal({ isOpen, onClose, onSuccess }:
 
           <p className="text-gray-500 text-sm font-medium mb-1">Upcoming webinar:</p>
           <h2 className="text-xl font-bold text-gray-900 text-center mb-6 px-4">
-            Get a Social Listening certificate with Brand24
+            Get a Social Listening certificate with Nope
           </h2>
 
           <div className="flex items-center text-blue-600 font-bold mb-8">
