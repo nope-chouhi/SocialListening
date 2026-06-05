@@ -212,7 +212,7 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges, setIsWebi
             UPCOMING WEBINAR
           </div>
           <p className="text-xs text-zinc-300 mb-2 leading-relaxed font-medium">
-            Get a Social Listening certificate with Brand24
+            Get a Social Listening certificate with Nope
           </p>
           <p className="text-[11px] text-zinc-500 mb-3">
             Date: <strong className="text-zinc-400">Wednesday, June 10, 2026</strong>
