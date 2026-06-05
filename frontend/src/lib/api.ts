@@ -318,7 +318,7 @@ export const crawl = {
     const response = await api.get('/api/crawl/capabilities');
     return response.data;
   },
-  manualScan: async (data: { keyword_group_ids?: number[]; keywords?: string[]; source_ids?: number[]; url?: string; mode?: string; project_id?: number; max_results?: number }) => {
+  manualScan: async (data: { keyword_group_ids?: number[]; keywords?: string[]; source_ids?: number[]; url?: string; mode?: string; project_id?: number; max_results?: number; query?: string; source_types?: string[]; expand_keywords?: boolean }) => {
     // Sent as a single JSON object — backend expects ManualScanRequest body
     const response = await api.post('/api/crawl/manual-scan', data);
     return response.data;

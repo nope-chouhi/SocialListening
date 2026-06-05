@@ -636,7 +636,9 @@ function MentionsPageContent() {
     try {
       const res = await crawl.manualScan({
         project_id: activeProject.id,
-        keywords: [keyword],
+        query: keyword,
+        source_types: filters.source_type ? filters.source_type.split(',') : [],
+        expand_keywords: true,
         mode: 'AUTO_DISCOVERY',
         source_ids: [],
         max_results: 100,
