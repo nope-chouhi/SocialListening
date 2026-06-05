@@ -269,12 +269,12 @@ def list_mentions(
                 count_base = count_base.where(Mention.influence_score >= min_influence_score)
             
             # Direct mention filters
-            if source_type and not need_source_join:
+            if source_type:
                 st_list = [s.strip() for s in source_type.split(",")]
                 count_base = count_base.where(Mention.source_type.in_(st_list))
-            if source_types and not need_source_join:
+            if source_types:
                 count_base = count_base.where(Mention.source_type.in_(source_types))
-            if domain and not need_source_join:
+            if domain:
                 count_base = count_base.where(Mention.domain.ilike(f"%{domain}%"))
             if sentiment:
                 sentiments_list = [s.strip() for s in sentiment.split(",")]
