@@ -52,9 +52,14 @@ def send_email_notification(
     smtp_user = env_smtp_user if use_env else settings.smtp_username
     smtp_password = env_smtp_password if use_env else settings.smtp_password
     smtp_from = env_smtp_from_email if use_env else (settings.from_email or settings.smtp_username)
-    smtp_use_tls = True # Assume true for env configuration as standard practice
-    if not use_env and settings:
+    
+    if use_env:
+        # Auto-detect SSL vs TLS based on port
+        smtp_use_tls = (smtp_port != 465)
+    elif settings:
         smtp_use_tls = settings.use_tls
+    else:
+        smtp_use_tls = True
         
     if env_smtp_from_name and use_env:
         smtp_from_str = f"{env_smtp_from_name} <{smtp_from}>"
@@ -77,12 +82,13 @@ def send_email_notification(
         part2 = MIMEText(body_html, 'html', 'utf-8')
         msg.attach(part2)
         
-        # Connect to SMTP server
+        # Connect to SMTP server (force IPv4 to avoid Errno 101 on some hosts)
+        source_addr = ('0.0.0.0', 0)
         if smtp_use_tls:
-            server = smtplib.SMTP(smtp_host, smtp_port, timeout=10)
+            server = smtplib.SMTP(smtp_host, smtp_port, timeout=10, source_address=source_addr)
             server.starttls()
         else:
-            server = smtplib.SMTP_SSL(smtp_host, smtp_port, timeout=10)
+            server = smtplib.SMTP_SSL(smtp_host, smtp_port, timeout=10, source_address=source_addr)
         
         # Login
         server.login(smtp_user, smtp_password)
