@@ -171,8 +171,9 @@ def list_mentions(
         if need_source_join:
             query = query.join(Source, Source.id == Mention.source_id)
             if source_type:
-                query = query.where(Source.source_type == source_type)
-            if source_types:
+                st_list = [s.strip() for s in source_type.split(",")]
+                query = query.where(Source.source_type.in_(st_list))
+            elif source_types:
                 query = query.where(Source.source_type.in_(source_types))
             if domain:
                 query = query.where(Source.url.ilike(f"%{domain}%"))
@@ -193,8 +194,9 @@ def list_mentions(
         
         # In case source_type is directly on mention (new model)
         if source_type and not need_source_join:
-            query = query.where(Mention.source_type == source_type)
-        if source_types and not need_source_join:
+            st_list = [s.strip() for s in source_type.split(",")]
+            query = query.where(Mention.source_type.in_(st_list))
+        elif source_types and not need_source_join:
             query = query.where(Mention.source_type.in_(source_types))
         if domain and not need_source_join:
             query = query.where(Mention.domain.ilike(f"%{domain}%"))
@@ -268,7 +270,8 @@ def list_mentions(
             
             # Direct mention filters
             if source_type and not need_source_join:
-                count_base = count_base.where(Mention.source_type == source_type)
+                st_list = [s.strip() for s in source_type.split(",")]
+                count_base = count_base.where(Mention.source_type.in_(st_list))
             if source_types and not need_source_join:
                 count_base = count_base.where(Mention.source_type.in_(source_types))
             if domain and not need_source_join:
@@ -288,14 +291,6 @@ def list_mentions(
             
             if search_query and not job_id:
                 search_pattern = f"%{search_query}%"
-                query = query.where(
-                    or_(
-                        Mention.title.ilike(search_pattern),
-                        Mention.content.ilike(search_pattern),
-                        Mention.author.ilike(search_pattern),
-                        Mention.url.ilike(search_pattern)
-                    )
-                )
                 count_base = count_base.where(
                     or_(
                         Mention.title.ilike(search_pattern),
@@ -307,15 +302,6 @@ def list_mentions(
 
             if q and not job_id:
                 search_term = f"%{q}%"
-                query = query.filter(
-                    or_(
-                        Mention.title.ilike(search_term),
-                        Mention.snippet.ilike(search_term),
-                        Mention.content.ilike(search_term),
-                        Mention.url.ilike(search_term),
-                        Mention.domain.ilike(search_term),
-                    )
-                )
                 count_base = count_base.where(
                     or_(
                         Mention.title.ilike(search_term),

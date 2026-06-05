@@ -483,6 +483,11 @@ function MentionsPageContent() {
   const fetchMentions = useCallback(async () => {
     try {
       setLoading(true);
+      // Khi page = 1 (tá»©c lÃ  query/filter thay Ä‘á»•i), clear dá»¯ liá»‡u cÅ© Ä‘á»ƒ hiá»ƒn thá»‹ loading chÃ­nh xÃ¡c
+      if (page === 1) {
+        setMentionsList([]);
+      }
+      
       const params: any = {
         page,
         page_size: 20,
@@ -736,6 +741,7 @@ function MentionsPageContent() {
     setSearchTerm('');
     setSearchInput('');
     setPage(1);
+    router.push('/dashboard/mentions'); // Clear URL params completely
   };
 
   const hasActiveFilters = filters.sentiment || filters.source_type || filters.min_risk_score !== null || searchTerm;
@@ -1144,7 +1150,19 @@ function MentionsPageContent() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-4 mb-1">
                         <div>
-                           <h3 className="text-base font-bold text-gray-900 dark:text-white truncate">{mention.title || mention.author || 'Unknown Author'}</h3>
+                           <h3 className="text-base font-bold text-gray-900 dark:text-white truncate" title={mention.title || mention.author || 'Unknown Author'}>
+                             {highlightText(mention.title || mention.author || 'Unknown Author', searchTerm)}
+                           </h3>
+                           {searchTerm && (
+                              <div className="text-xs text-indigo-500 dark:text-indigo-400 mt-1 mb-1 font-medium flex gap-1 items-center">
+                                <Search className="w-3 h-3" /> Matched in: {[
+                                  (mention.title?.toLowerCase() || '').includes(searchTerm.toLowerCase()) && 'Title',
+                                  ((mention.content?.toLowerCase() || '').includes(searchTerm.toLowerCase()) || (mention.snippet?.toLowerCase() || '').includes(searchTerm.toLowerCase())) && 'Content',
+                                  (mention.url?.toLowerCase() || '').includes(searchTerm.toLowerCase()) && 'URL',
+                                  ((mention.domain?.toLowerCase() || '').includes(searchTerm.toLowerCase()) || (mention.source_name?.toLowerCase() || '').includes(searchTerm.toLowerCase())) && 'Source'
+                                ].filter(Boolean).join(', ') || 'AI Analysis'}
+                              </div>
+                            )}
                            <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-500 mt-1">
                              <span>{mention.domain || mention.source_type}</span>
                              <span>•</span>
@@ -1174,7 +1192,7 @@ function MentionsPageContent() {
                       
                       {/* Body */}
                       <p className="text-sm text-gray-700 dark:text-gray-300 mt-3 line-clamp-3 leading-relaxed">
-                        {mention.content}
+                        {highlightText(mention.snippet || mention.content?.substring(0, 300) || '', searchTerm)}
                       </p>
                       
                       {/* Media Rendering */}
@@ -1365,7 +1383,8 @@ function MentionsPageContent() {
            </div>
            <div className="grid grid-cols-2 gap-y-3 gap-x-2">
              {SOURCE_TYPE_OPTIONS.map((src) => {
-               const isSelected = filters.source_type === src.value;
+               const currentSources = filters.source_type ? filters.source_type.split(',') : [];
+               const isSelected = currentSources.includes(src.value);
                return (
                  <div key={src.value} className="flex items-start gap-2">
                    <input 
@@ -1374,7 +1393,13 @@ function MentionsPageContent() {
                      disabled={src.disabled}
                      onChange={() => {
                         if (!src.disabled) {
-                          setFilters({ ...filters, source_type: isSelected ? null : src.value });
+                          let next = [...currentSources];
+                          if (isSelected) {
+                            next = next.filter(s => s !== src.value);
+                          } else {
+                            next.push(src.value);
+                          }
+                          setFilters({ ...filters, source_type: next.length ? next.join(',') : null });
                           setPage(1);
                         }
                      }}
