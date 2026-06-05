@@ -107,6 +107,9 @@ def debug_auto_discovery(
         return {"success": False, "error": str(e)}
 
 
+import time
+_EXPANDED_KEYWORDS_CACHE = {}
+
 @router.post("/manual-scan")
 def manual_scan(
     body: ManualScanRequest,
@@ -125,14 +128,34 @@ def manual_scan(
         
         # Try AI expansion first
         try:
-            from app.services.ai_service import get_ai_provider
-            ai = get_ai_provider()
-            ai_expansions = ai.expand_keyword(q)
-            if ai_expansions:
-                for e in ai_expansions:
-                    e_lower = e.lower().strip()
-                    if e_lower and e_lower not in expansions:
-                        expansions.append(e_lower)
+            # Check cache (24 hours = 86400 seconds)
+            if q_lower in _EXPANDED_KEYWORDS_CACHE:
+                timestamp, cached_expansions = _EXPANDED_KEYWORDS_CACHE[q_lower]
+                if time.time() - timestamp < 86400:
+                    for e in cached_expansions:
+                        if e and e not in expansions:
+                            expansions.append(e)
+                    ai_expansions = cached_expansions
+                else:
+                    from app.services.ai_service import get_ai_provider
+                    ai = get_ai_provider()
+                    ai_expansions = ai.expand_keyword(q)[:8]  # Limit max 8 words
+                    _EXPANDED_KEYWORDS_CACHE[q_lower] = (time.time(), ai_expansions or [])
+                    if ai_expansions:
+                        for e in ai_expansions:
+                            e_lower = e.lower().strip()
+                            if e_lower and e_lower not in expansions:
+                                expansions.append(e_lower)
+            else:
+                from app.services.ai_service import get_ai_provider
+                ai = get_ai_provider()
+                ai_expansions = ai.expand_keyword(q)[:8]  # Limit max 8 words
+                _EXPANDED_KEYWORDS_CACHE[q_lower] = (time.time(), ai_expansions or [])
+                if ai_expansions:
+                    for e in ai_expansions:
+                        e_lower = e.lower().strip()
+                        if e_lower and e_lower not in expansions:
+                            expansions.append(e_lower)
         except Exception as e:
             import logging
             logging.error(f"AI expansion failed in manual_scan: {e}")
@@ -177,6 +200,31 @@ def manual_scan(
     mode = getattr(body, "mode", "HYBRID") or "HYBRID"
     project_id = body.project_id
     max_results = body.max_results or 50
+
+    from datetime import timedelta
+    recent_limit = datetime.now(timezone.utc) - timedelta(minutes=15)
+    existing_jobs = db.execute(
+        select(CrawlJob).where(
+            CrawlJob.project_id == project_id,
+            CrawlJob.status.in_([CrawlJobStatus.PENDING, CrawlJobStatus.RUNNING]),
+            CrawlJob.started_at > recent_limit
+        )
+    ).scalars().all()
+    
+    for ej in existing_jobs:
+        meta = ej.meta_data or {}
+        ej_keywords = set(meta.get("keywords", []))
+        ej_source_types = set(meta.get("source_types", []))
+        
+        if ej.mode == mode and set(keyword_texts) == ej_keywords and set(body.source_types or []) == ej_source_types:
+            return {
+                "job_id": ej.id,
+                "status": ej.status.value if hasattr(ej.status, 'value') else ej.status,
+                "mode": ej.mode,
+                "project_id": ej.project_id,
+                "keywords": list(ej_keywords),
+                "message": "Returned existing running job to prevent duplicate crawl"
+            }
 
     job = CrawlJob(
         job_type='manual',
