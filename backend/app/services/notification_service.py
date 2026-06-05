@@ -26,12 +26,12 @@ def send_email_notification(
     """
     Send email notification using SMTP
     """
-    env_smtp_host = os.getenv("SMTP_HOST")
-    env_smtp_port = os.getenv("SMTP_PORT")
-    env_smtp_user = os.getenv("SMTP_USER")
-    env_smtp_password = os.getenv("SMTP_PASSWORD")
-    env_smtp_from_email = os.getenv("SMTP_FROM_EMAIL") or env_smtp_user
-    env_smtp_from_name = os.getenv("SMTP_FROM_NAME")
+    env_smtp_host = os.getenv("SMTP_HOST", "").strip()
+    env_smtp_port = os.getenv("SMTP_PORT", "").strip()
+    env_smtp_user = os.getenv("SMTP_USER", "").strip()
+    env_smtp_password = os.getenv("SMTP_PASSWORD", "").strip()
+    env_smtp_from_email = os.getenv("SMTP_FROM_EMAIL", "").strip() or env_smtp_user
+    env_smtp_from_name = os.getenv("SMTP_FROM_NAME", "").strip()
     
     # Get email settings
     settings = db.execute(
