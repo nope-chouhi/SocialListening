@@ -369,12 +369,16 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
         
         # Ensure we keep existing keys from DB meta_data
         current_meta = job.meta_data or {}
+        # Preserve original_query if it was in the initial meta
+        original_query = current_meta.get("query")
         current_meta.update({
             "summary": summary,
             "project_id": project_id,
             "keywords": keyword_texts,
             "started_at": job.started_at.isoformat() if job.started_at else None
         })
+        if original_query:
+            current_meta["query"] = original_query
         job.meta_data = current_meta
         db.commit()
 
@@ -384,6 +388,16 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
         
         def commit_summary():
             from sqlalchemy.orm.attributes import flag_modified
+            # Always preserve query field when committing
+            cur = job.meta_data or {}
+            q_val = cur.get("query") or original_query
+            job.meta_data = {
+                "query": q_val,
+                "summary": summary,
+                "project_id": project_id,
+                "keywords": keyword_texts,
+                "started_at": cur.get("started_at")
+            }
             flag_modified(job, "meta_data")
             db.commit()
             
@@ -424,7 +438,6 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
             summary["adapters_ready"].append("web")
             summary["web"]["called"] = True
             summary["web"]["status"] = "RUNNING"
-            job.meta_data = {"summary": summary, "project_id": project_id, "keywords": keyword_texts}
             commit_summary()
             
             try:
@@ -507,7 +520,6 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
                 summary["web"]["error"] = str(e)
                 summary["web"]["status"] = "ERROR"
             
-            job.meta_data = {"summary": summary, "project_id": project_id, "keywords": keyword_texts}
             commit_summary()
             
         # -------------- YOUTUBE ADAPTER --------------
@@ -515,7 +527,6 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
             summary["adapters_ready"].append("youtube")
             summary["youtube"]["called"] = True
             summary["youtube"]["status"] = "RUNNING"
-            job.meta_data = {"summary": summary, "project_id": project_id, "keywords": keyword_texts}
             commit_summary()
             
             try:
@@ -602,7 +613,6 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
             summary["adapters_ready"].append("social")
             summary["social"]["called"] = True
             summary["social"]["status"] = "RUNNING"
-            job.meta_data = {"summary": summary, "project_id": project_id, "keywords": keyword_texts}
             commit_summary()
             
             try:
@@ -684,15 +694,14 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
                 summary["errors"].append(f"Social: {e}")
                 summary["social"]["error"] = str(e)
                 summary["social"]["status"] = "ERROR"
-            
-        job.meta_data = {"summary": summary, "project_id": project_id, "keywords": keyword_texts}
         commit_summary()
 
         db.commit()
 
         job.completed_at = datetime.now(timezone.utc)
-        job.meta_data = {"summary": summary, "project_id": project_id, "keywords": keyword_texts}
         job.mentions_found = summary["new_mentions_created"]
+        # Persist final summary with all fields
+        commit_summary()
         
         # Determine final status
         if is_timeout():
