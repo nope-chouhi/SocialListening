@@ -205,7 +205,6 @@ def manual_scan(
     recent_limit = datetime.now(timezone.utc) - timedelta(minutes=15)
     existing_jobs = db.execute(
         select(CrawlJob).where(
-            CrawlJob.project_id == project_id,
             CrawlJob.status.in_([CrawlJobStatus.PENDING, CrawlJobStatus.RUNNING]),
             CrawlJob.started_at > recent_limit
         )
@@ -213,15 +212,19 @@ def manual_scan(
     
     for ej in existing_jobs:
         meta = ej.meta_data or {}
+        # Only check jobs for the same project
+        if meta.get("project_id") != project_id:
+            continue
+            
         ej_keywords = set(meta.get("keywords", []))
         ej_source_types = set(meta.get("source_types", []))
         
-        if ej.mode == mode and set(keyword_texts) == ej_keywords and set(body.source_types or []) == ej_source_types:
+        if meta.get("mode", ej.job_type) == mode and set(keyword_texts) == ej_keywords and set(body.source_types or []) == ej_source_types:
             return {
                 "job_id": ej.id,
                 "status": ej.status.value if hasattr(ej.status, 'value') else ej.status,
-                "mode": ej.mode,
-                "project_id": ej.project_id,
+                "mode": mode,
+                "project_id": project_id,
                 "keywords": list(ej_keywords),
                 "message": "Returned existing running job to prevent duplicate crawl"
             }
