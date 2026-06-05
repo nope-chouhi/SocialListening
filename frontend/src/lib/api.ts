@@ -135,6 +135,13 @@ export function getUserFacingErrorMessage(
 }
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────
+export const webinar = {
+  register: async (data: { email: string; name: string; time: string }) => {
+    const response = await api.post('/api/webinar/register', data);
+    return response.data;
+  }
+};
+
 export const auth = {
   login: async (email: string, password: string) => {
     const formData = new URLSearchParams();
@@ -904,5 +911,6 @@ export const collectors = {
     return response.data;
   },
 };
+
 
 

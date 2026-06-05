@@ -12,6 +12,8 @@ import { ProjectProvider, useProject } from '@/contexts/ProjectContext';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import toast, { Toaster } from 'react-hot-toast';
 import { withTimeout } from '@/lib/utils/timeout';
+import WebinarRegistrationModal from '@/components/dashboard/WebinarRegistrationModal';
+import WebinarSuccessModal from '@/components/dashboard/WebinarSuccessModal';
 import { 
   LayoutDashboard, 
   Globe, 
@@ -41,7 +43,7 @@ import {
   Zap
 } from 'lucide-react';
 
-function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges }: any) {
+function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges, setIsWebinarModalOpen }: any) {
   const pathname = usePathname();
   const router = useRouter();
   const { projects, activeProject, setActiveProject, loading: projectsLoading } = useProject();
@@ -210,15 +212,15 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges }: any) {
             UPCOMING WEBINAR
           </div>
           <p className="text-xs text-zinc-300 mb-2 leading-relaxed font-medium">
-            Get a Social Listening certificate with Nope
+            Get a Social Listening certificate with Brand24
           </p>
           <p className="text-[11px] text-zinc-500 mb-3">
-            Date: <strong className="text-zinc-400">Wednesday, June 3, 2026</strong>
+            Date: <strong className="text-zinc-400">Wednesday, June 10, 2026</strong>
           </p>
-          <Link href="/dashboard/webinar" className="flex items-center text-xs font-bold text-blue-500 hover:text-blue-400">
+          <button onClick={() => setIsWebinarModalOpen(true)} className="flex items-center text-xs font-bold text-blue-500 hover:text-blue-400">
             <Award className="w-4 h-4 mr-2" />
             Sign up for webinar
-          </Link>
+          </button>
         </div>
 
         {/* System/Admin Nav */}
@@ -228,8 +230,6 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges }: any) {
           </div>
           <div className="px-2">
             {systemNav.map((item) => {
-              if ((item as any).adminOnly && !user?.is_superuser) return null;
-              
               const isActive = pathname.startsWith(item.href);
               return (
                 <Link
@@ -284,10 +284,7 @@ function SearchBar() {
           onChange={(e) => {
             const val = e.target.value;
             window.dispatchEvent(new CustomEvent('topbar_search_typing'));
-            // Clear previous timeout
             if ((window as any).searchTimeout) clearTimeout((window as any).searchTimeout);
-            
-            // Set new timeout for debounce
             (window as any).searchTimeout = setTimeout(() => {
               if (val) {
                 router.push(`/dashboard/mentions?q=${encodeURIComponent(val)}`);
@@ -309,15 +306,15 @@ function SearchBar() {
 
 function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const pathname = usePathname();
-  const { user, isLoading: authLoading, currentOrganization } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isWebinarModalOpen, setIsWebinarModalOpen] = useState(false);
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [badges, setBadges] = useState<{ new_alerts: number, open_incidents: number, unreviewed_mentions: number }>({
     new_alerts: 0, open_incidents: 0, unreviewed_mentions: 0
   });
 
   useEffect(() => {
-    // If no token at all, redirect immediately
     const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
     if (!token) {
       router.replace('/login');
@@ -338,26 +335,27 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
     }
   }, [user]);
 
-  // Remove blocking loader to render app shell immediately
-  // if (loading) return <LoadingSpinner message="Đang khởi động..." />;
-
   return (
     <div className="min-h-screen bg-[#F4F5F7] dark:bg-[#000511]">
       {sidebarOpen && (
         <div className="fixed inset-0 z-40 bg-gray-900/50 lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
       
-      <DashboardSidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} user={user} badges={badges} />
+      <DashboardSidebar 
+        sidebarOpen={sidebarOpen} 
+        setSidebarOpen={setSidebarOpen} 
+        user={user} 
+        badges={badges} 
+        setIsWebinarModalOpen={setIsWebinarModalOpen}
+      />
 
       <Toaster position="top-right" toastOptions={{ duration: 4000 }} />
       <div className="lg:pl-64 flex flex-col min-h-screen">
-        {/* Top Header */}
         <div className="sticky top-0 z-20 flex items-center h-16 px-4 bg-white dark:bg-[#050A15] border-b border-gray-200 dark:border-white/10 lg:px-8 shadow-sm">
           <button onClick={() => setSidebarOpen(true)} className="lg:hidden p-2 -ml-2 text-gray-500 hover:text-gray-900 mr-2">
             <Menu className="w-5 h-5" />
           </button>
 
-          {/* Search bar */}
           <Suspense fallback={<div className="flex-1 max-w-xl animate-pulse bg-gray-100 dark:bg-gray-800 h-10 rounded-lg" />}>
             <SearchBar />
           </Suspense>
@@ -400,6 +398,20 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
           {children}
         </main>
       </div>
+
+      <WebinarRegistrationModal 
+        isOpen={isWebinarModalOpen} 
+        onClose={() => setIsWebinarModalOpen(false)} 
+        onSuccess={() => {
+          setIsWebinarModalOpen(false);
+          setIsSuccessModalOpen(true);
+        }} 
+      />
+      
+      <WebinarSuccessModal 
+        isOpen={isSuccessModalOpen} 
+        onClose={() => setIsSuccessModalOpen(false)} 
+      />
     </div>
   );
 }

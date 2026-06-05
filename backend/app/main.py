@@ -16,7 +16,7 @@ from app.api import (
     reputation, discovery, integrations, realtime, saved_filters,
     organizations, billing
 )
-from app.api import service_requests
+from app.api import service_requests, webinar
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -189,6 +189,7 @@ app.include_router(audit.router,            prefix="/api/admin/audit",      tags
 app.include_router(service_requests.router, prefix="/api/service-requests", tags=["Service Requests"])
 app.include_router(monitor.router,          prefix="/api/monitor",           tags=["Monitor"])
 app.include_router(system.router,           prefix="/api/system",            tags=["System"])
+app.include_router(webinar.router,          prefix="/api/webinar",           tags=["Webinar"])
 app.include_router(ai.router,               prefix="/api/ai",                tags=["AI"])
 app.include_router(ai_chat.router,          prefix="/api/ai",                tags=["AI Chat"])
 app.include_router(evidence.router,         prefix="/api/evidence",          tags=["Evidence Locker"])
@@ -227,3 +228,4 @@ def debug_migrate():
     except Exception as e:
         os.chdir(original_cwd)
         return {"status": "error", "message": str(e), "traceback": traceback.format_exc()}
+
