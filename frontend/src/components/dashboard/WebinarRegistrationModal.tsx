@@ -19,17 +19,24 @@ export default function WebinarRegistrationModal({ isOpen, onClose, onSuccess }:
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
-    if (user) {
-      if (user.email) setEmail(user.email);
-      if (user.full_name) setName(user.full_name);
+    if (user && user.email) {
+      setEmail(user.email);
     }
+    // Do NOT auto-fill name per requirement
   }, [user, isOpen]);
 
   if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !name) return;
+    if (!email) {
+      setErrorMsg("Bạn phải đăng nhập hoặc có email để đăng ký.");
+      return;
+    }
+    if (!name) {
+      setErrorMsg("Vui lòng nhập tên của bạn.");
+      return;
+    }
     setLoading(true);
     setErrorMsg(null);
     try {
@@ -127,7 +134,9 @@ export default function WebinarRegistrationModal({ isOpen, onClose, onSuccess }:
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@email.com"
                   required
-                  className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  disabled
+                  readOnly
+                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg text-gray-500 cursor-not-allowed focus:outline-none"
                 />
               </div>
               <div className="flex-1 relative">

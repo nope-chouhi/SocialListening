@@ -82,20 +82,28 @@ def send_email_notification(
         part2 = MIMEText(body_html, 'html', 'utf-8')
         msg.attach(part2)
         
-        # Connect to SMTP server (force IPv4 to avoid Errno 101 on some hosts)
-        source_addr = ('0.0.0.0', 0)
-        if smtp_use_tls:
-            server = smtplib.SMTP(smtp_host, smtp_port, timeout=10, source_address=source_addr)
-            server.starttls()
-        else:
-            server = smtplib.SMTP_SSL(smtp_host, smtp_port, timeout=10, source_address=source_addr)
+        # Connect to SMTP server (force IPv4 via getaddrinfo patch to avoid Errno 101/Errno -9 on Render)
+        import socket
+        orig_getaddrinfo = socket.getaddrinfo
+        def getaddrinfo_ipv4(host, port, family=0, type=0, proto=0, flags=0):
+            return orig_getaddrinfo(host, port, socket.AF_INET, type, proto, flags)
         
-        # Login
-        server.login(smtp_user, smtp_password)
-        
-        # Send email
-        server.send_message(msg)
-        server.quit()
+        socket.getaddrinfo = getaddrinfo_ipv4
+        try:
+            if smtp_use_tls:
+                server = smtplib.SMTP(smtp_host, smtp_port, timeout=10)
+                server.starttls()
+            else:
+                server = smtplib.SMTP_SSL(smtp_host, smtp_port, timeout=10)
+            
+            # Login
+            server.login(smtp_user, smtp_password)
+            
+            # Send email
+            server.send_message(msg)
+            server.quit()
+        finally:
+            socket.getaddrinfo = orig_getaddrinfo
         
         print(f"[Email] ✅ Sent to {to_email}: {subject}")
         
