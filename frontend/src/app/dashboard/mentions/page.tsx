@@ -28,6 +28,7 @@ import {
 
 interface MentionItem {
   id: number;
+  job_id: number | null;
   source_id: number;
   source_name: string;
   source_type: string;
@@ -232,6 +233,9 @@ function MentionsPageContent() {
   const [activeChartTab, setActiveChartTab] = useState<'reach' | 'sentiment'>('reach');
   const [chartTimeRange, setChartTimeRange] = useState<'days' | 'weeks' | 'months'>('days');
 
+  const currentFetchIdRef = useRef<number>(0);
+  const scannedKeywordsRef = useRef<Set<string>>(new Set());
+
   const [searchState, setSearchState] = useState<'IDLE' | 'TYPING' | 'SEARCHING_DB' | 'LOCAL_RESULTS_FOUND' | 'NO_LOCAL_RESULTS' | 'AUTO_SCAN_STARTING' | 'AUTO_SCAN_RUNNING' | 'AUTO_SCAN_COMPLETED' | 'AUTO_SCAN_NO_RESULTS' | 'AUTO_SCAN_FAILED'>('IDLE');
 
   useEffect(() => {
@@ -246,8 +250,13 @@ function MentionsPageContent() {
       setSearchTerm(q);
       setSearchInput(q);
       setPage(1);
-      if (q) setSearchState('SEARCHING_DB');
-      else setSearchState('IDLE');
+      // Reset scanned keywords when query changes so new scan triggers
+      if (q) {
+        scannedKeywordsRef.current?.clear();
+        setSearchState('SEARCHING_DB');
+      } else {
+        setSearchState('IDLE');
+      }
     }
   }, [searchParams]);
   const [filters, setFilters] = useState<Filters>({
@@ -481,6 +490,7 @@ function MentionsPageContent() {
   /* ─── DATA FETCHING ─────────────────────────────────────────────────── */
 
   const fetchMentions = useCallback(async () => {
+    const fetchId = ++currentFetchIdRef.current;
     try {
       setLoading(true);
       // Khi page = 1 (tá»©c lÃ  query/filter thay Ä‘á»•i), clear dá»¯ liá»‡u cÅ© Ä‘á»ƒ hiá»ƒn thá»‹ loading chÃ­nh xÃ¡c
@@ -520,31 +530,43 @@ function MentionsPageContent() {
       if (activeProject) params.project_id = activeProject.id;
 
       const data = await mentionsApi.list(params);
+      if (fetchId !== currentFetchIdRef.current) return;
+      
       setMentionsList(data.items);
       setTotalMentions(data.total);
       setTotalPages(data.total_pages);
 
-      // Auto-trigger scan if 0 results
-      if (data.total === 0 && searchTerm && !initialJobId && !activeScanJobId) {
+      // Auto-trigger scan on EVERY search (not just empty results) if < threshold
+      if (searchTerm && !initialJobId && !activeScanJobId && activeProject) {
         const keywordLower = searchTerm.toLowerCase().trim();
-        // min keyword length = 2
-        if (keywordLower.length >= 2) {
-          if (!scannedKeywordsRef.current?.has(keywordLower) && activeProject) {
+        const allowlist = ['tth', 'fpt', 'vtv', 'vnpt', 'f88', '24h'];
+        const isAllowedShort = allowlist.includes(keywordLower);
+        
+        if ((keywordLower.length >= 3 || isAllowedShort) && !scannedKeywordsRef.current?.has(keywordLower)) {
+          if (data.total < 20) {
             scannedKeywordsRef.current?.add(keywordLower);
-            
-            // Call scan immediately
-            try {
+            // Show existing results immediately, scan runs in background
+            if (data.total > 0) {
+              setSearchState('LOCAL_RESULTS_FOUND');
+            } else {
               setSearchState('AUTO_SCAN_STARTING');
+            }
+            try {
               const res = await crawl.manualScan({
                 project_id: activeProject.id,
-                keywords: [searchTerm],
+                query: searchTerm,
+                expand_keywords: true,
                 mode: 'AUTO_DISCOVERY',
-                source_ids: [],
+                source_types: filters.source_type ? [filters.source_type] : [],
+                max_results: 20,
+                auto_triggered: true,
+                reason: 'live_search_low_results',
+                current_result_count: data.total
               });
-              if (res.message === "Returned existing running job to prevent duplicate crawl") {
-                toast.success("Đang có job quét tương tự đang chạy. Tự động theo dõi tiến độ...");
+              if (res.message === "Returned existing recent job to prevent duplicate crawl" || res.message === "Returned existing running job to prevent duplicate crawl") {
+                toast.success(`Đang theo dõi tiến độ quét '${searchTerm}'...`, { icon: '🔍' });
               } else {
-                toast.success(`Đang tự động quét thêm dữ liệu cho '${searchTerm}'...`);
+                toast.success(`Đang quét thêm '${searchTerm}' do ít kết quả...`, { icon: '🔍' });
               }
               setActiveScanJobId(res.job_id);
               setActiveScanKeyword(searchTerm);
@@ -553,17 +575,19 @@ function MentionsPageContent() {
               scanStartTimeRef.current = Date.now();
             } catch (err) {
               console.error('Scan error:', err);
-              setSearchState('AUTO_SCAN_FAILED');
-              // Allow retry if failed
+              setSearchState(data.total > 0 ? 'LOCAL_RESULTS_FOUND' : 'AUTO_SCAN_FAILED');
               scannedKeywordsRef.current?.delete(keywordLower);
             }
           } else {
-            setSearchState('NO_LOCAL_RESULTS');
+            // Sufficient results, no need to auto-scan
+            setSearchState('LOCAL_RESULTS_FOUND');
           }
         } else {
-          setSearchState('NO_LOCAL_RESULTS');
+          // Already scanned or too short
+          if (data.total === 0) setSearchState('NO_LOCAL_RESULTS');
+          else setSearchState('LOCAL_RESULTS_FOUND');
         }
-      } else if (data.total === 0) {
+      } else if (data.total === 0 && searchTerm) {
         setSearchState('NO_LOCAL_RESULTS');
       } else {
         if (searchTerm) setSearchState('LOCAL_RESULTS_FOUND');
@@ -719,7 +743,6 @@ function MentionsPageContent() {
 
   /* ─── PROJECT / SCAN ACTIONS ─────────────────────────────────────────── */
 
-  const scannedKeywordsRef = useRef<Set<string>>(new Set());
 
 
   const handleSearchChange = (val: string) => {
@@ -1035,7 +1058,7 @@ function MentionsPageContent() {
               <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-4" />
               <p className="text-gray-500 dark:text-gray-500">Đang tìm mentions hiện có liên quan đến '{searchTerm}'...</p>
             </div>
-          ) : ['AUTO_SCAN_STARTING', 'AUTO_SCAN_RUNNING'].includes(searchState) ? (
+          ) : ['AUTO_SCAN_STARTING', 'AUTO_SCAN_RUNNING'].includes(searchState) && mentionsList.length === 0 ? (
             <div className="py-20 flex flex-col items-center justify-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
               <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-4" />
               <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Đang tìm các bài viết/web/video liên quan đến '{searchTerm}'...</h3>
@@ -1096,6 +1119,14 @@ function MentionsPageContent() {
             </div>
           ) : (
             <div className="space-y-4">
+              {['AUTO_SCAN_STARTING', 'AUTO_SCAN_RUNNING'].includes(searchState) && (
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/50 rounded-lg p-3 mb-4 flex items-center gap-3">
+                  <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />
+                  <span className="text-sm text-blue-800 dark:text-blue-300 font-medium">
+                    Hệ thống đang tự động quét thêm kết quả mới cho '{searchTerm}' ở chế độ nền...
+                  </span>
+                </div>
+              )}
               {searchState === 'AUTO_SCAN_COMPLETED' && scanJobStatus && (
                 <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/50 rounded-lg p-4 mb-4">
                   <div className="flex items-center justify-between mb-3 border-b border-emerald-200/50 dark:border-emerald-800/30 pb-2">
@@ -1180,9 +1211,14 @@ function MentionsPageContent() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-4 mb-1">
                         <div>
-                           <h3 className="text-base font-bold text-gray-900 dark:text-white truncate" title={mention.title || mention.author || 'Unknown Author'}>
-                             {highlightText(mention.title || mention.author || 'Unknown Author', searchTerm)}
-                           </h3>
+                           <div className="flex items-center gap-2 mb-1">
+                             <h3 className="text-base font-bold text-gray-900 dark:text-white truncate" title={mention.title || mention.author || 'Unknown Author'}>
+                               {highlightText(mention.title || mention.author || 'Unknown Author', searchTerm)}
+                             </h3>
+                             {activeScanJobId && mention.job_id === activeScanJobId && (
+                               <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-[10px] uppercase font-extrabold px-1.5 py-0.5 rounded-sm shrink-0 border border-blue-200 dark:border-blue-800">New</span>
+                             )}
+                           </div>
                            {searchTerm && (
                               <div className="text-xs text-indigo-500 dark:text-indigo-400 mt-1 mb-1 font-medium flex gap-1 items-center">
                                 <Search className="w-3 h-3" /> Matched in: {[
@@ -1190,7 +1226,7 @@ function MentionsPageContent() {
                                   ((mention.content?.toLowerCase() || '').includes(searchTerm.toLowerCase()) || (mention.snippet?.toLowerCase() || '').includes(searchTerm.toLowerCase())) && 'Content',
                                   (mention.url?.toLowerCase() || '').includes(searchTerm.toLowerCase()) && 'URL',
                                   ((mention.domain?.toLowerCase() || '').includes(searchTerm.toLowerCase()) || (mention.source_name?.toLowerCase() || '').includes(searchTerm.toLowerCase())) && 'Source'
-                                ].filter(Boolean).join(', ') || 'AI Analysis'}
+                                ].filter(Boolean).join(', ') || 'Keyword Group / Semantic'}
                               </div>
                             )}
                            <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-500 mt-1">
