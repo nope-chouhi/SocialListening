@@ -260,8 +260,62 @@ def run_prod_backfill(db: Session = Depends(get_db)):
         db.commit()
         return {"status": "success"}
     except Exception as e:
-        db.rollback()
         return {"status": "error", "error": str(e)}
+
+@app.get("/api/sys/run-visit-migration")
+def run_visit_migration(db: Session = Depends(get_db)):
+    try:
+        # PostgreSQL syntax for adding columns safely
+        db.execute(text("ALTER TABLE mentions ADD COLUMN IF NOT EXISTS is_reviewed BOOLEAN DEFAULT FALSE"))
+        db.execute(text("ALTER TABLE mentions ADD COLUMN IF NOT EXISTS visit_count INTEGER DEFAULT 0"))
+        db.execute(text("ALTER TABLE mentions ADD COLUMN IF NOT EXISTS last_visited_at TIMESTAMP WITH TIME ZONE NULL"))
+        
+        # Check if mention_visits exists, if not create it
+        db.execute(text("""
+            CREATE TABLE IF NOT EXISTS mention_visits (
+                id SERIAL PRIMARY KEY,
+                mention_id INTEGER NOT NULL,
+                user_id INTEGER,
+                project_id INTEGER,
+                visited_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                original_url TEXT,
+                source_type VARCHAR(50),
+                user_agent TEXT,
+                ip_hash VARCHAR(64)
+            )
+        """))
+        
+        db.commit()
+        return {"status": "success", "message": "Migration completed successfully"}
+    except Exception as e:
+        db.rollback()
+        # Fallback to SQLite syntax if we are running locally
+        try:
+            db.execute(text("ALTER TABLE mentions ADD COLUMN is_reviewed BOOLEAN DEFAULT 0"))
+        except: pass
+        try:
+            db.execute(text("ALTER TABLE mentions ADD COLUMN visit_count INTEGER DEFAULT 0"))
+        except: pass
+        try:
+            db.execute(text("ALTER TABLE mentions ADD COLUMN last_visited_at DATETIME NULL"))
+        except: pass
+        try:
+            db.execute(text("""
+                CREATE TABLE IF NOT EXISTS mention_visits (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    mention_id INTEGER NOT NULL,
+                    user_id INTEGER,
+                    project_id INTEGER,
+                    visited_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    original_url TEXT,
+                    source_type VARCHAR(50),
+                    user_agent TEXT,
+                    ip_hash VARCHAR(64)
+                )
+            """))
+        except: pass
+        db.commit()
+        return {"status": "partial", "error": str(e), "message": "Ran SQLite fallback migration"}
 
 if __name__ == "__main__":
     import uvicorn

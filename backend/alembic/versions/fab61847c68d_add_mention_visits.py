@@ -39,11 +39,6 @@ def upgrade() -> None:
         batch_op.create_index(batch_op.f('ix_mention_visits_visited_at'), ['visited_at'], unique=False)
 
     pass
-    with op.batch_alter_table('ai_analysis', schema=None) as batch_op:
-        batch_op.alter_column('sentiment',
-               existing_type=sa.VARCHAR(length=15),
-               type_=sa.Enum('positive', 'neutral', 'negative', name='sentimentscore'),
-               existing_nullable=False)
 
     with op.batch_alter_table('mentions', schema=None) as batch_op:
         batch_op.add_column(sa.Column('visit_count', sa.Integer(), nullable=True))
@@ -58,11 +53,7 @@ def downgrade() -> None:
         batch_op.drop_column('last_visited_at')
         batch_op.drop_column('visit_count')
 
-    with op.batch_alter_table('ai_analysis', schema=None) as batch_op:
-        batch_op.alter_column('sentiment',
-               existing_type=sa.Enum('positive', 'neutral', 'negative', name='sentimentscore'),
-               type_=sa.VARCHAR(length=15),
-               existing_nullable=False)
+    pass
 
     pass
 
