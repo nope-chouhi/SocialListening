@@ -205,7 +205,7 @@ function highlightText(text: string, query: string): React.ReactNode {
   );
 }
 
-export function getSafeUrl(url: string | null | undefined): string | null {
+function getSafeUrl(url: string | null | undefined): string | null {
   if (!url) return null;
   const tUrl = url.trim();
   if (tUrl === '') return null;
