@@ -709,11 +709,10 @@ function MentionsPageContent() {
   useEffect(() => {
     if (!activeScanJobId) return;
     const interval = setInterval(async () => {
-      // Check for frontend timeout (2.5 minutes) in case the backend job hangs or server restarts
-      if (scanStartTimeRef.current && Date.now() - scanStartTimeRef.current > 150000) {
+      if (scanStartTimeRef.current && Date.now() - scanStartTimeRef.current > 90000) {
         clearInterval(interval);
         setSearchState('AUTO_SCAN_FAILED');
-        setScanJobStatus((prev: any) => ({ ...prev, status: 'TIMEOUT', error_message: 'Quá thời gian chờ phản hồi từ máy chủ (Timeout).' }));
+        setScanJobStatus((prev: any) => ({ ...prev, status: 'TIMEOUT', error_message: 'Job quét đang chạy lâu hơn bình thường (90s). Vui lòng kiểm tra lại Worker/Status.' }));
         return;
       }
 
@@ -1132,18 +1131,27 @@ function MentionsPageContent() {
                 <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
                   <Search className="w-8 h-8 text-gray-400" />
                 </div>
-                <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Chưa có dữ liệu trong DB cho '{searchTerm}'</h3>
+                <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Không tìm thấy kết quả đã lưu cho '{searchTerm}' trong bộ lọc hiện tại.</h3>
+                {dateRange !== 'all' && (
+                  <div className="bg-yellow-50 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-200 text-sm px-4 py-3 rounded-lg max-w-md mb-6 border border-yellow-200 dark:border-yellow-800/30">
+                    <span className="font-semibold block mb-1">Gợi ý:</span>
+                    Có thể từ khóa có dữ liệu ngoài phạm vi thời gian đã chọn. Thử mở rộng sang 30 ngày, 90 ngày hoặc Tất cả thời gian.
+                  </div>
+                )}
                 {searchTerm.length < 2 && (
                   <p className="text-gray-500 dark:text-gray-500 mb-6 max-w-sm">Từ khóa quá ngắn để tự động quét internet (cần ít nhất 2 ký tự).</p>
                 )}
-                <button 
-                  onClick={handleScanClick}
-                  disabled={activeScanJobId !== null || searchTerm.length < 2}
-                  className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
-                >
-                  <Search className="w-4 h-4" />
-                  Scan Now
-                </button>
+                <div className="flex flex-col items-center gap-2 mt-2">
+                  <p className="text-sm text-gray-500">Bạn có thể bấm Scan Now để quét thêm nguồn.</p>
+                  <button 
+                    onClick={handleScanClick}
+                    disabled={activeScanJobId !== null || searchTerm.length < 2}
+                    className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
+                  >
+                    <Search className="w-4 h-4" />
+                    Scan Now
+                  </button>
+                </div>
               </div>
             ) : (
               <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
@@ -1151,7 +1159,12 @@ function MentionsPageContent() {
                   <Search className="w-8 h-8 text-gray-400" />
                 </div>
                 <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Chưa có đề cập nào</h3>
-                <p className="text-gray-500 dark:text-gray-500 max-w-sm mb-6">Dự án của bạn chưa thu thập được đề cập nào, hoặc dữ liệu không khớp với bộ lọc.</p>
+                <p className="text-gray-500 dark:text-gray-500 max-w-sm mb-4">Dự án của bạn chưa thu thập được đề cập nào, hoặc dữ liệu không khớp với bộ lọc.</p>
+                {dateRange !== 'all' && (
+                  <div className="bg-yellow-50 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-200 text-sm px-4 py-2 rounded-lg max-w-md mb-6 border border-yellow-200 dark:border-yellow-800/30">
+                    Có thể dữ liệu nằm ngoài phạm vi thời gian hiện tại. Hãy thử mở rộng bộ lọc ngày.
+                  </div>
+                )}
               </div>
             )
           ) : (
