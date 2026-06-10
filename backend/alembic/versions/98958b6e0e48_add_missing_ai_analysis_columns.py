@@ -2,7 +2,7 @@ from alembic import op
 import sqlalchemy as sa
 
 revision = '98958b6e0e48'
-down_revision = '1922a3afa527'
+down_revision = '013_add_schedule_arrays'
 branch_labels = None
 depends_on = None
 

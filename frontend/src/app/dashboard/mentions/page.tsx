@@ -874,59 +874,92 @@ function MentionsPageContent() {
       <div className="flex-1 w-full lg:w-[75%] min-w-0 flex flex-col gap-6">
         
         {/* Header & Filter Controls */}
-        <div className="flex flex-wrap items-center justify-between gap-4 bg-white dark:bg-[#050A15] p-4 rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
-           <div className="flex items-center gap-3">
-             <div className="relative" ref={sortRef}>
-               <button onClick={() => setSortOpen(!sortOpen)} className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-gray-800 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-md transition-colors">
-                 {SORT_OPTIONS.find((o) => o.value === filters.sort_by)?.label || 'By relevance'}
-                 <ChevronDown className="w-4 h-4" />
-               </button>
-               {sortOpen && (
-                 <div className="absolute left-0 top-full mt-1 w-48 bg-white dark:bg-[#050A15] border border-gray-200 dark:border-white/10 rounded-lg shadow-xl z-20 py-1">
-                   {SORT_OPTIONS.map((opt) => (
-                     <button
-                       key={opt.value}
-                       onClick={() => { setFilters({ ...filters, sort_by: opt.value }); setSortOpen(false); setPage(1); }}
-                       className={`w-full text-left px-4 py-2 text-sm font-medium transition-colors ${
-                         filters.sort_by === opt.value
-                           ? 'bg-blue-50 text-blue-600'
-                           : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-[#0a0f1c] dark:bg-[#0a0f1c]'
-                       }`}
-                     >
-                       {opt.label}
-                     </button>
-                   ))}
-                 </div>
+        <div className="flex flex-col gap-3 bg-white dark:bg-[#050A15] p-4 rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+           <div className="flex flex-wrap items-center justify-between gap-4">
+             <div className="flex items-center gap-3">
+               <div className="relative" ref={sortRef}>
+                 <button onClick={() => setSortOpen(!sortOpen)} className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-gray-800 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-md transition-colors">
+                   {SORT_OPTIONS.find((o) => o.value === filters.sort_by)?.label || 'By relevance'}
+                   <ChevronDown className="w-4 h-4" />
+                 </button>
+                 {sortOpen && (
+                   <div className="absolute left-0 top-full mt-1 w-48 bg-white dark:bg-[#050A15] border border-gray-200 dark:border-white/10 rounded-lg shadow-xl z-20 py-1">
+                     {SORT_OPTIONS.map((opt) => (
+                       <button
+                         key={opt.value}
+                         onClick={() => { setFilters({ ...filters, sort_by: opt.value }); setSortOpen(false); setPage(1); }}
+                         className={`w-full text-left px-4 py-2 text-sm font-medium transition-colors ${
+                           filters.sort_by === opt.value
+                             ? 'bg-blue-50 text-blue-600'
+                             : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-[#0a0f1c] dark:bg-[#0a0f1c]'
+                         }`}
+                       >
+                         {opt.label}
+                       </button>
+                     ))}
+                   </div>
+                 )}
+               </div>
+               
+               {hasActiveFilters && (
+                 <button onClick={() => { setFilters({ ...filters, sentiment: null, source_type: null, min_risk_score: null, min_influence_score: null }); setPage(1); }} className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 dark:text-gray-100 font-medium transition-colors">
+                   <RefreshCw className="w-3.5 h-3.5" /> Clear filters
+                 </button>
                )}
+               
+               <button onClick={openSaveFilterModal} className="flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700 font-bold transition-colors">
+                 <SlidersHorizontal className="w-3.5 h-3.5" /> Save filters
+               </button>
              </div>
              
-             {hasActiveFilters && (
-               <button onClick={() => { setFilters({ ...filters, sentiment: null, source_type: null, min_risk_score: null, min_influence_score: null }); setPage(1); }} className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 dark:text-gray-100 font-medium transition-colors">
-                 <RefreshCw className="w-3.5 h-3.5" /> Clear filters
-               </button>
-             )}
-             
-             <button onClick={openSaveFilterModal} className="flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700 font-bold transition-colors">
-               <SlidersHorizontal className="w-3.5 h-3.5" /> Save filters
-             </button>
+             <div className="flex items-center gap-3">
+                <button onClick={() => { fetchMentions(); fetchChartData(); }} className="p-2 text-gray-400 hover:text-blue-600 transition-colors">
+                  <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                </button>
+                <button onClick={handleExportCsv} className="p-2 text-gray-400 hover:text-blue-600 transition-colors">
+                  <Download className="w-4 h-4" />
+                </button>
+                <button 
+                   onClick={handleScanClick}
+                   disabled={activeScanJobId !== null}
+                   className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
+                 >
+                   {activeScanJobId ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+                   {activeScanJobId ? 'Đang quét...' : 'Scan Now'}
+                 </button>
+             </div>
            </div>
            
-           <div className="flex items-center gap-3">
-              <button onClick={() => { fetchMentions(); fetchChartData(); }} className="p-2 text-gray-400 hover:text-blue-600 transition-colors">
-                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-              </button>
-              <button onClick={handleExportCsv} className="p-2 text-gray-400 hover:text-blue-600 transition-colors">
-                <Download className="w-4 h-4" />
-              </button>
-              <button 
-                 onClick={handleScanClick}
-                 disabled={activeScanJobId !== null}
-                 className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
-               >
-                 {activeScanJobId ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-                 {activeScanJobId ? 'Đang quét...' : 'Scan Now'}
-               </button>
-           </div>
+           {/* Scan / Search Status */}
+           {(searchTerm || activeScanJobId || scanJobStatus) && (
+             <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-gray-100 dark:border-white/5 text-sm text-gray-600 dark:text-gray-400">
+               {searchTerm && (
+                 <span className="font-medium">
+                   Tìm thấy <span className="font-bold text-gray-900 dark:text-white">{totalMentions}</span> kết quả cho <span className="text-blue-600 font-bold">'{searchTerm}'</span>
+                 </span>
+               )}
+               
+               {activeScanJobId && (
+                 <span className="flex items-center gap-1.5 text-blue-600 bg-blue-50 dark:bg-blue-900/20 px-2 py-0.5 rounded-md">
+                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                   Đang quét thêm nguồn mới để mở rộng kết quả...
+                 </span>
+               )}
+               
+               {!activeScanJobId && scanJobStatus && scanJobStatus.status === 'COMPLETED' && (
+                 <span className="flex items-center gap-1.5 text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-0.5 rounded-md">
+                   <CheckCircle2 className="w-3.5 h-3.5" />
+                   Quét xong: tìm thấy {scanJobStatus.meta_data?.actual_raw_results_count || 0}, thêm mới {scanJobStatus.meta_data?.created_mentions_count || 0}, bỏ qua {scanJobStatus.meta_data?.duplicate_mentions_count || 0} trùng lặp.
+                 </span>
+               )}
+               {!activeScanJobId && scanJobStatus && scanJobStatus.status === 'PARTIAL_FAILED' && (
+                 <span className="flex items-center gap-1.5 text-orange-600 bg-orange-50 dark:bg-orange-900/20 px-2 py-0.5 rounded-md">
+                   <AlertTriangle className="w-3.5 h-3.5" />
+                   Quét xong (có lỗi 1 phần): tìm thấy {scanJobStatus.meta_data?.actual_raw_results_count || 0}, thêm mới {scanJobStatus.meta_data?.created_mentions_count || 0}.
+                 </span>
+               )}
+             </div>
+           )}
         </div>
 
         {/* Chart Section */}

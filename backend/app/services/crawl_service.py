@@ -20,8 +20,12 @@ from app.models.crawl import CrawlJob, CrawlJobStatus
 
 logger = logging.getLogger(__name__)
 
+import os
 REQUEST_TIMEOUT = 30
-MAX_RSS_ENTRIES = 50
+try:
+    MAX_RSS_ENTRIES = min(int(os.getenv("CRAWL_MAX_RESULTS_PER_SOURCE", 50)), 100)
+except ValueError:
+    MAX_RSS_ENTRIES = 50
 MAX_CONTENT_LENGTH = 10000
 USER_AGENT = "Mozilla/5.0 (compatible; SocialListeningBot/1.0)"
 

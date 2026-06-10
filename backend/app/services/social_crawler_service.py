@@ -25,7 +25,7 @@ class SocialCrawlerService:
         self.timeout = 30.0
         self.user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 
-    async def crawl_twitter(self, keyword: str) -> List[Dict[str, Any]]:
+    async def crawl_twitter(self, keyword: str, limit: int = 50) -> List[Dict[str, Any]]:
         token = settings.TWITTER_BEARER_TOKEN or os.getenv("TWITTER_BEARER_TOKEN", "")
         if not token:
             logger.info("Twitter crawl skipped: TWITTER_BEARER_TOKEN not set")
@@ -34,7 +34,7 @@ class SocialCrawlerService:
         url = "https://api.twitter.com/2/tweets/search/recent"
         params = {
             "query": keyword,
-            "max_results": 50,
+            "max_results": limit,
             "tweet.fields": "created_at,public_metrics,author_id",
         }
         headers = {"Authorization": f"Bearer {token}"}
@@ -69,9 +69,9 @@ class SocialCrawlerService:
             })
         return results
 
-    async def crawl_reddit(self, keyword: str) -> List[Dict[str, Any]]:
+    async def crawl_reddit(self, keyword: str, limit: int = 50) -> List[Dict[str, Any]]:
         url = "https://www.reddit.com/search.json"
-        params = {"q": keyword, "limit": 50, "sort": "new"}
+        params = {"q": keyword, "limit": limit, "sort": "new"}
         # Reddit strictly blocks generic browser User-Agents for API/JSON endpoints
         headers = {"User-Agent": "python:sociallistening:v1.0.0 (by /u/sociallistening)"}
 
@@ -158,14 +158,14 @@ class SocialCrawlerService:
             logger.warning(f"Google News XML parse failed for '{keyword}'. Reason: {e}")
             return []
 
-    async def crawl_news(self, keyword: str) -> List[Dict[str, Any]]:
+    async def crawl_news(self, keyword: str, limit: int = 50) -> List[Dict[str, Any]]:
         api_key = settings.NEWS_API_KEY or os.getenv("NEWS_API_KEY", "")
         if not api_key:
             logger.info("News crawl skipped: NEWS_API_KEY not set")
             return []
 
         url = "https://newsapi.org/v2/everything"
-        params = {"q": keyword, "pageSize": 50, "apiKey": api_key, "sortBy": "publishedAt"}
+        params = {"q": keyword, "pageSize": limit, "apiKey": api_key, "sortBy": "publishedAt"}
 
         async with httpx.AsyncClient(timeout=self.timeout) as client:
             response = await client.get(url, params=params)
@@ -201,6 +201,7 @@ class SocialCrawlerService:
         self,
         keywords: List[str],
         platforms: Optional[List[str]] = None,
+        limit: int = 50,
     ) -> List[Dict[str, Any]]:
         platforms = platforms or ["twitter", "reddit", "news", "google_news"]
         mentions: List[Dict[str, Any]] = []
@@ -210,12 +211,13 @@ class SocialCrawlerService:
         for keyword in keywords:
             for platform in platforms:
                 if platform == "twitter":
-                    tasks.append((platform, keyword, self.crawl_twitter(keyword)))
+                    tasks.append((platform, keyword, self.crawl_twitter(keyword, limit=limit)))
                 elif platform == "reddit":
-                    tasks.append((platform, keyword, self.crawl_reddit(keyword)))
+                    tasks.append((platform, keyword, self.crawl_reddit(keyword, limit=limit)))
                 elif platform == "news":
-                    tasks.append((platform, keyword, self.crawl_news(keyword)))
+                    tasks.append((platform, keyword, self.crawl_news(keyword, limit=limit)))
                 elif platform == "google_news":
+                    # Google News RSS limits aren't easily controlled via URL params here, it returns around 100 max
                     tasks.append((platform, keyword, self.crawl_google_news(keyword)))
                     
         if not tasks:

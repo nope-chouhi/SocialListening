@@ -420,7 +420,9 @@ def list_mentions(
             "total": total,
             "page": page,
             "page_size": page_size,
-            "total_pages": total_pages
+            "total_pages": total_pages,
+            "has_next": page < total_pages,
+            "has_prev": page > 1
         }
     except HTTPException:
         raise

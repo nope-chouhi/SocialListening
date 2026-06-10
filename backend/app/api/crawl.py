@@ -228,13 +228,13 @@ def manual_scan(
     import os
     env_max = os.getenv("CRAWL_MAX_RESULTS_PER_SOURCE")
     try:
-        default_max = int(env_max) if env_max else 20
+        default_max = int(env_max) if env_max else 50
     except ValueError:
-        default_max = 20
+        default_max = 50
     
-    # Cap max_results at 50 to avoid overload
+    # Cap max_results at 100 to avoid overload
     req_max = body.max_results or default_max
-    max_results = min(req_max, 50)
+    max_results = min(req_max, 100)
 
     from datetime import timedelta
     # Check pending/running in last 15 min
@@ -494,7 +494,7 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
                 asyncio.set_event_loop(loop)
                 try:
                     results = loop.run_until_complete(
-                        social_crawler_service.crawl_keywords(keyword_texts, _social_types)
+                        social_crawler_service.crawl_keywords(keyword_texts, _social_types, limit=max_results)
                     )
                 finally:
                     loop.close()
@@ -635,12 +635,7 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
 
         db.flush()
         commit_summary()
-        db.commit()
-
-        job.completed_at = datetime.now(timezone.utc)
-        job.mentions_found = summary["new_mentions_created"]
-        commit_summary()
-
+        
         # Final status
         if is_timeout():
             job.status = CrawlJobStatus.TIMEOUT
@@ -650,11 +645,28 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
             job.error_message = "All adapters failed: " + "; ".join(summary["errors"])
         elif summary["errors"]:
             job.status = CrawlJobStatus.PARTIAL_FAILED
+            job.error_message = "Some adapters failed: " + "; ".join(summary["errors"])
         elif summary["new_mentions_created"] == 0 and summary["duplicates_skipped"] == 0:
             job.status = CrawlJobStatus.COMPLETED_NO_RESULTS
         else:
             job.status = CrawlJobStatus.COMPLETED
 
+        # Update strict metadata fields
+        meta_data_final = job.meta_data or {}
+        meta_data_final["normalized_query"] = meta_data_final.get("query", "").strip().lower()
+        meta_data_final["expanded_keywords"] = keyword_texts
+        meta_data_final["requested_max_results_per_source"] = max_results
+        meta_data_final["actual_raw_results_count"] = sum(s.get("raw_results_count", 0) for k, s in summary.items() if isinstance(s, dict) and "raw_results_count" in s)
+        meta_data_final["created_mentions_count"] = summary.get("new_mentions_created", 0)
+        meta_data_final["duplicate_mentions_count"] = summary.get("duplicates_skipped", 0)
+        meta_data_final["skipped_low_relevance_count"] = meta_data_final["actual_raw_results_count"] - meta_data_final["created_mentions_count"] - meta_data_final["duplicate_mentions_count"]
+        meta_data_final["failed_sources"] = summary["errors"]
+        meta_data_final["duration_seconds"] = time.time() - start_time
+        meta_data_final["status"] = job.status.name
+        job.meta_data = meta_data_final
+        job.completed_at = datetime.now(timezone.utc)
+        job.mentions_found = meta_data_final["created_mentions_count"]
+        flag_modified(job, "meta_data")
         db.commit()
 
     except Exception as e:
