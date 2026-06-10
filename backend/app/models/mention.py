@@ -69,6 +69,10 @@ class Mention(Base):
     meta_data = Column(JSON)  # Likes, shares, comments count, etc. (renamed from metadata)
     is_reviewed = Column(Boolean, default=False)
     
+    # Visit Tracking
+    visit_count = Column(Integer, default=0, nullable=True)
+    last_visited_at = Column(DateTime(timezone=True), nullable=True)
+    
     
     __table_args__ = (
         Index('idx_mention_published', 'published_at'),
@@ -123,3 +127,20 @@ class AIAnalysis(Base):
     # Timestamps
     analyzed_at = Column(DateTime(timezone=True), server_default=func.now())
     
+
+class MentionVisit(Base):
+    __tablename__ = "mention_visits"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    mention_id = Column(Integer, nullable=False, index=True)
+    user_id = Column(Integer, nullable=True, index=True)
+    project_id = Column(Integer, nullable=True, index=True)
+    visited_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+    original_url = Column(Text, nullable=True)
+    source_type = Column(String(50), nullable=True)
+    user_agent = Column(Text, nullable=True)
+    ip_hash = Column(String(64), nullable=True)
+    
+    __table_args__ = (
+        Index('idx_mention_visits_project_time', 'project_id', 'visited_at'),
+    )

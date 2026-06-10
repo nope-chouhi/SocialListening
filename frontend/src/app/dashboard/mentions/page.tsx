@@ -68,6 +68,9 @@ interface MentionItem {
     discovery_job_id?: number;
     [key: string]: any;
   } | null;
+  visit_count?: number;
+  last_visited_at?: string | null;
+  is_visited?: boolean;
 }
 
 interface Filters {
@@ -200,6 +203,42 @@ function highlightText(text: string, query: string): React.ReactNode {
       ? <mark key={i} className="bg-yellow-200 dark:bg-yellow-800 rounded px-0.5 font-medium">{part}</mark>
       : part
   );
+}
+
+export function getSafeUrl(url: string | null | undefined): string | null {
+  if (!url) return null;
+  const tUrl = url.trim();
+  if (tUrl === '') return null;
+  
+  const lowerUrl = tUrl.toLowerCase();
+  
+  // Block dangerous schemes
+  if (lowerUrl.startsWith('javascript:') || 
+      lowerUrl.startsWith('data:') || 
+      lowerUrl.startsWith('file:') || 
+      lowerUrl.startsWith('vbscript:')) {
+    return null;
+  }
+  
+  // Accept explicitly allowed schemes
+  if (lowerUrl.startsWith('http://') || lowerUrl.startsWith('https://')) {
+    return tUrl;
+  }
+  
+  // Try parsing as URL to catch weird cases like jAvascript:
+  try {
+    const parsed = new URL(tUrl);
+    if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+      return parsed.href;
+    }
+    return null;
+  } catch (e) {
+    // If URL parse fails but it looks like a domain without scheme, add https://
+    if (/^[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+/.test(tUrl)) {
+      return `https://${tUrl}`;
+    }
+  }
+  return null;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -809,6 +848,31 @@ function MentionsPageContent() {
     }
   };
 
+  const handleVisit = async (mention: MentionItem) => {
+    const safeUrl = getSafeUrl(mention.url);
+    if (!safeUrl) return;
+    
+    window.open(safeUrl, '_blank', 'noopener,noreferrer');
+    
+    // Optimistic update
+    setMentionsList(prev => prev.map(m => {
+      if (m.id === mention.id) {
+        return {
+          ...m,
+          is_visited: true,
+          visit_count: (m.visit_count || 0) + 1
+        };
+      }
+      return m;
+    }));
+    
+    try {
+      await mentionsApi.visit(mention.id);
+    } catch (error) {
+      console.error('Lỗi khi ghi nhận visit', error);
+    }
+  };
+
   const handleToggleAddToReport = async (mentionId: number, currentStatus: boolean) => {
     setActionLoading((prev) => ({ ...prev, [`${mentionId}_add_to_report`]: true }));
     try {
@@ -1393,12 +1457,37 @@ function MentionsPageContent() {
                 {/* Actions Footer */}
                 <div className="bg-gray-50 dark:bg-[#0a0f1c]/50 px-5 py-3 border-t border-gray-100 dark:border-white/5 flex flex-wrap items-center justify-between gap-3">
                    <div className="flex flex-wrap items-center gap-4">
-                     <a href={mention.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-700">
-                       <ExternalLink className="w-3.5 h-3.5" /> Visit
-                     </a>
+                     {(() => {
+                       const safeUrl = getSafeUrl(mention.url);
+                       if (!safeUrl) {
+                         return (
+                           <div className="flex items-center gap-1.5 text-xs font-bold text-gray-400 cursor-not-allowed group/tooltip relative">
+                             <Link2Off className="w-3.5 h-3.5" /> Visit
+                             <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover/tooltip:block px-2 py-1 bg-gray-800 text-white text-[10px] rounded whitespace-nowrap z-10">Không có link bài gốc</div>
+                           </div>
+                         );
+                       }
+                       return (
+                         <button onClick={() => handleVisit(mention)} className="flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-700 transition-colors">
+                           <ExternalLink className="w-3.5 h-3.5" /> Visit
+                         </button>
+                       );
+                     })()}
+                     
+                     {mention.is_visited && (
+                       <div className="flex items-center gap-1.5 text-[11px] font-medium text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-500/20">
+                         <CheckCircle2 className="w-3 h-3" /> Đã xem
+                         {(mention.visit_count ?? 0) > 0 && <span className="text-emerald-500">({mention.visit_count} lượt)</span>}
+                       </div>
+                     )}
+
                      <button 
                        onClick={() => handleAction(mention.id, 'review', () => mentionsApi.markReviewed(mention.id), 'Đã đánh dấu xem')}
-                       className="flex items-center gap-1.5 text-xs font-medium text-emerald-600 hover:text-emerald-700 transition-colors"
+                       className={`flex items-center gap-1.5 text-xs font-bold transition-colors ${
+                         mention.is_reviewed 
+                           ? 'text-emerald-600 dark:text-emerald-400 hover:text-emerald-700' 
+                           : 'text-gray-500 hover:text-gray-700'
+                       }`}
                        title="Đánh dấu đã xem"
                      >
                        <CheckCircle2 className="w-3.5 h-3.5" /> Đã xem

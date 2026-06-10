@@ -399,6 +399,10 @@ export const mentions = {
     const response = await api.post('/api/mentions/mute-author', { author, project_id });
     return response.data;
   },
+  visit: async (id: number) => {
+    const response = await api.post(`/api/mentions/${id}/visit`);
+    return response.data;
+  },
   updateSentiment: async (id: number, sentiment: string) => {
     const response = await api.put(`/api/mentions/${id}/sentiment`, { sentiment });
     return response.data;

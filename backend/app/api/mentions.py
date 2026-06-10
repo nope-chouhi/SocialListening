@@ -401,6 +401,24 @@ def list_mentions(
             except Exception:
                 pass
 
+        # Pre-load visit tracking for this user
+        mention_ids = [m.id for m in mentions]
+        visited_map = {}
+        if mention_ids:
+            try:
+                from app.models.mention import MentionVisit
+                visits = db.execute(
+                    select(MentionVisit.mention_id)
+                    .where(
+                        MentionVisit.user_id == current_user.id,
+                        MentionVisit.mention_id.in_(mention_ids)
+                    )
+                ).scalars().all()
+                for vid in visits:
+                    visited_map[vid] = True
+            except Exception as e:
+                logger.error(f"Error querying visit status: {e}")
+
         result_items = []
         for m in mentions:
             try:
@@ -444,7 +462,10 @@ def list_mentions(
                     "summary_vi": analysis.summary_vi if analysis else None,
                     "suggested_action": analysis.suggested_action if analysis else None,
                     "ai_provider": analysis.ai_provider if analysis else None
-                } if analysis else None
+                } if analysis else None,
+                "visit_count": m.visit_count or 0,
+                "last_visited_at": m.last_visited_at.isoformat() if m.last_visited_at else None,
+                "is_visited": visited_map.get(m.id, False)
             })
 
         total_pages = ceil(total / page_size) if total > 0 else 1
@@ -482,6 +503,45 @@ def list_mentions(
     except Exception as e:
         logger.error(f"Critical error in list_mentions: {e}")
         raise HTTPException(status_code=500, detail="Lỗi hệ thống khi tải danh sách mentions")
+
+
+@router.post("/{mention_id}/visit")
+def record_mention_visit(
+    mention_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Ghi nhận lượt xem của user đối với 1 mention"""
+    from app.models.mention import MentionVisit
+    
+    mention = db.execute(
+        select(Mention).where(Mention.id == mention_id)
+    ).scalar_one_or_none()
+    
+    if not mention:
+        raise HTTPException(status_code=404, detail="Mention not found")
+        
+    try:
+        visit = MentionVisit(
+            mention_id=mention_id,
+            user_id=current_user.id,
+            project_id=mention.project_id,
+            original_url=mention.url,
+            source_type=mention.source_type
+        )
+        db.add(visit)
+        
+        mention.visit_count = (mention.visit_count or 0) + 1
+        mention.last_visited_at = datetime.now(timezone.utc)
+        
+        db.commit()
+        return {"success": True, "visit_count": mention.visit_count, "last_visited_at": mention.last_visited_at.isoformat()}
+    except Exception as e:
+        db.rollback()
+        import logging
+        logging.error(f"Failed to record visit for mention {mention_id}: {e}")
+        # Trả về false thay vì raise lỗi để không làm crash luồng UI của user
+        return {"success": False, "error": str(e)}
 
 
 @router.get("/export")
