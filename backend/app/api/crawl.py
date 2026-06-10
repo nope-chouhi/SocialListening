@@ -125,9 +125,10 @@ def manual_scan(
     """
     keyword_texts = []
     
-    def expand_keyword(q: str) -> List[str]:
+    def expand_keyword(q: str):
         q_lower = q.lower().strip()
         expansions = [q_lower]
+        provider = "fallback"
         
         # Try AI expansion first
         try:
@@ -159,10 +160,12 @@ def manual_scan(
                     if e and e not in expansions:
                         expansions.append(e)
                 ai_expansions = cached_expansions
+                provider = "cache"
             else:
                 from app.services.ai_service import get_ai_provider
                 ai = get_ai_provider()
                 ai_expansions = ai.expand_keyword(q)[:8]  # Limit max 8 words
+                provider = ai.provider_name if hasattr(ai, 'provider_name') else "AI_Provider"
                 
                 # Save to caches (24 hours = 86400 seconds)
                 try:
@@ -200,13 +203,14 @@ def manual_scan(
             if h not in expansions:
                 expansions.append(h)
                 
-        return list(set(expansions))
+        return list(set(expansions)), provider
 
+    provider_used = "none"
     if body.query:
         query_kw = body.query.strip().lower()
         if query_kw:
             if body.expand_keywords:
-                expanded = expand_keyword(query_kw)
+                expanded, provider_used = expand_keyword(query_kw)
                 for exp in expanded:
                     if exp not in keyword_texts:
                         keyword_texts.append(exp)
@@ -285,6 +289,7 @@ def manual_scan(
             "project_id": project_id, 
             "mode": mode, 
             "keywords": keyword_texts,
+            "provider": provider_used,
             "user_id": current_user.id,
             "source_ids": body.source_ids or [],
             "source_types": body.source_types or [],
@@ -657,6 +662,7 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
         meta_data_final["expanded_keywords"] = keyword_texts
         meta_data_final["requested_max_results_per_source"] = max_results
         meta_data_final["actual_raw_results_count"] = sum(s.get("raw_results_count", 0) for k, s in summary.items() if isinstance(s, dict) and "raw_results_count" in s)
+        meta_data_final["raw_results_count"] = meta_data_final["actual_raw_results_count"]
         meta_data_final["created_mentions_count"] = summary.get("new_mentions_created", 0)
         meta_data_final["duplicate_mentions_count"] = summary.get("duplicates_skipped", 0)
         meta_data_final["skipped_low_relevance_count"] = meta_data_final["actual_raw_results_count"] - meta_data_final["created_mentions_count"] - meta_data_final["duplicate_mentions_count"]
@@ -932,7 +938,8 @@ def get_crawl_job(
         "keywords": meta.get("keywords", []),
         "error_code": meta.get("error_code"),
         "error_message": job.error_message or meta.get("error_message"),
-        "summary": meta.get("summary", {})
+        "summary": meta.get("summary", {}),
+        "meta_data": meta
     }
 
 @router.post("/jobs/{job_id}/retry")

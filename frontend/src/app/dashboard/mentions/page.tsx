@@ -1096,16 +1096,32 @@ function MentionsPageContent() {
             ) : ['AUTO_SCAN_STARTING', 'AUTO_SCAN_RUNNING'].includes(searchState) ? (
               <div className="py-20 flex flex-col items-center justify-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
                 <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-4" />
-                <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Đang tìm các bài viết/web/video liên quan đến '{searchTerm}'...</h3>
-                <p className="text-gray-500 dark:text-gray-500 mb-4">Hệ thống đang quét Web Search, YouTube và các nguồn đã cấu hình.</p>
+                <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Đang quét thêm nguồn mới cho '{searchTerm}'...</h3>
+                <p className="text-gray-500 dark:text-gray-500 mb-4">Hệ thống đang tìm kiếm trên Web Search, YouTube và các nguồn đã cấu hình.</p>
                 {activeProject && searchTerm.toLowerCase().trim() !== activeProject.name.toLowerCase().trim() && !activeProject.name.toLowerCase().trim().includes(searchTerm.toLowerCase().trim()) && (
                   <div className="bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 text-xs px-3 py-1.5 rounded-md mb-4 border border-yellow-200 dark:border-yellow-800/30">
                     <span className="font-semibold">Lưu ý:</span> Đang tìm '{searchTerm}' trong project '{activeProject.name}'
                   </div>
                 )}
-                {scanJobStatus?.status && (
-                   <div className="flex flex-col items-center text-sm text-gray-400 gap-1">
-                     <span>Trạng thái: {scanJobStatus.status} {activeScanJobId && `(Lượt quét #${activeScanJobId})`}</span>
+                {scanJobStatus && (
+                   <div className="w-full max-w-lg mt-4 bg-gray-50 dark:bg-white/5 p-4 rounded-lg text-sm text-gray-600 dark:text-gray-400 text-left space-y-1 border border-gray-200 dark:border-white/10">
+                     <p><span className="font-semibold">ID Quá trình (Job ID):</span> {scanJobStatus.job_id || activeScanJobId || 'Đang tạo...'}</p>
+                     <p><span className="font-semibold">Trạng thái:</span> {scanJobStatus.status}</p>
+                     {scanJobStatus.meta_data?.provider && <p><span className="font-semibold">Nguồn mở rộng từ khóa:</span> {scanJobStatus.meta_data.provider}</p>}
+                     {scanJobStatus.meta_data?.expanded_keywords && <p><span className="font-semibold">Từ khóa đang quét:</span> {scanJobStatus.meta_data.expanded_keywords.join(', ')}</p>}
+                     {scanJobStatus.meta_data?.source_types && scanJobStatus.meta_data.source_types.length > 0 && <p><span className="font-semibold">Các loại nguồn quét:</span> {scanJobStatus.meta_data.source_types.join(', ')}</p>}
+                     
+                     {(scanJobStatus.meta_data?.raw_results_count !== undefined || scanJobStatus.summary?.web?.called) && (
+                       <div className="pt-2 mt-2 border-t border-gray-200 dark:border-gray-700 space-y-1">
+                         <p><span className="font-semibold">Kết quả thô tìm được:</span> {scanJobStatus.meta_data?.raw_results_count || (scanJobStatus.summary ? ((scanJobStatus.summary.web?.raw_results_count || 0) + (scanJobStatus.summary.youtube?.raw_results_count || 0) + (scanJobStatus.summary.social?.raw_results_count || 0)) : 0)}</p>
+                         <p><span className="font-semibold">Bài viết hợp lệ mới:</span> {scanJobStatus.meta_data?.created_mentions_count || 0}</p>
+                         <p><span className="font-semibold">Bỏ qua do trùng lặp:</span> {scanJobStatus.meta_data?.duplicate_mentions_count || scanJobStatus.summary?.duplicates_skipped || 0}</p>
+                         {scanJobStatus.meta_data?.skipped_low_relevance_count > 0 && <p><span className="font-semibold">Bỏ qua do không khớp sát nghĩa:</span> {scanJobStatus.meta_data.skipped_low_relevance_count}</p>}
+                         {scanJobStatus.meta_data?.failed_sources && scanJobStatus.meta_data.failed_sources.length > 0 && (
+                           <p className="text-red-500 font-medium"><span className="font-semibold">Lỗi ở nguồn:</span> {scanJobStatus.meta_data.failed_sources.join('; ')}</p>
+                         )}
+                       </div>
+                     )}
                    </div>
                 )}
               </div>
@@ -1114,12 +1130,31 @@ function MentionsPageContent() {
                 <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
                   <Search className="w-8 h-8 text-gray-400" />
                 </div>
-                <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Không tìm thấy bài viết/web/video phù hợp với từ khóa '{searchTerm}'.</h3>
-                <div className="bg-gray-50 dark:bg-white/5 rounded-lg p-4 mb-6 text-sm text-gray-500 dark:text-gray-400 max-w-md text-left w-full space-y-2">
-                   <p className="font-semibold text-gray-700 dark:text-gray-300">Kết quả quét ({scanJobStatus?.job_id}):</p>
-                   <p>• Web Search: {scanJobStatus?.summary?.web?.called ? `${scanJobStatus.summary.web.raw_results_count} kết quả thô, ${scanJobStatus.summary.web.results_after_keyword_match} phù hợp` : 'Bỏ qua'}</p>
-                   <p>• YouTube: {scanJobStatus?.summary?.youtube?.called ? `${scanJobStatus.summary.youtube.raw_results_count} video` : 'Bỏ qua'}</p>
-                   <p>• Trùng lặp đã bỏ qua: {scanJobStatus?.summary?.duplicates_skipped || 0}</p>
+                <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Không tìm thấy kết quả nào sau khi đã quét các nguồn cho '{searchTerm}'.</h3>
+                <div className="w-full max-w-lg mt-4 bg-gray-50 dark:bg-white/5 p-4 rounded-lg text-sm text-gray-600 dark:text-gray-400 text-left space-y-2 border border-gray-200 dark:border-white/10 mb-6">
+                   <p className="font-bold text-gray-800 dark:text-gray-200">Chi tiết quét dữ liệu (Job #{scanJobStatus?.job_id || activeScanJobId}):</p>
+                   <p>• Trạng thái cuối: <span className="font-medium">{scanJobStatus?.status}</span></p>
+                   {scanJobStatus?.meta_data?.expanded_keywords && <p>• Đã quét qua các từ khóa: <span className="font-medium">{scanJobStatus.meta_data.expanded_keywords.join(', ')}</span></p>}
+                   
+                   <p>• Tổng kết quả thô thu được từ Internet: <span className="font-medium">{scanJobStatus?.meta_data?.raw_results_count || 0}</span></p>
+                   {scanJobStatus?.meta_data?.raw_results_count === 0 && (
+                     <p className="text-yellow-600 dark:text-yellow-400 ml-4">→ Nguyên nhân 1: Toàn bộ nguồn (Web, YouTube...) hoàn toàn không trả về bài viết nào cho từ khóa này.</p>
+                   )}
+                   
+                   {scanJobStatus?.meta_data?.duplicate_mentions_count > 0 && (
+                     <p>• Kết quả trùng lặp: <span className="font-medium">{scanJobStatus.meta_data.duplicate_mentions_count}</span></p>
+                   )}
+                   {scanJobStatus?.meta_data?.skipped_low_relevance_count > 0 && (
+                     <p>• Kết quả bị loại vì không sát nghĩa: <span className="font-medium">{scanJobStatus.meta_data.skipped_low_relevance_count}</span></p>
+                   )}
+                   
+                   {(scanJobStatus?.meta_data?.raw_results_count > 0 && (scanJobStatus?.meta_data?.created_mentions_count === 0)) && (
+                     <p className="text-yellow-600 dark:text-yellow-400 mt-2">→ Nguyên nhân: Nguồn có trả về dữ liệu, nhưng toàn bộ đã bị lọc bỏ do trùng lặp dữ liệu cũ, không khớp sát ngữ cảnh, hoặc bị chặn bởi bộ lọc hiện tại.</p>
+                   )}
+                   
+                   {scanJobStatus?.meta_data?.failed_sources && scanJobStatus.meta_data.failed_sources.length > 0 && (
+                      <p className="text-red-500 mt-2">• Nguồn bị lỗi trong quá trình quét: {scanJobStatus.meta_data.failed_sources.join('; ')}</p>
+                   )}
                 </div>
                 <div className="flex gap-3">
                    <button onClick={handleScanClick} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors">Thử quét lại</button>
