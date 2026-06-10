@@ -262,57 +262,6 @@ def run_prod_backfill(db: Session = Depends(get_db)):
     except Exception as e:
         return {"status": "error", "error": str(e)}
 
-@app.get("/api/sys/test-full-backdoor")
-def test_full_backdoor(q: str = None, test_visit: int = 0, days: int = 0, db: Session = Depends(get_db)):
-    from app.api.mentions import list_mentions
-    from app.models.user import User
-    user = db.query(User).filter(User.is_superuser == True).first()
-    if not user:
-        user = db.query(User).first()
-    if not user: return {"error": "no user"}
-    
-    date_from = None
-    if days:
-        from datetime import datetime, timedelta, timezone
-        date_from = datetime.now(timezone.utc) - timedelta(days=days)
-        
-    try:
-        res = list_mentions(
-            page=1, page_size=20, q=q, 
-            source_id=None, source_type=None, source_types=None, 
-            sentiment=None, sentiments=None, min_risk_score=None, search_query=None,
-            author=None, domain=None, date_from=date_from, date_to=None, job_id=None,
-            keyword=None, project_id=None, is_muted=None, min_influence_score=None, sort_by="newest",
-            db=db, current_user=user
-        )
-        
-        if test_visit and res.get("items") and len(res["items"]) > 0:
-            m_id = res["items"][0]["id"]
-            old_vc = res["items"][0].get("visit_count", 0)
-            from app.api.mentions import visit_link
-            from fastapi import Request
-            # Mock request
-            class MockReq:
-                client = type('obj', (object,), {'host': '127.0.0.1'})
-                headers = {'user-agent': 'test'}
-            visit_link(m_id, MockReq(), db=db, current_user=user)
-            
-            # Fetch again to get updated vc
-            res2 = list_mentions(
-                page=1, page_size=20, q=q, 
-                source_id=None, source_type=None, source_types=None, 
-                sentiment=None, sentiments=None, min_risk_score=None, search_query=None,
-                author=None, domain=None, date_from=date_from, date_to=None, job_id=None,
-                keyword=None, project_id=None, is_muted=None, min_influence_score=None, sort_by="newest",
-                db=db, current_user=user
-            )
-            res["test_visit"] = {"m_id": m_id, "old_vc": old_vc, "new_vc": res2["items"][0].get("visit_count", 0)}
-            
-        return res
-    except Exception as e:
-        import traceback
-        return {"error": str(e), "trace": traceback.format_exc()}
-
 @app.get("/api/sys/run-visit-migration")
 def run_visit_migration(db: Session = Depends(get_db)):
     try:
