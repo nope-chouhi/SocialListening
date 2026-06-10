@@ -71,6 +71,8 @@ interface MentionItem {
   visit_count?: number;
   last_visited_at?: string | null;
   is_visited?: boolean;
+  matched_in?: string[];
+  match_strength?: string;
 }
 
 interface Filters {
@@ -573,7 +575,23 @@ function MentionsPageContent() {
       const data = await mentionsApi.list(params);
       if (fetchId !== currentFetchIdRef.current) return;
       
-      setMentionsList(data.items);
+      // Deduplicate results based on URL and Title to avoid filling the page with spam
+      const seen = new Set();
+      const dedupedItems = data.items.filter((item: any) => {
+        const urlStr = typeof item.url === 'string' ? item.url : '';
+        const canonicalUrl = urlStr.split('?')[0].split('#')[0].replace(/\/$/, '').toLowerCase() || '';
+        const titleKey = (item.title || '').trim().toLowerCase();
+        // Fallback to title + source + date if URL is missing
+        const fallbackKey = `fallback:${titleKey}:${item.source_type}:${item.published_at || item.collected_at}`;
+        
+        const key = canonicalUrl ? `url:${canonicalUrl}` : (titleKey ? `title:${titleKey}` : fallbackKey);
+        
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+      
+      setMentionsList(dedupedItems);
       setTotalMentions(data.total);
       setTotalPages(data.total_pages);
 
@@ -1361,13 +1379,27 @@ function MentionsPageContent() {
                              )}
                            </div>
                            {searchTerm && (
-                              <div className="text-xs text-indigo-500 dark:text-indigo-400 mt-1 mb-1 font-medium flex gap-1 items-center">
-                                <Search className="w-3 h-3" /> Matched in: {[
-                                  (mention.title?.toLowerCase() || '').includes(searchTerm.toLowerCase()) && 'Title',
-                                  ((mention.content?.toLowerCase() || '').includes(searchTerm.toLowerCase()) || (mention.snippet?.toLowerCase() || '').includes(searchTerm.toLowerCase())) && 'Content',
-                                  (mention.url?.toLowerCase() || '').includes(searchTerm.toLowerCase()) && 'URL',
-                                  ((mention.domain?.toLowerCase() || '').includes(searchTerm.toLowerCase()) || (mention.source_name?.toLowerCase() || '').includes(searchTerm.toLowerCase())) && 'Source'
-                                ].filter(Boolean).join(', ') || 'Keyword Group / Semantic'}
+                              <div className="flex items-center gap-2 mt-1 mb-1 flex-wrap">
+                                {mention.matched_in && mention.matched_in.length > 0 ? (
+                                  <div className="text-[11px] text-indigo-600 dark:text-indigo-400 font-medium flex gap-1.5 items-center bg-indigo-50 dark:bg-indigo-900/20 px-2 py-0.5 rounded-full border border-indigo-100 dark:border-indigo-800/30">
+                                    <Search className="w-3 h-3" /> 
+                                    Matched in: {mention.matched_in.join(', ')}
+                                  </div>
+                                ) : (
+                                  <div className="text-[11px] text-gray-500 dark:text-gray-400 font-medium flex gap-1.5 items-center bg-gray-50 dark:bg-white/5 px-2 py-0.5 rounded-full border border-gray-200 dark:border-white/10">
+                                    <Search className="w-3 h-3" /> 
+                                    Semantic / AI Match
+                                  </div>
+                                )}
+                                {mention.match_strength && (
+                                  <div className={`text-[11px] font-bold px-2 py-0.5 rounded-full uppercase ${
+                                    mention.match_strength === 'exact' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' :
+                                    mention.match_strength === 'strong' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
+                                    'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
+                                  }`}>
+                                    {mention.match_strength} match
+                                  </div>
+                                )}
                               </div>
                             )}
                            <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-500 mt-1">

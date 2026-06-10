@@ -168,7 +168,7 @@ def list_mentions(
         if q and not job_id:
             try:
                 # Create a deterministic key based on search parameters
-                params_str = f"{project_id}_{q}_{source_types}_{sentiment}_{date_from}_{date_to}_{page}_{page_size}_{sort_by}"
+                params_str = f"proj:{project_id}_q:{q}_src:{source_type}_{source_types}_sent:{sentiment}_{sentiments}_d:{date_from}_{date_to}_p:{page}_ps:{page_size}_sort:{sort_by}_risk:{min_risk_score}"
                 cache_key = f"mentions_search:{hashlib.md5(params_str.encode()).hexdigest()}"
                 
                 # Check redis first
@@ -255,8 +255,7 @@ def list_mentions(
                 or_(
                     Mention.title.ilike(search_pattern),
                     Mention.content.ilike(search_pattern),
-                    Mention.author.ilike(search_pattern),
-                    Mention.url.ilike(search_pattern)
+                    Mention.author.ilike(search_pattern)
                 )
             )
 
@@ -267,7 +266,6 @@ def list_mentions(
                     Mention.title.ilike(search_term),
                     Mention.snippet.ilike(search_term),
                     Mention.content.ilike(search_term),
-                    Mention.url.ilike(search_term),
                     Mention.domain.ilike(search_term),
                     Mention.keyword_text.ilike(search_term),
                 )
@@ -330,8 +328,7 @@ def list_mentions(
                     or_(
                         Mention.title.ilike(search_pattern),
                         Mention.content.ilike(search_pattern),
-                        Mention.author.ilike(search_pattern),
-                        Mention.url.ilike(search_pattern)
+                        Mention.author.ilike(search_pattern)
                     )
                 )
 
@@ -342,7 +339,6 @@ def list_mentions(
                         Mention.title.ilike(search_term),
                         Mention.snippet.ilike(search_term),
                         Mention.content.ilike(search_term),
-                        Mention.url.ilike(search_term),
                         Mention.domain.ilike(search_term),
                         Mention.keyword_text.ilike(search_term),
                     )
@@ -363,11 +359,28 @@ def list_mentions(
                 logger.error(f"Fallback count also failed: {fallback_error}")
                 total = 0
 
-        from sqlalchemy import nullslast
+        from sqlalchemy import nullslast, case
         offset = (page - 1) * page_size
 
+        relevance_expr = None
+        if q and not job_id:
+            search_term = f"%{q}%"
+            # Build relevance score based on match location
+            exact_title = case((Mention.title.ilike(f"{q}"), 100), else_=0)
+            word_title = case((Mention.title.ilike(f"% {q} %"), 85), else_=0)
+            sub_title = case((Mention.title.ilike(search_term), 60), else_=0)
+            word_content = case((Mention.content.ilike(f"% {q} %"), 40), else_=0)
+            sub_content = case((Mention.content.ilike(search_term), 20), else_=0)
+            keyword_match = case((Mention.keyword_text.ilike(search_term), 50), else_=0)
+            domain_match = case((Mention.domain.ilike(search_term), 15), else_=0)
+            
+            relevance_expr = exact_title + word_title + sub_title + word_content + sub_content + keyword_match + domain_match
+
         # Sorting
-        if sort_by == "oldest":
+        if q and not job_id and relevance_expr is not None:
+            # Always prioritize relevance when searching by query string
+            query = query.order_by(relevance_expr.desc(), nullslast(Mention.collected_at.desc()), Mention.id.desc())
+        elif sort_by == "oldest":
             query = query.order_by(Mention.collected_at.asc(), Mention.id.asc())
         elif sort_by == "risk_high":
             query = query.order_by(nullslast(AIAnalysis.risk_score.desc()), Mention.id.desc())
@@ -430,6 +443,41 @@ def list_mentions(
 
             src = sources_map.get(m.source_id)
 
+            # Calculate match reason manually for UI
+            matched_in = []
+            match_strength = "related"
+            if q:
+                ql = q.lower()
+                m_title = (m.title or "").lower()
+                m_content = (m.content or "").lower() + " " + (m.snippet or "").lower()
+                m_source = (m.domain or "").lower() + " " + (src.name.lower() if src and src.name else "")
+                m_keywords = []
+                if m.matched_keywords and isinstance(m.matched_keywords, list):
+                    m_keywords = [kw.get("keyword", "").lower() for kw in m.matched_keywords if isinstance(kw, dict)]
+                elif m.keyword_text:
+                    m_keywords = [m.keyword_text.lower()]
+                
+                if ql == m_title:
+                    matched_in.append("Title")
+                    match_strength = "exact"
+                elif f" {ql} " in f" {m_title} ":
+                    matched_in.append("Title")
+                    if match_strength != "exact": match_strength = "strong"
+                elif ql in m_title:
+                    matched_in.append("Title")
+                    
+                if ql in m_content and "Content" not in matched_in:
+                    matched_in.append("Content")
+                    if f" {ql} " in f" {m_content} " and match_strength not in ("exact", "strong"):
+                        match_strength = "strong"
+                        
+                if ql in m_source and "Source" not in matched_in:
+                    matched_in.append("Source")
+                
+                if any(ql in kw or kw in ql for kw in m_keywords) and "Keyword" not in matched_in:
+                    matched_in.append("Keyword")
+                    if match_strength != "exact": match_strength = "strong"
+
             result_items.append({
                 "id": m.id,
                 "project_id": m.project_id,
@@ -465,7 +513,9 @@ def list_mentions(
                 } if analysis else None,
                 "visit_count": m.visit_count or 0,
                 "last_visited_at": m.last_visited_at.isoformat() if m.last_visited_at else None,
-                "is_visited": visited_map.get(m.id, False)
+                "is_visited": visited_map.get(m.id, False),
+                "matched_in": matched_in,
+                "match_strength": match_strength
             })
 
         total_pages = ceil(total / page_size) if total > 0 else 1
