@@ -376,7 +376,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
         position="top-right" 
         toastOptions={{ 
           duration: 4000,
-          className: 'dark:bg-[#1E293B] dark:text-white dark:border-gray-700 dark:border shadow-lg'
+          className: 'dark:!bg-[#1E293B] dark:!text-white dark:!border-gray-700 dark:border shadow-lg'
         }} 
       />
       <div className={`transition-all duration-300 flex flex-col min-h-screen ${sidebarCollapsed ? 'lg:pl-20' : 'lg:pl-64'}`}>

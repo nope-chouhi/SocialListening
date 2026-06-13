@@ -773,15 +773,15 @@ def analyze_mention(
     try:
         analysis_result = service_analyze_mention(mention.content, mention.title)
     except Exception as e:
-        err_str = str(e)
+        err_str = str(e).lower()
         from fastapi.responses import JSONResponse
-        if "Incorrect API key" in err_str or "ai_provider_not_configured" in err_str or "openai_dependency_missing" in err_str or "API key is missing" in err_str or "not configured" in err_str:
+        if any(key in err_str for key in ["incorrect api key", "invalid_api_key", "401", "authenticationerror", "ai_provider_not_configured", "openai_dependency_missing", "api key is missing", "not configured"]):
             return JSONResponse(
                 status_code=400,
                 content={
                     "success": False,
-                    "code": "AI_PROVIDER_NOT_CONFIGURED",
-                    "message": "AI chưa được cấu hình hợp lệ. Vui lòng kiểm tra API key hoặc chuyển sang chế độ rule-based."
+                    "code": "AI_PROVIDER_INVALID_KEY",
+                    "message": "AI chưa được cấu hình hợp lệ. Vui lòng kiểm tra API key hoặc chuyển sang chế độ phân tích cơ bản."
                 }
             )
         return JSONResponse(
@@ -789,7 +789,7 @@ def analyze_mention(
             content={
                 "success": False,
                 "code": "AI_ANALYSIS_FAILED",
-                "message": f"Không thể thực hiện phân tích: {err_str}"
+                "message": "Không thể thực hiện phân tích do lỗi hệ thống AI. Vui lòng thử lại sau."
             }
         )
     

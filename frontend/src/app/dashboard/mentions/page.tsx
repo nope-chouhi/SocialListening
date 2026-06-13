@@ -991,7 +991,6 @@ function MentionsPageContent() {
 
   return (
     <div className="flex flex-col lg:flex-row gap-6 max-w-[1600px] mx-auto min-h-screen">
-      <Toaster position="top-right" />
       
       {!activeProject && projects.length === 0 ? (
         <div className="flex-1 w-full flex flex-col items-center justify-center min-h-[60vh] bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10 p-8 text-center">
