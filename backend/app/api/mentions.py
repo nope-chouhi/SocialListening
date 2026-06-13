@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import select, func, text, and_, or_, desc, asc, case
@@ -32,6 +32,11 @@ router = APIRouter()
 @router.get("/summary")
 def get_mentions_summary(
     project_id: Optional[int] = Query(None),
+    q: Optional[str] = Query(None),
+    date_from: Optional[datetime] = None,
+    date_to: Optional[datetime] = None,
+    source_type: Optional[str] = None,
+    sentiment: Optional[str] = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
@@ -42,9 +47,28 @@ def get_mentions_summary(
         from app.models.mention import SentimentScore
         
         # Build base filter
-        base_filter = [Mention.is_muted == False, Mention.is_deleted == False]
+        base_filter = [Mention.is_muted == False, Mention.is_deleted == False, Mention.verification_status != 'synthetic']
         if project_id:
             base_filter.append(Mention.project_id == project_id)
+        if q:
+            search_term = f"%{q}%"
+            base_filter.append(or_(
+                Mention.title.ilike(search_term),
+                Mention.snippet.ilike(search_term),
+                Mention.content.ilike(search_term),
+                Mention.domain.ilike(search_term),
+                Mention.keyword_text.ilike(search_term),
+            ))
+        if date_from:
+            base_filter.append(Mention.collected_at >= date_from)
+        if date_to:
+            base_filter.append(Mention.collected_at <= date_to)
+        if source_type:
+            st_list = [s.strip() for s in source_type.split(",")]
+            base_filter.append(Mention.source_type.in_(st_list))
+        if sentiment:
+            sentiments_list = [s.strip() for s in sentiment.split(",")]
+            base_filter.append(Mention.sentiment.in_(sentiments_list))
         
         # Total mentions
         try:
@@ -213,6 +237,7 @@ def list_mentions(
                 query = query.where(Source.url.ilike(f"%{domain}%"))
 
         # Mentions filtering directly
+        query = query.where(Mention.verification_status != 'synthetic')
         if project_id:
             query = query.where(Mention.project_id == project_id)
         if job_id:
@@ -558,6 +583,7 @@ def list_mentions(
 @router.post("/{mention_id}/visit")
 def record_mention_visit(
     mention_id: int,
+    request: Request,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
@@ -572,12 +598,19 @@ def record_mention_visit(
         raise HTTPException(status_code=404, detail="Mention not found")
         
     try:
+        import hashlib
+        user_agent = request.headers.get("user-agent", "")
+        ip = request.client.host if request.client else ""
+        ip_hash = hashlib.sha256(ip.encode()).hexdigest() if ip else ""
+
         visit = MentionVisit(
             mention_id=mention_id,
             user_id=current_user.id,
             project_id=mention.project_id,
             original_url=mention.url,
-            source_type=mention.source_type
+            source_type=mention.source_type,
+            user_agent=user_agent,
+            ip_hash=ip_hash
         )
         db.add(visit)
         
@@ -741,14 +774,23 @@ def analyze_mention(
         analysis_result = service_analyze_mention(mention.content, mention.title)
     except Exception as e:
         err_str = str(e)
-        if "ai_provider_not_configured" in err_str or "openai_dependency_missing" in err_str or "API key is missing" in err_str or "not configured" in err_str:
-            raise HTTPException(
+        from fastapi.responses import JSONResponse
+        if "Incorrect API key" in err_str or "ai_provider_not_configured" in err_str or "openai_dependency_missing" in err_str or "API key is missing" in err_str or "not configured" in err_str:
+            return JSONResponse(
                 status_code=400,
-                detail="AI chưa cấu hình, mention đã được lưu nhưng chưa phân tích AI."
+                content={
+                    "success": False,
+                    "code": "AI_PROVIDER_NOT_CONFIGURED",
+                    "message": "AI chưa được cấu hình hợp lệ. Vui lòng kiểm tra API key hoặc chuyển sang chế độ rule-based."
+                }
             )
-        raise HTTPException(
+        return JSONResponse(
             status_code=400,
-            detail=f"Không thể thực hiện phân tích: {err_str}"
+            content={
+                "success": False,
+                "code": "AI_ANALYSIS_FAILED",
+                "message": f"Không thể thực hiện phân tích: {err_str}"
+            }
         )
     
     # Get AI provider name for tracking
@@ -942,7 +984,7 @@ def delete_mention(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
-    """Delete a mention"""
+    """Delete a mention (Soft delete)"""
     mention = db.execute(
         apply_tenant_filter(select(Mention), Mention, current_user).where(Mention.id == mention_id)
     ).scalar_one_or_none()
@@ -950,7 +992,7 @@ def delete_mention(
     if not mention:
         raise HTTPException(status_code=404, detail="Mention not found")
 
-    db.delete(mention)
+    mention.is_deleted = True
     db.commit()
 
 

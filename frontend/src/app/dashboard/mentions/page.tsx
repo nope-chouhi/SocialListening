@@ -10,7 +10,7 @@ import {
   Facebook, Youtube, RefreshCw, SlidersHorizontal, Sparkles,
   Twitter, Instagram, Mic, Video, Link2Off, Tag,
   SearchCode, Download, CheckSquare, Square, Calendar,
-  Scan, ChevronLeft, ChevronRight, Info
+  Scan, ChevronLeft, ChevronRight, Info, LayoutDashboard
 } from 'lucide-react';
 import { mentions as mentionsApi, dashboard, keywords as keywordsApi, crawl, savedFilters } from '@/lib/api';
 import { useProject } from '@/contexts/ProjectContext';
@@ -73,6 +73,7 @@ interface MentionItem {
   is_visited?: boolean;
   matched_in?: string[];
   match_strength?: string;
+  canonical_url?: string | null;
 }
 
 interface Filters {
@@ -533,6 +534,14 @@ function MentionsPageContent() {
   /* ─── DATA FETCHING ─────────────────────────────────────────────────── */
 
   const fetchMentions = useCallback(async () => {
+    if (!activeProject) {
+      setMentionsList([]);
+      setTotalMentions(0);
+      setTotalPages(1);
+      setSearchState('IDLE');
+      return;
+    }
+    
     const fetchId = ++currentFetchIdRef.current;
     try {
       setLoading(true);
@@ -844,30 +853,61 @@ function MentionsPageContent() {
 
   const handleDelete = async () => {
     if (!deleteConfirm.mentionId) return;
+    const deletedId = deleteConfirm.mentionId;
+    
+    // Optimistic update
+    setMentionsList(prev => prev.filter(m => m.id !== deletedId));
+    setDeleteConfirm({ isOpen: false, mentionId: null, mentionTitle: '' });
+    
     try {
-      await mentionsApi.delete(deleteConfirm.mentionId);
+      await mentionsApi.delete(deletedId);
       toast.success('Xóa mention thành công!');
-      fetchMentions();
     } catch (error: any) {
       toast.error('Lỗi khi xóa mention');
+      // Rollback if error
+      fetchMentions();
     }
   };
 
-  const handleAction = async (mentionId: number, action: string, apiCall: () => Promise<any>, successMsg: string) => {
+  const handleAction = async (mentionId: number, action: string, apiCall: () => Promise<any>, successMsg: string, optimisticData?: Partial<any>) => {
     setActionLoading((prev) => ({ ...prev, [`${mentionId}_${action}`]: true }));
+    
+    if (optimisticData) {
+      setMentionsList(prev => prev.map(m => m.id === mentionId ? { ...m, ...optimisticData } : m));
+    }
+
     try {
       await apiCall();
       toast.success(successMsg);
-      fetchMentions();
+      if (!optimisticData) {
+        fetchMentions();
+      }
     } catch (error: any) {
-      toast.error(error?.response?.data?.detail || 'Có lỗi xảy ra');
+      // Rollback on error if we updated optimistically
+      if (optimisticData) {
+        fetchMentions();
+      }
+      const errorData = error?.response?.data;
+      const errorMessage = errorData?.message || errorData?.detail || 'Có lỗi xảy ra';
+      
+      if (errorData?.code === 'AI_PROVIDER_NOT_CONFIGURED') {
+        toast.error(errorMessage, { 
+          icon: '⚠️',
+          duration: 5000,
+          className: 'dark:bg-gray-800 dark:text-white dark:border-gray-700'
+        });
+      } else {
+        toast.error(errorMessage, {
+          className: 'dark:bg-gray-800 dark:text-white dark:border-gray-700'
+        });
+      }
     } finally {
       setActionLoading((prev) => ({ ...prev, [`${mentionId}_${action}`]: false }));
     }
   };
 
   const handleVisit = async (mention: MentionItem) => {
-    const safeUrl = getSafeUrl(mention.url);
+    const safeUrl = getSafeUrl(mention.url) || getSafeUrl(mention.canonical_url);
     if (!safeUrl) return;
     
     window.open(safeUrl, '_blank', 'noopener,noreferrer');
@@ -953,10 +993,27 @@ function MentionsPageContent() {
     <div className="flex flex-col lg:flex-row gap-6 max-w-[1600px] mx-auto min-h-screen">
       <Toaster position="top-right" />
       
-      {/* ─── LEFT MAIN COLUMN (75%) ─────────────────────────────────────────── */}
-      <div className="flex-1 w-full lg:w-[75%] min-w-0 flex flex-col gap-6">
-        
-        {/* Header & Filter Controls */}
+      {!activeProject && projects.length === 0 ? (
+        <div className="flex-1 w-full flex flex-col items-center justify-center min-h-[60vh] bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10 p-8 text-center">
+          <div className="w-20 h-20 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mb-6">
+            <LayoutDashboard className="w-10 h-10 text-blue-600 dark:text-blue-400" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">Chưa có Project nào</h2>
+          <p className="text-gray-500 dark:text-gray-400 max-w-md mb-8">
+            Bạn chưa có project. Tạo project đầu tiên để bắt đầu theo dõi các đề cập trên mạng xã hội.
+          </p>
+          <button 
+            disabled 
+            className="px-6 py-3 bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 font-bold rounded-lg cursor-not-allowed border border-gray-200 dark:border-gray-700"
+          >
+            Tạo project (Chưa tích hợp)
+          </button>
+        </div>
+      ) : (
+        <>
+          <div className="flex-1 w-full lg:w-[75%] min-w-0 flex flex-col gap-6">
+            
+            {/* Header & Filter Controls */}
         <div className="flex flex-col gap-3 bg-white dark:bg-[#050A15] p-4 rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
            <div className="flex flex-wrap items-center justify-between gap-4">
              <div className="flex items-center gap-3">
@@ -1252,7 +1309,27 @@ function MentionsPageContent() {
                 {dateRange !== 'all' && (
                   <div className="bg-yellow-50 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-200 text-sm px-4 py-3 rounded-lg max-w-md mb-6 border border-yellow-200 dark:border-yellow-800/30">
                     <span className="font-semibold block mb-1">Gợi ý:</span>
-                    Có thể từ khóa có dữ liệu ngoài phạm vi thời gian đã chọn. Thử mở rộng sang 30 ngày, 90 ngày hoặc Tất cả thời gian.
+                    Có thể từ khóa có dữ liệu ngoài phạm vi thời gian đã chọn ({dateRange}). Thử mở rộng sang 30 ngày, 90 ngày hoặc Tất cả thời gian.
+                  </div>
+                )}
+                {scanJobStatus && scanJobStatus.status === 'COMPLETED' && (
+                  <div className="bg-gray-50 dark:bg-gray-800/50 text-gray-700 dark:text-gray-300 text-sm px-4 py-3 rounded-lg max-w-md mb-6 border border-gray-200 dark:border-gray-700">
+                    <span className="font-bold block mb-1 text-gray-900 dark:text-white">Lý do từ kết quả quét tự động:</span>
+                    {scanJobStatus.summary?.serpapi_result_count === 0 ? (
+                      <p>Nguồn không trả về kết quả phù hợp nào cho từ khóa này.</p>
+                    ) : (scanJobStatus.summary?.new_mentions_created === 0 && scanJobStatus.summary?.duplicates_skipped > 0) ? (
+                      <p>Các kết quả tìm thấy đã tồn tại trong hệ thống (bị trùng lặp).</p>
+                    ) : (scanJobStatus.summary?.low_relevance_skipped > 0) ? (
+                      <p>Một số kết quả bị loại bỏ do độ liên quan thấp.</p>
+                    ) : (
+                      <p>Quét hoàn tất nhưng không có mentions mới được tạo thành công.</p>
+                    )}
+                  </div>
+                )}
+                {scanJobStatus && scanJobStatus.status === 'TIMEOUT' && (
+                  <div className="bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 text-sm px-4 py-3 rounded-lg max-w-md mb-6 border border-red-200 dark:border-red-800/30">
+                    <span className="font-bold block mb-1 text-red-900 dark:text-red-100">Worker chưa xử lý job:</span>
+                    Job quét đã vượt quá thời gian chờ. Vui lòng kiểm tra lại trạng thái Worker backend.
                   </div>
                 )}
                 {searchTerm.length < 2 && (
@@ -1418,7 +1495,7 @@ function MentionsPageContent() {
                         }`}>
                            <select
                              value={mention.sentiment === 'positive' ? 'positive' : mention.sentiment === 'negative' ? 'negative' : 'neutral'}
-                             onChange={(e) => handleAction(mention.id, 'sentiment', () => mentionsApi.updateSentiment(mention.id, e.target.value), 'Đã cập nhật sentiment')}
+                             onChange={(e) => handleAction(mention.id, 'sentiment', () => mentionsApi.updateSentiment(mention.id, e.target.value), 'Đã cập nhật sentiment', { sentiment: e.target.value })}
                              className="bg-transparent border-none outline-none font-bold cursor-pointer appearance-none pr-1"
                            >
                              <option value="positive" className="text-emerald-600">Positive</option>
@@ -1488,7 +1565,7 @@ function MentionsPageContent() {
                 
                 {/* Actions Footer */}
                 <div className="bg-gray-50 dark:bg-[#0a0f1c]/50 px-5 py-3 border-t border-gray-100 dark:border-white/5 flex flex-wrap items-center justify-between gap-3">
-                   <div className="flex flex-wrap items-center gap-4">
+                   <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
                      {(() => {
                        const safeUrl = getSafeUrl(mention.url);
                        if (!safeUrl) {
@@ -1514,7 +1591,7 @@ function MentionsPageContent() {
                      )}
 
                      <button 
-                       onClick={() => handleAction(mention.id, 'review', () => mentionsApi.markReviewed(mention.id), 'Đã đánh dấu xem')}
+                       onClick={() => handleAction(mention.id, 'review', () => mentionsApi.markReviewed(mention.id), 'Đã đánh dấu xem', { is_reviewed: true })}
                        className={`flex items-center gap-1.5 text-xs font-bold transition-colors ${
                          mention.is_reviewed 
                            ? 'text-emerald-600 dark:text-emerald-400 hover:text-emerald-700' 
@@ -1554,31 +1631,35 @@ function MentionsPageContent() {
                          });
                          if (input !== null) {
                            const newTags = input.split(',').map((t) => t.trim()).filter(Boolean);
-                           handleAction(mention.id, 'tags', () => mentionsApi.updateTags(mention.id, newTags), 'Đã cập nhật tags');
+                           handleAction(mention.id, 'tags', () => mentionsApi.updateTags(mention.id, newTags), 'Đã cập nhật tags', { tags: newTags });
                          }
                        }}
-                       className="flex items-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 dark:text-gray-100"
+                       className="flex items-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
                      >
                        <Tag className="w-3.5 h-3.5" /> Tags
                      </button>
-                     <button onClick={() => handleToggleAddToReport(mention.id, mention.add_to_report)} className={`flex items-center gap-1.5 text-xs font-medium ${mention.add_to_report ? 'text-indigo-600' : 'text-gray-500 dark:text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 dark:text-gray-100'}`}>
+                     <button onClick={() => handleToggleAddToReport(mention.id, mention.add_to_report)} className={`flex items-center gap-1.5 text-xs font-medium transition-colors ${mention.add_to_report ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'}`}>
                        <FileText className="w-3.5 h-3.5" /> {mention.add_to_report ? 'Remove from PDF' : 'Add to PDF report'}
                      </button>
                      <button 
                        disabled={!mention.author}
                        onClick={() => handleAction(mention.id, 'mute_author', () => mentionsApi.muteAuthor(mention.author!, activeProject!.id), `Đã ẩn tác giả ${mention.author}`)} 
-                       className="flex items-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 disabled:opacity-50"
+                       className="flex items-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 disabled:opacity-50 transition-colors"
                      >
                        <Eye className="w-3.5 h-3.5" /> Mute author
                      </button>
                      <button 
                        disabled={!mention.domain}
                        onClick={() => handleAction(mention.id, 'mute_domain', () => mentionsApi.muteDomain(mention.domain!, activeProject!.id), `Đã ẩn nguồn ${mention.domain}`)} 
-                       className="flex items-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 disabled:opacity-50"
+                       className="flex items-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 disabled:opacity-50 transition-colors"
                      >
                        <Eye className="w-3.5 h-3.5" /> Mute site
                      </button>
-                     <button onClick={() => setDeleteConfirm({ isOpen: true, mentionId: mention.id, mentionTitle: mention.title || '' })} className="flex items-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-500 hover:text-red-600">
+                     <button 
+                       onClick={() => setDeleteConfirm({ isOpen: true, mentionId: mention.id, mentionTitle: mention.title || '' })} 
+                       className="flex items-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                       title="Xóa mention"
+                     >
                        <Trash2 className="w-3.5 h-3.5" /> Delete
                      </button>
                    </div>
@@ -1794,6 +1875,8 @@ function MentionsPageContent() {
             </div>
           </div>
         </div>
+      )}
+      </>
       )}
     </div>
   );

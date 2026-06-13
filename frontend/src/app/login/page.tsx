@@ -41,7 +41,16 @@ function LoginContent() {
     setLoading(true);
 
     try {
-      const result = await auth.login(email, password);
+      // Add a manual timeout promise to handle hangs
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('TIMEOUT')), 15000)
+      );
+      
+      const result = await Promise.race([
+        auth.login(email, password),
+        timeoutPromise
+      ]) as any;
+
       resetAuthRedirectLock();
       // Cache user in background, then redirect immediately
       if (result.access_token) {
@@ -50,8 +59,17 @@ function LoginContent() {
       // Instant redirect — no setTimeout delay
       router.replace('/dashboard');
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Đăng nhập thất bại. Vui lòng thử lại.');
       setLoading(false);
+      
+      if (err.message === 'TIMEOUT' || err.code === 'ECONNABORTED' || !err.response) {
+        setError('Không kết nối được máy chủ. Vui lòng kiểm tra mạng.');
+      } else if (err.response?.status === 401 || err.response?.status === 403) {
+        setError('Sai email hoặc mật khẩu.');
+      } else if (err.response?.status >= 500) {
+        setError('Lỗi máy chủ, vui lòng thử lại sau.');
+      } else {
+        setError(err.response?.data?.detail || 'Đăng nhập thất bại. Vui lòng thử lại.');
+      }
     }
   };
 

@@ -43,7 +43,7 @@ import {
   Zap
 } from 'lucide-react';
 
-function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges, setIsWebinarModalOpen }: any) {
+function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges, setIsWebinarModalOpen, sidebarCollapsed }: any) {
   const pathname = usePathname();
   const router = useRouter();
   const { projects, activeProject, setActiveProject, loading: projectsLoading } = useProject();
@@ -77,18 +77,18 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges, setIsWebi
 
   return (
     <div
-      className={`fixed inset-y-0 left-0 z-50 w-64 bg-[#1A202C] border-r border-gray-800 shadow-xl transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${
+      className={`fixed inset-y-0 left-0 z-50 bg-[#1A202C] border-r border-gray-800 shadow-xl transform transition-all duration-300 ease-in-out lg:translate-x-0 ${
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-      } flex flex-col`}
+      } ${sidebarCollapsed ? 'w-20' : 'w-64'} flex flex-col`}
     >
       
       {/* Logo */}
       <div className="flex items-center justify-between h-[64px] px-6 border-b border-gray-800 relative z-10 bg-[#1A202C]">
         <div className="flex items-center space-x-3">
-          <div className="w-9 h-9 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-[0_0_15px_rgba(99,102,241,0.5)] border border-white/20">
+          <div className="w-9 h-9 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-[0_0_15px_rgba(99,102,241,0.5)] border border-white/20 shrink-0">
             <span className="text-white font-bold text-lg leading-none">N</span>
           </div>
-          <h1 className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-zinc-400">Nope</h1>
+          {!sidebarCollapsed && <h1 className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-zinc-400">Nope</h1>}
         </div>
         <button
           onClick={() => setSidebarOpen(false)}
@@ -103,34 +103,55 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges, setIsWebi
         
         {/* Project Contextual Nav */}
         <div className="space-y-1 mb-6">
-          <div className="px-5 mb-2 flex items-center justify-between text-xs font-bold tracking-widest text-zinc-400 uppercase">
-            <span>PROJECTS</span>
-            <Link href="/dashboard/projects/new" className="text-zinc-800 hover:text-zinc-900">
-              <div className="w-5 h-5 rounded-full bg-emerald-400 flex items-center justify-center">
-                <Plus className="w-4 h-4" />
-              </div>
-            </Link>
-          </div>
+          {!sidebarCollapsed ? (
+            <div className="px-5 mb-2 flex items-center justify-between text-xs font-bold tracking-widest text-zinc-400 uppercase">
+              <span>PROJECTS</span>
+              <Link href="/dashboard/projects/new" className="text-zinc-800 hover:text-zinc-900">
+                <div className="w-5 h-5 rounded-full bg-emerald-400 flex items-center justify-center">
+                  <Plus className="w-4 h-4" />
+                </div>
+              </Link>
+            </div>
+          ) : (
+            <div className="flex justify-center mb-2">
+              <Link href="/dashboard/projects/new" title="New Project" className="text-zinc-800 hover:text-zinc-900">
+                <div className="w-5 h-5 rounded-full bg-emerald-400 flex items-center justify-center">
+                  <Plus className="w-4 h-4" />
+                </div>
+              </Link>
+            </div>
+          )}
 
           {/* Active project selector */}
           <div className="relative mb-3">
             <button
               onClick={() => setProjectDropdownOpen(!projectDropdownOpen)}
-              className="w-full px-5 py-2 flex items-center justify-between group cursor-pointer hover:bg-[#2D3748] transition-colors"
+              title={activeProject?.name || 'Select Project'}
+              className={`w-full py-2 flex items-center group cursor-pointer hover:bg-[#2D3748] transition-colors ${sidebarCollapsed ? 'justify-center px-0' : 'justify-between px-5'}`}
             >
-              <div className="text-left flex-1 min-w-0">
-                <p className="text-sm font-bold text-white flex items-center gap-2">
-                  {projectsLoading ? 'Loading...' : activeProject?.name || 'Select Project'}
-                </p>
-                <p className="text-xs text-zinc-400 flex items-center gap-1.5 mt-0.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                  {activeProject ? `${badges.unreviewed_mentions > 0 ? `${badges.unreviewed_mentions} mentions chưa xem` : 'Không có mention mới'}` : 'Chọn project để xem'}
-                </p>
+              <div className="text-left flex-1 min-w-0 flex items-center justify-center lg:justify-start">
+                {!sidebarCollapsed ? (
+                  <div>
+                    <p className="text-sm font-bold text-white flex items-center gap-2">
+                      {projectsLoading ? 'Loading...' : activeProject?.name || 'Select Project'}
+                    </p>
+                    <p className="text-xs text-zinc-400 flex items-center gap-1.5 mt-0.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                      {activeProject ? `${badges.unreviewed_mentions > 0 ? `${badges.unreviewed_mentions} mentions chưa xem` : 'Không có mention mới'}` : 'Chọn project để xem'}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="w-8 h-8 rounded bg-[#2D3748] flex items-center justify-center text-white font-bold text-xs">
+                    {activeProject?.name?.charAt(0) || '?'}
+                  </div>
+                )}
               </div>
-              <div className="flex items-center gap-3 text-zinc-400">
-                <Settings className="w-4 h-4 hover:text-white" onClick={(e) => { e.stopPropagation(); router.push('/dashboard/project-settings'); }} />
-                <ChevronDown className={`w-4 h-4 hover:text-white transition-transform ${projectDropdownOpen ? 'rotate-180' : ''}`} />
-              </div>
+              {!sidebarCollapsed && (
+                <div className="flex items-center gap-3 text-zinc-400">
+                  <Settings className="w-4 h-4 hover:text-white" onClick={(e) => { e.stopPropagation(); router.push('/dashboard/project-settings'); }} />
+                  <ChevronDown className={`w-4 h-4 hover:text-white transition-transform ${projectDropdownOpen ? 'rotate-180' : ''}`} />
+                </div>
+              )}
             </button>
 
             {projectDropdownOpen && (
@@ -163,16 +184,17 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges, setIsWebi
                 <Link
                   key={item.name}
                   href={item.href}
-                  className={`group flex items-center px-3 py-2 text-sm font-bold rounded-lg transition-all duration-200 ${
+                  title={item.name}
+                  className={`group flex items-center py-2 text-sm font-bold rounded-lg transition-all duration-200 ${
                     isActive
                       ? 'text-white bg-[#2D3748]'
                       : 'text-gray-400 hover:text-white hover:bg-[#2D3748]'
-                  }`}
+                  } ${sidebarCollapsed ? 'justify-center px-0' : 'px-3'}`}
                   onClick={() => setSidebarOpen(false)}
                 >
-                  <item.icon className={`w-4 h-4 mr-3 ${isActive ? 'text-emerald-400' : 'text-gray-500'}`} />
-                  <span className="truncate flex-1">{item.name}</span>
-                  {(item as any).badge ? <SidebarBadge count={(item as any).badge} /> : null}
+                  <item.icon className={`w-5 h-5 ${isActive ? 'text-emerald-400' : 'text-gray-500'} ${!sidebarCollapsed && 'mr-3'}`} />
+                  {!sidebarCollapsed && <span className="truncate flex-1">{item.name}</span>}
+                  {!sidebarCollapsed && (item as any).badge ? <SidebarBadge count={(item as any).badge} /> : null}
                 </Link>
               );
             })}
@@ -181,9 +203,11 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges, setIsWebi
 
         {/* Reports Nav */}
         <div className="space-y-1 mb-6 border-t border-white/5 pt-4">
-          <div className="px-5 mb-2 text-xs font-bold tracking-widest text-zinc-400 uppercase">
-            REPORTS
-          </div>
+          {!sidebarCollapsed && (
+            <div className="px-5 mb-2 text-xs font-bold tracking-widest text-zinc-400 uppercase">
+              REPORTS
+            </div>
+          )}
           <div className="px-2">
             {reportsNav.map((item) => {
               const isActive = pathname === item.href;
@@ -191,15 +215,16 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges, setIsWebi
                 <Link
                   key={item.name}
                   href={item.href}
-                  className={`group flex items-center px-3 py-2 text-sm font-bold rounded-lg transition-all duration-200 ${
+                  title={item.name}
+                  className={`group flex items-center py-2 text-sm font-bold rounded-lg transition-all duration-200 ${
                     isActive
                       ? 'text-white bg-[#2D3748]'
                       : 'text-gray-400 hover:text-white hover:bg-[#2D3748]'
-                  }`}
+                  } ${sidebarCollapsed ? 'justify-center px-0' : 'px-3'}`}
                   onClick={() => setSidebarOpen(false)}
                 >
-                  <item.icon className={`w-4 h-4 mr-3 ${isActive ? 'text-emerald-400' : 'text-gray-500'}`} />
-                  <span className="truncate flex-1">{item.name}</span>
+                  <item.icon className={`w-5 h-5 ${isActive ? 'text-emerald-400' : 'text-gray-500'} ${!sidebarCollapsed && 'mr-3'}`} />
+                  {!sidebarCollapsed && <span className="truncate flex-1">{item.name}</span>}
                 </Link>
               );
             })}
@@ -207,27 +232,31 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges, setIsWebi
         </div>
 
         {/* Webinar Banner */}
-        <div className="px-5 mb-6">
-          <div className="mb-2 text-[11px] font-bold tracking-widest text-white uppercase">
-            UPCOMING WEBINAR
+        {!sidebarCollapsed && (
+          <div className="px-5 mb-6">
+            <div className="mb-2 text-[11px] font-bold tracking-widest text-white uppercase">
+              UPCOMING WEBINAR
+            </div>
+            <p className="text-xs text-zinc-300 mb-2 leading-relaxed font-medium">
+              Get a Social Listening certificate with Nope
+            </p>
+            <p className="text-[11px] text-zinc-500 mb-3">
+              Date: <strong className="text-zinc-400">Wednesday, June 10, 2026</strong>
+            </p>
+            <button onClick={() => setIsWebinarModalOpen(true)} className="flex items-center text-xs font-bold text-blue-500 hover:text-blue-400">
+              <Award className="w-4 h-4 mr-2" />
+              Sign up for webinar
+            </button>
           </div>
-          <p className="text-xs text-zinc-300 mb-2 leading-relaxed font-medium">
-            Get a Social Listening certificate with Nope
-          </p>
-          <p className="text-[11px] text-zinc-500 mb-3">
-            Date: <strong className="text-zinc-400">Wednesday, June 10, 2026</strong>
-          </p>
-          <button onClick={() => setIsWebinarModalOpen(true)} className="flex items-center text-xs font-bold text-blue-500 hover:text-blue-400">
-            <Award className="w-4 h-4 mr-2" />
-            Sign up for webinar
-          </button>
-        </div>
+        )}
 
         {/* System/Admin Nav */}
         <div className="space-y-1 pt-4 border-t border-white/5">
-          <div className="px-5 mb-2 text-[10px] font-bold tracking-widest text-zinc-500 uppercase">
-            SYSTEM
-          </div>
+          {!sidebarCollapsed && (
+            <div className="px-5 mb-2 text-[10px] font-bold tracking-widest text-zinc-500 uppercase">
+              SYSTEM
+            </div>
+          )}
           <div className="px-2">
             {systemNav.map((item) => {
               const isActive = pathname.startsWith(item.href);
@@ -235,15 +264,16 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges, setIsWebi
                 <Link
                   key={item.name}
                   href={item.href}
-                  className={`flex items-center px-5 py-2.5 text-sm font-medium transition-all group ${
+                  title={item.name}
+                  className={`flex items-center py-2.5 text-sm font-medium transition-all group ${
                     isActive
-                      ? 'text-white bg-[#2D3748] border-r-2 border-emerald-400'
+                      ? 'text-white bg-[#2D3748] border-emerald-400'
                       : 'text-gray-400 hover:text-white hover:bg-[#2D3748]'
-                  }`}
+                  } ${sidebarCollapsed ? 'justify-center border-l-2' : 'px-5 border-r-2'}`}
                   onClick={() => setSidebarOpen(false)}
                 >
-                  <item.icon className={`w-4 h-4 mr-3 ${isActive ? 'text-emerald-400' : 'text-gray-500'}`} />
-                  <span className="truncate flex-1">{item.name}</span>
+                  <item.icon className={`w-5 h-5 ${isActive ? 'text-emerald-400' : 'text-gray-500'} ${!sidebarCollapsed && 'mr-3'}`} />
+                  {!sidebarCollapsed && <span className="truncate flex-1">{item.name}</span>}
                 </Link>
               );
             })}
@@ -251,19 +281,6 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges, setIsWebi
         </div>
       </nav>
 
-      {/* Legal Footer & User Profile Combine */}
-      <div className="p-4 bg-[#1A202C] z-10 flex flex-col gap-4 mt-auto">
-        <div className="flex flex-col items-center gap-1 text-[10px] font-bold text-gray-400 mb-2">
-          <div className="flex items-center gap-2">
-            <Link href="#" className="hover:text-white transition-colors">Legal Information</Link>
-            <span className="text-gray-600">|</span>
-            <Link href="#" className="hover:text-white transition-colors">Customize cookie</Link>
-          </div>
-          <p className="text-[10px] text-gray-500 leading-relaxed mt-2">
-            Copyrights © 2026 Nope, Inc. All rights reserved.
-          </p>
-        </div>
-      </div>
     </div>
   );
 }
@@ -310,6 +327,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isWebinarModalOpen, setIsWebinarModalOpen] = useState(false);
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [badges, setBadges] = useState<{ new_alerts: number, open_incidents: number, unreviewed_mentions: number }>({
     new_alerts: 0, open_incidents: 0, unreviewed_mentions: 0
   });
@@ -318,6 +336,10 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
     const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
     if (!token) {
       router.replace('/login');
+    }
+    const savedCollapse = localStorage.getItem('sidebar_collapsed');
+    if (savedCollapse === 'true') {
+      setSidebarCollapsed(true);
     }
   }, [router]);
 
@@ -347,12 +369,22 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
         user={user} 
         badges={badges} 
         setIsWebinarModalOpen={setIsWebinarModalOpen}
+        sidebarCollapsed={sidebarCollapsed}
       />
 
-      <Toaster position="top-right" toastOptions={{ duration: 4000 }} />
-      <div className="lg:pl-64 flex flex-col min-h-screen">
+      <Toaster 
+        position="top-right" 
+        toastOptions={{ 
+          duration: 4000,
+          className: 'dark:bg-[#1E293B] dark:text-white dark:border-gray-700 dark:border shadow-lg'
+        }} 
+      />
+      <div className={`transition-all duration-300 flex flex-col min-h-screen ${sidebarCollapsed ? 'lg:pl-20' : 'lg:pl-64'}`}>
         <div className="sticky top-0 z-20 flex items-center h-16 px-4 bg-white dark:bg-[#050A15] border-b border-gray-200 dark:border-white/10 lg:px-8 shadow-sm">
           <button onClick={() => setSidebarOpen(true)} className="lg:hidden p-2 -ml-2 text-gray-500 hover:text-gray-900 mr-2">
+            <Menu className="w-5 h-5" />
+          </button>
+          <button onClick={() => { setSidebarCollapsed(!sidebarCollapsed); localStorage.setItem('sidebar_collapsed', (!sidebarCollapsed).toString()); }} className="hidden lg:block p-2 -ml-2 text-gray-500 hover:text-gray-900 mr-4">
             <Menu className="w-5 h-5" />
           </button>
 
@@ -374,13 +406,13 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
             <ThemeToggle />
             
             <div className="relative group">
-              <div className="w-8 h-8 rounded-full bg-slate-800 text-white flex items-center justify-center text-xs font-bold ml-2 cursor-pointer shadow-sm hover:ring-2 hover:ring-indigo-500 transition-all">
+              <div suppressHydrationWarning className="w-8 h-8 rounded-full bg-slate-800 text-white flex items-center justify-center text-xs font-bold ml-2 cursor-pointer shadow-sm hover:ring-2 hover:ring-indigo-500 transition-all">
                 {authLoading ? '...' : (user?.full_name || user?.email || 'K')[0].toUpperCase()}
               </div>
-              <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-[#1E293B] rounded-lg shadow-xl border border-gray-100 dark:border-gray-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+              <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-[#1E293B] rounded-lg shadow-xl border border-gray-100 dark:border-gray-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
                 <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
-                  <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{user?.full_name || 'User'}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user?.email}</p>
+                  <p suppressHydrationWarning className="text-sm font-semibold text-gray-900 dark:text-white truncate">{user?.full_name || 'User'}</p>
+                  <p suppressHydrationWarning className="text-xs text-gray-500 dark:text-gray-400 truncate">{user?.email}</p>
                 </div>
                 <div className="py-1">
                   <Link href="/dashboard/settings" className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">
@@ -394,8 +426,17 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
             </div>
           </div>
         </div>
-        <main className="flex-1 p-4 lg:p-8 w-full max-w-[1920px] mx-auto">
-          {children}
+        <main className="flex-1 p-4 lg:p-8 w-full max-w-[1920px] mx-auto flex flex-col">
+          <div className="flex-1">
+            {children}
+          </div>
+          <div className="mt-8 pt-4 border-t border-gray-200 dark:border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-medium text-gray-500">
+            <div className="flex items-center gap-4">
+              <Link href="#" className="hover:text-gray-900 dark:hover:text-white transition-colors">Legal Information</Link>
+              <Link href="#" className="hover:text-gray-900 dark:hover:text-white transition-colors">Customize cookie</Link>
+            </div>
+            <p>Copyrights © 2026 Nope, Inc. All rights reserved.</p>
+          </div>
         </main>
       </div>
 

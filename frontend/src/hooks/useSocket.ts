@@ -19,6 +19,9 @@ export function useSocket(onEvent?: (evt: RealtimeEvent) => void) {
   const [connected, setConnected] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
   const onEventRef = useRef(onEvent);
+  const retryCount = useRef(0);
+  const maxRetries = 5;
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   onEventRef.current = onEvent;
 
   const connect = useCallback(() => {
@@ -27,38 +30,63 @@ export function useSocket(onEvent?: (evt: RealtimeEvent) => void) {
     if (!token) return;
 
     if (wsRef.current?.readyState === WebSocket.OPEN) return;
+    if (retryCount.current >= maxRetries) {
+      console.warn('[Socket] Maximum reconnection attempts reached. Falling back to HTTP polling.');
+      return;
+    }
 
-    const ws = new WebSocket(getWsUrl());
-    wsRef.current = ws;
+    try {
+      const ws = new WebSocket(getWsUrl());
+      wsRef.current = ws;
 
-    ws.onopen = () => setConnected(true);
-    ws.onclose = () => {
-      setConnected(false);
-      wsRef.current = null;
-    };
-    ws.onerror = () => setConnected(false);
-    ws.onmessage = (msg) => {
-      try {
-        const parsed = JSON.parse(msg.data) as RealtimeEvent;
-        onEventRef.current?.(parsed);
-      } catch {
-        /* ignore */
-      }
-    };
+      ws.onopen = () => {
+        setConnected(true);
+        retryCount.current = 0; // reset on success
+      };
+      
+      ws.onclose = () => {
+        setConnected(false);
+        wsRef.current = null;
+        scheduleReconnect();
+      };
+      
+      ws.onerror = () => {
+        setConnected(false);
+        // Error will naturally trigger onclose
+      };
+      
+      ws.onmessage = (msg) => {
+        try {
+          const parsed = JSON.parse(msg.data) as RealtimeEvent;
+          onEventRef.current?.(parsed);
+        } catch {
+          /* ignore */
+        }
+      };
+    } catch (err) {
+      console.error('[Socket] Connection error:', err);
+      scheduleReconnect();
+    }
   }, []);
+
+  const scheduleReconnect = useCallback(() => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    if (retryCount.current < maxRetries) {
+      retryCount.current++;
+      const delay = Math.min(1000 * Math.pow(2, retryCount.current), 30000); // Exponential backoff up to 30s
+      timeoutRef.current = setTimeout(() => {
+        connect();
+      }, delay);
+    }
+  }, [connect]);
 
   useEffect(() => {
     connect();
-    const interval = setInterval(() => {
-      if (!wsRef.current || wsRef.current.readyState === WebSocket.CLOSED) {
-        connect();
-      }
-    }, 10000);
     return () => {
-      clearInterval(interval);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
       wsRef.current?.close();
     };
   }, [connect]);
 
-  return { connected, reconnect: connect };
+  return { connected, reconnect: connect, isFallback: retryCount.current >= maxRetries };
 }

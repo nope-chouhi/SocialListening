@@ -103,7 +103,17 @@ def run_loop(interval_minutes: int):
     """Run the worker in continuous loop mode"""
     logger.info("=" * 60)
     logger.info(f"RSS Worker - Continuous mode (interval: {interval_minutes} min)")
-    logger.info(f"Database: {os.getenv('DATABASE_URL', 'default')}")
+    # Mask the database URL password
+    db_url = os.getenv('DATABASE_URL', 'default')
+    masked_db_url = db_url
+    if '@' in db_url and '://' in db_url:
+        parts = db_url.split('@')
+        creds = parts[0].split('://')
+        if len(creds) == 2 and ':' in creds[1]:
+            user = creds[1].split(':')[0]
+            masked_db_url = f"{creds[0]}://{user}:***@{parts[1]}"
+            
+    logger.info(f"Database: {masked_db_url}")
     logger.info(f"Time: {datetime.now(timezone.utc).isoformat()}")
     logger.info("=" * 60)
 

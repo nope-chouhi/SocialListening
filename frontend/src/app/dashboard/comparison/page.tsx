@@ -77,13 +77,18 @@ export default function ComparisonPage() {
       {/* Project selector */}
       <div className="bg-white dark:bg-[#050A15] rounded-2xl shadow border border-gray-200 dark:border-white/10 p-6">
         <h2 className="text-base font-bold text-gray-900 dark:text-white mb-4">Chọn 2 Projects để So sánh</h2>
-        <div className="flex flex-col sm:flex-row gap-4 items-end">
+        {projects.length < 2 ? (
+          <div className="bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 text-amber-800 dark:text-amber-300 px-4 py-3 rounded-lg text-sm">
+            Tính năng này yêu cầu ít nhất 2 dự án. Hiện tại bạn mới có {projects.length} dự án.
+          </div>
+        ) : (
+          <div className="flex flex-col sm:flex-row gap-4 items-end">
           <div className="flex-1 space-y-2">
             <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Project A</label>
             <select
               value={projectA || ''}
               onChange={e => setProjectA(Number(e.target.value) || null)}
-              className="w-full bg-gray-50 dark:bg-[#0a0f1c] border border-gray-200 dark:border-white/10 rounded-lg px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full bg-gray-50 dark:bg-[#0a0f1c] border border-gray-200 dark:border-white/10 rounded-lg px-4 pr-8 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 appearance-none"
             >
               <option value="">-- Chọn Project A --</option>
               {projects.map(p => (
@@ -96,7 +101,7 @@ export default function ComparisonPage() {
             <select
               value={projectB || ''}
               onChange={e => setProjectB(Number(e.target.value) || null)}
-              className="w-full bg-gray-50 dark:bg-[#0a0f1c] border border-gray-200 dark:border-white/10 rounded-lg px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="w-full bg-gray-50 dark:bg-[#0a0f1c] border border-gray-200 dark:border-white/10 rounded-lg px-4 pr-8 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 appearance-none"
             >
               <option value="">-- Chọn Project B --</option>
               {projects.map(p => (
@@ -106,13 +111,14 @@ export default function ComparisonPage() {
           </div>
           <button
             onClick={handleCompare}
-            disabled={loading}
+            disabled={loading || projects.length < 2}
             className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold transition-colors disabled:opacity-50 flex items-center gap-2"
           >
             {loading ? <RefreshCcw className="w-4 h-4 animate-spin" /> : <Scale className="w-4 h-4" />}
             So sánh
           </button>
         </div>
+        )}
       </div>
 
       {/* Results */}

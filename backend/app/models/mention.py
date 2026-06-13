@@ -73,6 +73,13 @@ class Mention(Base):
     visit_count = Column(Integer, default=0, nullable=True)
     last_visited_at = Column(DateTime(timezone=True), nullable=True)
     
+    # Verification & Hallucination Prevention
+    verification_status = Column(String(50), default="verified", index=True) # verified, unverified, failed, synthetic
+    verification_error = Column(Text, nullable=True)
+    verified_at = Column(DateTime(timezone=True), nullable=True)
+    original_url = Column(Text, nullable=True)
+    canonical_url = Column(Text, nullable=True)
+    
     
     __table_args__ = (
         Index('idx_mention_published', 'published_at'),

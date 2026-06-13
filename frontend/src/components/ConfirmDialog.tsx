@@ -63,7 +63,7 @@ export default function ConfirmDialog({
       
       {/* Dialog */}
       <div className="flex min-h-full items-center justify-center p-4">
-        <div className="relative bg-[#111827] border border-gray-800 rounded-2xl shadow-2xl w-full max-w-md transform transition-all overflow-hidden">
+        <div className="relative bg-white dark:bg-[#111827] border border-gray-200 dark:border-gray-800 rounded-2xl shadow-2xl w-full max-w-md transform transition-all overflow-hidden">
           {/* Close button */}
           <button
             onClick={onClose}
@@ -80,12 +80,12 @@ export default function ConfirmDialog({
             </div>
 
             {/* Title */}
-            <h3 className="text-xl font-bold text-white text-center mb-2">
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white text-center mb-2">
               {title}
             </h3>
 
             {/* Message */}
-            <p className="text-sm text-gray-400 text-center mb-8">
+            <p className="text-sm text-gray-600 dark:text-gray-400 text-center mb-8">
               {message}
             </p>
 
@@ -93,7 +93,7 @@ export default function ConfirmDialog({
             <div className="flex space-x-3">
               <button
                 onClick={onClose}
-                className="flex-1 px-4 py-2.5 text-gray-300 bg-[#1E293B] border border-gray-700 rounded-xl hover:bg-gray-800 hover:text-white transition-colors font-medium"
+                className="flex-1 px-4 py-2.5 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-[#1E293B] border border-gray-300 dark:border-gray-700 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors font-medium"
               >
                 {cancelText}
               </button>

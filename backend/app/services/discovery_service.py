@@ -618,6 +618,8 @@ def run_discovery_job(db: Session, job_id: int) -> DiscoveryJob:
                 source_type = "video"
                 platform = "youtube"
 
+            is_synthetic = "news.com" in domain
+
             mention = Mention(
                 project_id=job.project_id,  # Set project_id from discovery job
                 job_id=job.id,
@@ -642,6 +644,8 @@ def run_discovery_job(db: Session, job_id: int) -> DiscoveryJob:
                 },
                 extraction_source="crawled_page" if crawl_result.get("success") else "search_result",
                 is_reviewed=False,
+                verification_status="synthetic" if is_synthetic else "verified",
+                verification_error="Quarantined placeholder data" if is_synthetic else None,
             )
             
             # Simple influence score calculation

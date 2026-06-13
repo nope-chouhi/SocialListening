@@ -69,7 +69,7 @@ def get_dashboard_summary(
             negative_mentions = db.execute(
                 query.where(
                     and_(
-                        AIAnalysis.sentiment.in_([SentimentScore.NEGATIVE_LOW, SentimentScore.NEGATIVE_MEDIUM, SentimentScore.NEGATIVE_HIGH]),
+                        AIAnalysis.sentiment.in_(['negative_low', 'negative_medium', 'negative_high', 'negative']),
                         AIAnalysis.analyzed_at >= start_date
                     )
                 )
@@ -375,7 +375,7 @@ def get_dashboard_trends(
             query = query.where(
                 and_(
                     AIAnalysis.analyzed_at >= start_date,
-                    AIAnalysis.sentiment.in_([SentimentScore.NEGATIVE_LOW, SentimentScore.NEGATIVE_MEDIUM, SentimentScore.NEGATIVE_HIGH])
+                    AIAnalysis.sentiment.in_(['negative_low', 'negative_medium', 'negative_high', 'negative'])
                 )
             ).group_by(date_col)
             
@@ -496,7 +496,7 @@ def get_sentiment_summary(
                 select(func.count(AIAnalysis.id)).where(
                     and_(
                         *ai_filter,
-                        AIAnalysis.sentiment.in_([SentimentScore.NEGATIVE_LOW, SentimentScore.NEGATIVE_MEDIUM, SentimentScore.NEGATIVE_HIGH])
+                        AIAnalysis.sentiment.in_(['negative_low', 'negative_medium', 'negative_high', 'negative'])
                     )
                 )
             ).scalar() or 0
