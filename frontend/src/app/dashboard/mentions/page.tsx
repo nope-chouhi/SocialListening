@@ -1041,14 +1041,106 @@ function MentionsPageContent() {
                        </button>
                      ))}
                    </div>
-                 )}
+       
+          ) : searchState === 'AUTO_SCAN_NO_RESULTS' ? (
+            <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Không tìm thấy bài viết/web/video phù hợp với từ khóa '{searchTerm}'.</h3>
+              <div className="flex gap-3 mt-4">
+                 <button onClick={handleScanClick} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors">Thử quét lại</button>
+                 <button onClick={() => { setSearchTerm(''); router.push('/dashboard/mentions'); }} className="px-4 py-2 bg-gray-200 dark:bg-white/10 hover:bg-gray-300 dark:hover:bg-white/20 text-gray-800 dark:text-white rounded-lg text-sm font-medium transition-colors">Xóa bộ lọc</button>
+              </div>
+            </div>
+          ) : ['AUTO_SCAN_STARTING', 'AUTO_SCAN_RUNNING'].includes(searchState) ? (
+            <div className="py-20 flex flex-col items-center justify-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-4" />
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Chưa có kết quả trong dữ liệu đã lưu. Hệ thống đang quét thêm nguồn mới...</h3>
+              <p className="text-gray-500 dark:text-gray-500 mb-4">Đang tìm các bài viết/web/video liên quan đến '{searchTerm}'...</p>
+            </div>
+          ) : searchState === 'TYPING' ? (
+            <div className="py-20 flex flex-col items-center justify-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-4" />
+              <p className="text-gray-500 dark:text-gray-500">Đang nhập từ khóa...</p>
+            </div>
+          ) : searchState === 'NO_LOCAL_RESULTS' ? (
+            <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Chưa có dữ liệu trong DB cho '{searchTerm}'</h3>
+              <button 
+                onClick={handleScanClick}
+                disabled={activeScanJobId !== null || searchTerm.length < 2}
+                className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors flex items-center gap-2 mt-4 disabled:opacity-50"
+              >
+                <Search className="w-4 h-4" /> Scan Now
+              </button>
+            </div>
+          ) : (
+            <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Chưa có đề cập nào</h3>
+              <p className="text-gray-500 dark:text-gray-500 max-w-sm mb-6">Dự án của bạn chưa thu thập được đề cập nào, hoặc dữ liệu không khớp với bộ lọc.</p>
+            </div>
+          )}
+
                </div>
                
                {hasActiveFilters && (
                  <button onClick={() => { setFilters({ ...filters, sentiment: null, source_type: null, min_risk_score: null, min_influence_score: null }); setPage(1); }} className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 dark:text-gray-100 font-medium transition-colors">
                    <RefreshCw className="w-3.5 h-3.5" /> Clear filters
                  </button>
-               )}
+     
+          ) : searchState === 'AUTO_SCAN_NO_RESULTS' ? (
+            <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Không tìm thấy bài viết/web/video phù hợp với từ khóa '{searchTerm}'.</h3>
+              <div className="flex gap-3 mt-4">
+                 <button onClick={handleScanClick} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors">Thử quét lại</button>
+                 <button onClick={() => { setSearchTerm(''); router.push('/dashboard/mentions'); }} className="px-4 py-2 bg-gray-200 dark:bg-white/10 hover:bg-gray-300 dark:hover:bg-white/20 text-gray-800 dark:text-white rounded-lg text-sm font-medium transition-colors">Xóa bộ lọc</button>
+              </div>
+            </div>
+          ) : ['AUTO_SCAN_STARTING', 'AUTO_SCAN_RUNNING'].includes(searchState) ? (
+            <div className="py-20 flex flex-col items-center justify-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-4" />
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Chưa có kết quả trong dữ liệu đã lưu. Hệ thống đang quét thêm nguồn mới...</h3>
+              <p className="text-gray-500 dark:text-gray-500 mb-4">Đang tìm các bài viết/web/video liên quan đến '{searchTerm}'...</p>
+            </div>
+          ) : searchState === 'TYPING' ? (
+            <div className="py-20 flex flex-col items-center justify-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-4" />
+              <p className="text-gray-500 dark:text-gray-500">Đang nhập từ khóa...</p>
+            </div>
+          ) : searchState === 'NO_LOCAL_RESULTS' ? (
+            <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Chưa có dữ liệu trong DB cho '{searchTerm}'</h3>
+              <button 
+                onClick={handleScanClick}
+                disabled={activeScanJobId !== null || searchTerm.length < 2}
+                className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors flex items-center gap-2 mt-4 disabled:opacity-50"
+              >
+                <Search className="w-4 h-4" /> Scan Now
+              </button>
+            </div>
+          ) : (
+            <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Chưa có đề cập nào</h3>
+              <p className="text-gray-500 dark:text-gray-500 max-w-sm mb-6">Dự án của bạn chưa thu thập được đề cập nào, hoặc dữ liệu không khớp với bộ lọc.</p>
+            </div>
+          )}
+
                
                <button onClick={openSaveFilterModal} className="flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700 font-bold transition-colors">
                  <SlidersHorizontal className="w-3.5 h-3.5" /> Save filters
@@ -1080,29 +1172,259 @@ function MentionsPageContent() {
                  <span className="font-medium">
                    Tìm thấy <span className="font-bold text-gray-900 dark:text-white">{totalMentions}</span> kết quả cho <span className="text-blue-600 font-bold">'{searchTerm}'</span>
                  </span>
-               )}
+     
+          ) : searchState === 'AUTO_SCAN_NO_RESULTS' ? (
+            <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Không tìm thấy bài viết/web/video phù hợp với từ khóa '{searchTerm}'.</h3>
+              <div className="flex gap-3 mt-4">
+                 <button onClick={handleScanClick} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors">Thử quét lại</button>
+                 <button onClick={() => { setSearchTerm(''); router.push('/dashboard/mentions'); }} className="px-4 py-2 bg-gray-200 dark:bg-white/10 hover:bg-gray-300 dark:hover:bg-white/20 text-gray-800 dark:text-white rounded-lg text-sm font-medium transition-colors">Xóa bộ lọc</button>
+              </div>
+            </div>
+          ) : ['AUTO_SCAN_STARTING', 'AUTO_SCAN_RUNNING'].includes(searchState) ? (
+            <div className="py-20 flex flex-col items-center justify-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-4" />
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Chưa có kết quả trong dữ liệu đã lưu. Hệ thống đang quét thêm nguồn mới...</h3>
+              <p className="text-gray-500 dark:text-gray-500 mb-4">Đang tìm các bài viết/web/video liên quan đến '{searchTerm}'...</p>
+            </div>
+          ) : searchState === 'TYPING' ? (
+            <div className="py-20 flex flex-col items-center justify-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-4" />
+              <p className="text-gray-500 dark:text-gray-500">Đang nhập từ khóa...</p>
+            </div>
+          ) : searchState === 'NO_LOCAL_RESULTS' ? (
+            <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Chưa có dữ liệu trong DB cho '{searchTerm}'</h3>
+              <button 
+                onClick={handleScanClick}
+                disabled={activeScanJobId !== null || searchTerm.length < 2}
+                className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors flex items-center gap-2 mt-4 disabled:opacity-50"
+              >
+                <Search className="w-4 h-4" /> Scan Now
+              </button>
+            </div>
+          ) : (
+            <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Chưa có đề cập nào</h3>
+              <p className="text-gray-500 dark:text-gray-500 max-w-sm mb-6">Dự án của bạn chưa thu thập được đề cập nào, hoặc dữ liệu không khớp với bộ lọc.</p>
+            </div>
+          )}
+
                
                {activeScanJobId && (
                  <span className="flex items-center gap-1.5 text-blue-600 bg-blue-50 dark:bg-blue-900/20 px-2 py-0.5 rounded-md">
                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
                    Đang quét thêm nguồn mới để mở rộng kết quả...
                  </span>
-               )}
+     
+          ) : searchState === 'AUTO_SCAN_NO_RESULTS' ? (
+            <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Không tìm thấy bài viết/web/video phù hợp với từ khóa '{searchTerm}'.</h3>
+              <div className="flex gap-3 mt-4">
+                 <button onClick={handleScanClick} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors">Thử quét lại</button>
+                 <button onClick={() => { setSearchTerm(''); router.push('/dashboard/mentions'); }} className="px-4 py-2 bg-gray-200 dark:bg-white/10 hover:bg-gray-300 dark:hover:bg-white/20 text-gray-800 dark:text-white rounded-lg text-sm font-medium transition-colors">Xóa bộ lọc</button>
+              </div>
+            </div>
+          ) : ['AUTO_SCAN_STARTING', 'AUTO_SCAN_RUNNING'].includes(searchState) ? (
+            <div className="py-20 flex flex-col items-center justify-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-4" />
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Chưa có kết quả trong dữ liệu đã lưu. Hệ thống đang quét thêm nguồn mới...</h3>
+              <p className="text-gray-500 dark:text-gray-500 mb-4">Đang tìm các bài viết/web/video liên quan đến '{searchTerm}'...</p>
+            </div>
+          ) : searchState === 'TYPING' ? (
+            <div className="py-20 flex flex-col items-center justify-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-4" />
+              <p className="text-gray-500 dark:text-gray-500">Đang nhập từ khóa...</p>
+            </div>
+          ) : searchState === 'NO_LOCAL_RESULTS' ? (
+            <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Chưa có dữ liệu trong DB cho '{searchTerm}'</h3>
+              <button 
+                onClick={handleScanClick}
+                disabled={activeScanJobId !== null || searchTerm.length < 2}
+                className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors flex items-center gap-2 mt-4 disabled:opacity-50"
+              >
+                <Search className="w-4 h-4" /> Scan Now
+              </button>
+            </div>
+          ) : (
+            <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Chưa có đề cập nào</h3>
+              <p className="text-gray-500 dark:text-gray-500 max-w-sm mb-6">Dự án của bạn chưa thu thập được đề cập nào, hoặc dữ liệu không khớp với bộ lọc.</p>
+            </div>
+          )}
+
                
                {!activeScanJobId && scanJobStatus && scanJobStatus.status === 'COMPLETED' && (
                  <span className="flex items-center gap-1.5 text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-0.5 rounded-md">
                    <CheckCircle2 className="w-3.5 h-3.5" />
                    Quét xong: tìm thấy {scanJobStatus.meta_data?.actual_raw_results_count || 0}, thêm mới {scanJobStatus.meta_data?.created_mentions_count || 0}, bỏ qua {scanJobStatus.meta_data?.duplicate_mentions_count || 0} trùng lặp.
                  </span>
-               )}
+     
+          ) : searchState === 'AUTO_SCAN_NO_RESULTS' ? (
+            <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Không tìm thấy bài viết/web/video phù hợp với từ khóa '{searchTerm}'.</h3>
+              <div className="flex gap-3 mt-4">
+                 <button onClick={handleScanClick} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors">Thử quét lại</button>
+                 <button onClick={() => { setSearchTerm(''); router.push('/dashboard/mentions'); }} className="px-4 py-2 bg-gray-200 dark:bg-white/10 hover:bg-gray-300 dark:hover:bg-white/20 text-gray-800 dark:text-white rounded-lg text-sm font-medium transition-colors">Xóa bộ lọc</button>
+              </div>
+            </div>
+          ) : ['AUTO_SCAN_STARTING', 'AUTO_SCAN_RUNNING'].includes(searchState) ? (
+            <div className="py-20 flex flex-col items-center justify-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-4" />
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Chưa có kết quả trong dữ liệu đã lưu. Hệ thống đang quét thêm nguồn mới...</h3>
+              <p className="text-gray-500 dark:text-gray-500 mb-4">Đang tìm các bài viết/web/video liên quan đến '{searchTerm}'...</p>
+            </div>
+          ) : searchState === 'TYPING' ? (
+            <div className="py-20 flex flex-col items-center justify-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-4" />
+              <p className="text-gray-500 dark:text-gray-500">Đang nhập từ khóa...</p>
+            </div>
+          ) : searchState === 'NO_LOCAL_RESULTS' ? (
+            <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Chưa có dữ liệu trong DB cho '{searchTerm}'</h3>
+              <button 
+                onClick={handleScanClick}
+                disabled={activeScanJobId !== null || searchTerm.length < 2}
+                className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors flex items-center gap-2 mt-4 disabled:opacity-50"
+              >
+                <Search className="w-4 h-4" /> Scan Now
+              </button>
+            </div>
+          ) : (
+            <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Chưa có đề cập nào</h3>
+              <p className="text-gray-500 dark:text-gray-500 max-w-sm mb-6">Dự án của bạn chưa thu thập được đề cập nào, hoặc dữ liệu không khớp với bộ lọc.</p>
+            </div>
+          )}
+
                {!activeScanJobId && scanJobStatus && scanJobStatus.status === 'PARTIAL_FAILED' && (
                  <span className="flex items-center gap-1.5 text-orange-600 bg-orange-50 dark:bg-orange-900/20 px-2 py-0.5 rounded-md">
                    <AlertTriangle className="w-3.5 h-3.5" />
                    Quét xong (có lỗi 1 phần): tìm thấy {scanJobStatus.meta_data?.actual_raw_results_count || 0}, thêm mới {scanJobStatus.meta_data?.created_mentions_count || 0}.
                  </span>
-               )}
+     
+          ) : searchState === 'AUTO_SCAN_NO_RESULTS' ? (
+            <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Không tìm thấy bài viết/web/video phù hợp với từ khóa '{searchTerm}'.</h3>
+              <div className="flex gap-3 mt-4">
+                 <button onClick={handleScanClick} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors">Thử quét lại</button>
+                 <button onClick={() => { setSearchTerm(''); router.push('/dashboard/mentions'); }} className="px-4 py-2 bg-gray-200 dark:bg-white/10 hover:bg-gray-300 dark:hover:bg-white/20 text-gray-800 dark:text-white rounded-lg text-sm font-medium transition-colors">Xóa bộ lọc</button>
+              </div>
+            </div>
+          ) : ['AUTO_SCAN_STARTING', 'AUTO_SCAN_RUNNING'].includes(searchState) ? (
+            <div className="py-20 flex flex-col items-center justify-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-4" />
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Chưa có kết quả trong dữ liệu đã lưu. Hệ thống đang quét thêm nguồn mới...</h3>
+              <p className="text-gray-500 dark:text-gray-500 mb-4">Đang tìm các bài viết/web/video liên quan đến '{searchTerm}'...</p>
+            </div>
+          ) : searchState === 'TYPING' ? (
+            <div className="py-20 flex flex-col items-center justify-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-4" />
+              <p className="text-gray-500 dark:text-gray-500">Đang nhập từ khóa...</p>
+            </div>
+          ) : searchState === 'NO_LOCAL_RESULTS' ? (
+            <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Chưa có dữ liệu trong DB cho '{searchTerm}'</h3>
+              <button 
+                onClick={handleScanClick}
+                disabled={activeScanJobId !== null || searchTerm.length < 2}
+                className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors flex items-center gap-2 mt-4 disabled:opacity-50"
+              >
+                <Search className="w-4 h-4" /> Scan Now
+              </button>
+            </div>
+          ) : (
+            <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Chưa có đề cập nào</h3>
+              <p className="text-gray-500 dark:text-gray-500 max-w-sm mb-6">Dự án của bạn chưa thu thập được đề cập nào, hoặc dữ liệu không khớp với bộ lọc.</p>
+            </div>
+          )}
+
              </div>
-           )}
+ 
+          ) : searchState === 'AUTO_SCAN_NO_RESULTS' ? (
+            <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Không tìm thấy bài viết/web/video phù hợp với từ khóa '{searchTerm}'.</h3>
+              <div className="flex gap-3 mt-4">
+                 <button onClick={handleScanClick} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors">Thử quét lại</button>
+                 <button onClick={() => { setSearchTerm(''); router.push('/dashboard/mentions'); }} className="px-4 py-2 bg-gray-200 dark:bg-white/10 hover:bg-gray-300 dark:hover:bg-white/20 text-gray-800 dark:text-white rounded-lg text-sm font-medium transition-colors">Xóa bộ lọc</button>
+              </div>
+            </div>
+          ) : ['AUTO_SCAN_STARTING', 'AUTO_SCAN_RUNNING'].includes(searchState) ? (
+            <div className="py-20 flex flex-col items-center justify-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-4" />
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Chưa có kết quả trong dữ liệu đã lưu. Hệ thống đang quét thêm nguồn mới...</h3>
+              <p className="text-gray-500 dark:text-gray-500 mb-4">Đang tìm các bài viết/web/video liên quan đến '{searchTerm}'...</p>
+            </div>
+          ) : searchState === 'TYPING' ? (
+            <div className="py-20 flex flex-col items-center justify-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-4" />
+              <p className="text-gray-500 dark:text-gray-500">Đang nhập từ khóa...</p>
+            </div>
+          ) : searchState === 'NO_LOCAL_RESULTS' ? (
+            <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Chưa có dữ liệu trong DB cho '{searchTerm}'</h3>
+              <button 
+                onClick={handleScanClick}
+                disabled={activeScanJobId !== null || searchTerm.length < 2}
+                className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors flex items-center gap-2 mt-4 disabled:opacity-50"
+              >
+                <Search className="w-4 h-4" /> Scan Now
+              </button>
+            </div>
+          ) : (
+            <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Chưa có đề cập nào</h3>
+              <p className="text-gray-500 dark:text-gray-500 max-w-sm mb-6">Dự án của bạn chưa thu thập được đề cập nào, hoặc dữ liệu không khớp với bộ lọc.</p>
+            </div>
+          )}
+
         </div>
 
         {/* Chart Section */}
@@ -1158,14 +1480,106 @@ function MentionsPageContent() {
                       <Bar dataKey="neutral" stackId="a" fill="#9CA3AF" maxBarSize={40} />
                       <Bar dataKey="negative" stackId="a" fill="#F43F5E" radius={[4, 4, 0, 0]} maxBarSize={40} />
                     </>
-                  )}
+        
+          ) : searchState === 'AUTO_SCAN_NO_RESULTS' ? (
+            <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Không tìm thấy bài viết/web/video phù hợp với từ khóa '{searchTerm}'.</h3>
+              <div className="flex gap-3 mt-4">
+                 <button onClick={handleScanClick} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors">Thử quét lại</button>
+                 <button onClick={() => { setSearchTerm(''); router.push('/dashboard/mentions'); }} className="px-4 py-2 bg-gray-200 dark:bg-white/10 hover:bg-gray-300 dark:hover:bg-white/20 text-gray-800 dark:text-white rounded-lg text-sm font-medium transition-colors">Xóa bộ lọc</button>
+              </div>
+            </div>
+          ) : ['AUTO_SCAN_STARTING', 'AUTO_SCAN_RUNNING'].includes(searchState) ? (
+            <div className="py-20 flex flex-col items-center justify-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-4" />
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Chưa có kết quả trong dữ liệu đã lưu. Hệ thống đang quét thêm nguồn mới...</h3>
+              <p className="text-gray-500 dark:text-gray-500 mb-4">Đang tìm các bài viết/web/video liên quan đến '{searchTerm}'...</p>
+            </div>
+          ) : searchState === 'TYPING' ? (
+            <div className="py-20 flex flex-col items-center justify-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-4" />
+              <p className="text-gray-500 dark:text-gray-500">Đang nhập từ khóa...</p>
+            </div>
+          ) : searchState === 'NO_LOCAL_RESULTS' ? (
+            <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Chưa có dữ liệu trong DB cho '{searchTerm}'</h3>
+              <button 
+                onClick={handleScanClick}
+                disabled={activeScanJobId !== null || searchTerm.length < 2}
+                className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors flex items-center gap-2 mt-4 disabled:opacity-50"
+              >
+                <Search className="w-4 h-4" /> Scan Now
+              </button>
+            </div>
+          ) : (
+            <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Chưa có đề cập nào</h3>
+              <p className="text-gray-500 dark:text-gray-500 max-w-sm mb-6">Dự án của bạn chưa thu thập được đề cập nào, hoặc dữ liệu không khớp với bộ lọc.</p>
+            </div>
+          )}
+
                 </BarChart>
               </ResponsiveContainer>
             ) : (
               <div className="w-full h-full flex items-center justify-center text-sm text-gray-400">
                 Không có dữ liệu biểu đồ
               </div>
-            )}
+  
+          ) : searchState === 'AUTO_SCAN_NO_RESULTS' ? (
+            <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Không tìm thấy bài viết/web/video phù hợp với từ khóa '{searchTerm}'.</h3>
+              <div className="flex gap-3 mt-4">
+                 <button onClick={handleScanClick} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors">Thử quét lại</button>
+                 <button onClick={() => { setSearchTerm(''); router.push('/dashboard/mentions'); }} className="px-4 py-2 bg-gray-200 dark:bg-white/10 hover:bg-gray-300 dark:hover:bg-white/20 text-gray-800 dark:text-white rounded-lg text-sm font-medium transition-colors">Xóa bộ lọc</button>
+              </div>
+            </div>
+          ) : ['AUTO_SCAN_STARTING', 'AUTO_SCAN_RUNNING'].includes(searchState) ? (
+            <div className="py-20 flex flex-col items-center justify-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-4" />
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Chưa có kết quả trong dữ liệu đã lưu. Hệ thống đang quét thêm nguồn mới...</h3>
+              <p className="text-gray-500 dark:text-gray-500 mb-4">Đang tìm các bài viết/web/video liên quan đến '{searchTerm}'...</p>
+            </div>
+          ) : searchState === 'TYPING' ? (
+            <div className="py-20 flex flex-col items-center justify-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-4" />
+              <p className="text-gray-500 dark:text-gray-500">Đang nhập từ khóa...</p>
+            </div>
+          ) : searchState === 'NO_LOCAL_RESULTS' ? (
+            <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Chưa có dữ liệu trong DB cho '{searchTerm}'</h3>
+              <button 
+                onClick={handleScanClick}
+                disabled={activeScanJobId !== null || searchTerm.length < 2}
+                className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors flex items-center gap-2 mt-4 disabled:opacity-50"
+              >
+                <Search className="w-4 h-4" /> Scan Now
+              </button>
+            </div>
+          ) : (
+            <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Chưa có đề cập nào</h3>
+              <p className="text-gray-500 dark:text-gray-500 max-w-sm mb-6">Dự án của bạn chưa thu thập được đề cập nào, hoặc dữ liệu không khớp với bộ lọc.</p>
+            </div>
+          )}
+
           </div>
           <div className="px-6 pb-4 flex items-center gap-6">
              {activeChartTab === 'reach' ? (
@@ -1179,7 +1593,53 @@ function MentionsPageContent() {
                  <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-sm bg-gray-400"></span><span className="text-xs font-bold text-gray-500">Trung lập</span></div>
                  <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-sm bg-rose-500"></span><span className="text-xs font-bold text-rose-600">Tiêu cực</span></div>
                </>
-             )}
+   
+          ) : searchState === 'AUTO_SCAN_NO_RESULTS' ? (
+            <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Không tìm thấy bài viết/web/video phù hợp với từ khóa '{searchTerm}'.</h3>
+              <div className="flex gap-3 mt-4">
+                 <button onClick={handleScanClick} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors">Thử quét lại</button>
+                 <button onClick={() => { setSearchTerm(''); router.push('/dashboard/mentions'); }} className="px-4 py-2 bg-gray-200 dark:bg-white/10 hover:bg-gray-300 dark:hover:bg-white/20 text-gray-800 dark:text-white rounded-lg text-sm font-medium transition-colors">Xóa bộ lọc</button>
+              </div>
+            </div>
+          ) : ['AUTO_SCAN_STARTING', 'AUTO_SCAN_RUNNING'].includes(searchState) ? (
+            <div className="py-20 flex flex-col items-center justify-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-4" />
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Chưa có kết quả trong dữ liệu đã lưu. Hệ thống đang quét thêm nguồn mới...</h3>
+              <p className="text-gray-500 dark:text-gray-500 mb-4">Đang tìm các bài viết/web/video liên quan đến '{searchTerm}'...</p>
+            </div>
+          ) : searchState === 'TYPING' ? (
+            <div className="py-20 flex flex-col items-center justify-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-4" />
+              <p className="text-gray-500 dark:text-gray-500">Đang nhập từ khóa...</p>
+            </div>
+          ) : searchState === 'NO_LOCAL_RESULTS' ? (
+            <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Chưa có dữ liệu trong DB cho '{searchTerm}'</h3>
+              <button 
+                onClick={handleScanClick}
+                disabled={activeScanJobId !== null || searchTerm.length < 2}
+                className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors flex items-center gap-2 mt-4 disabled:opacity-50"
+              >
+                <Search className="w-4 h-4" /> Scan Now
+              </button>
+            </div>
+          ) : (
+            <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Chưa có đề cập nào</h3>
+              <p className="text-gray-500 dark:text-gray-500 max-w-sm mb-6">Dự án của bạn chưa thu thập được đề cập nào, hoặc dữ liệu không khớp với bộ lọc.</p>
+            </div>
+          )}
+
           </div>
         </div>
 
@@ -1201,12 +1661,104 @@ function MentionsPageContent() {
                  <button onClick={() => setPage(totalPages)} className={`w-8 h-8 flex items-center justify-center rounded-md ${page === totalPages ? 'text-blue-600 font-bold bg-blue-50' : 'hover:bg-gray-100 dark:hover:bg-gray-800 dark:bg-white/10'}`}>
                    {totalPages}
                  </button>
-               )}
+     
+          ) : searchState === 'AUTO_SCAN_NO_RESULTS' ? (
+            <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Không tìm thấy bài viết/web/video phù hợp với từ khóa '{searchTerm}'.</h3>
+              <div className="flex gap-3 mt-4">
+                 <button onClick={handleScanClick} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors">Thử quét lại</button>
+                 <button onClick={() => { setSearchTerm(''); router.push('/dashboard/mentions'); }} className="px-4 py-2 bg-gray-200 dark:bg-white/10 hover:bg-gray-300 dark:hover:bg-white/20 text-gray-800 dark:text-white rounded-lg text-sm font-medium transition-colors">Xóa bộ lọc</button>
+              </div>
+            </div>
+          ) : ['AUTO_SCAN_STARTING', 'AUTO_SCAN_RUNNING'].includes(searchState) ? (
+            <div className="py-20 flex flex-col items-center justify-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-4" />
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Chưa có kết quả trong dữ liệu đã lưu. Hệ thống đang quét thêm nguồn mới...</h3>
+              <p className="text-gray-500 dark:text-gray-500 mb-4">Đang tìm các bài viết/web/video liên quan đến '{searchTerm}'...</p>
+            </div>
+          ) : searchState === 'TYPING' ? (
+            <div className="py-20 flex flex-col items-center justify-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-4" />
+              <p className="text-gray-500 dark:text-gray-500">Đang nhập từ khóa...</p>
+            </div>
+          ) : searchState === 'NO_LOCAL_RESULTS' ? (
+            <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Chưa có dữ liệu trong DB cho '{searchTerm}'</h3>
+              <button 
+                onClick={handleScanClick}
+                disabled={activeScanJobId !== null || searchTerm.length < 2}
+                className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors flex items-center gap-2 mt-4 disabled:opacity-50"
+              >
+                <Search className="w-4 h-4" /> Scan Now
+              </button>
+            </div>
+          ) : (
+            <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Chưa có đề cập nào</h3>
+              <p className="text-gray-500 dark:text-gray-500 max-w-sm mb-6">Dự án của bạn chưa thu thập được đề cập nào, hoặc dữ liệu không khớp với bộ lọc.</p>
+            </div>
+          )}
+
                <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 dark:bg-white/10 rounded-md disabled:opacity-50 text-blue-600">
                  <ChevronRight className="w-5 h-5" />
                </button>
              </div>
-           )}
+ 
+          ) : searchState === 'AUTO_SCAN_NO_RESULTS' ? (
+            <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Không tìm thấy bài viết/web/video phù hợp với từ khóa '{searchTerm}'.</h3>
+              <div className="flex gap-3 mt-4">
+                 <button onClick={handleScanClick} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors">Thử quét lại</button>
+                 <button onClick={() => { setSearchTerm(''); router.push('/dashboard/mentions'); }} className="px-4 py-2 bg-gray-200 dark:bg-white/10 hover:bg-gray-300 dark:hover:bg-white/20 text-gray-800 dark:text-white rounded-lg text-sm font-medium transition-colors">Xóa bộ lọc</button>
+              </div>
+            </div>
+          ) : ['AUTO_SCAN_STARTING', 'AUTO_SCAN_RUNNING'].includes(searchState) ? (
+            <div className="py-20 flex flex-col items-center justify-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-4" />
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Chưa có kết quả trong dữ liệu đã lưu. Hệ thống đang quét thêm nguồn mới...</h3>
+              <p className="text-gray-500 dark:text-gray-500 mb-4">Đang tìm các bài viết/web/video liên quan đến '{searchTerm}'...</p>
+            </div>
+          ) : searchState === 'TYPING' ? (
+            <div className="py-20 flex flex-col items-center justify-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-4" />
+              <p className="text-gray-500 dark:text-gray-500">Đang nhập từ khóa...</p>
+            </div>
+          ) : searchState === 'NO_LOCAL_RESULTS' ? (
+            <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Chưa có dữ liệu trong DB cho '{searchTerm}'</h3>
+              <button 
+                onClick={handleScanClick}
+                disabled={activeScanJobId !== null || searchTerm.length < 2}
+                className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors flex items-center gap-2 mt-4 disabled:opacity-50"
+              >
+                <Search className="w-4 h-4" /> Scan Now
+              </button>
+            </div>
+          ) : (
+            <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Chưa có đề cập nào</h3>
+              <p className="text-gray-500 dark:text-gray-500 max-w-sm mb-6">Dự án của bạn chưa thu thập được đề cập nào, hoặc dữ liệu không khớp với bộ lọc.</p>
+            </div>
+          )}
+
         </div>
 
         {/* MENTIONS LIST */}
@@ -1238,32 +1790,16 @@ function MentionsPageContent() {
             ) : ['AUTO_SCAN_STARTING', 'AUTO_SCAN_RUNNING'].includes(searchState) ? (
               <div className="py-20 flex flex-col items-center justify-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
                 <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-4" />
-                <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Đang quét thêm nguồn mới cho '{searchTerm}'...</h3>
-                <p className="text-gray-500 dark:text-gray-500 mb-4">Hệ thống đang tìm kiếm trên Web Search, YouTube và các nguồn đã cấu hình.</p>
+                <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Đang tìm các bài viết/web/video liên quan đến '{searchTerm}'...</h3>
+                <p className="text-gray-500 dark:text-gray-500 mb-4">Hệ thống đang quét Web Search, YouTube và các nguồn đã cấu hình.</p>
                 {activeProject && searchTerm.toLowerCase().trim() !== activeProject.name.toLowerCase().trim() && !activeProject.name.toLowerCase().trim().includes(searchTerm.toLowerCase().trim()) && (
                   <div className="bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 text-xs px-3 py-1.5 rounded-md mb-4 border border-yellow-200 dark:border-yellow-800/30">
                     <span className="font-semibold">Lưu ý:</span> Đang tìm '{searchTerm}' trong project '{activeProject.name}'
                   </div>
                 )}
-                {scanJobStatus && (
-                   <div className="w-full max-w-lg mt-4 bg-gray-50 dark:bg-white/5 p-4 rounded-lg text-sm text-gray-600 dark:text-gray-400 text-left space-y-1 border border-gray-200 dark:border-white/10">
-                     <p><span className="font-semibold">ID Quá trình (Job ID):</span> {scanJobStatus.job_id || activeScanJobId || 'Đang tạo...'}</p>
-                     <p><span className="font-semibold">Trạng thái:</span> {scanJobStatus.status}</p>
-                     {scanJobStatus.meta_data?.provider && <p><span className="font-semibold">Nguồn mở rộng từ khóa:</span> {scanJobStatus.meta_data.provider}</p>}
-                     {scanJobStatus.meta_data?.expanded_keywords && <p><span className="font-semibold">Từ khóa đang quét:</span> {scanJobStatus.meta_data.expanded_keywords.join(', ')}</p>}
-                     {scanJobStatus.meta_data?.source_types && scanJobStatus.meta_data.source_types.length > 0 && <p><span className="font-semibold">Các loại nguồn quét:</span> {scanJobStatus.meta_data.source_types.join(', ')}</p>}
-                     
-                     {(scanJobStatus.meta_data?.raw_results_count !== undefined || scanJobStatus.summary?.web?.called) && (
-                       <div className="pt-2 mt-2 border-t border-gray-200 dark:border-gray-700 space-y-1">
-                         <p><span className="font-semibold">Kết quả thô tìm được:</span> {scanJobStatus.meta_data?.raw_results_count || (scanJobStatus.summary ? ((scanJobStatus.summary.web?.raw_results_count || 0) + (scanJobStatus.summary.youtube?.raw_results_count || 0) + (scanJobStatus.summary.social?.raw_results_count || 0)) : 0)}</p>
-                         <p><span className="font-semibold">Bài viết hợp lệ mới:</span> {scanJobStatus.meta_data?.created_mentions_count || 0}</p>
-                         <p><span className="font-semibold">Bỏ qua do trùng lặp:</span> {scanJobStatus.meta_data?.duplicate_mentions_count || scanJobStatus.summary?.duplicates_skipped || 0}</p>
-                         {scanJobStatus.meta_data?.skipped_low_relevance_count > 0 && <p><span className="font-semibold">Bỏ qua do không khớp sát nghĩa:</span> {scanJobStatus.meta_data.skipped_low_relevance_count}</p>}
-                         {scanJobStatus.meta_data?.failed_sources && scanJobStatus.meta_data.failed_sources.length > 0 && (
-                           <p className="text-red-500 font-medium"><span className="font-semibold">Lỗi ở nguồn:</span> {scanJobStatus.meta_data.failed_sources.join('; ')}</p>
-                         )}
-                       </div>
-                     )}
+                {scanJobStatus?.status && (
+                   <div className="flex flex-col items-center text-sm text-gray-400 gap-1">
+                     <span>Trạng thái: {scanJobStatus.status} {activeScanJobId && `(Lượt quét #${activeScanJobId})`}</span>
                    </div>
                 )}
               </div>
@@ -1272,31 +1808,12 @@ function MentionsPageContent() {
                 <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
                   <Search className="w-8 h-8 text-gray-400" />
                 </div>
-                <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Không tìm thấy kết quả nào sau khi đã quét các nguồn cho '{searchTerm}'.</h3>
-                <div className="w-full max-w-lg mt-4 bg-gray-50 dark:bg-white/5 p-4 rounded-lg text-sm text-gray-600 dark:text-gray-400 text-left space-y-2 border border-gray-200 dark:border-white/10 mb-6">
-                   <p className="font-bold text-gray-800 dark:text-gray-200">Chi tiết quét dữ liệu (Job #{scanJobStatus?.job_id || activeScanJobId}):</p>
-                   <p>• Trạng thái cuối: <span className="font-medium">{scanJobStatus?.status}</span></p>
-                   {scanJobStatus?.meta_data?.expanded_keywords && <p>• Đã quét qua các từ khóa: <span className="font-medium">{scanJobStatus.meta_data.expanded_keywords.join(', ')}</span></p>}
-                   
-                   <p>• Tổng kết quả thô thu được từ Internet: <span className="font-medium">{scanJobStatus?.meta_data?.raw_results_count || 0}</span></p>
-                   {scanJobStatus?.meta_data?.raw_results_count === 0 && (
-                     <p className="text-yellow-600 dark:text-yellow-400 ml-4">→ Nguyên nhân 1: Toàn bộ nguồn (Web, YouTube...) hoàn toàn không trả về bài viết nào cho từ khóa này.</p>
-                   )}
-                   
-                   {scanJobStatus?.meta_data?.duplicate_mentions_count > 0 && (
-                     <p>• Kết quả trùng lặp: <span className="font-medium">{scanJobStatus.meta_data.duplicate_mentions_count}</span></p>
-                   )}
-                   {scanJobStatus?.meta_data?.skipped_low_relevance_count > 0 && (
-                     <p>• Kết quả bị loại vì không sát nghĩa: <span className="font-medium">{scanJobStatus.meta_data.skipped_low_relevance_count}</span></p>
-                   )}
-                   
-                   {(scanJobStatus?.meta_data?.raw_results_count > 0 && (scanJobStatus?.meta_data?.created_mentions_count === 0)) && (
-                     <p className="text-yellow-600 dark:text-yellow-400 mt-2">→ Nguyên nhân: Nguồn có trả về dữ liệu, nhưng toàn bộ đã bị lọc bỏ do trùng lặp dữ liệu cũ, không khớp sát ngữ cảnh, hoặc bị chặn bởi bộ lọc hiện tại.</p>
-                   )}
-                   
-                   {scanJobStatus?.meta_data?.failed_sources && scanJobStatus.meta_data.failed_sources.length > 0 && (
-                      <p className="text-red-500 mt-2">• Nguồn bị lỗi trong quá trình quét: {scanJobStatus.meta_data.failed_sources.join('; ')}</p>
-                   )}
+                <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Không tìm thấy bài viết/web/video phù hợp với từ khóa '{searchTerm}'.</h3>
+                <div className="bg-gray-50 dark:bg-white/5 rounded-lg p-4 mb-6 text-sm text-gray-500 dark:text-gray-400 max-w-md text-left w-full space-y-2">
+                   <p className="font-semibold text-gray-700 dark:text-gray-300">Kết quả quét ({scanJobStatus?.job_id}):</p>
+                   <p>• Web Search: {scanJobStatus?.summary?.web?.called ? `${scanJobStatus.summary.web.raw_results_count} kết quả thô, ${scanJobStatus.summary.web.results_after_keyword_match} phù hợp` : 'Bỏ qua'}</p>
+                   <p>• YouTube: {scanJobStatus?.summary?.youtube?.called ? `${scanJobStatus.summary.youtube.raw_results_count} video` : 'Bỏ qua'}</p>
+                   <p>• Trùng lặp đã bỏ qua: {scanJobStatus?.summary?.duplicates_skipped || 0}</p>
                 </div>
                 <div className="flex gap-3">
                    <button onClick={handleScanClick} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors">Thử quét lại</button>
@@ -1308,47 +1825,18 @@ function MentionsPageContent() {
                 <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
                   <Search className="w-8 h-8 text-gray-400" />
                 </div>
-                <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Không tìm thấy kết quả đã lưu cho '{searchTerm}' trong bộ lọc hiện tại.</h3>
-                {dateRange !== 'all' && (
-                  <div className="bg-yellow-50 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-200 text-sm px-4 py-3 rounded-lg max-w-md mb-6 border border-yellow-200 dark:border-yellow-800/30">
-                    <span className="font-semibold block mb-1">Gợi ý:</span>
-                    Có thể từ khóa có dữ liệu ngoài phạm vi thời gian đã chọn ({dateRange}). Thử mở rộng sang 30 ngày, 90 ngày hoặc Tất cả thời gian.
-                  </div>
-                )}
-                {scanJobStatus && scanJobStatus.status === 'COMPLETED' && (
-                  <div className="bg-gray-50 dark:bg-gray-800/50 text-gray-700 dark:text-gray-300 text-sm px-4 py-3 rounded-lg max-w-md mb-6 border border-gray-200 dark:border-gray-700">
-                    <span className="font-bold block mb-1 text-gray-900 dark:text-white">Lý do từ kết quả quét tự động:</span>
-                    {scanJobStatus.summary?.serpapi_result_count === 0 ? (
-                      <p>Nguồn không trả về kết quả phù hợp nào cho từ khóa này.</p>
-                    ) : (scanJobStatus.summary?.new_mentions_created === 0 && scanJobStatus.summary?.duplicates_skipped > 0) ? (
-                      <p>Các kết quả tìm thấy đã tồn tại trong hệ thống (bị trùng lặp).</p>
-                    ) : (scanJobStatus.summary?.low_relevance_skipped > 0) ? (
-                      <p>Một số kết quả bị loại bỏ do độ liên quan thấp.</p>
-                    ) : (
-                      <p>Quét hoàn tất nhưng không có mentions mới được tạo thành công.</p>
-                    )}
-                  </div>
-                )}
-                {scanJobStatus && scanJobStatus.status === 'TIMEOUT' && (
-                  <div className="bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 text-sm px-4 py-3 rounded-lg max-w-md mb-6 border border-red-200 dark:border-red-800/30">
-                    <span className="font-bold block mb-1 text-red-900 dark:text-red-100">Worker chưa xử lý job:</span>
-                    Job quét đã vượt quá thời gian chờ. Vui lòng kiểm tra lại trạng thái Worker backend.
-                  </div>
-                )}
+                <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Chưa có dữ liệu trong DB cho '{searchTerm}'</h3>
                 {searchTerm.length < 2 && (
                   <p className="text-gray-500 dark:text-gray-500 mb-6 max-w-sm">Từ khóa quá ngắn để tự động quét internet (cần ít nhất 2 ký tự).</p>
                 )}
-                <div className="flex flex-col items-center gap-2 mt-2">
-                  <p className="text-sm text-gray-500">Bạn có thể bấm Scan Now để quét thêm nguồn.</p>
-                  <button 
-                    onClick={handleScanClick}
-                    disabled={activeScanJobId !== null || searchTerm.length < 2}
-                    className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
-                  >
-                    <Search className="w-4 h-4" />
-                    Scan Now
-                  </button>
-                </div>
+                <button 
+                  onClick={handleScanClick}
+                  disabled={activeScanJobId !== null || searchTerm.length < 2}
+                  className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
+                >
+                  <Search className="w-4 h-4" />
+                  Scan Now
+                </button>
               </div>
             ) : (
               <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
@@ -1356,12 +1844,7 @@ function MentionsPageContent() {
                   <Search className="w-8 h-8 text-gray-400" />
                 </div>
                 <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Chưa có đề cập nào</h3>
-                <p className="text-gray-500 dark:text-gray-500 max-w-sm mb-4">Dự án của bạn chưa thu thập được đề cập nào, hoặc dữ liệu không khớp với bộ lọc.</p>
-                {dateRange !== 'all' && (
-                  <div className="bg-yellow-50 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-200 text-sm px-4 py-2 rounded-lg max-w-md mb-6 border border-yellow-200 dark:border-yellow-800/30">
-                    Có thể dữ liệu nằm ngoài phạm vi thời gian hiện tại. Hãy thử mở rộng bộ lọc ngày.
-                  </div>
-                )}
+                <p className="text-gray-500 dark:text-gray-500 max-w-sm mb-6">Dự án của bạn chưa thu thập được đề cập nào, hoặc dữ liệu không khớp với bộ lọc.</p>
               </div>
             )
           ) : (
@@ -1431,7 +1914,53 @@ function MentionsPageContent() {
                     </button>
                   </div>
                 </div>
-              )}
+    
+          ) : searchState === 'AUTO_SCAN_NO_RESULTS' ? (
+            <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Không tìm thấy bài viết/web/video phù hợp với từ khóa '{searchTerm}'.</h3>
+              <div className="flex gap-3 mt-4">
+                 <button onClick={handleScanClick} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors">Thử quét lại</button>
+                 <button onClick={() => { setSearchTerm(''); router.push('/dashboard/mentions'); }} className="px-4 py-2 bg-gray-200 dark:bg-white/10 hover:bg-gray-300 dark:hover:bg-white/20 text-gray-800 dark:text-white rounded-lg text-sm font-medium transition-colors">Xóa bộ lọc</button>
+              </div>
+            </div>
+          ) : ['AUTO_SCAN_STARTING', 'AUTO_SCAN_RUNNING'].includes(searchState) ? (
+            <div className="py-20 flex flex-col items-center justify-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-4" />
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Chưa có kết quả trong dữ liệu đã lưu. Hệ thống đang quét thêm nguồn mới...</h3>
+              <p className="text-gray-500 dark:text-gray-500 mb-4">Đang tìm các bài viết/web/video liên quan đến '{searchTerm}'...</p>
+            </div>
+          ) : searchState === 'TYPING' ? (
+            <div className="py-20 flex flex-col items-center justify-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-4" />
+              <p className="text-gray-500 dark:text-gray-500">Đang nhập từ khóa...</p>
+            </div>
+          ) : searchState === 'NO_LOCAL_RESULTS' ? (
+            <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Chưa có dữ liệu trong DB cho '{searchTerm}'</h3>
+              <button 
+                onClick={handleScanClick}
+                disabled={activeScanJobId !== null || searchTerm.length < 2}
+                className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors flex items-center gap-2 mt-4 disabled:opacity-50"
+              >
+                <Search className="w-4 h-4" /> Scan Now
+              </button>
+            </div>
+          ) : (
+            <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Chưa có đề cập nào</h3>
+              <p className="text-gray-500 dark:text-gray-500 max-w-sm mb-6">Dự án của bạn chưa thu thập được đề cập nào, hoặc dữ liệu không khớp với bộ lọc.</p>
+            </div>
+          )}
+
               {mentionsList.map((mention) => (
               <div key={mention.id} className="bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10 overflow-hidden group hover:border-gray-300 transition-colors">
                 <div className="p-5">
@@ -1456,7 +1985,53 @@ function MentionsPageContent() {
                              </h3>
                              {activeScanJobId && mention.job_id === activeScanJobId && (
                                <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-[10px] uppercase font-extrabold px-1.5 py-0.5 rounded-sm shrink-0 border border-blue-200 dark:border-blue-800">New</span>
-                             )}
+                   
+          ) : searchState === 'AUTO_SCAN_NO_RESULTS' ? (
+            <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Không tìm thấy bài viết/web/video phù hợp với từ khóa '{searchTerm}'.</h3>
+              <div className="flex gap-3 mt-4">
+                 <button onClick={handleScanClick} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors">Thử quét lại</button>
+                 <button onClick={() => { setSearchTerm(''); router.push('/dashboard/mentions'); }} className="px-4 py-2 bg-gray-200 dark:bg-white/10 hover:bg-gray-300 dark:hover:bg-white/20 text-gray-800 dark:text-white rounded-lg text-sm font-medium transition-colors">Xóa bộ lọc</button>
+              </div>
+            </div>
+          ) : ['AUTO_SCAN_STARTING', 'AUTO_SCAN_RUNNING'].includes(searchState) ? (
+            <div className="py-20 flex flex-col items-center justify-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-4" />
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Chưa có kết quả trong dữ liệu đã lưu. Hệ thống đang quét thêm nguồn mới...</h3>
+              <p className="text-gray-500 dark:text-gray-500 mb-4">Đang tìm các bài viết/web/video liên quan đến '{searchTerm}'...</p>
+            </div>
+          ) : searchState === 'TYPING' ? (
+            <div className="py-20 flex flex-col items-center justify-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-4" />
+              <p className="text-gray-500 dark:text-gray-500">Đang nhập từ khóa...</p>
+            </div>
+          ) : searchState === 'NO_LOCAL_RESULTS' ? (
+            <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Chưa có dữ liệu trong DB cho '{searchTerm}'</h3>
+              <button 
+                onClick={handleScanClick}
+                disabled={activeScanJobId !== null || searchTerm.length < 2}
+                className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors flex items-center gap-2 mt-4 disabled:opacity-50"
+              >
+                <Search className="w-4 h-4" /> Scan Now
+              </button>
+            </div>
+          ) : (
+            <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Chưa có đề cập nào</h3>
+              <p className="text-gray-500 dark:text-gray-500 max-w-sm mb-6">Dự án của bạn chưa thu thập được đề cập nào, hoặc dữ liệu không khớp với bộ lọc.</p>
+            </div>
+          )}
+
                            </div>
                            {searchTerm && (
                               <div className="flex items-center gap-2 mt-1 mb-1 flex-wrap">
@@ -1470,7 +2045,53 @@ function MentionsPageContent() {
                                     <Search className="w-3 h-3" /> 
                                     Semantic / AI Match
                                   </div>
-                                )}
+                      
+          ) : searchState === 'AUTO_SCAN_NO_RESULTS' ? (
+            <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Không tìm thấy bài viết/web/video phù hợp với từ khóa '{searchTerm}'.</h3>
+              <div className="flex gap-3 mt-4">
+                 <button onClick={handleScanClick} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors">Thử quét lại</button>
+                 <button onClick={() => { setSearchTerm(''); router.push('/dashboard/mentions'); }} className="px-4 py-2 bg-gray-200 dark:bg-white/10 hover:bg-gray-300 dark:hover:bg-white/20 text-gray-800 dark:text-white rounded-lg text-sm font-medium transition-colors">Xóa bộ lọc</button>
+              </div>
+            </div>
+          ) : ['AUTO_SCAN_STARTING', 'AUTO_SCAN_RUNNING'].includes(searchState) ? (
+            <div className="py-20 flex flex-col items-center justify-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-4" />
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Chưa có kết quả trong dữ liệu đã lưu. Hệ thống đang quét thêm nguồn mới...</h3>
+              <p className="text-gray-500 dark:text-gray-500 mb-4">Đang tìm các bài viết/web/video liên quan đến '{searchTerm}'...</p>
+            </div>
+          ) : searchState === 'TYPING' ? (
+            <div className="py-20 flex flex-col items-center justify-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-4" />
+              <p className="text-gray-500 dark:text-gray-500">Đang nhập từ khóa...</p>
+            </div>
+          ) : searchState === 'NO_LOCAL_RESULTS' ? (
+            <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Chưa có dữ liệu trong DB cho '{searchTerm}'</h3>
+              <button 
+                onClick={handleScanClick}
+                disabled={activeScanJobId !== null || searchTerm.length < 2}
+                className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors flex items-center gap-2 mt-4 disabled:opacity-50"
+              >
+                <Search className="w-4 h-4" /> Scan Now
+              </button>
+            </div>
+          ) : (
+            <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Chưa có đề cập nào</h3>
+              <p className="text-gray-500 dark:text-gray-500 max-w-sm mb-6">Dự án của bạn chưa thu thập được đề cập nào, hoặc dữ liệu không khớp với bộ lọc.</p>
+            </div>
+          )}
+
                                 {mention.match_strength && (
                                   <div className={`text-[11px] font-bold px-2 py-0.5 rounded-full uppercase ${
                                     mention.match_strength === 'exact' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' :
@@ -1479,9 +2100,101 @@ function MentionsPageContent() {
                                   }`}>
                                     {mention.match_strength} match
                                   </div>
-                                )}
+                      
+          ) : searchState === 'AUTO_SCAN_NO_RESULTS' ? (
+            <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Không tìm thấy bài viết/web/video phù hợp với từ khóa '{searchTerm}'.</h3>
+              <div className="flex gap-3 mt-4">
+                 <button onClick={handleScanClick} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors">Thử quét lại</button>
+                 <button onClick={() => { setSearchTerm(''); router.push('/dashboard/mentions'); }} className="px-4 py-2 bg-gray-200 dark:bg-white/10 hover:bg-gray-300 dark:hover:bg-white/20 text-gray-800 dark:text-white rounded-lg text-sm font-medium transition-colors">Xóa bộ lọc</button>
+              </div>
+            </div>
+          ) : ['AUTO_SCAN_STARTING', 'AUTO_SCAN_RUNNING'].includes(searchState) ? (
+            <div className="py-20 flex flex-col items-center justify-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-4" />
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Chưa có kết quả trong dữ liệu đã lưu. Hệ thống đang quét thêm nguồn mới...</h3>
+              <p className="text-gray-500 dark:text-gray-500 mb-4">Đang tìm các bài viết/web/video liên quan đến '{searchTerm}'...</p>
+            </div>
+          ) : searchState === 'TYPING' ? (
+            <div className="py-20 flex flex-col items-center justify-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-4" />
+              <p className="text-gray-500 dark:text-gray-500">Đang nhập từ khóa...</p>
+            </div>
+          ) : searchState === 'NO_LOCAL_RESULTS' ? (
+            <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Chưa có dữ liệu trong DB cho '{searchTerm}'</h3>
+              <button 
+                onClick={handleScanClick}
+                disabled={activeScanJobId !== null || searchTerm.length < 2}
+                className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors flex items-center gap-2 mt-4 disabled:opacity-50"
+              >
+                <Search className="w-4 h-4" /> Scan Now
+              </button>
+            </div>
+          ) : (
+            <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Chưa có đề cập nào</h3>
+              <p className="text-gray-500 dark:text-gray-500 max-w-sm mb-6">Dự án của bạn chưa thu thập được đề cập nào, hoặc dữ liệu không khớp với bộ lọc.</p>
+            </div>
+          )}
+
                               </div>
-                            )}
+                  
+          ) : searchState === 'AUTO_SCAN_NO_RESULTS' ? (
+            <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Không tìm thấy bài viết/web/video phù hợp với từ khóa '{searchTerm}'.</h3>
+              <div className="flex gap-3 mt-4">
+                 <button onClick={handleScanClick} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors">Thử quét lại</button>
+                 <button onClick={() => { setSearchTerm(''); router.push('/dashboard/mentions'); }} className="px-4 py-2 bg-gray-200 dark:bg-white/10 hover:bg-gray-300 dark:hover:bg-white/20 text-gray-800 dark:text-white rounded-lg text-sm font-medium transition-colors">Xóa bộ lọc</button>
+              </div>
+            </div>
+          ) : ['AUTO_SCAN_STARTING', 'AUTO_SCAN_RUNNING'].includes(searchState) ? (
+            <div className="py-20 flex flex-col items-center justify-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-4" />
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Chưa có kết quả trong dữ liệu đã lưu. Hệ thống đang quét thêm nguồn mới...</h3>
+              <p className="text-gray-500 dark:text-gray-500 mb-4">Đang tìm các bài viết/web/video liên quan đến '{searchTerm}'...</p>
+            </div>
+          ) : searchState === 'TYPING' ? (
+            <div className="py-20 flex flex-col items-center justify-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-4" />
+              <p className="text-gray-500 dark:text-gray-500">Đang nhập từ khóa...</p>
+            </div>
+          ) : searchState === 'NO_LOCAL_RESULTS' ? (
+            <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Chưa có dữ liệu trong DB cho '{searchTerm}'</h3>
+              <button 
+                onClick={handleScanClick}
+                disabled={activeScanJobId !== null || searchTerm.length < 2}
+                className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors flex items-center gap-2 mt-4 disabled:opacity-50"
+              >
+                <Search className="w-4 h-4" /> Scan Now
+              </button>
+            </div>
+          ) : (
+            <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Chưa có đề cập nào</h3>
+              <p className="text-gray-500 dark:text-gray-500 max-w-sm mb-6">Dự án của bạn chưa thu thập được đề cập nào, hoặc dữ liệu không khớp với bộ lọc.</p>
+            </div>
+          )}
+
                            <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-500 mt-1">
                              <span>{mention.domain || mention.source_type}</span>
                              <span>•</span>
@@ -1601,7 +2314,53 @@ function MentionsPageContent() {
                          <CheckCircle2 className="w-3 h-3" /> Đã mở
                          {(mention.visit_count ?? 0) > 0 && <span className="text-emerald-500">({mention.visit_count})</span>}
                        </div>
-                     )}
+           
+          ) : searchState === 'AUTO_SCAN_NO_RESULTS' ? (
+            <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Không tìm thấy bài viết/web/video phù hợp với từ khóa '{searchTerm}'.</h3>
+              <div className="flex gap-3 mt-4">
+                 <button onClick={handleScanClick} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors">Thử quét lại</button>
+                 <button onClick={() => { setSearchTerm(''); router.push('/dashboard/mentions'); }} className="px-4 py-2 bg-gray-200 dark:bg-white/10 hover:bg-gray-300 dark:hover:bg-white/20 text-gray-800 dark:text-white rounded-lg text-sm font-medium transition-colors">Xóa bộ lọc</button>
+              </div>
+            </div>
+          ) : ['AUTO_SCAN_STARTING', 'AUTO_SCAN_RUNNING'].includes(searchState) ? (
+            <div className="py-20 flex flex-col items-center justify-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-4" />
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Chưa có kết quả trong dữ liệu đã lưu. Hệ thống đang quét thêm nguồn mới...</h3>
+              <p className="text-gray-500 dark:text-gray-500 mb-4">Đang tìm các bài viết/web/video liên quan đến '{searchTerm}'...</p>
+            </div>
+          ) : searchState === 'TYPING' ? (
+            <div className="py-20 flex flex-col items-center justify-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-4" />
+              <p className="text-gray-500 dark:text-gray-500">Đang nhập từ khóa...</p>
+            </div>
+          ) : searchState === 'NO_LOCAL_RESULTS' ? (
+            <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Chưa có dữ liệu trong DB cho '{searchTerm}'</h3>
+              <button 
+                onClick={handleScanClick}
+                disabled={activeScanJobId !== null || searchTerm.length < 2}
+                className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors flex items-center gap-2 mt-4 disabled:opacity-50"
+              >
+                <Search className="w-4 h-4" /> Scan Now
+              </button>
+            </div>
+          ) : (
+            <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Chưa có đề cập nào</h3>
+              <p className="text-gray-500 dark:text-gray-500 max-w-sm mb-6">Dự án của bạn chưa thu thập được đề cập nào, hoặc dữ liệu không khớp với bộ lọc.</p>
+            </div>
+          )}
+
 
                      <button 
                        onClick={() => handleAction(mention.id, 'review', () => mentionsApi.markReviewed(mention.id), 'Đã đánh dấu xem', { is_reviewed: true })}
@@ -1626,7 +2385,53 @@ function MentionsPageContent() {
                          {actionLoading[`${mention.id}_analyze`] ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <BrainCircuit className="w-3.5 h-3.5" />} 
                          Phân tích AI
                        </button>
-                     )}
+           
+          ) : searchState === 'AUTO_SCAN_NO_RESULTS' ? (
+            <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Không tìm thấy bài viết/web/video phù hợp với từ khóa '{searchTerm}'.</h3>
+              <div className="flex gap-3 mt-4">
+                 <button onClick={handleScanClick} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors">Thử quét lại</button>
+                 <button onClick={() => { setSearchTerm(''); router.push('/dashboard/mentions'); }} className="px-4 py-2 bg-gray-200 dark:bg-white/10 hover:bg-gray-300 dark:hover:bg-white/20 text-gray-800 dark:text-white rounded-lg text-sm font-medium transition-colors">Xóa bộ lọc</button>
+              </div>
+            </div>
+          ) : ['AUTO_SCAN_STARTING', 'AUTO_SCAN_RUNNING'].includes(searchState) ? (
+            <div className="py-20 flex flex-col items-center justify-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-4" />
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Chưa có kết quả trong dữ liệu đã lưu. Hệ thống đang quét thêm nguồn mới...</h3>
+              <p className="text-gray-500 dark:text-gray-500 mb-4">Đang tìm các bài viết/web/video liên quan đến '{searchTerm}'...</p>
+            </div>
+          ) : searchState === 'TYPING' ? (
+            <div className="py-20 flex flex-col items-center justify-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-4" />
+              <p className="text-gray-500 dark:text-gray-500">Đang nhập từ khóa...</p>
+            </div>
+          ) : searchState === 'NO_LOCAL_RESULTS' ? (
+            <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Chưa có dữ liệu trong DB cho '{searchTerm}'</h3>
+              <button 
+                onClick={handleScanClick}
+                disabled={activeScanJobId !== null || searchTerm.length < 2}
+                className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors flex items-center gap-2 mt-4 disabled:opacity-50"
+              >
+                <Search className="w-4 h-4" /> Scan Now
+              </button>
+            </div>
+          ) : (
+            <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Chưa có đề cập nào</h3>
+              <p className="text-gray-500 dark:text-gray-500 max-w-sm mb-6">Dự án của bạn chưa thu thập được đề cập nào, hoặc dữ liệu không khớp với bộ lọc.</p>
+            </div>
+          )}
+
                      {(mention.risk_score !== undefined && mention.risk_score >= 50) && (
                        <button 
                          onClick={() => handleAction(mention.id, 'alert', () => mentionsApi.createAlert(mention.id), 'Đã tạo cảnh báo rủi ro')}
@@ -1637,7 +2442,53 @@ function MentionsPageContent() {
                          {actionLoading[`${mention.id}_alert`] ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <AlertTriangle className="w-3.5 h-3.5" />} 
                          Tạo cảnh báo
                        </button>
-                     )}
+           
+          ) : searchState === 'AUTO_SCAN_NO_RESULTS' ? (
+            <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Không tìm thấy bài viết/web/video phù hợp với từ khóa '{searchTerm}'.</h3>
+              <div className="flex gap-3 mt-4">
+                 <button onClick={handleScanClick} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors">Thử quét lại</button>
+                 <button onClick={() => { setSearchTerm(''); router.push('/dashboard/mentions'); }} className="px-4 py-2 bg-gray-200 dark:bg-white/10 hover:bg-gray-300 dark:hover:bg-white/20 text-gray-800 dark:text-white rounded-lg text-sm font-medium transition-colors">Xóa bộ lọc</button>
+              </div>
+            </div>
+          ) : ['AUTO_SCAN_STARTING', 'AUTO_SCAN_RUNNING'].includes(searchState) ? (
+            <div className="py-20 flex flex-col items-center justify-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-4" />
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Chưa có kết quả trong dữ liệu đã lưu. Hệ thống đang quét thêm nguồn mới...</h3>
+              <p className="text-gray-500 dark:text-gray-500 mb-4">Đang tìm các bài viết/web/video liên quan đến '{searchTerm}'...</p>
+            </div>
+          ) : searchState === 'TYPING' ? (
+            <div className="py-20 flex flex-col items-center justify-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-4" />
+              <p className="text-gray-500 dark:text-gray-500">Đang nhập từ khóa...</p>
+            </div>
+          ) : searchState === 'NO_LOCAL_RESULTS' ? (
+            <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Chưa có dữ liệu trong DB cho '{searchTerm}'</h3>
+              <button 
+                onClick={handleScanClick}
+                disabled={activeScanJobId !== null || searchTerm.length < 2}
+                className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors flex items-center gap-2 mt-4 disabled:opacity-50"
+              >
+                <Search className="w-4 h-4" /> Scan Now
+              </button>
+            </div>
+          ) : (
+            <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Chưa có đề cập nào</h3>
+              <p className="text-gray-500 dark:text-gray-500 max-w-sm mb-6">Dự án của bạn chưa thu thập được đề cập nào, hoặc dữ liệu không khớp với bộ lọc.</p>
+            </div>
+          )}
+
                      <button 
                        onClick={async () => {
                          const currentTagsArray = Array.isArray(mention.tags) ? mention.tags : (mention.tags ? mention.tags.split(',') : []);
@@ -1703,7 +2554,53 @@ function MentionsPageContent() {
             ))
             }
             </div>
+
+          ) : searchState === 'AUTO_SCAN_NO_RESULTS' ? (
+            <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Không tìm thấy bài viết/web/video phù hợp với từ khóa '{searchTerm}'.</h3>
+              <div className="flex gap-3 mt-4">
+                 <button onClick={handleScanClick} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors">Thử quét lại</button>
+                 <button onClick={() => { setSearchTerm(''); router.push('/dashboard/mentions'); }} className="px-4 py-2 bg-gray-200 dark:bg-white/10 hover:bg-gray-300 dark:hover:bg-white/20 text-gray-800 dark:text-white rounded-lg text-sm font-medium transition-colors">Xóa bộ lọc</button>
+              </div>
+            </div>
+          ) : ['AUTO_SCAN_STARTING', 'AUTO_SCAN_RUNNING'].includes(searchState) ? (
+            <div className="py-20 flex flex-col items-center justify-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-4" />
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Chưa có kết quả trong dữ liệu đã lưu. Hệ thống đang quét thêm nguồn mới...</h3>
+              <p className="text-gray-500 dark:text-gray-500 mb-4">Đang tìm các bài viết/web/video liên quan đến '{searchTerm}'...</p>
+            </div>
+          ) : searchState === 'TYPING' ? (
+            <div className="py-20 flex flex-col items-center justify-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-4" />
+              <p className="text-gray-500 dark:text-gray-500">Đang nhập từ khóa...</p>
+            </div>
+          ) : searchState === 'NO_LOCAL_RESULTS' ? (
+            <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Chưa có dữ liệu trong DB cho '{searchTerm}'</h3>
+              <button 
+                onClick={handleScanClick}
+                disabled={activeScanJobId !== null || searchTerm.length < 2}
+                className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors flex items-center gap-2 mt-4 disabled:opacity-50"
+              >
+                <Search className="w-4 h-4" /> Scan Now
+              </button>
+            </div>
+          ) : (
+            <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Chưa có đề cập nào</h3>
+              <p className="text-gray-500 dark:text-gray-500 max-w-sm mb-6">Dự án của bạn chưa thu thập được đề cập nào, hoặc dữ liệu không khớp với bộ lọc.</p>
+            </div>
           )}
+
         </div>
 
         {/* Pagination Bar Bottom */}
@@ -1720,7 +2617,53 @@ function MentionsPageContent() {
                  <button onClick={() => setPage(totalPages)} className={`w-8 h-8 flex items-center justify-center rounded-md ${page === totalPages ? 'text-blue-600 font-bold bg-blue-50' : 'hover:bg-gray-100 dark:hover:bg-gray-800 dark:bg-white/10'}`}>
                    {totalPages}
                  </button>
-               )}
+     
+          ) : searchState === 'AUTO_SCAN_NO_RESULTS' ? (
+            <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Không tìm thấy bài viết/web/video phù hợp với từ khóa '{searchTerm}'.</h3>
+              <div className="flex gap-3 mt-4">
+                 <button onClick={handleScanClick} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors">Thử quét lại</button>
+                 <button onClick={() => { setSearchTerm(''); router.push('/dashboard/mentions'); }} className="px-4 py-2 bg-gray-200 dark:bg-white/10 hover:bg-gray-300 dark:hover:bg-white/20 text-gray-800 dark:text-white rounded-lg text-sm font-medium transition-colors">Xóa bộ lọc</button>
+              </div>
+            </div>
+          ) : ['AUTO_SCAN_STARTING', 'AUTO_SCAN_RUNNING'].includes(searchState) ? (
+            <div className="py-20 flex flex-col items-center justify-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-4" />
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Chưa có kết quả trong dữ liệu đã lưu. Hệ thống đang quét thêm nguồn mới...</h3>
+              <p className="text-gray-500 dark:text-gray-500 mb-4">Đang tìm các bài viết/web/video liên quan đến '{searchTerm}'...</p>
+            </div>
+          ) : searchState === 'TYPING' ? (
+            <div className="py-20 flex flex-col items-center justify-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-4" />
+              <p className="text-gray-500 dark:text-gray-500">Đang nhập từ khóa...</p>
+            </div>
+          ) : searchState === 'NO_LOCAL_RESULTS' ? (
+            <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Chưa có dữ liệu trong DB cho '{searchTerm}'</h3>
+              <button 
+                onClick={handleScanClick}
+                disabled={activeScanJobId !== null || searchTerm.length < 2}
+                className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors flex items-center gap-2 mt-4 disabled:opacity-50"
+              >
+                <Search className="w-4 h-4" /> Scan Now
+              </button>
+            </div>
+          ) : (
+            <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Chưa có đề cập nào</h3>
+              <p className="text-gray-500 dark:text-gray-500 max-w-sm mb-6">Dự án của bạn chưa thu thập được đề cập nào, hoặc dữ liệu không khớp với bộ lọc.</p>
+            </div>
+          )}
+
              </div>
            </div>
         )}
