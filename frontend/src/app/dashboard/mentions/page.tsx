@@ -1749,49 +1749,73 @@ function MentionsPageContent() {
 
         {/* Sources Filter */}
         <div className="bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10 p-4">
-           <div className="flex items-center justify-between mb-4">
+           <div className="flex items-center justify-between mb-3">
              <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100 flex items-center gap-1.5">
-               Sources <Info className="w-3.5 h-3.5 text-gray-400" />
+               Sources
              </h3>
-             <span className="text-xs text-gray-500 dark:text-gray-500 cursor-pointer hover:underline">Show all</span>
            </div>
-           <div className="grid grid-cols-2 gap-y-3 gap-x-2">
-             {SOURCE_TYPE_OPTIONS.map((src) => {
+
+           {/* Available sources */}
+           <p className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest mb-2">Available</p>
+           <div className="space-y-2 mb-4">
+             {SOURCE_TYPE_OPTIONS.filter(src => !src.disabled).map((src) => {
                const currentSources = filters.source_type ? filters.source_type.split(',') : [];
                const isSelected = currentSources.includes(src.value);
                return (
-                 <div key={src.value} className="flex items-start gap-2">
+                 <label key={src.value} className="flex items-center gap-2 cursor-pointer group">
                    <input 
                      type="checkbox" 
                      checked={isSelected}
-                     disabled={src.disabled}
                      onChange={() => {
-                        if (!src.disabled) {
-                          let next = [...currentSources];
-                          if (isSelected) {
-                            next = next.filter(s => s !== src.value);
-                          } else {
-                            next.push(src.value);
-                          }
-                          setFilters({ ...filters, source_type: next.length ? next.join(',') : null });
-                          setPage(1);
-                        }
+                       let next = [...currentSources];
+                       if (isSelected) {
+                         next = next.filter(s => s !== src.value);
+                       } else {
+                         next.push(src.value);
+                       }
+                       setFilters({ ...filters, source_type: next.length ? next.join(',') : null });
+                       setPage(1);
                      }}
-                     className="mt-0.5 rounded border-gray-300 text-emerald-500 focus:ring-emerald-500 disabled:opacity-50" 
+                     className="rounded border-gray-300 text-emerald-500 focus:ring-emerald-500" 
                    />
-                   <div className={`flex flex-col ${src.disabled ? 'opacity-50' : ''}`}>
-                     <span className="text-xs font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
-                       <div className={`w-5 h-5 rounded-full flex items-center justify-center bg-gray-100 dark:bg-white/10 ${src.color}`}>
-                          <src.icon className="w-3 h-3" />
-                       </div>
-                       {src.label}
-                     </span>
-                     {src.disabled && (
-                        <span className="mt-1 ml-6 text-[9px] font-bold bg-gray-500 text-white px-1.5 py-0.5 rounded uppercase tracking-wider w-max">
-                          {src.msg || 'COMING SOON'}
-                        </span>
-                     )}
-                   </div>
+                   <span className="flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">
+                     <div className={`w-4 h-4 rounded-full flex items-center justify-center bg-gray-100 dark:bg-white/10 ${src.color}`}>
+                       <src.icon className="w-2.5 h-2.5" />
+                     </div>
+                     {src.label}
+                   </span>
+                 </label>
+               );
+             })}
+           </div>
+
+           {/* Disabled sources */}
+           <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2">Cần kết nối / Coming soon</p>
+           <div className="space-y-2">
+             {SOURCE_TYPE_OPTIONS.filter(src => src.disabled).map((src) => {
+               const isConnectRequired = src.msg?.toLowerCase().includes('connect');
+               return (
+                 <div key={src.value} className="flex items-center gap-2 opacity-50 cursor-not-allowed" title={isConnectRequired ? 'Cần kết nối nguồn trước khi sử dụng' : 'Tính năng đang phát triển'}>
+                   <input 
+                     type="checkbox" 
+                     disabled 
+                     checked={false}
+                     onChange={() => {}}
+                     className="rounded border-gray-300 cursor-not-allowed" 
+                   />
+                   <span className="flex items-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-500">
+                     <div className={`w-4 h-4 rounded-full flex items-center justify-center bg-gray-100 dark:bg-white/10 ${src.color}`}>
+                       <src.icon className="w-2.5 h-2.5" />
+                     </div>
+                     {src.label}
+                   </span>
+                   <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider leading-none ${
+                     isConnectRequired
+                       ? 'bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400'
+                       : 'bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-gray-400'
+                   }`}>
+                     {isConnectRequired ? 'Connect' : 'Soon'}
+                   </span>
                  </div>
                );
              })}

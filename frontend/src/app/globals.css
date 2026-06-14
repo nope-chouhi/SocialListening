@@ -206,3 +206,42 @@ html.light body {
 .btn-gradient {
   @apply bg-gradient-to-r from-brand-blue to-brand-purple text-white font-medium rounded-xl px-4 py-2 shadow-lg hover:opacity-90 transition-opacity;
 }
+
+/* ─── Toast / Hot-toast dark mode ───────────────────────────────────────── */
+/* react-hot-toast containers get explicit dark mode styles */
+.dark [data-hot-toast] {
+  background: #1E293B !important;
+  color: #F8FAFC !important;
+  border: 1px solid rgba(148, 163, 184, 0.18) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45) !important;
+}
+
+/* ─── Select / Dropdown caret fix ───────────────────────────────────────── */
+/* Native select: ensure enough padding-right so caret never overlaps text */
+select {
+  padding-right: 2.25rem !important; /* 36px: gives caret room */
+  background-repeat: no-repeat;
+  background-position: right 0.6rem center;
+  background-size: 1rem;
+}
+
+/* In dark mode, native select caret is almost invisible — use a light icon */
+.dark select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2394a3b8' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+}
+
+/* ─── Disabled checkbox cursor fix ──────────────────────────────────────── */
+input[type='checkbox']:disabled {
+  cursor: not-allowed;
+}
+
+/* ─── Light mode contrast improvements ──────────────────────────────────── */
+/* Slightly off-white backgrounds for cards in light mode to distinguish layers */
+:root:not(.dark) .bg-white {
+  /* keep white but add a very subtle shadow - handled via Tailwind shadow classes */
+}
+
+/* Ensure loading skeleton is visible in light mode */
+.animate-pulse {
+  opacity: 0.7;
+}
