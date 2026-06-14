@@ -1,13 +1,15 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import dynamic from 'next/dynamic';
 import { Activity, Radio, TrendingUp, Users, MessageCircle, Smile, type LucideIcon } from 'lucide-react';
 import { dashboard } from '@/lib/api';
 import { useSocket } from '@/hooks/useSocket';
-import RealtimeVolumeChart from './RealtimeVolumeChart';
-import ReachInteractionsChart from './ReachInteractionsChart';
-import SentimentDonutChart from './SentimentDonutChart';
+
+// Lazy-load heavy chart components to avoid SSR hydration mismatch
+const RealtimeVolumeChart = dynamic(() => import('./RealtimeVolumeChart'), { ssr: false, loading: () => <div className="animate-pulse bg-white/5 rounded-lg h-32" /> });
+const ReachInteractionsChart = dynamic(() => import('./ReachInteractionsChart'), { ssr: false, loading: () => <div className="animate-pulse bg-white/5 rounded-lg h-32" /> });
+const SentimentDonutChart = dynamic(() => import('./SentimentDonutChart'), { ssr: false, loading: () => <div className="animate-pulse bg-white/5 rounded-lg h-32" /> });
 
 type RealtimeMetrics = {
   total_mentions: number;
@@ -39,12 +41,7 @@ function StatCard({
   accent: string;
 }) {
   return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="glass-card rounded-xl p-5 hover:shadow-lg transition-shadow"
-    >
+    <div className="glass-card rounded-xl p-5 hover:shadow-lg transition-shadow">
       <div className="flex items-center justify-between mb-2">
         <span className="text-xs font-medium text-zinc-400 uppercase tracking-wide">{title}</span>
         <div className={`p-2 rounded-lg ${accent}`}>
@@ -52,20 +49,27 @@ function StatCard({
         </div>
       </div>
       <p className="text-2xl font-bold text-white tabular-nums">{value}</p>
-    </motion.div>
+    </div>
   );
 }
 
 export default function RealtimeStatsSection({ projectId }: { projectId?: number | null }) {
   const [metrics, setMetrics] = useState<RealtimeMetrics | null>(null);
   const [loading, setLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
 
   const fetchMetrics = useCallback(async () => {
+    if (!projectId) {
+      setLoading(false);
+      return;
+    }
     try {
       const data = await dashboard.realtimeMetrics(projectId ?? undefined);
       setMetrics(data);
-    } catch (e) {
-      console.error('Realtime metrics error', e);
+      setHasError(false);
+    } catch {
+      // Silent: do not log error to avoid exposing internals
+      setHasError(true);
     } finally {
       setLoading(false);
     }

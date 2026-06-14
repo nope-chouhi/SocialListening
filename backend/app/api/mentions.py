@@ -37,6 +37,7 @@ def get_mentions_summary(
     date_to: Optional[datetime] = None,
     source_type: Optional[str] = None,
     sentiment: Optional[str] = None,
+    show_unverified: bool = Query(False),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
@@ -47,7 +48,11 @@ def get_mentions_summary(
         from app.models.mention import SentimentScore
         
         # Build base filter
-        base_filter = [Mention.is_muted == False, Mention.is_deleted == False, Mention.verification_status != 'synthetic']
+        base_filter = [Mention.is_muted == False, Mention.is_deleted == False]
+        if show_unverified:
+            base_filter.append(Mention.verification_status != 'synthetic')
+        else:
+            base_filter.append(Mention.verification_status.in_(['verified', 'reliable']))
         if project_id:
             base_filter.append(Mention.project_id == project_id)
         if q:
@@ -180,6 +185,7 @@ def list_mentions(
     is_muted: Optional[bool] = Query(None),
     min_influence_score: Optional[float] = Query(None),
     sort_by: Optional[str] = Query("newest", pattern="^(newest|oldest|risk_high|risk_low|influence_high|engagement_high)$"),
+    show_unverified: bool = Query(False),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
@@ -237,7 +243,10 @@ def list_mentions(
                 query = query.where(Source.url.ilike(f"%{domain}%"))
 
         # Mentions filtering directly
-        query = query.where(Mention.verification_status != 'synthetic')
+        if show_unverified:
+            query = query.where(Mention.verification_status != 'synthetic')
+        else:
+            query = query.where(Mention.verification_status.in_(['verified', 'reliable']))
         if project_id:
             query = query.where(Mention.project_id == project_id)
         if job_id:
@@ -317,6 +326,12 @@ def list_mentions(
                 count_base = count_base.where(Mention.project_id == project_id)
             if job_id:
                 count_base = count_base.where(Mention.job_id == job_id)
+                
+            if show_unverified:
+                count_base = count_base.where(Mention.verification_status != 'synthetic')
+            else:
+                count_base = count_base.where(Mention.verification_status.in_(['verified', 'reliable']))
+
             if keyword:
                 count_base = count_base.where(Mention.keyword_text.ilike(f"%{keyword}%"))
             if is_muted is not None:

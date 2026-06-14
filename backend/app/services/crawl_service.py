@@ -405,7 +405,8 @@ def crawl_source(db: Session, source_id: int, job_id: int = None) -> Dict:
                 published_at=article.get('published_at'),
                 collected_at=datetime.now(timezone.utc),
                 matched_keywords=matched_keywords if matched_keywords else None,
-                is_reviewed=False
+                is_reviewed=False,
+                verification_status="verified"
             )
             db.add(mention)
             db.flush()  # Get mention.id without committing

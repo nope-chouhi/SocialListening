@@ -633,6 +633,7 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
                 is_reviewed=False,
                 author=author,
                 published_at=published_at,
+                verification_status="reliable" if adapter_name == "web" else "verified",
             )
             db.add(mention)
             summary[adapter_name]["mentions_created"] += 1
