@@ -29,6 +29,8 @@ import {
   ScanSearch,
   ClipboardList,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Plus,
   Users,
   SearchCode,
@@ -43,7 +45,7 @@ import {
   Zap
 } from 'lucide-react';
 
-function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges, setIsWebinarModalOpen, sidebarCollapsed }: any) {
+function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges, setIsWebinarModalOpen, sidebarCollapsed, setSidebarCollapsed }: any) {
   const pathname = usePathname();
   const router = useRouter();
   const { projects, activeProject, setActiveProject, loading: projectsLoading } = useProject();
@@ -82,20 +84,37 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges, setIsWebi
       } ${sidebarCollapsed ? 'w-20' : 'w-64'} flex flex-col`}
     >
       
-      {/* Logo */}
-      <div className="flex items-center justify-between h-[64px] px-6 border-b border-gray-800 relative z-10 bg-[#1A202C]">
-        <div className="flex items-center space-x-3">
+      {/* Logo + Collapse Toggle */}
+      <div className={`flex items-center h-[64px] border-b border-gray-800 relative z-10 bg-[#1A202C] ${sidebarCollapsed ? 'justify-center px-2' : 'justify-between px-4'}`}>
+        <div className="flex items-center gap-3">
           <div className="w-9 h-9 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-[0_0_15px_rgba(99,102,241,0.5)] border border-white/20 shrink-0">
             <span className="text-white font-bold text-lg leading-none">N</span>
           </div>
           {!sidebarCollapsed && <h1 className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-zinc-400">Nope</h1>}
         </div>
-        <button
-          onClick={() => setSidebarOpen(false)}
-          className="lg:hidden p-2 -mr-2 text-zinc-400 hover:text-white rounded-lg hover:bg-white/10"
-        >
-          <X className="w-5 h-5" />
-        </button>
+        <div className="flex items-center gap-1">
+          {/* Close on mobile */}
+          <button
+            onClick={() => setSidebarOpen(false)}
+            className="lg:hidden p-2 text-zinc-400 hover:text-white rounded-lg hover:bg-white/10"
+          >
+            <X className="w-5 h-5" />
+          </button>
+          {/* Collapse/Expand on desktop */}
+          <button
+            onClick={() => {
+              const next = !sidebarCollapsed;
+              setSidebarCollapsed(next);
+              if (typeof window !== 'undefined') {
+                localStorage.setItem('sidebar_collapsed', String(next));
+              }
+            }}
+            title={sidebarCollapsed ? 'Mở rộng sidebar' : 'Thu gọn sidebar'}
+            className="hidden lg:flex items-center justify-center w-7 h-7 rounded-md text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
+          >
+            {sidebarCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+          </button>
+        </div>
       </div>
 
       {/* Navigation */}
@@ -184,17 +203,23 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges, setIsWebi
                 <Link
                   key={item.name}
                   href={item.href}
-                  title={item.name}
-                  className={`group flex items-center py-2 text-sm font-bold rounded-lg transition-all duration-200 ${
+                  title={sidebarCollapsed ? item.name : undefined}
+                  className={`group relative flex items-center py-2 text-sm font-bold rounded-lg transition-all duration-200 ${
                     isActive
                       ? 'text-white bg-[#2D3748]'
                       : 'text-gray-400 hover:text-white hover:bg-[#2D3748]'
                   } ${sidebarCollapsed ? 'justify-center px-0' : 'px-3'}`}
                   onClick={() => setSidebarOpen(false)}
                 >
-                  <item.icon className={`w-5 h-5 ${isActive ? 'text-emerald-400' : 'text-gray-500'} ${!sidebarCollapsed && 'mr-3'}`} />
+                  <item.icon className={`w-5 h-5 shrink-0 ${isActive ? 'text-emerald-400' : 'text-gray-500'} ${!sidebarCollapsed && 'mr-3'}`} />
                   {!sidebarCollapsed && <span className="truncate flex-1">{item.name}</span>}
                   {!sidebarCollapsed && (item as any).badge ? <SidebarBadge count={(item as any).badge} /> : null}
+                  {/* Tooltip for collapsed mode */}
+                  {sidebarCollapsed && (
+                    <span className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 shadow-lg">
+                      {item.name}
+                    </span>
+                  )}
                 </Link>
               );
             })}
@@ -215,16 +240,21 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges, setIsWebi
                 <Link
                   key={item.name}
                   href={item.href}
-                  title={item.name}
-                  className={`group flex items-center py-2 text-sm font-bold rounded-lg transition-all duration-200 ${
+                  title={sidebarCollapsed ? item.name : undefined}
+                  className={`group relative flex items-center py-2 text-sm font-bold rounded-lg transition-all duration-200 ${
                     isActive
                       ? 'text-white bg-[#2D3748]'
                       : 'text-gray-400 hover:text-white hover:bg-[#2D3748]'
                   } ${sidebarCollapsed ? 'justify-center px-0' : 'px-3'}`}
                   onClick={() => setSidebarOpen(false)}
                 >
-                  <item.icon className={`w-5 h-5 ${isActive ? 'text-emerald-400' : 'text-gray-500'} ${!sidebarCollapsed && 'mr-3'}`} />
+                  <item.icon className={`w-5 h-5 shrink-0 ${isActive ? 'text-emerald-400' : 'text-gray-500'} ${!sidebarCollapsed && 'mr-3'}`} />
                   {!sidebarCollapsed && <span className="truncate flex-1">{item.name}</span>}
+                  {sidebarCollapsed && (
+                    <span className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 shadow-lg">
+                      {item.name}
+                    </span>
+                  )}
                 </Link>
               );
             })}
@@ -264,16 +294,21 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges, setIsWebi
                 <Link
                   key={item.name}
                   href={item.href}
-                  title={item.name}
-                  className={`flex items-center py-2.5 text-sm font-medium transition-all group ${
+                  title={sidebarCollapsed ? item.name : undefined}
+                  className={`group relative flex items-center py-2 text-sm font-medium rounded-lg transition-all ${
                     isActive
-                      ? 'text-white bg-[#2D3748] border-emerald-400'
+                      ? 'text-white bg-[#2D3748]'
                       : 'text-gray-400 hover:text-white hover:bg-[#2D3748]'
-                  } ${sidebarCollapsed ? 'justify-center border-l-2' : 'px-5 border-r-2'}`}
+                  } ${sidebarCollapsed ? 'justify-center px-0' : 'px-3'}`}
                   onClick={() => setSidebarOpen(false)}
                 >
-                  <item.icon className={`w-5 h-5 ${isActive ? 'text-emerald-400' : 'text-gray-500'} ${!sidebarCollapsed && 'mr-3'}`} />
+                  <item.icon className={`w-5 h-5 shrink-0 ${isActive ? 'text-emerald-400' : 'text-gray-500'} ${!sidebarCollapsed && 'mr-3'}`} />
                   {!sidebarCollapsed && <span className="truncate flex-1">{item.name}</span>}
+                  {sidebarCollapsed && (
+                    <span className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 shadow-lg">
+                      {item.name}
+                    </span>
+                  )}
                 </Link>
               );
             })}
@@ -328,14 +363,18 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const [isWebinarModalOpen, setIsWebinarModalOpen] = useState(false);
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const [badges, setBadges] = useState<{ new_alerts: number, open_incidents: number, unreviewed_mentions: number }>({
     new_alerts: 0, open_incidents: 0, unreviewed_mentions: 0
   });
 
+  // Hydration guard: only read localStorage after client mount
   useEffect(() => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+    setMounted(true);
+    const token = localStorage.getItem('access_token');
     if (!token) {
       router.replace('/login');
+      return;
     }
     const savedCollapse = localStorage.getItem('sidebar_collapsed');
     if (savedCollapse === 'true') {
@@ -370,6 +409,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
         badges={badges} 
         setIsWebinarModalOpen={setIsWebinarModalOpen}
         sidebarCollapsed={sidebarCollapsed}
+        setSidebarCollapsed={setSidebarCollapsed}
       />
 
       <Toaster 
@@ -379,12 +419,10 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
           className: 'dark:!bg-[#1E293B] dark:!text-white dark:!border-gray-700 dark:border shadow-lg'
         }} 
       />
-      <div className={`transition-all duration-300 flex flex-col min-h-screen ${sidebarCollapsed ? 'lg:pl-20' : 'lg:pl-64'}`}>
+      <div className={`transition-all duration-300 flex flex-col min-h-screen ${mounted ? (sidebarCollapsed ? 'lg:pl-20' : 'lg:pl-64') : 'lg:pl-64'}`}>
         <div className="sticky top-0 z-20 flex items-center h-16 px-4 bg-white dark:bg-[#050A15] border-b border-gray-200 dark:border-white/10 lg:px-8 shadow-sm">
+          {/* Mobile hamburger */}
           <button onClick={() => setSidebarOpen(true)} className="lg:hidden p-2 -ml-2 text-gray-500 hover:text-gray-900 mr-2">
-            <Menu className="w-5 h-5" />
-          </button>
-          <button onClick={() => { setSidebarCollapsed(!sidebarCollapsed); localStorage.setItem('sidebar_collapsed', (!sidebarCollapsed).toString()); }} className="hidden lg:block p-2 -ml-2 text-gray-500 hover:text-gray-900 mr-4">
             <Menu className="w-5 h-5" />
           </button>
 
@@ -430,13 +468,16 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
           <div className="flex-1">
             {children}
           </div>
-          <div className="mt-8 pt-4 border-t border-gray-200 dark:border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-medium text-gray-500">
-            <div className="flex items-center gap-4">
-              <Link href="#" className="hover:text-gray-900 dark:hover:text-white transition-colors">Legal Information</Link>
-              <Link href="#" className="hover:text-gray-900 dark:hover:text-white transition-colors">Customize cookie</Link>
+          {/* Footer — legal/copyright, NOT in sidebar */}
+          <footer className="mt-10 pt-4 border-t border-gray-200 dark:border-white/10">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-400 dark:text-gray-500">
+              <div className="flex items-center gap-4">
+                <Link href="#" className="hover:text-gray-700 dark:hover:text-gray-300 transition-colors">Legal Information</Link>
+                <Link href="#" className="hover:text-gray-700 dark:hover:text-gray-300 transition-colors">Customize cookie</Link>
+              </div>
+              <p className="text-center sm:text-right">Copyrights © 2026 Nope, Inc. All rights reserved.</p>
             </div>
-            <p>Copyrights © 2026 Nope, Inc. All rights reserved.</p>
-          </div>
+          </footer>
         </main>
       </div>
 
