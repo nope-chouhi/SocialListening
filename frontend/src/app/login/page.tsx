@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { auth, resetAuthRedirectLock } from '@/lib/api';
 import LoadingSpinner from '@/components/LoadingSpinner';
@@ -17,14 +17,14 @@ function cacheUserAfterLogin(token: string) {
   } catch {}
 }
 
-/** Wake up Render backend by calling /health directly (bypasses Next.js /api proxy) */
+/** Wake up Render backend by calling /health directly */
 async function wakeBackend(): Promise<boolean> {
   const backendUrl = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/+$/, '');
   if (!backendUrl) return true; // dev: assume alive
   try {
     const res = await fetch(`${backendUrl}/health`, {
       method: 'GET',
-      signal: AbortSignal.timeout(22000),
+      signal: AbortSignal.timeout(12000), // Reduced from 22s to 12s
       cache: 'no-store',
     });
     return res.ok;
@@ -42,6 +42,8 @@ function LoginContent() {
   const [loading, setLoading] = useState(false);
   const [loginPhase, setLoginPhase] = useState<'idle' | 'connecting' | 'authenticating'>('idle');
   const [serverStatus, setServerStatus] = useState<'checking' | 'ready' | 'slow'>('checking');
+  const [elapsedSec, setElapsedSec] = useState(0);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Show session-expired banner if redirected from 401
   useEffect(() => {
@@ -61,13 +63,17 @@ function LoginContent() {
     return () => { cancelled = true; };
   }, []);
 
-  /** Single login attempt with a hard timeout */
-  const attemptLogin = (ms: number) => {
-    const timeout = new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error('TIMEOUT')), ms)
-    );
-    return Promise.race([auth.login(email, password), timeout]) as Promise<any>;
-  };
+  // Elapsed time counter while loading
+  useEffect(() => {
+    if (loading) {
+      setElapsedSec(0);
+      timerRef.current = setInterval(() => setElapsedSec(s => s + 1), 1000);
+    } else {
+      if (timerRef.current) clearInterval(timerRef.current);
+      setElapsedSec(0);
+    }
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [loading]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,39 +81,45 @@ function LoginContent() {
     setLoading(true);
 
     try {
-      // If backend hasn't confirmed ready yet, wake it first
+      // If backend hasn't confirmed ready, wake it in parallel with showing status
       if (serverStatus !== 'ready') {
         setLoginPhase('connecting');
-        await wakeBackend();
+        const wakeOk = await wakeBackend();
+        if (!wakeOk) {
+          setError('Máy chủ chưa sẵn sàng (Render cold start). Vui lòng thử lại sau 10-15 giây.');
+          return;
+        }
+        setServerStatus('ready');
       }
 
+      // Authenticate with a single 15s timeout (reduced from 30s)
       setLoginPhase('authenticating');
+      const timeout = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('TIMEOUT')), 15000)
+      );
       let result: any;
-
+      
       try {
-        // First attempt — 30s timeout
-        result = await attemptLogin(30000);
+        result = await Promise.race([auth.login(email, password), timeout]);
       } catch (firstErr: any) {
         const isNetworkOrTimeout =
           firstErr.message === 'TIMEOUT' ||
           firstErr.code === 'ECONNABORTED' ||
           !firstErr.response;
 
-        if (!isNetworkOrTimeout) throw firstErr; // auth error → bubble up for classification
+        if (!isNetworkOrTimeout) throw firstErr;
 
-        // Network/timeout: wake backend, then retry once
+        // Single retry: wake backend then try once more
         setLoginPhase('connecting');
-        const alive = await wakeBackend();
-        if (!alive) {
-          setError('Máy chủ phản hồi chậm hoặc chưa sẵn sàng. Vui lòng thử lại sau.');
-          return;
-        }
-
+        await wakeBackend();
         setLoginPhase('authenticating');
-        result = await attemptLogin(30000); // retry
+        const retryTimeout = new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('TIMEOUT')), 15000)
+        );
+        result = await Promise.race([auth.login(email, password), retryTimeout]);
       }
 
-      // ── Success ──────────────────────────────────────────────────────────
+      // ── Success ──
       resetAuthRedirectLock();
       if (result?.access_token) cacheUserAfterLogin(result.access_token);
       router.replace('/dashboard');
@@ -118,7 +130,7 @@ function LoginContent() {
       } else if (status && status >= 500) {
         setError('Lỗi máy chủ, vui lòng thử lại sau.');
       } else if (err.message === 'TIMEOUT' || err.code === 'ECONNABORTED' || !err.response) {
-        setError('Máy chủ phản hồi chậm hoặc chưa sẵn sàng. Vui lòng thử lại sau.');
+        setError('Máy chủ phản hồi chậm (Render cold start ~30s). Bấm Đăng nhập lại.');
       } else {
         setError(err.response?.data?.detail || 'Đăng nhập thất bại. Vui lòng thử lại.');
       }
@@ -130,8 +142,9 @@ function LoginContent() {
 
   const btnLabel = () => {
     if (!loading) return 'Đăng nhập';
-    if (loginPhase === 'connecting') return 'Đang kết nối máy chủ...';
-    return 'Đang xác thực...';
+    const suffix = elapsedSec > 2 ? ` (${elapsedSec}s)` : '';
+    if (loginPhase === 'connecting') return `Đang kết nối máy chủ...${suffix}`;
+    return `Đang xác thực...${suffix}`;
   };
 
   return (
@@ -149,6 +162,17 @@ function LoginContent() {
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
               </svg>
               Đang kết nối máy chủ...
+            </p>
+          )}
+          {serverStatus === 'ready' && !loading && (
+            <p className="mt-2 text-xs text-emerald-500 flex items-center justify-center gap-1.5">
+              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+              Máy chủ sẵn sàng
+            </p>
+          )}
+          {serverStatus === 'slow' && !loading && (
+            <p className="mt-2 text-xs text-orange-500 flex items-center justify-center gap-1.5">
+              ⚠️ Máy chủ đang khởi động (cold start). Đăng nhập có thể mất 10-30s.
             </p>
           )}
         </div>
@@ -208,6 +232,15 @@ function LoginContent() {
             )}
           </button>
         </form>
+
+        {/* Elapsed time hint when login is slow */}
+        {loading && elapsedSec >= 5 && (
+          <p className="text-center text-xs text-gray-400 dark:text-gray-500">
+            {elapsedSec < 15 
+              ? 'Render free tier đang khởi động, vui lòng chờ...'
+              : 'Đang chờ lâu hơn bình thường. Có thể bấm lại nếu muốn.'}
+          </p>
+        )}
 
         <div className="text-center text-sm text-gray-500 dark:text-gray-400">
           <p>Chưa có tài khoản?{' '}
