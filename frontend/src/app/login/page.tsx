@@ -17,14 +17,16 @@ function cacheUserAfterLogin(token: string) {
   } catch {}
 }
 
-/** Wake up Render backend by calling /health directly */
+/** Wake up Render backend by calling /health directly to bypass Vercel 10s proxy limit */
 async function wakeBackend(): Promise<boolean> {
   const backendUrl = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/+$/, '');
-  if (!backendUrl) return true; // dev: assume alive
+  if (!backendUrl || backendUrl.includes('localhost')) return true; // dev: assume alive
   try {
+    // Render free tier cold starts take 50-60 seconds. 
+    // We MUST wait long enough, otherwise we falsely report it as offline.
     const res = await fetch(`${backendUrl}/health`, {
       method: 'GET',
-      signal: AbortSignal.timeout(12000), // Reduced from 22s to 12s
+      signal: AbortSignal.timeout(90000), // Wait up to 90s for cold start
       cache: 'no-store',
     });
     return res.ok;
@@ -40,7 +42,7 @@ function LoginContent() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [loginPhase, setLoginPhase] = useState<'idle' | 'connecting' | 'authenticating'>('idle');
+  const [loginPhase, setLoginPhase] = useState<'idle' | 'waking' | 'authenticating'>('idle');
   const [serverStatus, setServerStatus] = useState<'checking' | 'ready' | 'slow'>('checking');
   const [elapsedSec, setElapsedSec] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -81,43 +83,29 @@ function LoginContent() {
     setLoading(true);
 
     try {
-      // If backend hasn't confirmed ready, wake it in parallel with showing status
+      // If backend is not known to be ready, we must wake it first.
+      // Since Vercel proxy times out in 10s, we CANNOT send auth.login through proxy
+      // while backend is cold. We must wait for wakeBackend (direct call) to succeed.
       if (serverStatus !== 'ready') {
-        setLoginPhase('connecting');
-        const wakeOk = await wakeBackend();
+        setLoginPhase('waking');
+        const wakeOk = await wakeBackend(); // This will wait up to 90s
         if (!wakeOk) {
-          setError('Máy chủ chưa sẵn sàng (Render cold start). Vui lòng thử lại sau 10-15 giây.');
+          setError('Máy chủ không phản hồi sau 90s. Vui lòng kiểm tra lại dịch vụ Render.');
           return;
         }
         setServerStatus('ready');
       }
 
-      // Authenticate with a single 15s timeout (reduced from 30s)
+      // Backend is now awake. Authenticate through Next.js proxy.
       setLoginPhase('authenticating');
+      
+      // The backend is awake, so this should take < 2s. 
+      // We give it 15s max to handle slow network.
       const timeout = new Promise<never>((_, reject) =>
         setTimeout(() => reject(new Error('TIMEOUT')), 15000)
       );
-      let result: any;
       
-      try {
-        result = await Promise.race([auth.login(email, password), timeout]);
-      } catch (firstErr: any) {
-        const isNetworkOrTimeout =
-          firstErr.message === 'TIMEOUT' ||
-          firstErr.code === 'ECONNABORTED' ||
-          !firstErr.response;
-
-        if (!isNetworkOrTimeout) throw firstErr;
-
-        // Single retry: wake backend then try once more
-        setLoginPhase('connecting');
-        await wakeBackend();
-        setLoginPhase('authenticating');
-        const retryTimeout = new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('TIMEOUT')), 15000)
-        );
-        result = await Promise.race([auth.login(email, password), retryTimeout]);
-      }
+      const result = await Promise.race([auth.login(email, password), timeout]) as any;
 
       // ── Success ──
       resetAuthRedirectLock();
@@ -130,7 +118,7 @@ function LoginContent() {
       } else if (status && status >= 500) {
         setError('Lỗi máy chủ, vui lòng thử lại sau.');
       } else if (err.message === 'TIMEOUT' || err.code === 'ECONNABORTED' || !err.response) {
-        setError('Máy chủ phản hồi chậm (Render cold start ~30s). Bấm Đăng nhập lại.');
+        setError('Kết nối quá hạn. Vui lòng kiểm tra mạng và thử lại.');
       } else {
         setError(err.response?.data?.detail || 'Đăng nhập thất bại. Vui lòng thử lại.');
       }
@@ -143,7 +131,7 @@ function LoginContent() {
   const btnLabel = () => {
     if (!loading) return 'Đăng nhập';
     const suffix = elapsedSec > 2 ? ` (${elapsedSec}s)` : '';
-    if (loginPhase === 'connecting') return `Đang kết nối máy chủ...${suffix}`;
+    if (loginPhase === 'waking') return `Đang chờ máy chủ khởi động...${suffix}`;
     return `Đang xác thực...${suffix}`;
   };
 
@@ -161,7 +149,7 @@ function LoginContent() {
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
               </svg>
-              Đang kết nối máy chủ...
+              Đang kiểm tra trạng thái máy chủ...
             </p>
           )}
           {serverStatus === 'ready' && !loading && (
@@ -171,9 +159,10 @@ function LoginContent() {
             </p>
           )}
           {serverStatus === 'slow' && !loading && (
-            <p className="mt-2 text-xs text-orange-500 flex items-center justify-center gap-1.5">
-              ⚠️ Máy chủ đang khởi động (cold start). Đăng nhập có thể mất 10-30s.
-            </p>
+            <div className="mt-2 p-2 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800/30 rounded text-xs text-orange-600 dark:text-orange-400 text-left">
+              <p className="font-semibold mb-1">⚠️ Lưu ý (Render Free Tier):</p>
+              <p>Máy chủ đang ngủ. Quá trình đăng nhập đầu tiên có thể mất <span className="font-bold">45-60 giây</span> để đánh thức hệ thống. Vui lòng bấm Đăng nhập và đợi.</p>
+            </div>
           )}
         </div>
 
@@ -236,9 +225,9 @@ function LoginContent() {
         {/* Elapsed time hint when login is slow */}
         {loading && elapsedSec >= 5 && (
           <p className="text-center text-xs text-gray-400 dark:text-gray-500">
-            {elapsedSec < 15 
-              ? 'Render free tier đang khởi động, vui lòng chờ...'
-              : 'Đang chờ lâu hơn bình thường. Có thể bấm lại nếu muốn.'}
+            {elapsedSec < 50 
+              ? `Hệ thống đang khởi động (thường mất ~50s), vui lòng không tắt trang...`
+              : 'Sắp xong rồi, vui lòng đợi thêm chút nữa...'}
           </p>
         )}
 
