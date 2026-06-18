@@ -43,12 +43,9 @@ export default function AnalysisPage() {
       const res = await mentionsApi.summarize({ project_id: activeProject.id });
       setAiText(res.summary || res.result || 'Không có kết quả');
     } catch (error: any) {
+      console.error('[API Error] POST /api/mentions/summarize ->', error?.response?.status || error.message);
       const detail = error?.response?.data?.detail || '';
-      if (detail.includes('OPENAI') || detail.includes('API key') || detail.includes('not configured')) {
-        toast.error('Config required: OPENAI_API_KEY chưa được cấu hình trên server');
-      } else {
-        toast.error(detail || 'Lỗi khi tạo AI Summary');
-      }
+      toast.error(detail || 'Không tạo được tóm tắt AI lúc này');
     } finally {
       setAiLoading(false);
     }
