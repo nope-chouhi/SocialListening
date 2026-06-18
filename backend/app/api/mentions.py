@@ -518,6 +518,11 @@ def list_mentions(
                 "content": m.content,
                 "snippet": m.snippet or "Không có đoạn trích",
                 "url": m.url,
+                "canonical_url": m.canonical_url,
+                "original_url": m.original_url,
+                "verification_status": m.verification_status,
+                "verification_error": m.verification_error,
+                "ai_provider": analysis.ai_provider if analysis else None,
                 "sentiment": m.sentiment or (analysis.sentiment.value if analysis and hasattr(analysis.sentiment, 'value') else (analysis.sentiment if analysis else "neutral")),
                 "sentiment_confidence": m.sentiment_confidence,
                 "influence_score": m.influence_score,
@@ -728,18 +733,32 @@ def get_mention(
         select(AIAnalysis).where(AIAnalysis.mention_id == mention.id)
     ).scalar_one_or_none()
 
+    from app.models.source import Source
+    src = None
+    if mention.source_id:
+        src = db.execute(select(Source).where(Source.id == mention.source_id)).scalar_one_or_none()
+
     return {
         "id": mention.id,
         "source_id": mention.source_id,
+        "source_name": src.name if src else "Unknown",
+        "source_type": mention.source_type or (src.source_type.value if src and hasattr(src.source_type, 'value') else (src.source_type if src else "web")),
+        "platform": mention.platform,
+        "domain": mention.domain,
         "title": mention.title,
         "content": mention.content,
         "url": mention.url,
+        "canonical_url": mention.canonical_url,
+        "original_url": mention.original_url,
         "author": mention.author,
         "published_at": mention.published_at.isoformat() if mention.published_at else None,
         "collected_at": mention.collected_at.isoformat() if mention.collected_at else None,
         "matched_keywords": mention.matched_keywords,
         "platform_post_id": mention.platform_post_id,
         "metadata": mention.meta_data,
+        "verification_status": mention.verification_status,
+        "verification_error": mention.verification_error,
+        "ai_provider": analysis.ai_provider if analysis else None,
         "ai_analysis": {
             "id": analysis.id,
             "sentiment": analysis.sentiment.value if hasattr(analysis.sentiment, 'value') else analysis.sentiment,

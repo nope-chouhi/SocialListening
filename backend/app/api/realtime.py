@@ -146,48 +146,49 @@ def get_realtime_metrics(
 
     sentiment_score_pct = round((pos / analyzed * 100) if analyzed else 50, 1)
 
-    # Volume buckets — last N × 5 minutes
+    # Volume buckets — last N × 5 minutes (max 72 buckets = 6 hours to save payload/computation)
+    num_buckets = min(int(hours * 60 / bucket_minutes), 72)
+    start_buckets = now - timedelta(minutes=num_buckets * bucket_minutes)
+    
+    rows = db.execute(
+        select(
+            Mention.collected_at,
+            Mention.reach_estimate,
+            Mention.likes_count,
+            Mention.comments_count,
+            Mention.shares_count
+        ).where(
+            and_(
+                *base_filter,
+                Mention.collected_at >= start_buckets
+            )
+        )
+    ).all()
+
+    buckets = {i: {"mentions": 0, "reach": 0, "interactions": 0} for i in range(num_buckets)}
+    for row in rows:
+        col_at = row[0]
+        if col_at:
+            if col_at.tzinfo is None:
+                col_at = col_at.replace(tzinfo=timezone.utc)
+            diff_mins = (now - col_at).total_seconds() / 60.0
+            bucket_idx = int(diff_mins / bucket_minutes)
+            if 0 <= bucket_idx < num_buckets:
+                b = buckets[bucket_idx]
+                b["mentions"] += 1
+                b["reach"] += row[1] or 0
+                b["interactions"] += (row[2] or 0) + (row[3] or 0) + (row[4] or 0)
+
     volume = []
     for i in range(num_buckets - 1, -1, -1):
         bucket_end = now - timedelta(minutes=i * bucket_minutes)
         bucket_start = bucket_end - timedelta(minutes=bucket_minutes)
-        count = db.execute(
-            select(func.count(Mention.id)).where(
-                and_(
-                    *base_filter,
-                    Mention.collected_at >= bucket_start,
-                    Mention.collected_at < bucket_end,
-                )
-            )
-        ).scalar() or 0
-        reach_bucket = db.execute(
-            select(func.coalesce(func.sum(Mention.reach_estimate), 0)).where(
-                and_(
-                    *base_filter,
-                    Mention.collected_at >= bucket_start,
-                    Mention.collected_at < bucket_end,
-                )
-            )
-        ).scalar() or 0
-        inter_bucket = db.execute(
-            select(
-                func.coalesce(
-                    func.sum(func.coalesce(Mention.likes_count, 0)),
-                    0,
-                )
-            ).where(
-                and_(
-                    *base_filter,
-                    Mention.collected_at >= bucket_start,
-                    Mention.collected_at < bucket_end,
-                )
-            )
-        ).scalar() or 0
+        b = buckets[i]
         volume.append({
             "time": bucket_start.isoformat(),
-            "mentions": count,
-            "reach": int(reach_bucket or 0),
-            "interactions": int(inter_bucket or 0),
+            "mentions": b["mentions"],
+            "reach": int(b["reach"]),
+            "interactions": int(b["interactions"]),
         })
 
     return {

@@ -29,8 +29,26 @@ class SocialCrawlerService:
     async def _resolve_news_url(self, client: httpx.AsyncClient, url: str) -> str:
         if url in self._url_cache:
             return self._url_cache[url]
+
+        # Try base64 decode first for Google News RSS articles
+        if "news.google.com/rss/articles/" in url:
+            try:
+                import base64
+                import re
+                b64_str = url.split("articles/")[1].split("?")[0]
+                # Pad to multiple of 4
+                b64_str += "=" * ((4 - len(b64_str) % 4) % 4)
+                decoded = base64.urlsafe_b64decode(b64_str)
+                match = re.search(rb"https?://[a-zA-Z0-9-._~:/?#\[\]@!$&\'()*+,;=%]+", decoded)
+                if match:
+                    final_url = match.group(0).decode("utf-8")
+                    self._url_cache[url] = final_url
+                    return final_url
+            except Exception as e:
+                logger.debug(f"Base64 decode failed for {url}: {e}")
+
         try:
-            # Short timeout, allow redirects
+            # Fallback to HTTP redirect resolution
             response = await client.get(url, timeout=5.0, follow_redirects=True)
             final_url = str(response.url)
             self._url_cache[url] = final_url

@@ -43,6 +43,32 @@ export default function MentionCard({ mention, onActionComplete, userRole }: Men
     }
   };
 
+  // Helper to derive a clean domain from a URL string
+  const extractDomain = (url: string) => {
+    try {
+      if (!url) return '';
+      const hostname = new URL(url).hostname;
+      return hostname.replace(/^www\./, '');
+    } catch {
+      return '';
+    }
+  };
+
+  const bestUrl = mention.canonical_url || mention.url || mention.original_url || '';
+  const isFallbackUrl = bestUrl.startsWith('https://news.google.com');
+
+  const getSourceDisplay = () => {
+    if (mention.source_name && mention.source_name.toLowerCase() !== 'unknown') {
+      return mention.source_name;
+    }
+    if (mention.domain && mention.domain.toLowerCase() !== 'unknown') {
+      return mention.domain;
+    }
+    const derivedDomain = extractDomain(bestUrl);
+    if (derivedDomain) return derivedDomain;
+    return 'Nguồn chưa xác định';
+  };
+
   return (
     <div className="bg-[#1E293B] rounded-xl shadow-sm border border-gray-800 p-4 hover:shadow-md hover:border-gray-700 transition-all">
       <div className="flex items-start justify-between">
@@ -55,7 +81,7 @@ export default function MentionCard({ mention, onActionComplete, userRole }: Men
               {mention.title || 'Không có tiêu đề'}
             </h3>
             <div className="flex items-center text-xs text-gray-400 mt-1.5 space-x-2 font-medium">
-              <span className="text-indigo-400 font-semibold tracking-wide">{mention.source_name}</span>
+              <span className="text-indigo-400 font-semibold tracking-wide">{getSourceDisplay()}</span>
               <span className="text-gray-700">•</span>
               <span>{new Date(mention.collected_at || mention.published_at).toLocaleString('vi-VN')}</span>
             </div>

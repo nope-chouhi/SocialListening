@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { Activity, Radio, TrendingUp, Users, MessageCircle, Smile, type LucideIcon } from 'lucide-react';
 import { dashboard } from '@/lib/api';
 import { useSocket } from '@/hooks/useSocket';
+import { withTimeout } from '@/lib/utils/timeout';
 import RealtimeVolumeChart from './RealtimeVolumeChart';
 import ReachInteractionsChart from './ReachInteractionsChart';
 import SentimentDonutChart from './SentimentDonutChart';
@@ -62,10 +63,11 @@ export default function RealtimeStatsSection({ projectId }: { projectId?: number
 
   const fetchMetrics = useCallback(async () => {
     try {
-      const data = await dashboard.realtimeMetrics(projectId ?? undefined);
+      const data = await withTimeout(dashboard.realtimeMetrics(projectId ?? undefined), 10000);
       setMetrics(data);
-    } catch (e) {
-      console.error('Realtime metrics error', e);
+    } catch (e: any) {
+      const safeMsg = e?.response?.status ? `HTTP ${e.response.status}` : e?.message || 'Unknown error';
+      console.error(`[RealtimeStats] Failed to load metrics. Error: ${safeMsg}`);
     } finally {
       setLoading(false);
     }
