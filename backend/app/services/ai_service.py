@@ -69,134 +69,7 @@ class AIProvider(ABC):
         return []
 
 
-# ============================================================================
-# DUMMY AI PROVIDER (FOR TESTING)
-# ============================================================================
-
-class DummyAIProvider(AIProvider):
-    """
-    Dummy AI provider using keyword matching
-    Used for testing and development
-    """
-    
-    def analyze_mention(self, content: str, title: Optional[str] = None) -> Dict:
-        start_time = time.time()
-        
-        content_lower = (content or "").lower()
-        title_lower = (title or "").lower()
-        full_text = f"{title_lower} {content_lower}"
-        
-        # Negative keywords (Vietnamese + English)
-        negative_keywords = [
-            'tệ', 'kém', 'dở', 'tồi', 'lừa đảo', 'scam', 'fake', 'giả mạo',
-            'bad', 'terrible', 'awful', 'worst', 'fraud', 'cheat',
-            'không tốt', 'thất vọng', 'disappointed', 'angry', 'tức giận',
-            'lỗi', 'error', 'bug', 'broken', 'hỏng', 'sai', 'wrong',
-            'chậm', 'slow', 'delay', 'trễ', 'không phản hồi', 'no response',
-            'rác', 'trash', 'garbage', 'useless', 'vô dụng'
-        ]
-        
-        # Positive keywords
-        positive_keywords = [
-            'tốt', 'good', 'great', 'excellent', 'xuất sắc', 'tuyệt vời',
-            'hài lòng', 'satisfied', 'happy', 'vui', 'thích', 'like', 'love',
-            'chất lượng', 'quality', 'nhanh', 'fast', 'quick', 'tốc độ',
-            'recommend', 'khuyên dùng', 'đáng tin', 'trust', 'reliable'
-        ]
-        
-        # Crisis keywords (high risk)
-        crisis_keywords = [
-            'chết', 'death', 'die', 'tử vong', 'nguy hiểm', 'danger',
-            'bệnh viện', 'hospital', 'cấp cứu', 'emergency', 'khẩn cấp',
-            'kiện', 'lawsuit', 'sue', 'court', 'tòa án', 'pháp luật',
-            'scandal', 'bê bối', 'rò rỉ', 'leak', 'hack', 'breach',
-            'virus', 'nhiễm độc', 'poison', 'toxic', 'độc hại',
-            'cháy', 'fire', 'nổ', 'explosion', 'tai nạn', 'accident'
-        ]
-        
-        # Count matches
-        negative_count = sum(1 for kw in negative_keywords if kw in full_text)
-        positive_count = sum(1 for kw in positive_keywords if kw in full_text)
-        crisis_count = sum(1 for kw in crisis_keywords if kw in full_text)
-        
-        # Calculate sentiment
-        if crisis_count > 0:
-            sentiment = "negative"
-        elif negative_count > positive_count:
-            sentiment = "negative"
-        elif positive_count > 0:
-            sentiment = "positive"
-        else:
-            sentiment = "neutral"
-        
-        # Calculate risk score (0-100)
-        base_risk = 30
-        risk_score = base_risk + (negative_count * 10) + (crisis_count * 20)
-        risk_score = min(risk_score, 100)
-        
-        # Calculate crisis level (1-5)
-        if crisis_count > 0:
-            crisis_level = 5
-        elif risk_score >= 80:
-            crisis_level = 4
-        elif risk_score >= 60:
-            crisis_level = 3
-        elif risk_score >= 40:
-            crisis_level = 2
-        else:
-            crisis_level = 1
-        
-        # Generate summary
-        if sentiment == "negative" and crisis_count > 0:
-            summary_vi = "Phát hiện nội dung tiêu cực nghiêm trọng. Cần xem xét và xử lý ngay."
-        elif sentiment == "negative":
-            summary_vi = "Nội dung có xu hướng tiêu cực. Nên theo dõi và phản hồi."
-        elif sentiment == "positive":
-            summary_vi = "Nội dung tích cực, phản hồi tốt từ người dùng."
-        else:
-            summary_vi = "Nội dung trung lập, không có ý kiến rõ ràng."
-        
-        # Suggested action
-        if crisis_level >= 4:
-            suggested_action = "legal_review"
-            responsible_department = "legal"
-        elif crisis_level >= 3:
-            suggested_action = "escalate"
-            responsible_department = "executive"
-        elif risk_score >= 50:
-            suggested_action = "respond"
-            responsible_department = "PR"
-        elif risk_score >= 30:
-            suggested_action = "monitor"
-            responsible_department = "customer_service"
-        else:
-            suggested_action = "monitor"
-            responsible_department = "customer_service"
-        
-        # Confidence score (keyword-based is less confident)
-        confidence_score = 65.0 + (min(negative_count + positive_count + crisis_count, 10) * 2)
-        
-        processing_time_ms = int((time.time() - start_time) * 1000)
-        
-        return {
-            "sentiment": sentiment,
-            "risk_score": risk_score,
-            "crisis_level": crisis_level,
-            "summary_vi": summary_vi,
-            "suggested_action": suggested_action,
-            "responsible_department": responsible_department,
-            "urgency": "high" if crisis_level >= 4 else ("medium" if risk_score >= 50 else "low"),
-            "response_type": "escalate_to_legal" if crisis_level >= 4 else "contact_privately",
-            "recommended_owner": "Manager",
-            "deadline_suggestion": "within 2 hours" if crisis_level >= 4 else "within 24 hours",
-            "escalation_needed": crisis_level >= 3,
-            "why_it_matters": f"Nội dung này chứa {crisis_count} từ khóa khủng hoảng và {negative_count} từ tiêu cực.",
-            "confidence_score": round(confidence_score, 2),
-            "processing_time_ms": processing_time_ms
-        }
-
-    def expand_keyword(self, keyword: str) -> list[str]:
-        return []
+# Dummy AI provider removed to enforce real AI usage in production
 
 
 # ============================================================================
@@ -296,12 +169,10 @@ Trả về JSON thuần túy, không có markdown:"""
             return result
             
         except Exception as e:
-            # Fallback to dummy analysis if OpenAI fails and not in production
-            print(f"OpenAI analysis failed: {e}")
-            if settings.ENVIRONMENT.lower() == "production":
-                raise ValueError(f"OpenAI analysis failed and dummy fallback is disabled in production: {e}")
-            dummy = DummyAIProvider()
-            return dummy.analyze_mention(content, title)
+            # Do not fallback to dummy analysis. Fail gracefully.
+            logger = logging.getLogger(__name__)
+            logger.error(f"OpenAI analysis failed: {e}")
+            raise ValueError(f"OpenAI analysis failed: {e}")
 
     def generate_executive_brief(self, content: str) -> Dict:
         prompt = f"""Tạo báo cáo điều hành (Executive Brief) cho nội dung sau:
@@ -476,12 +347,10 @@ Trả về JSON thuần túy, không có markdown:
             return result
             
         except Exception as e:
-            # Fallback to dummy analysis if Gemini fails and not in production
-            print(f"Gemini analysis failed: {e}")
-            if settings.ENVIRONMENT.lower() == "production":
-                raise ValueError(f"Gemini analysis failed and dummy fallback is disabled in production: {e}")
-            dummy = DummyAIProvider()
-            return dummy.analyze_mention(content, title)
+            # Do not fallback to dummy analysis. Fail gracefully.
+            logger = logging.getLogger(__name__)
+            logger.error(f"Gemini analysis failed: {e}")
+            raise ValueError(f"Gemini analysis failed: {e}")
 
     def generate_executive_brief(self, content: str) -> Dict:
         prompt = f"""Tạo báo cáo điều hành (Executive Brief) cho nội dung sau:
@@ -578,14 +447,9 @@ class PhoBERTProvider(AIProvider):
     def analyze_mention(self, content: str, title: Optional[str] = None) -> Dict:
         start_time = time.time()
         
-        # Fallback nếu PhoBERT không khả dụng
+        # PhoBERT not fully supported in this context without dependencies
         if not self._available:
-            if settings.ENVIRONMENT.lower() == "production":
-                raise ValueError("PhoBERT model is unavailable and dummy fallback is disabled in production.")
-            dummy = DummyAIProvider()
-            result = dummy.analyze_mention(content, title)
-            result["ai_provider"] = "dummy_fallback"
-            return result
+            raise ValueError("PhoBERT model is unavailable. Please install required dependencies.")
         
         full_text = f"{title} {content}" if title else content
         # Truncate cho PhoBERT (max 256 tokens)
@@ -684,13 +548,9 @@ class PhoBERTProvider(AIProvider):
             }
             
         except Exception as e:
-            print(f"PhoBERT analysis failed: {e}")
-            if settings.ENVIRONMENT.lower() == "production":
-                raise ValueError(f"PhoBERT analysis failed and dummy fallback is disabled in production: {e}")
-            dummy = DummyAIProvider()
-            result = dummy.analyze_mention(content, title)
-            result["ai_provider"] = "dummy_fallback"
-            return result
+            logger = logging.getLogger(__name__)
+            logger.error(f"PhoBERT analysis failed: {e}")
+            raise ValueError(f"PhoBERT analysis failed: {e}")
 
     def expand_keyword(self, keyword: str) -> list[str]:
         return []
@@ -714,35 +574,23 @@ def get_ai_provider() -> AIProvider:
     if provider_name == "openai":
         api_key = settings.OPENAI_API_KEY
         if not api_key:
-            raise ValueError("ai_provider_not_configured: AI chưa cấu hình, mention đã được lưu nhưng chưa phân tích AI.")
+            raise ValueError("OPENAI_API_KEY is not configured.")
         return OpenAIProvider(api_key)
     
     elif provider_name == "gemini":
         api_key = settings.GEMINI_API_KEY
         if not api_key:
-            raise ValueError("Gemini API key is missing. Please configure GEMINI_API_KEY in settings.")
+            raise ValueError("GEMINI_API_KEY is not configured.")
         return GeminiProvider(api_key)
     
     elif provider_name == "phobert":
-        # PhoBERT: Vietnamese-specific sentiment analysis via HuggingFace
-        # Requires: pip install transformers torch
         provider = PhoBERTProvider()
         if provider._available:
             return provider
-        if is_production:
-            raise ValueError("PhoBERT model is unavailable and dummy fallback is disabled in production.")
-        print("WARNING: PhoBERT unavailable, falling back to dummy AI")
-        return DummyAIProvider()
-    
-    elif provider_name == "dummy":
-        if is_production:
-            raise ValueError("ai_provider_not_configured: AI dummy không được phép chạy trong môi trường Production.")
-        return DummyAIProvider()
+        raise ValueError("PhoBERT model is unavailable.")
     
     else:
-        if is_production:
-            raise ValueError(f"ai_provider_not_configured: Unknown/dummy AI provider '{provider_name}' is not allowed in production environment.")
-        return DummyAIProvider()
+        raise ValueError(f"Unknown or unsupported AI provider '{provider_name}'.")
 
 
 def analyze_mention(content: str, title: Optional[str] = None) -> Dict:
@@ -760,16 +608,7 @@ def analyze_mention(content: str, title: Optional[str] = None) -> Dict:
     return provider.analyze_mention(content, title)
 
 
-# ============================================================================
-# BACKWARD COMPATIBILITY
-# ============================================================================
-
-def analyze_mention_with_dummy_ai(content: str, title: str = None) -> Dict:
-    """
-    DEPRECATED: Use analyze_mention() instead
-    Kept for backward compatibility
-    """
-    return analyze_mention(content, title)
+# Removed analyze_mention_with_dummy_ai for production constraints
 
 
 # ============================================================================

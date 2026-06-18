@@ -349,7 +349,7 @@ def scan_all_due_sources():
 
 _is_embedded_mode = False
 
-def start_scheduler(interval_minutes: int = 10, is_embedded: bool = False):
+def start_scheduler(is_embedded: bool = False):
     """
     Start the background scheduler.
     Should be called once when the application starts.
@@ -370,6 +370,8 @@ def start_scheduler(interval_minutes: int = 10, is_embedded: bool = False):
     _is_embedded_mode = is_embedded
 
     try:
+        # Use SCAN_INTERVAL_MINUTES from settings, default 15
+        interval_minutes = settings.SCAN_INTERVAL_MINUTES
         # Use 1 minute interval for embedded mode to ensure heartbeat updates frequently
         actual_interval = 1 if is_embedded else interval_minutes
         

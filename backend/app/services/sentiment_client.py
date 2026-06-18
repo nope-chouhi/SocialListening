@@ -1,41 +1,30 @@
 """
-HTTP client for the Flask sentiment microservice.
+Compatibility wrapper for sentiment analysis.
+Uses real ai_service instead of HTTP calls to a dummy microservice.
 """
 import logging
-from typing import Dict, Optional
-
-import httpx
-
-from app.core.config import settings
+from typing import Dict
+from app.services.ai_service import analyze_mention
 
 logger = logging.getLogger(__name__)
 
-
 async def analyze_sentiment_async(text: str) -> Dict:
-    """Call AI sentiment service (async)."""
-    url = f"{settings.SENTIMENT_SERVICE_URL.rstrip('/')}/api/ai/sentiment"
-    try:
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await client.post(url, json={"text": text})
-            response.raise_for_status()
-            return response.json()
-    except Exception as e:
-        logger.warning(f"Sentiment service error: {e}")
-        return {"sentiment": "neutral", "score": 0, "confidence": 0}
-
+    """Call AI sentiment service (async wrapper)."""
+    return analyze_sentiment(text)
 
 def analyze_sentiment(text: str) -> Dict:
-    """Call AI sentiment service (sync)."""
-    url = f"{settings.SENTIMENT_SERVICE_URL.rstrip('/')}/api/ai/sentiment"
+    """Call AI sentiment service."""
     try:
-        with httpx.Client(timeout=30.0) as client:
-            response = client.post(url, json={"text": text})
-            response.raise_for_status()
-            return response.json()
+        # Uses real AI provider configured in the system
+        result = analyze_mention(content=text)
+        return {
+            "sentiment": result.get("sentiment", "neutral"),
+            "score": result.get("risk_score", 0.0) / 100.0,
+            "confidence": result.get("confidence_score", 0.0) / 100.0,
+        }
     except Exception as e:
-        logger.warning(f"Sentiment service error: {e}")
-        return {"sentiment": "neutral", "score": 0, "confidence": 0}
-
+        logger.error(f"Sentiment analysis failed: {e}")
+        raise ValueError(f"AI Provider error: {e}")
 
 def map_to_ai_sentiment(simple: str) -> str:
     """Map positive/negative/neutral to platform sentiment enum values."""

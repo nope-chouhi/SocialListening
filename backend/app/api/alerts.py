@@ -401,6 +401,10 @@ def check_alert_rules(
             db.add(alert)
             db.commit()
             alerts_created += 1
+            try:
+                notify_alert_created(db, alert.id)
+            except Exception as e:
+                print(f"Notification failed for alert {alert.id}: {e}")
     
     elif body.rule_type == "negative_spike":
         # Check if negative mentions exceed threshold
@@ -435,6 +439,10 @@ def check_alert_rules(
                 db.add(alert)
                 db.commit()
                 alerts_created += 1
+                try:
+                    notify_alert_created(db, alert.id)
+                except Exception as e:
+                    print(f"Notification failed for alert {alert.id}: {e}")
     
     elif body.rule_type == "high_risk":
         # Check if any mentions have risk score above threshold
@@ -467,6 +475,10 @@ def check_alert_rules(
                 db.add(alert)
                 db.commit()
                 alerts_created += 1
+                try:
+                    notify_alert_created(db, alert.id)
+                except Exception as e:
+                    print(f"Notification failed for alert {alert.id}: {e}")
     
     return {
         "message": f"Alert rule check complete",
