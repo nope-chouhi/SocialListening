@@ -122,15 +122,28 @@ export default function MentionCard({ mention, onActionComplete, userRole }: Men
               variant="danger"
             />
           )}
-          <a
-            href={mention.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center px-4 py-2 text-xs font-medium rounded-xl bg-[#111827] text-gray-300 border border-gray-700 hover:bg-gray-800 transition-colors shadow-sm"
-          >
-            <ExternalLink className="w-3.5 h-3.5 mr-2" />
-            Nguồn
-          </a>
+          {(() => {
+            const bestUrl = mention.canonical_url || mention.url || mention.original_url;
+            if (!bestUrl || bestUrl.trim() === '' || bestUrl.startsWith('/')) return null;
+            
+            const isFallback = bestUrl.startsWith('https://news.google.com');
+            return (
+              <a
+                href={bestUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`inline-flex items-center px-4 py-2 text-xs font-medium rounded-xl border transition-colors shadow-sm ${
+                  isFallback 
+                    ? 'bg-amber-500/10 text-amber-400 border-amber-500/20 hover:bg-amber-500/20' 
+                    : 'bg-[#111827] text-gray-300 border-gray-700 hover:bg-gray-800'
+                }`}
+                title={isFallback ? "Fallback URL (Proxy)" : "Nguồn bài viết"}
+              >
+                <ExternalLink className="w-3.5 h-3.5 mr-2" />
+                Nguồn
+              </a>
+            );
+          })()}
         </div>
       </div>
     </div>

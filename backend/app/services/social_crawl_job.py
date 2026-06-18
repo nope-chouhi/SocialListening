@@ -94,6 +94,9 @@ def _persist_mentions(db, raw_mentions: List[Dict[str, Any]]) -> List[Dict[str, 
                 content=content,
                 content_hash=content_hash,
                 url=url,
+                original_url=raw.get("original_url"),
+                canonical_url=raw.get("url"), # if available, url is the resolved one
+                domain=raw.get("domain"),
                 author=raw.get("author"),
                 published_at=raw.get("timestamp"),
                 collected_at=datetime.now(timezone.utc),
@@ -105,6 +108,7 @@ def _persist_mentions(db, raw_mentions: List[Dict[str, Any]]) -> List[Dict[str, 
                 platform_post_id=raw.get("platform_post_id"),
                 extraction_source="social_crawler",
                 matched_keywords=[{"keyword": raw.get("keyword")}] if raw.get("keyword") else None,
+                meta_data=raw.get("metadata", {}),
             )
             db.add(mention)
             db.flush()
