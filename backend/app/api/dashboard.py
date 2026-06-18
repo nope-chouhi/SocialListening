@@ -46,6 +46,7 @@ def get_dashboard_summary(
                 base_query = base_query.where(Mention.project_id == project_id)
             total_mentions = db.execute(base_query).scalar() or 0
         except Exception as e:
+            db.rollback()
             logger.error(f"Error querying total mentions: {e}")
             total_mentions = 0
             
@@ -55,6 +56,7 @@ def get_dashboard_summary(
                 base_query = base_query.where(Mention.project_id == project_id)
             mentions_today = db.execute(base_query).scalar() or 0
         except Exception as e:
+            db.rollback()
             logger.error(f"Error querying mentions today: {e}")
             mentions_today = 0
         
@@ -69,12 +71,13 @@ def get_dashboard_summary(
             negative_mentions = db.execute(
                 query.where(
                     and_(
-                        AIAnalysis.sentiment.in_(['negative_low', 'negative_medium', 'negative_high', 'negative']),
+                        AIAnalysis.sentiment.in_(['negative']),
                         AIAnalysis.analyzed_at >= start_date
                     )
                 )
             ).scalar() or 0
         except Exception as e:
+            db.rollback()
             logger.error(f"Error querying negative mentions: {e}")
             negative_mentions = 0
         
@@ -84,6 +87,7 @@ def get_dashboard_summary(
             alerts_query = alerts_query.where(Alert.created_at >= start_date)
             total_alerts = db.execute(alerts_query).scalar() or 0
         except Exception as e:
+            db.rollback()
             logger.error(f"Error querying total alerts: {e}")
             total_alerts = 0
         
@@ -93,6 +97,7 @@ def get_dashboard_summary(
             incidents_query = incidents_query.where(Incident.created_at >= start_date)
             total_incidents = db.execute(incidents_query).scalar() or 0
         except Exception as e:
+            db.rollback()
             logger.error(f"Error querying total incidents: {e}")
             total_incidents = 0
         
@@ -101,6 +106,7 @@ def get_dashboard_summary(
             sources_query = apply_tenant_filter(select(func.count(Source.id)), Source, current_user).where(Source.is_active == True)
             total_sources = db.execute(sources_query).scalar() or 0
         except Exception as e:
+            db.rollback()
             logger.error(f"Error querying active sources: {e}")
             total_sources = 0
         
@@ -148,6 +154,7 @@ def get_dashboard_summary(
                     "ai_provider": analysis.ai_provider if analysis else None,
                 })
         except Exception as e:
+            db.rollback()
             logger.error(f"Error querying latest mentions: {e}")
             latest_mentions_data = []
         
@@ -168,6 +175,7 @@ def get_dashboard_summary(
                     "created_at": a.created_at.isoformat() if a.created_at else None,
                 })
         except Exception as e:
+            db.rollback()
             logger.error(f"Error querying latest alerts: {e}")
             latest_alerts_data = []
         # Discovery stats
@@ -361,6 +369,7 @@ def get_dashboard_trends(
                 if d_str in items_dict:
                     items_dict[d_str]["total_mentions"] = row[1]
         except Exception as e:
+            db.rollback()
             logger.error(f"Error mentions trend: {e}")
 
         # 2. Negative mentions by date
@@ -375,7 +384,7 @@ def get_dashboard_trends(
             query = query.where(
                 and_(
                     AIAnalysis.analyzed_at >= start_date,
-                    AIAnalysis.sentiment.in_(['negative_low', 'negative_medium', 'negative_high', 'negative'])
+                    AIAnalysis.sentiment.in_(['negative'])
                 )
             ).group_by(date_col)
             
@@ -384,6 +393,7 @@ def get_dashboard_trends(
                 if d_str in items_dict:
                     items_dict[d_str]["negative_mentions"] = row[1]
         except Exception as e:
+            db.rollback()
             logger.error(f"Error negative mentions trend: {e}")
 
         # 3. Alerts by date
@@ -398,6 +408,7 @@ def get_dashboard_trends(
                 if d_str in items_dict:
                     items_dict[d_str]["alerts"] = row[1]
         except Exception as e:
+            db.rollback()
             logger.error(f"Error alerts trend: {e}")
 
         # 4. Incidents by date
@@ -412,6 +423,7 @@ def get_dashboard_trends(
                 if d_str in items_dict:
                     items_dict[d_str]["incidents"] = row[1]
         except Exception as e:
+            db.rollback()
             logger.error(f"Error incidents trend: {e}")
 
         items = list(items_dict.values())
@@ -496,11 +508,12 @@ def get_sentiment_summary(
                 select(func.count(AIAnalysis.id)).where(
                     and_(
                         *ai_filter,
-                        AIAnalysis.sentiment.in_(['negative_low', 'negative_medium', 'negative_high', 'negative'])
+                        AIAnalysis.sentiment.in_(['negative'])
                     )
                 )
             ).scalar() or 0
         except Exception:
+            db.rollback()
             negative = 0
             
         # The remainder are unknown/pending
@@ -577,6 +590,7 @@ def get_hot_keywords(
                     for a in analyses:
                         analysis_dict[a.mention_id] = a
                 except Exception as e:
+                    db.rollback()
                     logger.error(f"Error fetching AI analysis batch: {e}")
 
         for kw in all_keywords:
@@ -602,7 +616,7 @@ def get_hot_keywords(
                     analysis = analysis_dict.get(m.id)
                     if analysis:
                         sentiment_val = analysis.sentiment.value if hasattr(analysis.sentiment, 'value') else analysis.sentiment
-                        if sentiment_val in ['negative_low', 'negative_medium', 'negative_high', 'negative']:
+                        if sentiment_val in ['negative']:
                             negative_count += 1
                         if analysis.risk_score is not None:
                             risk_scores.append(analysis.risk_score)

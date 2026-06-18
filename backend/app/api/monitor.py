@@ -172,6 +172,7 @@ def start_monitoring(
             db.commit()
 
         except Exception as e:
+            db.rollback()
             logger.error(f"[Monitor] Error scanning source {source.id} ({source.name}): {e}")
             errors.append(f"{source.name}: {str(e)[:100]}")
 
@@ -323,14 +324,9 @@ def get_monitor_dashboard(
 
             if sentiment_val == "positive":
                 positive_count += 1
-            elif sentiment_val in (
-                "negative_low",
-                "negative_medium",
-                "negative_high",
-            ):
+            elif sentiment_val == "negative":
                 negative_count += 1
-                if sentiment_val in ("negative_medium", "negative_high"):
-                    dangerous_negative_count += 1
+                dangerous_negative_count += 1
             else:
                 neutral_count += 1
 
@@ -505,11 +501,7 @@ def get_ai_analysis(
                 if hasattr(analysis.sentiment, "value")
                 else analysis.sentiment
             )
-            if sentiment_val in (
-                "negative_low",
-                "negative_medium",
-                "negative_high",
-            ):
+            if sentiment_val == "negative":
                 negative_mentions.append({
                     "content": m.content,
                     "sentiment": sentiment_val,
@@ -699,11 +691,7 @@ def _compute_volatility(
             )
             if sentiment_val == "positive":
                 daily_data[date_str]["positive"] += 1
-            elif sentiment_val in (
-                "negative_low",
-                "negative_medium",
-                "negative_high",
-            ):
+            elif sentiment_val == "negative":
                 daily_data[date_str]["negative"] += 1
             else:
                 daily_data[date_str]["neutral"] += 1

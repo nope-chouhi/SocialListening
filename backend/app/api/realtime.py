@@ -128,11 +128,7 @@ def get_realtime_metrics(
                 select(func.count(AIAnalysis.id)).where(
                     and_(
                         AIAnalysis.analyzed_at >= start,
-                        AIAnalysis.sentiment.in_([
-                            SentimentScore.NEGATIVE_LOW,
-                            SentimentScore.NEGATIVE_MEDIUM,
-                            SentimentScore.NEGATIVE_HIGH,
-                        ]),
+                        AIAnalysis.sentiment == "negative",
                     )
                 )
             ).scalar() or 0

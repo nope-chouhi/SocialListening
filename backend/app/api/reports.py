@@ -42,7 +42,7 @@ def get_reports_summary(
     
     negative = db.execute(
         select(func.count(AIAnalysis.id))
-        .where(AIAnalysis.sentiment.in_(['negative_low', 'negative_medium', 'negative_high']))
+        .where(AIAnalysis.sentiment.in_(['negative']))
     ).scalar() or 0
     
     return {
@@ -128,7 +128,7 @@ def _generate_report_inline(report: Report, db: Session, current_user: User = No
 
         sentiment_counts = {
             "positive": 0, "neutral": 0,
-            "negative_low": 0, "negative_medium": 0, "negative_high": 0
+            "negative": 0
         }
         risk_distribution = {"low": 0, "medium": 0, "high": 0, "critical": 0}
         total_risk_score = 0

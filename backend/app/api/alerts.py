@@ -418,7 +418,7 @@ def check_alert_rules(
                 select(func.count(AIAnalysis.id)).where(
                     and_(
                         AIAnalysis.mention_id.in_(mention_ids),
-                        AIAnalysis.sentiment.in_(["negative_low", "negative_medium", "negative_high"])
+                        AIAnalysis.sentiment.in_(['negative'])
                     )
                 )
             ).scalar() or 0

@@ -190,7 +190,7 @@ export default function MentionDetailPage() {
                 <h3 className="text-lg font-bold text-white">AI Analysis</h3>
                 {(mention.ai_analysis.ai_provider === 'dummy' || mention.ai_analysis.ai_provider === 'dummy_ai') && (
                   <span className="px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase text-orange-400 bg-orange-500/10 rounded-md border border-orange-500/20">
-                    DUMMY/DEV
+                    LEGACY (RULE-BASED)
                   </span>
                 )}
                 {mention.ai_analysis.ai_provider && mention.ai_analysis.ai_provider !== 'dummy' && mention.ai_analysis.ai_provider !== 'dummy_ai' && (
