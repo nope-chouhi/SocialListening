@@ -449,25 +449,12 @@ def crawl_source(db: Session, source_id: int, job_id: int = None) -> Dict:
                 err_str = str(e)
                 if "ai_provider_not_configured" in err_str or "openai_dependency_missing" in err_str or "API key is missing" in err_str or "not configured" in err_str:
                     msg = "AI chưa cấu hình, mention đã được lưu nhưng chưa phân tích AI."
-                    prov = "skipped"
                 else:
                     msg = f"AI analysis failed: {err_str}"
-                    prov = "failed"
                 
-                ai_analysis = AIAnalysis(
-                    mention_id=mention.id,
-                    sentiment="neutral",
-                    risk_score=0.0,
-                    crisis_level=1,
-                    summary_vi=msg,
-                    suggested_action="monitor",
-                    responsible_department="customer_service",
-                    confidence_score=0.0,
-                    ai_provider=prov,
-                    model_version="1.0",
-                    processing_time_ms=0
-                )
-                db.add(ai_analysis)
+                mention.verification_status = "failed"
+                mention.verification_error = msg
+                db.add(mention)
 
             mentions_new += 1
 

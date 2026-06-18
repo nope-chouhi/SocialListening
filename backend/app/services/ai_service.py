@@ -1,16 +1,36 @@
 """
 AI Service for Social Listening Platform
-Supports multiple AI providers: OpenAI, Gemini, and Dummy (for testing)
+Supports multiple AI providers with failover chain: Gemini, Grok, OpenAI, and PhoBERT
 """
 import os
 import time
 import json
 import logging
-from typing import Dict, Optional
+from typing import Dict, Optional, List, Any
 from abc import ABC, abstractmethod
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
+
+# ============================================================================
+# EXCEPTIONS FOR FAILOVER
+# ============================================================================
+
+class AITemporaryError(Exception):
+    """Exception for rate limits, quota exhausted, timeouts, 5xx errors"""
+    pass
+
+class AIAuthError(Exception):
+    """Exception for invalid API keys or 401/403 errors"""
+    pass
+
+class AIProviderMalformedResponseError(Exception):
+    """Exception for malformed output from a specific provider (e.g. bad JSON). Triggers failover."""
+    pass
+
+class AIInternalValidationError(Exception):
+    """Exception for internal schema or prompt bugs. Does NOT trigger failover."""
+    pass
 
 
 # ============================================================================
@@ -20,59 +40,30 @@ logger = logging.getLogger(__name__)
 class AIProvider(ABC):
     """Abstract base class for AI providers"""
     
+    @property
     @abstractmethod
-    def analyze_mention(self, content: str, title: Optional[str] = None) -> Dict:
-        """
-        Analyze a mention and return structured results
-        
-        Returns:
-            {
-                "sentiment": str,  # positive, neutral, negative_low, negative_medium, negative_high
-                "risk_score": float,  # 0-100
-                "crisis_level": int,  # 1-5
-                "summary_vi": str,  # Vietnamese summary
-                "suggested_action": str,  # monitor, respond, escalate, legal_review
-                "responsible_department": str,  # customer_service, PR, legal, executive
-                "confidence_score": float,  # 0-100
-                "processing_time_ms": int
-            }
-        """
+    def name(self) -> str:
         pass
 
+    @abstractmethod
+    def is_configured(self) -> bool:
+        pass
+
+    @abstractmethod
+    def analyze_mention(self, content: str, title: Optional[str] = None) -> Dict:
+        pass
+
+    @abstractmethod
     def generate_executive_brief(self, content: str) -> Dict:
-        """
-        Generate an executive brief in 3 formats based on content.
-        
-        Returns:
-            {
-                "summary_3_lines": str,
-                "zalo_brief": str,
-                "full_brief": str,
-                "risk_level": str,
-                "recommended_decision": str,
-                "owner": str,
-                "deadline": str
-            }
-        """
-        return {
-            "summary_3_lines": "1. Phát hiện sự cố/thảo luận.\n2. Nguy cơ tiềm ẩn trung bình.\n3. Cần theo dõi thêm.",
-            "zalo_brief": "🚨 BÁO CÁO NHANH\n- Sự việc: Có thông tin cần lưu ý\n- Đánh giá: Rủi ro trung bình\n- Hành động: Theo dõi",
-            "full_brief": "BÁO CÁO CHI TIẾT\n\n1. Tình hình: Đang có thảo luận liên quan đến thương hiệu.\n2. Phân tích: Nguy cơ lan rộng trung bình.\n3. Khuyến nghị: Theo dõi chặt chẽ và chuẩn bị kịch bản phản hồi.",
-            "risk_level": "medium",
-            "recommended_decision": "Theo dõi và báo cáo khi có diễn biến mới",
-            "owner": "Quản lý",
-            "deadline": "24h"
-        }
+        pass
 
+    @abstractmethod
     def expand_keyword(self, keyword: str) -> list[str]:
-        """
-        Dynamically generate synonyms or related keywords for a given keyword
-        to improve search expansion coverage.
-        """
-        return []
+        pass
 
-
-# Dummy AI provider removed to enforce real AI usage in production
+    @abstractmethod
+    def draft_response(self, prompt: str, max_tokens: int = 300) -> str:
+        pass
 
 
 # ============================================================================
@@ -80,171 +71,296 @@ class AIProvider(ABC):
 # ============================================================================
 
 class OpenAIProvider(AIProvider):
-    """OpenAI GPT-4 provider for mention analysis"""
-    
-    def __init__(self, api_key: str):
-        self.api_key = api_key
+    @property
+    def name(self) -> str:
+        return "openai"
+
+    def is_configured(self) -> bool:
+        return bool(settings.OPENAI_API_KEY)
+
+    def __init__(self):
+        if not self.is_configured():
+            return
         try:
             from openai import OpenAI
-            self.client = OpenAI(api_key=api_key)
+            self.client = OpenAI(api_key=settings.OPENAI_API_KEY)
+            self.model = settings.OPENAI_MODEL
         except ImportError:
-            raise ImportError("openai_dependency_missing: AI chưa sẵn sàng: thiếu package openai.")
-    
+            logger.warning("openai package not installed.")
+            self.client = None
+            
+    def _handle_openai_error(self, e: Exception):
+        import openai
+        if isinstance(e, openai.AuthenticationError):
+            raise AIAuthError(f"OpenAI Auth Error: {str(e)}")
+        elif isinstance(e, (openai.RateLimitError, openai.APITimeoutError, openai.APIConnectionError, openai.InternalServerError)):
+            raise AITemporaryError(f"OpenAI Temporary Error: {str(e)}")
+        else:
+            raise AIProviderMalformedResponseError(f"OpenAI Error: {str(e)}")
+
+    def _parse_json(self, text: str) -> Dict:
+        if text.startswith("```"):
+            text = text.split("```")[1]
+            if text.startswith("json"):
+                text = text[4:]
+            text = text.strip()
+        try:
+            return json.loads(text)
+        except json.JSONDecodeError as e:
+            raise AIProviderMalformedResponseError(f"OpenAI JSON parse error: {e}")
+
     def analyze_mention(self, content: str, title: Optional[str] = None) -> Dict:
+        if not content:
+            raise AIInternalValidationError("Empty content provided for analysis.")
         start_time = time.time()
-        
         full_text = f"{title}\n\n{content}" if title else content
         
         prompt = f"""Phân tích nội dung sau đây và trả về kết quả dưới dạng JSON:
-
-Nội dung:
-{full_text}
-
+Nội dung: {full_text}
 Yêu cầu phân tích:
-1. sentiment: Đánh giá cảm xúc (chỉ được trả về 1 trong 3 giá trị: positive, neutral, negative)
-2. risk_score: Điểm rủi ro từ 0-100 (0 = không rủi ro, 100 = rủi ro cực cao)
-3. crisis_level: Mức độ khủng hoảng từ 1-5 (1 = bình thường, 5 = khủng hoảng nghiêm trọng)
-4. summary_vi: Tóm tắt ngắn gọn bằng tiếng Việt (1-2 câu)
-5. suggested_action: Hành động đề xuất (monitor, respond, escalate, legal_review)
-6. responsible_department: Bộ phận chịu trách nhiệm (customer_service, PR, legal, executive, operations, technical)
-7. urgency: Độ khẩn cấp (low, medium, high, critical)
-8. response_type: Kiểu phản hồi gợi ý (monitor_only, reply_publicly, contact_privately, escalate_to_legal, create_incident...)
-9. recommended_owner: Chức danh/Vai trò người nên xử lý (ví dụ: PR Manager, Legal Counsel)
-10. deadline_suggestion: Gợi ý thời hạn xử lý (ví dụ: "trong 2 giờ", "trong 24 giờ")
-11. escalation_needed: Cần leo thang không? (true/false)
-12. why_it_matters: Tại sao vấn đề này quan trọng, có thể ảnh hưởng gì đến thương hiệu? (1-2 câu tiếng Việt)
-13. confidence_score: Độ tin cậy của phân tích từ 0-100
-
-LƯU Ý QUAN TRỌNG:
-- KHÔNG đề xuất hành động bất hợp pháp (hack, DDoS, spam, scraping trái phép)
-- Với nội dung có hại: đề xuất thu thập bằng chứng, yêu cầu sửa đổi, dự thảo takedown hợp pháp, báo cáo vi phạm chính sách nền tảng
-- Luôn yêu cầu phê duyệt của con người cho các hành động quan trọng
-
-Trả về JSON thuần túy, không có markdown:"""
+1. sentiment: (positive, neutral, negative)
+2. risk_score: (0-100)
+3. crisis_level: (1-5)
+4. summary_vi: Tóm tắt ngắn gọn
+5. suggested_action: (monitor, respond, escalate, legal_review)
+6. responsible_department: (customer_service, PR, legal, executive)
+7. confidence_score: (0-100)
+Trả về JSON thuần túy:"""
 
         try:
             response = self.client.chat.completions.create(
-                model="gpt-4",
+                model=self.model,
+                messages=[
+                    {"role": "system", "content": "Bạn là chuyên gia phân tích. Trả về JSON thuần túy."},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.3,
+                max_tokens=800,
+                timeout=settings.AI_PROVIDER_TIMEOUT_SECONDS
+            )
+            result_text = response.choices[0].message.content.strip()
+            result = self._parse_json(result_text)
+            
+            result["sentiment"] = result.get("sentiment", "neutral")
+            result["risk_score"] = float(result.get("risk_score", 50))
+            result["crisis_level"] = int(result.get("crisis_level", 2))
+            result["summary_vi"] = result.get("summary_vi", "")
+            result["suggested_action"] = result.get("suggested_action", "monitor")
+            result["responsible_department"] = result.get("responsible_department", "customer_service")
+            
+            result["processing_time_ms"] = int((time.time() - start_time) * 1000)
+            result["ai_provider"] = self.name
+            result["model_version"] = self.model
+            return result
+        except Exception as e:
+            self._handle_openai_error(e)
+
+    def generate_executive_brief(self, content: str) -> Dict:
+        prompt = f"""Tạo báo cáo điều hành (Executive Brief) cho nội dung sau:
+{content}
+Bạn phải trả về JSON thuần túy:
+{{
+  "summary_3_lines": "...",
+  "zalo_brief": "...",
+  "full_brief": "...",
+  "risk_level": "low/medium/high/critical",
+  "recommended_decision": "...",
+  "owner": "...",
+  "deadline": "..."
+}}"""
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {"role": "system", "content": "Bạn là chuyên gia phân tích khủng hoảng. Trả về JSON thuần túy."},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.3,
+                max_tokens=800,
+                timeout=settings.AI_PROVIDER_TIMEOUT_SECONDS
+            )
+            return self._parse_json(response.choices[0].message.content.strip())
+        except Exception as e:
+            self._handle_openai_error(e)
+
+    def expand_keyword(self, keyword: str) -> list[str]:
+        prompt = f"""Given the keyword '{keyword}', generate 5 synonyms. Return ONLY a valid JSON array of strings."""
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.7,
+                max_tokens=150,
+                timeout=settings.AI_PROVIDER_TIMEOUT_SECONDS
+            )
+            res = self._parse_json(response.choices[0].message.content.strip())
+            if isinstance(res, list): return [str(x) for x in res]
+            return []
+        except Exception as e:
+            self._handle_openai_error(e)
+
+    def draft_response(self, prompt: str, max_tokens: int = 300) -> str:
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.7,
+                max_tokens=max_tokens,
+                timeout=settings.AI_PROVIDER_TIMEOUT_SECONDS
+            )
+            return response.choices[0].message.content.strip()
+        except Exception as e:
+            self._handle_openai_error(e)
+
+
+# ============================================================================
+# GROK PROVIDER (xAI)
+# ============================================================================
+
+class GrokProvider(AIProvider):
+    @property
+    def name(self) -> str:
+        return "grok"
+
+    def is_configured(self) -> bool:
+        return bool(settings.GROK_API_KEY)
+
+    def __init__(self):
+        if not self.is_configured():
+            return
+        try:
+            from openai import OpenAI
+            self.client = OpenAI(
+                api_key=settings.GROK_API_KEY,
+                base_url=settings.GROK_BASE_URL
+            )
+            self.model = settings.GROK_MODEL
+        except ImportError:
+            logger.warning("openai package not installed.")
+            self.client = None
+
+    def _handle_grok_error(self, e: Exception):
+        import openai
+        if isinstance(e, openai.AuthenticationError):
+            raise AIAuthError(f"Grok Auth Error: {str(e)}")
+        elif isinstance(e, (openai.RateLimitError, openai.APITimeoutError, openai.APIConnectionError, openai.InternalServerError)):
+            raise AITemporaryError(f"Grok Temporary Error: {str(e)}")
+        else:
+            raise AIProviderMalformedResponseError(f"Grok Error: {str(e)}")
+
+    def _parse_json(self, text: str) -> Dict:
+        if text.startswith("```"):
+            text = text.split("```")[1]
+            if text.startswith("json"):
+                text = text[4:]
+            text = text.strip()
+        try:
+            return json.loads(text)
+        except json.JSONDecodeError as e:
+            raise AIProviderMalformedResponseError(f"Grok JSON parse error: {e}")
+
+    def analyze_mention(self, content: str, title: Optional[str] = None) -> Dict:
+        if not content:
+            raise AIInternalValidationError("Empty content provided for analysis.")
+        start_time = time.time()
+        full_text = f"{title}\n\n{content}" if title else content
+        
+        prompt = f"""Phân tích nội dung sau đây và trả về kết quả dưới dạng JSON:
+Nội dung: {full_text}
+Yêu cầu phân tích:
+1. sentiment: (positive, neutral, negative)
+2. risk_score: (0-100)
+3. crisis_level: (1-5)
+4. summary_vi: Tóm tắt ngắn gọn
+5. suggested_action: (monitor, respond, escalate, legal_review)
+6. responsible_department: (customer_service, PR, legal, executive)
+7. confidence_score: (0-100)
+Trả về JSON thuần túy:"""
+
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model,
                 messages=[
                     {"role": "system", "content": "Bạn là chuyên gia phân tích social listening. Trả về JSON thuần túy."},
                     {"role": "user", "content": prompt}
                 ],
                 temperature=0.3,
-                max_tokens=500
+                max_tokens=800,
+                timeout=settings.AI_PROVIDER_TIMEOUT_SECONDS
             )
-            
             result_text = response.choices[0].message.content.strip()
+            result = self._parse_json(result_text)
             
-            # Remove markdown code blocks if present
-            if result_text.startswith("```"):
-                result_text = result_text.split("```")[1]
-                if result_text.startswith("json"):
-                    result_text = result_text[4:]
-                result_text = result_text.strip()
-            
-            result = json.loads(result_text)
-            
-            # Validate and normalize
             result["sentiment"] = result.get("sentiment", "neutral")
             result["risk_score"] = float(result.get("risk_score", 50))
             result["crisis_level"] = int(result.get("crisis_level", 2))
-            result["summary_vi"] = result.get("summary_vi", "Không có tóm tắt")
+            result["summary_vi"] = result.get("summary_vi", "")
             result["suggested_action"] = result.get("suggested_action", "monitor")
             result["responsible_department"] = result.get("responsible_department", "customer_service")
-            result["urgency"] = result.get("urgency", "low")
-            result["response_type"] = result.get("response_type", "monitor_only")
-            result["recommended_owner"] = result.get("recommended_owner", "CS Staff")
-            result["deadline_suggestion"] = result.get("deadline_suggestion", "N/A")
-            result["escalation_needed"] = bool(result.get("escalation_needed", False))
-            result["why_it_matters"] = result.get("why_it_matters", "")
             
-            # Vietnamese Context fields
-            result["vietnamese_context_label"] = result.get("vietnamese_context_label", "")
-            result["tone"] = result.get("tone", "")
-            result["sarcasm_possible"] = bool(result.get("sarcasm_possible", False))
-            result["complaint_type"] = result.get("complaint_type", "")
-            result["sensitive_signal"] = bool(result.get("sensitive_signal", False))
-            result["explanation"] = result.get("explanation", "")
-            
-            result["confidence_score"] = float(result.get("confidence_score", 80))
             result["processing_time_ms"] = int((time.time() - start_time) * 1000)
-            result["ai_provider"] = "openai"
-            result["model_version"] = getattr(self, "model", None) or getattr(settings, "OPENAI_MODEL", "gpt-4")
-            
+            result["ai_provider"] = self.name
+            result["model_version"] = self.model
             return result
-            
         except Exception as e:
-            # Do not fallback to dummy analysis. Fail gracefully.
-            logger = logging.getLogger(__name__)
-            logger.error(f"OpenAI analysis failed: {e}")
-            raise ValueError(f"OpenAI analysis failed: {e}")
+            self._handle_grok_error(e)
 
     def generate_executive_brief(self, content: str) -> Dict:
         prompt = f"""Tạo báo cáo điều hành (Executive Brief) cho nội dung sau:
-
-Nội dung:
 {content}
-
-Bạn phải trả về JSON thuần túy (không markdown) với cấu trúc sau:
+Bạn phải trả về JSON thuần túy:
 {{
-  "summary_3_lines": "Tóm tắt đúng 3 gạch đầu dòng: 1. Chuyện gì xảy ra? 2. Mức độ nghiêm trọng? 3. Cần quyết định/hành động gì?",
-  "zalo_brief": "Báo cáo cực ngắn, súc tích, phong cách Zalo (có dùng emoji phù hợp) để gửi trong group chat lãnh đạo.",
-  "full_brief": "Báo cáo đầy đủ gồm: bối cảnh, phân tích rủi ro, cảm xúc đám đông, và đề xuất chi tiết.",
+  "summary_3_lines": "...",
+  "zalo_brief": "...",
+  "full_brief": "...",
   "risk_level": "low/medium/high/critical",
-  "recommended_decision": "Quyết định đề xuất ngắn gọn",
-  "owner": "Người/Bộ phận phụ trách",
-  "deadline": "Thời hạn xử lý đề xuất (VD: Trong vòng 2h)"
-}}
-
-Tuyệt đối chỉ trả về JSON, không có code block markdown:"""
-
+  "recommended_decision": "...",
+  "owner": "...",
+  "deadline": "..."
+}}"""
         try:
             response = self.client.chat.completions.create(
-                model="gpt-4",
+                model=self.model,
                 messages=[
-                    {"role": "system", "content": "Bạn là chuyên gia phân tích khủng hoảng và báo cáo cho ban lãnh đạo. Trả về JSON thuần túy."},
+                    {"role": "system", "content": "Bạn là chuyên gia phân tích khủng hoảng. Trả về JSON thuần túy."},
                     {"role": "user", "content": prompt}
                 ],
                 temperature=0.3,
-                max_tokens=800
+                max_tokens=800,
+                timeout=settings.AI_PROVIDER_TIMEOUT_SECONDS
             )
-            
-            result_text = response.choices[0].message.content.strip()
-            
-            if result_text.startswith("```"):
-                result_text = result_text.split("```")[1]
-                if result_text.startswith("json"):
-                    result_text = result_text[4:]
-                result_text = result_text.strip()
-            
-            return json.loads(result_text)
-            
+            return self._parse_json(response.choices[0].message.content.strip())
         except Exception as e:
-            print(f"OpenAI brief generation failed: {e}")
-            return super().generate_executive_brief(content)
+            self._handle_grok_error(e)
 
     def expand_keyword(self, keyword: str) -> list[str]:
-        prompt = f"""You are an SEO and search expert. Given the primary keyword '{keyword}', generate 5 highly relevant alternative keywords or synonyms (in Vietnamese if the keyword is Vietnamese) that a user might use to search for this entity/topic on the internet. Return ONLY a valid JSON array of strings. Do not include markdown formatting or any other text. Example: ["keyword1", "keyword2"]"""
+        prompt = f"""Given the keyword '{keyword}', generate 5 synonyms. Return ONLY a valid JSON array of strings."""
         try:
             response = self.client.chat.completions.create(
-                model="gpt-3.5-turbo",
+                model=self.model,
                 messages=[{"role": "user", "content": prompt}],
                 temperature=0.7,
-                max_tokens=150
+                max_tokens=150,
+                timeout=settings.AI_PROVIDER_TIMEOUT_SECONDS
             )
-            result_text = response.choices[0].message.content.strip()
-            if result_text.startswith("```"):
-                result_text = result_text.split("```")[1]
-                if result_text.startswith("json"):
-                    result_text = result_text[4:]
-                result_text = result_text.strip()
-            expansions = json.loads(result_text)
-            if isinstance(expansions, list):
-                return [str(e) for e in expansions]
+            res = self._parse_json(response.choices[0].message.content.strip())
+            if isinstance(res, list): return [str(x) for x in res]
             return []
         except Exception as e:
-            print(f"OpenAI Keyword expansion failed: {e}")
-            return []
+            self._handle_grok_error(e)
+
+    def draft_response(self, prompt: str, max_tokens: int = 300) -> str:
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.7,
+                max_tokens=max_tokens,
+                timeout=settings.AI_PROVIDER_TIMEOUT_SECONDS
+            )
+            return response.choices[0].message.content.strip()
+        except Exception as e:
+            self._handle_grok_error(e)
 
 
 # ============================================================================
@@ -252,500 +368,306 @@ Tuyệt đối chỉ trả về JSON, không có code block markdown:"""
 # ============================================================================
 
 class GeminiProvider(AIProvider):
-    """Google Gemini provider for mention analysis"""
-    
-    def __init__(self, api_key: str):
-        self.api_key = api_key
+    @property
+    def name(self) -> str:
+        return "gemini"
+
+    def is_configured(self) -> bool:
+        return bool(settings.GEMINI_API_KEY)
+
+    def __init__(self):
+        if not self.is_configured():
+            return
         try:
             import google.generativeai as genai
             self.genai = genai
-            self.genai.configure(api_key=api_key)
-            self.model = self.genai.GenerativeModel('gemini-pro')
+            self.genai.configure(api_key=settings.GEMINI_API_KEY)
+            self.model_name = settings.GEMINI_MODEL
+            self.model = self.genai.GenerativeModel(self.model_name)
         except ImportError:
-            raise ImportError("google-generativeai package not installed. Run: pip install google-generativeai")
-    
+            logger.warning("google-generativeai package not installed.")
+            self.model = None
+
+    def _handle_gemini_error(self, e: Exception):
+        err_str = str(e).lower()
+        if "api_key" in err_str or "unauthenticated" in err_str or "permission" in err_str:
+            raise AIAuthError(f"Gemini Auth Error: {str(e)}")
+        elif "quota" in err_str or "429" in err_str or "exhausted" in err_str or "timeout" in err_str or "503" in err_str:
+            raise AITemporaryError(f"Gemini Temporary Error: {str(e)}")
+        else:
+            raise AIProviderMalformedResponseError(f"Gemini Error: {str(e)}")
+
+    def _parse_json(self, text: str) -> Dict:
+        if text.startswith("```"):
+            text = text.split("```")[1]
+            if text.startswith("json"):
+                text = text[4:]
+            text = text.strip()
+        try:
+            return json.loads(text)
+        except json.JSONDecodeError as e:
+            raise AIProviderMalformedResponseError(f"Gemini JSON parse error: {e}")
+
     def analyze_mention(self, content: str, title: Optional[str] = None) -> Dict:
+        if not content:
+            raise AIInternalValidationError("Empty content provided for analysis.")
         start_time = time.time()
-        
         full_text = f"{title}\n\n{content}" if title else content
         
         prompt = f"""Phân tích nội dung sau đây và trả về kết quả dưới dạng JSON:
-
-Nội dung:
-{full_text}
-
+Nội dung: {full_text}
 Yêu cầu phân tích:
-1. sentiment: Đánh giá cảm xúc (chỉ được trả về 1 trong 3 giá trị: positive, neutral, negative)
-2. risk_score: Điểm rủi ro từ 0-100 (0 = không rủi ro, 100 = rủi ro cực cao)
-3. crisis_level: Mức độ khủng hoảng từ 1-5 (1 = bình thường, 5 = khủng hoảng nghiêm trọng)
-4. summary_vi: Tóm tắt ngắn gọn bằng tiếng Việt (1-2 câu)
-5. suggested_action: Hành động đề xuất (monitor, respond, escalate, legal_review)
-6. responsible_department: Bộ phận chịu trách nhiệm (customer_service, PR, legal, executive, operations, technical)
-7. urgency: Độ khẩn cấp (low, medium, high, critical)
-8. response_type: Kiểu phản hồi gợi ý (monitor_only, reply_publicly, contact_privately, escalate_to_legal, create_incident...)
-9. recommended_owner: Chức danh/Vai trò người nên xử lý (ví dụ: PR Manager, Legal Counsel)
-10. deadline_suggestion: Gợi ý thời hạn xử lý (ví dụ: "trong 2 giờ", "trong 24 giờ")
-11. escalation_needed: Cần leo thang không? (true/false)
-12. why_it_matters: Tại sao vấn đề này quan trọng, có thể ảnh hưởng gì đến thương hiệu? (1-2 câu tiếng Việt)
-13. confidence_score: Độ tin cậy của phân tích từ 0-100
-
-LƯU Ý QUAN TRỌNG:
-- KHÔNG đề xuất hành động bất hợp pháp (hack, DDoS, spam, scraping trái phép)
-- Với nội dung có hại: đề xuất thu thập bằng chứng, yêu cầu sửa đổi, dự thảo takedown hợp pháp, báo cáo vi phạm chính sách nền tảng
-- Luôn yêu cầu phê duyệt của con người cho các hành động quan trọng
-
-Trả về JSON thuần túy, không có markdown:
-{{
-  "sentiment": "...",
-  "risk_score": 0,
-  "crisis_level": 0,
-  "summary_vi": "...",
-  "suggested_action": "...",
-  "responsible_department": "...",
-  "urgency": "...",
-  "response_type": "...",
-  "recommended_owner": "...",
-  "deadline_suggestion": "...",
-  "escalation_needed": false,
-  "why_it_matters": "...",
-  "confidence_score": 0
-}}"""
+1. sentiment: (positive, neutral, negative)
+2. risk_score: (0-100)
+3. crisis_level: (1-5)
+4. summary_vi: Tóm tắt ngắn gọn
+5. suggested_action: (monitor, respond, escalate, legal_review)
+6. responsible_department: (customer_service, PR, legal, executive)
+7. confidence_score: (0-100)
+Trả về JSON thuần túy:"""
 
         try:
             response = self.model.generate_content(prompt)
             result_text = response.text.strip()
+            result = self._parse_json(result_text)
             
-            # Remove markdown code blocks if present
-            if result_text.startswith("```"):
-                result_text = result_text.split("```")[1]
-                if result_text.startswith("json"):
-                    result_text = result_text[4:]
-                result_text = result_text.strip()
-            
-            result = json.loads(result_text)
-            
-            # Validate and normalize
             result["sentiment"] = result.get("sentiment", "neutral")
             result["risk_score"] = float(result.get("risk_score", 50))
             result["crisis_level"] = int(result.get("crisis_level", 2))
-            result["summary_vi"] = result.get("summary_vi", "Không có tóm tắt")
+            result["summary_vi"] = result.get("summary_vi", "")
             result["suggested_action"] = result.get("suggested_action", "monitor")
             result["responsible_department"] = result.get("responsible_department", "customer_service")
-            result["urgency"] = result.get("urgency", "low")
-            result["response_type"] = result.get("response_type", "monitor_only")
-            result["recommended_owner"] = result.get("recommended_owner", "CS Staff")
-            result["deadline_suggestion"] = result.get("deadline_suggestion", "N/A")
-            result["escalation_needed"] = bool(result.get("escalation_needed", False))
-            result["why_it_matters"] = result.get("why_it_matters", "")
             
-            # Vietnamese Context fields
-            result["vietnamese_context_label"] = result.get("vietnamese_context_label", "")
-            result["tone"] = result.get("tone", "")
-            result["sarcasm_possible"] = bool(result.get("sarcasm_possible", False))
-            result["complaint_type"] = result.get("complaint_type", "")
-            result["sensitive_signal"] = bool(result.get("sensitive_signal", False))
-            result["explanation"] = result.get("explanation", "")
-            
-            result["confidence_score"] = float(result.get("confidence_score", 80))
             result["processing_time_ms"] = int((time.time() - start_time) * 1000)
-            result["ai_provider"] = "openai"
-            result["model_version"] = getattr(self, "model", None) or getattr(settings, "OPENAI_MODEL", "gpt-4")
-            
+            result["ai_provider"] = self.name
+            result["model_version"] = self.model_name
             return result
-            
         except Exception as e:
-            # Do not fallback to dummy analysis. Fail gracefully.
-            logger = logging.getLogger(__name__)
-            logger.error(f"Gemini analysis failed: {e}")
-            raise ValueError(f"Gemini analysis failed: {e}")
+            self._handle_gemini_error(e)
 
     def generate_executive_brief(self, content: str) -> Dict:
         prompt = f"""Tạo báo cáo điều hành (Executive Brief) cho nội dung sau:
-
-Nội dung:
 {content}
-
-Bạn phải trả về JSON thuần túy (không markdown) với cấu trúc sau:
+Bạn phải trả về JSON thuần túy:
 {{
-  "summary_3_lines": "Tóm tắt đúng 3 gạch đầu dòng: 1. Chuyện gì xảy ra? 2. Mức độ nghiêm trọng? 3. Cần quyết định/hành động gì?",
-  "zalo_brief": "Báo cáo cực ngắn, súc tích, phong cách Zalo (có dùng emoji phù hợp) để gửi trong group chat lãnh đạo.",
-  "full_brief": "Báo cáo đầy đủ gồm: bối cảnh, phân tích rủi ro, cảm xúc đám đông, và đề xuất chi tiết.",
+  "summary_3_lines": "...",
+  "zalo_brief": "...",
+  "full_brief": "...",
   "risk_level": "low/medium/high/critical",
-  "recommended_decision": "Quyết định đề xuất ngắn gọn",
-  "owner": "Người/Bộ phận phụ trách",
-  "deadline": "Thời hạn xử lý đề xuất (VD: Trong vòng 2h)"
-}}
-
-Tuyệt đối chỉ trả về JSON, không có code block markdown:"""
-
+  "recommended_decision": "...",
+  "owner": "...",
+  "deadline": "..."
+}}"""
         try:
             response = self.model.generate_content(prompt)
-            result_text = response.text.strip()
-            
-            if result_text.startswith("```"):
-                result_text = result_text.split("```")[1]
-                if result_text.startswith("json"):
-                    result_text = result_text[4:]
-                result_text = result_text.strip()
-            
-            return json.loads(result_text)
-            
+            return self._parse_json(response.text.strip())
         except Exception as e:
-            print(f"Gemini brief generation failed: {e}")
-            return super().generate_executive_brief(content)
+            self._handle_gemini_error(e)
 
     def expand_keyword(self, keyword: str) -> list[str]:
-        prompt = f"""You are an SEO and search expert. Given the primary keyword '{keyword}', generate 5 highly relevant alternative keywords or synonyms (in Vietnamese if the keyword is Vietnamese) that a user might use to search for this entity/topic on the internet. Return ONLY a valid JSON array of strings. Do not include markdown formatting or any other text. Example: ["keyword1", "keyword2"]"""
+        prompt = f"""Given the keyword '{keyword}', generate 5 synonyms. Return ONLY a valid JSON array of strings."""
         try:
             response = self.model.generate_content(prompt)
-            result_text = response.text.strip()
-            if result_text.startswith("```"):
-                result_text = result_text.split("```")[1]
-                if result_text.startswith("json"):
-                    result_text = result_text[4:]
-                result_text = result_text.strip()
-            expansions = json.loads(result_text)
-            if isinstance(expansions, list):
-                return [str(e) for e in expansions]
+            res = self._parse_json(response.text.strip())
+            if isinstance(res, list): return [str(x) for x in res]
             return []
         except Exception as e:
-            print(f"Gemini Keyword expansion failed: {e}")
-            return []
+            self._handle_gemini_error(e)
+
+    def draft_response(self, prompt: str, max_tokens: int = 300) -> str:
+        try:
+            response = self.model.generate_content(prompt)
+            return response.text.strip()
+        except Exception as e:
+            self._handle_gemini_error(e)
 
 
 # ============================================================================
-# PHOBERT PROVIDER (Vietnamese NLP)
+# PHOBERT PROVIDER (Legacy/Offline fallback if needed)
 # ============================================================================
 
 class PhoBERTProvider(AIProvider):
-    """
-    PhoBERT-based Vietnamese sentiment analysis provider.
-    Uses HuggingFace transformers pipeline with wonrax/phobert-base-vietnamese-sentiment.
-    
-    Mô hình PhoBERT được pre-train trên dữ liệu tiếng Việt, cho kết quả chính xác hơn
-    so với các mô hình đa ngôn ngữ khi phân tích cảm xúc tiếng Việt.
-    
-    Requirements:
-        pip install transformers torch
-        (Lưu ý: ~2GB dependencies, chỉ cài khi cần dùng PhoBERT)
-    """
-    
+    @property
+    def name(self) -> str:
+        return "phobert"
+        
+    def is_configured(self) -> bool:
+        return getattr(self, "_available", False)
+        
     def __init__(self):
         try:
             from transformers import pipeline
-            # wonrax/phobert-base-vietnamese-sentiment phân loại 3 nhãn:
-            # NEG (Negative), POS (Positive), NEU (Neutral)
-            self.classifier = pipeline(
-                "sentiment-analysis",
-                model="wonrax/phobert-base-vietnamese-sentiment",
-                tokenizer="wonrax/phobert-base-vietnamese-sentiment",
-                max_length=256,
-                truncation=True
-            )
+            self.classifier = pipeline("sentiment-analysis", model="wonrax/phobert-base-vietnamese-sentiment", tokenizer="wonrax/phobert-base-vietnamese-sentiment", max_length=256, truncation=True)
             self._available = True
-        except ImportError:
-            print("WARNING: transformers/torch not installed. PhoBERT unavailable.")
-            print("Install with: pip install transformers torch")
+        except Exception:
             self._available = False
-        except Exception as e:
-            print(f"WARNING: Failed to load PhoBERT model: {e}")
-            self._available = False
-    
+
     def analyze_mention(self, content: str, title: Optional[str] = None) -> Dict:
-        start_time = time.time()
+        raise AIProviderMalformedResponseError("PhoBERT unavailable")
         
-        # PhoBERT not fully supported in this context without dependencies
-        if not self._available:
-            raise ValueError("PhoBERT model is unavailable. Please install required dependencies.")
-        
-        full_text = f"{title} {content}" if title else content
-        # Truncate cho PhoBERT (max 256 tokens)
-        full_text = full_text[:512]
-        
-        try:
-            # Chạy sentiment classification
-            results = self.classifier(full_text)
-            # results = [{'label': 'POS'/'NEG'/'NEU', 'score': 0.95}]
-            
-            label = results[0]["label"].upper()
-            score = results[0]["score"]
-            
-            # Map PhoBERT labels → SentimentScore enum values
-            if label == "POS":
-                sentiment = "positive"
-                risk_score = max(0, 30 - (score * 25))
-                crisis_level = 1
-            elif label == "NEU":
-                sentiment = "neutral"
-                risk_score = 30 + (1 - score) * 10
-                crisis_level = 1
-            else:  # NEG
-                sentiment = "negative"
-                # Phân loại mức độ tiêu cực dựa trên confidence score để tính risk_score
-                if score >= 0.9:
-                    risk_score = 80 + (score - 0.9) * 200  # 80-100
-                    crisis_level = 4
-                elif score >= 0.7:
-                    risk_score = 55 + (score - 0.7) * 125  # 55-80
-                    crisis_level = 3
-                else:
-                    risk_score = 35 + (score - 0.5) * 100  # 35-55
-                    crisis_level = 2
-            
-            risk_score = min(max(risk_score, 0), 100)
-            
-            # Kiểm tra thêm crisis keywords để tăng chính xác
-            # (bổ sung cho PhoBERT vì model có thể miss context nguy hiểm)
-            content_lower = full_text.lower()
-            crisis_keywords = [
-                'chết', 'tử vong', 'nguy hiểm', 'cấp cứu', 'kiện',
-                'tòa án', 'bê bối', 'rò rỉ', 'hack', 'cháy', 'tai nạn',
-                'độc hại', 'nhiễm độc'
-            ]
-            crisis_found = sum(1 for kw in crisis_keywords if kw in content_lower)
-            if crisis_found > 0:
-                risk_score = min(risk_score + crisis_found * 15, 100)
-                crisis_level = max(crisis_level, 4)
-                if sentiment == "negative" or label == "NEG":
-                    sentiment = "negative"
-            
-            # Tạo summary tiếng Việt
-            sentiment_labels = {
-                "positive": "Nội dung tích cực, phản hồi tốt từ người dùng.",
-                "neutral": "Nội dung trung lập, không có ý kiến rõ ràng.",
-                "negative": "Nội dung tiêu cực. Có thể cần theo dõi và phản hồi.",
-            }
-            summary_vi = sentiment_labels.get(sentiment, "Đang phân tích...")
-            
-            if crisis_level >= 4:
-                summary_vi = "Phát hiện nội dung tiêu cực nghiêm trọng. Cần xem xét và xử lý ngay."
-            
-            # Suggested action
-            if crisis_level >= 4:
-                suggested_action = "legal_review"
-                responsible_department = "legal"
-            elif crisis_level >= 3:
-                suggested_action = "escalate"
-                responsible_department = "executive"
-            elif risk_score >= 50:
-                suggested_action = "respond"
-                responsible_department = "PR"
-            else:
-                suggested_action = "monitor"
-                responsible_department = "customer_service"
-            
-            processing_time_ms = int((time.time() - start_time) * 1000)
-            
-            return {
-                "sentiment": sentiment,
-                "risk_score": round(risk_score, 1),
-                "crisis_level": crisis_level,
-                "summary_vi": summary_vi,
-                "suggested_action": suggested_action,
-                "responsible_department": responsible_department,
-                "urgency": "high" if crisis_level >= 4 else "low",
-                "response_type": "monitor_only",
-                "recommended_owner": "Manager",
-                "deadline_suggestion": "24h",
-                "escalation_needed": crisis_level >= 3,
-                "why_it_matters": "Xác định rủi ro dựa trên mô hình ngôn ngữ.",
-                "confidence_score": round(score * 100, 2),
-                "processing_time_ms": processing_time_ms,
-                "ai_provider": "phobert",
-            }
-            
-        except Exception as e:
-            logger = logging.getLogger(__name__)
-            logger.error(f"PhoBERT analysis failed: {e}")
-            raise ValueError(f"PhoBERT analysis failed: {e}")
+    def generate_executive_brief(self, content: str) -> Dict:
+        raise AIProviderMalformedResponseError("PhoBERT does not support executive brief.")
 
     def expand_keyword(self, keyword: str) -> list[str]:
         return []
 
+    def draft_response(self, prompt: str, max_tokens: int = 300) -> str:
+        return "Không hỗ trợ bởi PhoBERT."
 
 
 # ============================================================================
-# AI SERVICE FACTORY
+# AI PROVIDER MANAGER (FAILOVER CHAIN)
 # ============================================================================
 
-def get_ai_provider() -> AIProvider:
-    """
-    Get the configured AI provider based on settings
+class AIProviderManager:
+    """Manages the AI provider chain, cooldowns, and routing."""
     
-    Returns:
-        AIProvider instance
-    """
-    provider_name = settings.AI_PROVIDER.lower()
-    is_production = settings.ENVIRONMENT.lower() == "production"
-    
-    if provider_name == "openai":
-        api_key = settings.OPENAI_API_KEY
-        if not api_key:
-            raise ValueError("OPENAI_API_KEY is not configured.")
-        return OpenAIProvider(api_key)
-    
-    elif provider_name == "gemini":
-        api_key = settings.GEMINI_API_KEY
-        if not api_key:
-            raise ValueError("GEMINI_API_KEY is not configured.")
-        return GeminiProvider(api_key)
-    
-    elif provider_name == "phobert":
-        provider = PhoBERTProvider()
-        if provider._available:
-            return provider
-        raise ValueError("PhoBERT model is unavailable.")
-    
-    else:
-        raise ValueError(f"Unknown or unsupported AI provider '{provider_name}'.")
+    def __init__(self):
+        self._providers: Dict[str, AIProvider] = {}
+        self._cooldowns: Dict[str, float] = {}
+        
+        gemini = GeminiProvider()
+        if gemini.is_configured(): self._providers["gemini"] = gemini
+        
+        grok = GrokProvider()
+        if grok.is_configured(): self._providers["grok"] = grok
+        
+        openai_prov = OpenAIProvider()
+        if openai_prov.is_configured(): self._providers["openai"] = openai_prov
+        
+        chain_str = getattr(settings, "AI_PROVIDER_CHAIN", None)
+        if chain_str:
+            self._chain = [p.strip().lower() for p in chain_str.split(",") if p.strip()]
+        else:
+            legacy = getattr(settings, "AI_PROVIDER", None)
+            if legacy:
+                self._chain = [legacy.lower()]
+            else:
+                self._chain = ["gemini", "grok"]
+                
+        self.last_successful_provider = None
+        self.last_error_category = None
 
+    def get_status(self) -> Dict:
+        now = time.time()
+        cooldown_state = {}
+        for p, ts in self._cooldowns.items():
+            rem = int(ts + settings.AI_PROVIDER_COOLDOWN_SECONDS - now)
+            if rem > 0:
+                cooldown_state[p] = f"{rem}s remaining"
+        
+        return {
+            "chain": self._chain,
+            "configured_providers": list(self._providers.keys()),
+            "active_cooldowns": cooldown_state,
+            "last_successful_provider": self.last_successful_provider,
+            "last_error_category": self.last_error_category,
+            "ai_available": any(p in self._providers and (p not in self._cooldowns or now > self._cooldowns[p] + settings.AI_PROVIDER_COOLDOWN_SECONDS) for p in self._chain)
+        }
+
+    def _execute_with_failover(self, method_name: str, *args, **kwargs) -> Any:
+        """Executes an AI method with provider failover."""
+        now = time.time()
+        last_exception = None
+        
+        # Clean up expired cooldowns
+        expired = [p for p, ts in self._cooldowns.items() if now > ts + settings.AI_PROVIDER_COOLDOWN_SECONDS]
+        for p in expired:
+            del self._cooldowns[p]
+
+        for provider_name in self._chain:
+            if provider_name not in self._providers:
+                continue
+                
+            if provider_name in self._cooldowns:
+                continue # Skip provider in cooldown
+                
+            provider = self._providers[provider_name]
+            method = getattr(provider, method_name)
+            
+            for attempt in range(settings.AI_PROVIDER_MAX_RETRIES):
+                try:
+                    result = method(*args, **kwargs)
+                    self.last_successful_provider = provider_name
+                    self.last_error_category = None
+                    return result
+                except AIInternalValidationError as e:
+                    # Internal bugs (like empty content or invalid inputs) should fail immediately without rotating.
+                    logger.error(f"AIInternalValidationError: {str(e)}")
+                    self.last_error_category = "internal_validation_error"
+                    raise RuntimeError(f"Internal Validation Error: {str(e)}")
+                except AIProviderMalformedResponseError as e:
+                    # Provider-specific malformed response. Move to next provider.
+                    logger.warning(f"AIProviderMalformedResponseError on {provider_name}: {str(e)}")
+                    self.last_error_category = "provider_malformed_response"
+                    last_exception = e
+                    break # Break retry loop, move to next provider
+                except AIAuthError as e:
+                    logger.error(f"AIAuthError on {provider_name}: {str(e)}. Placing in cooldown.")
+                    self._cooldowns[provider_name] = time.time()
+                    self.last_error_category = "auth_error"
+                    last_exception = e
+                    break # Break retry loop, move to next provider
+                except AITemporaryError as e:
+                    logger.warning(f"AITemporaryError on {provider_name}: {str(e)}. Placing in cooldown.")
+                    self._cooldowns[provider_name] = time.time()
+                    self.last_error_category = "temporary_error"
+                    last_exception = e
+                    break # Break retry loop, move to next provider
+                except Exception as e:
+                    logger.error(f"Unknown error on {provider_name}: {str(e)}")
+                    self.last_error_category = "unknown_error"
+                    last_exception = e
+                    break
+        
+        # If we got here, all providers failed or chain is empty
+        logger.error(f"All AI providers in chain failed. Last error: {str(last_exception)}")
+        raise RuntimeError(f"AI Service Unavailable. Last error: {self.last_error_category} - {str(last_exception)}")
+
+
+# Global Manager Instance
+manager = AIProviderManager()
+
+def get_ai_status() -> Dict:
+    return manager.get_status()
+
+# ============================================================================
+# PUBLIC API WRAPPERS
+# ============================================================================
 
 def analyze_mention(content: str, title: Optional[str] = None) -> Dict:
-    """
-    Analyze a mention using the configured AI provider
-    
-    Args:
-        content: The mention content to analyze
-        title: Optional title of the mention
-    
-    Returns:
-        Analysis results dictionary
-    """
-    provider = get_ai_provider()
-    return provider.analyze_mention(content, title)
+    # Let the RuntimeError bubble up to callers so they know it failed and avoid saving fake AIAnalysis rows.
+    return manager._execute_with_failover("analyze_mention", content, title)
 
+def generate_executive_brief(content: str) -> Dict:
+    return manager._execute_with_failover("generate_executive_brief", content)
 
-# Removed analyze_mention_with_dummy_ai for production constraints
-
-
-# ============================================================================
-# REPUTATION HANDLING DRAFTS
-# ============================================================================
+def expand_keyword(keyword: str) -> list[str]:
+    try:
+        return manager._execute_with_failover("expand_keyword", keyword)
+    except RuntimeError:
+        return []
 
 async def draft_reputation_response(case) -> str:
-    # Build content context from evidence
     evidence_texts = [e.captured_text for e in case.evidence] if case.evidence else []
     context = "\n".join(evidence_texts)
-    
-    prompt = f"""Dự thảo một phản hồi CÔNG KHAI, lịch sự và chuyên nghiệp cho bình luận/bài viết sau:
-Nội dung gốc: {context}
-
-Yêu cầu:
-1. Giữ giọng văn bình tĩnh, tôn trọng, giải quyết vấn đề.
-2. KHÔNG nhận lỗi nếu chưa có kết luận rõ ràng.
-3. Mời khách hàng liên hệ qua kênh riêng (inbox, email, hotline) để giải quyết chi tiết.
-4. KHÔNG dùng ngôn ngữ tấn công hoặc đe dọa.
-5. Ngắn gọn, súc tích (dưới 100 chữ)."""
-    
-    try:
-        provider = get_ai_provider()
-        if hasattr(provider, 'client'):
-            response = provider.client.chat.completions.create(
-                model="gpt-4",
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.7,
-                max_tokens=300
-            )
-            return response.choices[0].message.content.strip()
-        elif hasattr(provider, 'model'):
-            response = provider.model.generate_content(prompt)
-            return response.text.strip()
-    except Exception as e:
-        logger.error(f"AI draft response failed: {e}")
-        
-    return "Chào bạn, chúng tôi đã ghi nhận thông tin và đang tiến hành kiểm tra. Bạn vui lòng kiểm tra hộp thư tin nhắn hoặc cung cấp thêm thông tin liên hệ để chúng tôi hỗ trợ kịp thời nhé. Cảm ơn bạn!"
+    prompt = f"Dự thảo phản hồi CÔNG KHAI: {context}"
+    return manager._execute_with_failover("draft_response", prompt, 300)
 
 async def draft_correction_request(case) -> str:
     evidence_texts = [e.captured_text for e in case.evidence] if case.evidence else []
     context = "\n".join(evidence_texts)
-    
-    prompt = f"""Dự thảo MỘT EMAIL/CÔNG VĂN YÊU CẦU ĐÍNH CHÍNH thông tin sai lệch:
-Nội dung sai lệch đang lan truyền: {context}
-
-Yêu cầu:
-1. Giọng văn trang trọng, pháp lý, cứng rắn nhưng lịch sự.
-2. Trích dẫn URL gốc: {case.source_url or 'không rõ'}.
-3. Yêu cầu tác giả/nền tảng gỡ bỏ hoặc đính chính thông tin trong vòng 24-48 giờ.
-4. Nhấn mạnh việc bảo lưu quyền sử dụng các biện pháp pháp lý nếu không hợp tác.
-5. Ngắn gọn (1-2 đoạn)."""
-    
-    try:
-        provider = get_ai_provider()
-        if hasattr(provider, 'client'):
-            response = provider.client.chat.completions.create(
-                model="gpt-4",
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.4,
-                max_tokens=500
-            )
-            return response.choices[0].message.content.strip()
-        elif hasattr(provider, 'model'):
-            response = provider.model.generate_content(prompt)
-            return response.text.strip()
-    except Exception as e:
-        logger.error(f"AI draft correction failed: {e}")
-        
-    return "Kính gửi Bộ phận phụ trách/Tác giả bài viết,\n\nChúng tôi phát hiện nội dung bài viết tại liên kết trên chứa thông tin không chính xác, gây ảnh hưởng đến danh tiếng công ty chúng tôi. Chúng tôi yêu cầu gỡ bỏ hoặc đính chính thông tin này trong thời gian sớm nhất.\n\nTrân trọng,"
+    prompt = f"Dự thảo EMAIL YÊU CẦU ĐÍNH CHÍNH: {context}"
+    return manager._execute_with_failover("draft_response", prompt, 500)
 
 async def draft_platform_report(case) -> str:
     evidence_texts = [e.captured_text for e in case.evidence] if case.evidence else []
     context = "\n".join(evidence_texts)
-    
-    prompt = f"""Dự thảo lý do BÁO CÁO VI PHẠM (Report) gửi cho đội ngũ hỗ trợ của nền tảng {case.platform or 'Mạng xã hội'}:
-Nội dung vi phạm: {context}
-URL vi phạm: {case.source_url}
-
-Yêu cầu:
-1. Nêu rõ nội dung vi phạm điều khoản nào (ví dụ: bôi nhọ danh dự, spam, tin giả, mạo danh).
-2. Trình bày ngắn gọn, dễ hiểu để kiểm duyệt viên nền tảng đọc nhanh (dưới 100 chữ).
-3. Bằng tiếng Việt và Tiếng Anh (nếu là nền tảng quốc tế)."""
-    
-    try:
-        provider = get_ai_provider()
-        if hasattr(provider, 'client'):
-            response = provider.client.chat.completions.create(
-                model="gpt-4",
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.3,
-                max_tokens=300
-            )
-            return response.choices[0].message.content.strip()
-        elif hasattr(provider, 'model'):
-            response = provider.model.generate_content(prompt)
-            return response.text.strip()
-    except Exception as e:
-        logger.error(f"AI draft report failed: {e}")
-        
-    return "Nội dung này vi phạm chính sách cộng đồng (lan truyền thông tin sai lệch/bôi nhọ danh dự). Vui lòng xem xét và gỡ bỏ."
+    prompt = f"Dự thảo BÁO CÁO VI PHẠM: {context}"
+    return manager._execute_with_failover("draft_response", prompt, 300)
 
 async def draft_executive_brief(case) -> str:
     evidence_texts = [e.captured_text for e in case.evidence] if case.evidence else []
     context = "\n".join(evidence_texts)
-    
-    prompt = f"""Dự thảo một ĐOẠN TÓM TẮT DÀNH CHO LÃNH ĐẠO (Executive Brief) về sự cố sau:
-Tiêu đề: {case.title}
-Mức rủi ro: {case.risk_level}
-Nội dung tóm tắt: {context[:500]}
-
-Yêu cầu:
-1. Format 3 gạch đầu dòng: (1) Tình hình, (2) Đánh giá rủi ro, (3) Đề xuất xử lý.
-2. Ngắn gọn, đi thẳng vào vấn đề.
-3. Không markdown code block."""
-
-    try:
-        provider = get_ai_provider()
-        if hasattr(provider, 'client'):
-            response = provider.client.chat.completions.create(
-                model="gpt-4",
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.3,
-                max_tokens=300
-            )
-            return response.choices[0].message.content.strip()
-        elif hasattr(provider, 'model'):
-            response = provider.model.generate_content(prompt)
-            return response.text.strip()
-    except Exception as e:
-        logger.error(f"AI brief failed: {e}")
-        
-    return "- Tình hình: Đang có bài viết/phản ánh có thể ảnh hưởng danh tiếng.\n- Đánh giá: Cần chú ý theo dõi.\n- Đề xuất: Chờ thu thập thêm bằng chứng và lên phương án phản hồi."
+    prompt = f"Dự thảo TÓM TẮT DÀNH CHO LÃNH ĐẠO: {context}"
+    return manager._execute_with_failover("draft_response", prompt, 300)

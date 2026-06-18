@@ -687,23 +687,10 @@ def run_discovery_job(db: Session, job_id: int) -> DiscoveryJob:
                 db.add(ai_analysis)
             except Exception as ai_err:
                 logger.info(f"AI analysis skipped for discovery mention: {ai_err}")
-                # Create a placeholder analysis
                 try:
-                    from app.models.mention import AIAnalysis
-                    ai_analysis = AIAnalysis(
-                        mention_id=mention.id,
-                        sentiment="neutral",
-                        risk_score=0.0,
-                        crisis_level=1,
-                        summary_vi="AI chưa cấu hình, mention đã được lưu nhưng chưa phân tích AI.",
-                        suggested_action="monitor",
-                        responsible_department="customer_service",
-                        confidence_score=0.0,
-                        ai_provider="skipped",
-                        model_version="1.0",
-                        processing_time_ms=0,
-                    )
-                    db.add(ai_analysis)
+                    mention.verification_status = "failed"
+                    mention.verification_error = f"AI analysis failed: {str(ai_err)}"
+                    db.add(mention)
                 except Exception:
                     pass
 

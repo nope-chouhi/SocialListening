@@ -32,10 +32,28 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440  # 24 hours
     
-    # AI Provider
-    AI_PROVIDER: str = "openai"  # openai, gemini, anthropic, deepseek
-    OPENAI_API_KEY: str = ""
+    # AI Provider Failover Chain
+    AI_PROVIDER_CHAIN: str = "gemini,grok"
+    AI_PROVIDER: Optional[str] = None  # Legacy fallback
+    
+    # Gemini
     GEMINI_API_KEY: str = ""
+    GEMINI_MODEL: str = "gemini-2.5-flash"
+    
+    # Grok (xAI)
+    GROK_API_KEY: str = ""
+    GROK_MODEL: str = "grok-4.3"
+    GROK_BASE_URL: str = "https://api.x.ai/v1"
+    
+    # OpenAI (optional)
+    OPENAI_API_KEY: str = ""
+    OPENAI_MODEL: str = "gpt-4"
+    
+    # Provider Settings
+    AI_PROVIDER_TIMEOUT_SECONDS: int = 30
+    AI_PROVIDER_COOLDOWN_SECONDS: int = 300
+    AI_PROVIDER_MAX_RETRIES: int = 1
+    
     ANTHROPIC_API_KEY: str = ""
     DEEPSEEK_API_KEY: str = ""
     

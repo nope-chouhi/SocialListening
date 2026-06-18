@@ -1413,8 +1413,14 @@ function MentionsPageContent() {
                              {mention.ai_analysis?.ai_provider && (
                                <>
                                  <span>•</span>
-                                 <span className="bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400 px-1.5 py-0.5 rounded text-[10px] font-bold">
-                                   {(mention.ai_analysis.ai_provider.includes('gemini') || mention.ai_analysis.ai_provider.includes('openai')) ? 'Real AI' : 'Fallback AI'}
+                                 <span className={
+                                   mention.ai_analysis.ai_provider === 'failed' 
+                                   ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 px-1.5 py-0.5 rounded text-[10px] font-bold" 
+                                   : "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400 px-1.5 py-0.5 rounded text-[10px] font-bold"
+                                 }>
+                                   {mention.ai_analysis.ai_provider === 'failed' ? 'AI FAILED' : 
+                                    ['dummy', 'dummy_ai'].includes(mention.ai_analysis.ai_provider) ? 'RULE-BASED' : 
+                                    mention.ai_analysis.ai_provider.toUpperCase()}
                                  </span>
                                </>
                              )}
