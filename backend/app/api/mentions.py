@@ -204,6 +204,8 @@ def list_mentions(
                         cached_val = r.get(cache_key)
                         if cached_val:
                             return json.loads(cached_val)
+                except ImportError:
+                    pass
                 except Exception:
                     pass
                 
@@ -564,6 +566,8 @@ def list_mentions(
                     if hasattr(settings, "REDIS_URL") and settings.REDIS_URL:
                         r = redis.from_url(settings.REDIS_URL, decode_responses=True)
                         r.setex(cache_key, 60, json.dumps(response_data))
+                except ImportError:
+                    pass
                 except Exception:
                     pass
                 

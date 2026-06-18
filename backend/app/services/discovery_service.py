@@ -571,17 +571,19 @@ def run_discovery_job(db: Session, job_id: int) -> DiscoveryJob:
 
         if content_hash:
             existing = db.execute(
-                select(Mention).where(Mention.content_hash == content_hash)
-            ).scalar_one_or_none()
+                select(Mention).where(Mention.content_hash == content_hash).order_by(Mention.id.desc())
+            ).scalars().first()
             if existing:
                 is_duplicate = True
+                logger.info(f"Duplicate found by hash: {content_hash}")
 
         if not is_duplicate:
             existing_by_url = db.execute(
-                select(Mention).where(Mention.url == normalized_url)
-            ).scalar_one_or_none()
+                select(Mention).where(Mention.url == normalized_url).order_by(Mention.id.desc())
+            ).scalars().first()
             if existing_by_url:
                 is_duplicate = True
+                logger.info(f"Duplicate found by url: {normalized_url}")
 
         if is_duplicate:
             job.duplicates_skipped = (job.duplicates_skipped or 0) + 1

@@ -15,6 +15,7 @@ from sqlalchemy import select, and_
 from app.core.database import SessionLocal
 from app.models.source import Source, CrawlFrequency
 from app.models.crawl import CrawlJob, CrawlJobStatus
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 

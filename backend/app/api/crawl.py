@@ -145,9 +145,10 @@ def manual_scan(
                     cached_val = r.get(cache_key)
                     if cached_val:
                         cached_expansions = json.loads(cached_val)
+            except ImportError:
+                pass
             except Exception as e:
-                import logging
-                logging.error(f"Redis cache error: {e}")
+                pass
                 
             # Try RAM cache fallback
             if cached_expansions is None and q_lower in _EXPANDED_KEYWORDS_CACHE:
@@ -249,7 +250,7 @@ def manual_scan(
     existing_jobs = db.execute(
         select(CrawlJob).where(
             or_(
-                and_(CrawlJob.status.in_([CrawlJobStatus.PENDING, CrawlJobStatus.RUNNING]), CrawlJob.started_at > recent_limit_active),
+                and_(CrawlJob.status.in_([CrawlJobStatus.PENDING, CrawlJobStatus.RUNNING]), CrawlJob.created_at > recent_limit_active),
                 and_(CrawlJob.status == CrawlJobStatus.COMPLETED, CrawlJob.completed_at > recent_limit_completed)
             )
         )
