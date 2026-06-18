@@ -91,8 +91,11 @@ async def lifespan(app: FastAPI):
     if enable_scheduler:
         try:
             from app.services.scheduler_service import start_scheduler
-            start_scheduler(is_embedded=os.getenv("ENABLE_EMBEDDED_SCHEDULER", "false").lower() == "true")
-            logger.info("Background scheduler started")
+            is_started = start_scheduler(is_embedded=os.getenv("ENABLE_EMBEDDED_SCHEDULER", "false").lower() == "true")
+            if is_started:
+                logger.info("Background scheduler started")
+            else:
+                logger.warning("Scheduler start failed or was disabled")
         except Exception as e:
             logger.warning(f"Scheduler start failed: {e}")
 
