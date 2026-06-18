@@ -414,6 +414,8 @@ def crawl_source(db: Session, source_id: int, job_id: int = None) -> Dict:
             try:
                 from app.services.ai_service import analyze_mention as ai_analyze
                 analysis_result = ai_analyze(mention.content, mention.title)
+                if not analysis_result.get('ai_provider'):
+                    logger.error(f"AI Provider missing in analysis result for mention {mention.id}")
 
                 ai_analysis = AIAnalysis(
                     mention_id=mention.id,
@@ -424,8 +426,8 @@ def crawl_source(db: Session, source_id: int, job_id: int = None) -> Dict:
                     suggested_action=analysis_result.get('suggested_action', 'monitor'),
                     responsible_department=analysis_result.get('responsible_department', 'customer_service'),
                     confidence_score=analysis_result.get('confidence_score', 65.0),
-                    ai_provider=analysis_result.get('ai_provider', 'dummy'),
-                    model_version='1.0',
+                    ai_provider=analysis_result.get('ai_provider', 'unknown'),
+                    model_version=analysis_result.get('model_version', 'unknown'),
                     processing_time_ms=analysis_result.get('processing_time_ms', 0)
                 )
                 db.add(ai_analysis)

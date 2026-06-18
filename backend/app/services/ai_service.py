@@ -165,6 +165,8 @@ Trả về JSON thuần túy, không có markdown:"""
             
             result["confidence_score"] = float(result.get("confidence_score", 80))
             result["processing_time_ms"] = int((time.time() - start_time) * 1000)
+            result["ai_provider"] = "openai"
+            result["model_version"] = getattr(self, "model", None) or getattr(settings, "OPENAI_MODEL", "gpt-4")
             
             return result
             
@@ -343,6 +345,8 @@ Trả về JSON thuần túy, không có markdown:
             
             result["confidence_score"] = float(result.get("confidence_score", 80))
             result["processing_time_ms"] = int((time.time() - start_time) * 1000)
+            result["ai_provider"] = "openai"
+            result["model_version"] = getattr(self, "model", None) or getattr(settings, "OPENAI_MODEL", "gpt-4")
             
             return result
             
