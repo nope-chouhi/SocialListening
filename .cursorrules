@@ -1,0 +1,46 @@
+# Social Listening Platform / Nope - Agent Rules & Governance
+
+## 1. Project Identity
+- **Project Name**: Social Listening Platform / Nope.
+- **Backend Stack**: FastAPI, Python, PostgreSQL, Alembic (migrations).
+- **Frontend Stack**: Next.js, TypeScript, Tailwind CSS, shadcn/ui.
+- **Hosting / Infrastructure**: Render (backend & managed database), Vercel (frontend).
+
+## 2. Safety and Preservation
+- **Preserve Working Code**: Under no circumstances should you rewrite or refactor stable, completed modules unless explicitly requested.
+- **Lock Stable Features**: Do not break or negatively affect existing Auth, RBAC, Dashboard, Mention workflows, Keyword/Source CRUD, Alerts, Incidents, Admin Settings, Personal Settings, or deployment configurations.
+- **Minimal Footprint**: Any codebase changes must be minimal, highly targeted, easily reversible, and backward-compatible with the current architecture.
+
+## 3. No Fake Implementations (No Placeholders)
+- **Real Code Only**: Do not write fake UI, fake mock data, dummy API responses, or placeholder backend logic.
+- **No Mocked Success**: Do not simulate success states for production features (e.g., mock SMTP dispatch).
+- **Development Flagging**: Any temporary mock or test logic required for local development must be explicitly marked as such (e.g., prefixed with `DEV_ONLY_`) and must never be presented as production-ready.
+
+## 4. Production Blockers & Standards
+- **AI Analysis**: `analyze_mention_with_dummy_ai` is obsolete and must not be extended. Future AI analysis must integrate with a real provider (OpenAI, Gemini, or Anthropic).
+- **Automated Scanning**: Scheduled/automated scans must use a real, observable background job system (e.g., Celery, APScheduler).
+- **Notifications**: Notifications must send real emails (via SMTP) or trigger real webhooks. Do not use console logs or database flags as a substitute for real dispatch.
+- **Reporting**: Report generation must eventually support real PDF/Excel document export.
+- **Crawling**: Distinctly categorize crawling logic between simple static parsing (BeautifulSoup) and dynamic, JavaScript-heavy crawling (Playwright/Selenium).
+
+## 5. Database and API Safety
+- **Schema Protection**: Do not drop tables or columns without explicit approval from the user.
+- **Migration History**: Never modify or rewrite existing Alembic migration files (`alembic/versions/*`).
+- **Contract Safety**: Do not change API response formats or endpoint contracts without updating all dependent frontend/client code.
+
+## 6. Frontend Safety
+- **No Placeholders**: Do not replace fully functional Next.js pages with placeholder screens or "Coming Soon" tabs.
+- **Error Transparency**: Show actual errors or diagnostic messages. Do not hide failures behind fake success states.
+- **UX Preservation**: Keep theme (dark/light mode), layouts, paginations, filters, mention/dashboard cards, and RBAC visibility checks functional.
+
+## 7. Testing and Verification
+- **Verification Routine**: Before finishing a task, you must run:
+  1. Backend syntax/import check (e.g., `python -m compileall`).
+  2. Frontend TypeScript check (`npx tsc --noEmit` or similar).
+  3. Frontend production build (`npm run build`).
+  4. Git status check.
+
+## 8. Git and Deployment
+- **No Auto-Commits**: Never commit or push changes automatically unless explicitly requested after a diff has been shown.
+- **No Forced Pushes**: Never use force-push flags (`-f`, `--force`).
+- **Deploy Branch Protection**: Respect branch protection rules. If `deploy.bat` blocks deployment because the current branch is `main` or `master`, stop and report it immediately. Do not manually override or bypass branch constraints.
