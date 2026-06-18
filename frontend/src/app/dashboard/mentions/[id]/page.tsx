@@ -153,15 +153,25 @@ export default function MentionDetailPage() {
               </p>
             </div>
             <div className="mt-8 pt-5 border-t border-gray-800">
-              <a 
-                href={mention.url} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="inline-flex items-center text-indigo-400 hover:text-indigo-300 font-medium transition-colors"
-              >
-                <ExternalLink className="w-4 h-4 mr-2" />
-                Xem nguồn gốc
-              </a>
+              {(() => {
+                const bestUrl = mention.canonical_url || mention.url || mention.original_url;
+                if (!bestUrl || bestUrl.trim() === '' || bestUrl.startsWith('/')) return null;
+                const isFallback = bestUrl.startsWith('https://news.google.com');
+                return (
+                  <a 
+                    href={bestUrl} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className={`inline-flex items-center font-medium transition-colors ${
+                      isFallback ? 'text-amber-400 hover:text-amber-300' : 'text-indigo-400 hover:text-indigo-300'
+                    }`}
+                    title={isFallback ? "Fallback URL (Proxy)" : "Nguồn bài viết"}
+                  >
+                    <ExternalLink className="w-4 h-4 mr-2" />
+                    Xem nguồn gốc
+                  </a>
+                );
+              })()}
             </div>
           </div>
 

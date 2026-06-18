@@ -5,9 +5,12 @@ Supports multiple AI providers: OpenAI, Gemini, and Dummy (for testing)
 import os
 import time
 import json
+import logging
 from typing import Dict, Optional
 from abc import ABC, abstractmethod
 from app.core.config import settings
+
+logger = logging.getLogger(__name__)
 
 
 # ============================================================================

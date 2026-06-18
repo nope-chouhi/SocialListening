@@ -24,6 +24,20 @@ class SocialCrawlerService:
     def __init__(self):
         self.timeout = 30.0
         self.user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        self._url_cache = {}
+
+    async def _resolve_news_url(self, client: httpx.AsyncClient, url: str) -> str:
+        if url in self._url_cache:
+            return self._url_cache[url]
+        try:
+            # Short timeout, allow redirects
+            response = await client.get(url, timeout=5.0, follow_redirects=True)
+            final_url = str(response.url)
+            self._url_cache[url] = final_url
+            return final_url
+        except Exception as e:
+            logger.debug(f"Failed to resolve URL {url}: {e}")
+            return url
 
     async def crawl_twitter(self, keyword: str, limit: int = 50) -> List[Dict[str, Any]]:
         token = settings.TWITTER_BEARER_TOKEN or os.getenv("TWITTER_BEARER_TOKEN", "")
@@ -120,10 +134,10 @@ class SocialCrawlerService:
         try:
             root = ET.fromstring(xml_data)
             items = root.findall('.//item')
-            results = []
-            for item in items:
+            
+            async def process_item(client, item):
                 title = item.findtext('title', '')
-                link = item.findtext('link', '')
+                original_link = item.findtext('link', '')
                 pubDate = item.findtext('pubDate', '')
                 description = item.findtext('description', '')
                 source = item.find('source')
@@ -139,23 +153,40 @@ class SocialCrawlerService:
                         
                 clean_description = html.unescape(re.sub(r'<[^>]+>', '', description)) if description else ''
                 clean_content = clean_description or title
+                
+                final_link = await self._resolve_news_url(client, original_link) if original_link else ''
+                link_resolution_failed = (final_link == original_link) and original_link.startswith("https://news.google.com")
+                
+                domain = ""
+                if final_link:
+                    parsed = urllib.parse.urlparse(final_link)
+                    domain = parsed.netloc.replace("www.", "")
                         
-                results.append({
+                return {
                     "source": "google_news",
                     "platform": "news",
                     "source_type": "news",
                     "author": source_name,
                     "title": title,
                     "content": clean_content,
-                    "url": link,
+                    "url": final_link or original_link,
+                    "original_url": original_link,
+                    "domain": domain,
+                    "metadata": {"link_resolution_failed": link_resolution_failed} if link_resolution_failed else {},
                     "timestamp": ts,
                     "interactions": 0,
                     "reach_estimate": 500,
                     "platform_post_id": None,
-                })
-            return results
+                }
+            
+            import asyncio
+            async with httpx.AsyncClient(timeout=5.0, follow_redirects=True) as resolve_client:
+                coros = [process_item(resolve_client, item) for item in items[:30]] # Limit to 30 to avoid hanging
+                results = await asyncio.gather(*coros)
+            
+            return list(results)
         except Exception as e:
-            logger.warning(f"Google News XML parse failed for '{keyword}'. Reason: {e}")
+            logger.warning(f"Google News XML parse/resolve failed for '{keyword}'. Reason: {e}")
             return []
 
     async def crawl_news(self, keyword: str, limit: int = 50) -> List[Dict[str, Any]]:
