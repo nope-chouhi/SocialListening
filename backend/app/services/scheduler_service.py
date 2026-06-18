@@ -467,25 +467,43 @@ def get_worker_status(db: Session) -> dict:
             )
         ).scalars().all()
 
+        # Get last scan time
+        last_job = db.execute(
+            select(CrawlJob).where(CrawlJob.status == CrawlJobStatus.COMPLETED).order_by(CrawlJob.completed_at.desc()).limit(1)
+        ).scalar_one_or_none()
+        last_scan_at = last_job.completed_at.isoformat() if last_job and last_job.completed_at else None
+
+        # Get next scan time
+        next_scan_at = None
+        if scheduler_started:
+            for job in scheduler.get_jobs():
+                if job.id == 'scan_due_sources' and job.next_run_time:
+                    next_scan_at = job.next_run_time.isoformat()
+                    break
+
         return {
-            "scheduler_running": scheduler_started,
             "scheduler_enabled": os.getenv("SCHEDULER_ENABLED", "true").lower() == "true",
+            "worker_running": scheduler_started,
             "last_heartbeat": _last_heartbeat.isoformat() if _last_heartbeat else None,
             "last_error": _last_error,
             "active_sources": active_sources,
             "due_sources": due_sources,
             "running_jobs": len(list(running_jobs)),
-            "warning": None if scheduler_started else "Worker is not running. Background RSS scanning is disabled."
+            "warning": None if scheduler_started else "Worker is not running. Background RSS scanning is disabled.",
+            "last_scan_at": last_scan_at,
+            "next_scan_at": next_scan_at
         }
     except Exception as e:
         logger.error(f"Error getting worker status: {e}")
         return {
-            "scheduler_running": scheduler_started,
             "scheduler_enabled": False,
+            "worker_running": scheduler_started,
             "last_heartbeat": None,
             "last_error": str(e),
             "active_sources": 0,
             "due_sources": 0,
             "running_jobs": 0,
-            "warning": f"Error checking status: {e}"
+            "warning": f"Error checking status: {e}",
+            "last_scan_at": None,
+            "next_scan_at": None
         }

@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { auth } from '@/lib/api';
+import { auth, crawl } from '@/lib/api';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { SidebarBadge } from '@/components/dashboard/Badges';
 import { canAccessAdmin, type User } from '@/lib/permissions';
@@ -44,6 +44,46 @@ import {
   HelpCircle,
   Zap
 } from 'lucide-react';
+
+function WorkerStatusBadge() {
+  const [status, setStatus] = useState<any>(null);
+
+  useEffect(() => {
+    const fetchStatus = async () => {
+      try {
+        const data = await crawl.getWorkerStatus();
+        setStatus(data);
+      } catch (err) {}
+    };
+    fetchStatus();
+    const interval = setInterval(fetchStatus, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  if (!status) return null;
+
+  const isRunning = status.worker_running;
+  const isEnabled = status.scheduler_enabled;
+  
+  if (!isEnabled) {
+    return (
+      <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 bg-gray-100 dark:bg-gray-800 text-gray-500 text-[10px] font-bold rounded-full border border-gray-200 dark:border-gray-700" title="Worker is disabled">
+        <div className="w-2 h-2 rounded-full bg-gray-400"></div>
+        WORKER OFF
+      </div>
+    );
+  }
+
+  return (
+    <div 
+      className={`hidden sm:flex items-center gap-1.5 px-3 py-1 ${isRunning ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/50' : 'bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800/50'} text-[10px] font-bold rounded-full cursor-help transition-colors`}
+      title={isRunning ? `Worker Online. Running Jobs: ${status.running_jobs}. Due: ${status.due_sources}` : `Worker Offline! ${status.last_error || ''}`}
+    >
+      <div className={`w-2 h-2 rounded-full ${isRunning ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`}></div>
+      {isRunning ? 'WORKER ONLINE' : 'WORKER OFFLINE'}
+    </div>
+  );
+}
 
 function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges, setIsWebinarModalOpen, sidebarCollapsed, setSidebarCollapsed }: any) {
   const pathname = usePathname();
@@ -431,6 +471,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
           </Suspense>
 
           <div className="ml-auto flex items-center space-x-4">
+            <WorkerStatusBadge />
             <button onClick={() => toast('Billing/Upgrade coming soon', { icon: '⏳' })} className="hidden sm:flex items-center px-4 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-full transition-colors tracking-wide shadow-sm">
               UPGRADE
             </button>

@@ -103,6 +103,23 @@ def create_alert(
             detail=f"Má»©c Ä‘á»™ khÃ´ng há»£p lá»‡. Cho phÃ©p: {allowed_severities}"
         )
 
+    # Prevent duplicate active alert for the same mention
+    if body.mention_id:
+        existing = db.execute(
+            select(Alert).where(
+                and_(
+                    Alert.mention_id == body.mention_id,
+                    Alert.status.in_([AlertStatus.NEW, AlertStatus.ACKNOWLEDGED, AlertStatus.ASSIGNED])
+                )
+            )
+        ).scalar_one_or_none()
+        if existing:
+            return {
+                "id": existing.id,
+                "is_duplicate": True,
+                "message": "Cảnh báo cho mention này đã tồn tại"
+            }
+
     alert = Alert(
         mention_id=body.mention_id,
         title=body.title,
@@ -436,11 +453,14 @@ def check_alert_rules(
             ).scalars().all()
             
             if high_risk_mentions:
+                max_risk = max(m.risk_score for m in high_risk_mentions)
+                severity = AlertSeverity.CRITICAL if max_risk >= 90 else (AlertSeverity.HIGH if max_risk >= 80 else (AlertSeverity.MEDIUM if max_risk >= 60 else AlertSeverity.LOW))
+                
                 alert = Alert(
                     project_id=body.project_id,
                     title=f"High Risk Mentions: {body.name}",
-                    message=f"Found {len(high_risk_mentions)} mentions with risk score >= {body.threshold} in the last {body.window_hours}h",
-                    severity=AlertSeverity.CRITICAL if body.threshold >= 85 else AlertSeverity.HIGH,
+                    message=f"Found {len(high_risk_mentions)} mentions with max risk score {max_risk} in the last {body.window_hours}h",
+                    severity=severity,
                     status=AlertStatus.NEW,
                     user_id=current_user.id
                 )

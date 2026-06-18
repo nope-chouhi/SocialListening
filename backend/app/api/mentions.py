@@ -238,6 +238,7 @@ def list_mentions(
 
         # Mentions filtering directly
         query = query.where(Mention.verification_status != 'synthetic')
+        query = query.where(Mention.is_deleted == False)
         if project_id:
             query = query.where(Mention.project_id == project_id)
         if job_id:
@@ -291,7 +292,6 @@ def list_mentions(
                     Mention.title.ilike(search_term),
                     Mention.snippet.ilike(search_term),
                     Mention.content.ilike(search_term),
-                    Mention.domain.ilike(search_term),
                     Mention.keyword_text.ilike(search_term),
                 )
             )
@@ -309,6 +309,8 @@ def list_mentions(
         try:
             # Build base count query with same filters but without joins for counting
             count_base = apply_tenant_filter(select(Mention), Mention, current_user)
+            count_base = count_base.where(Mention.verification_status != 'synthetic')
+            count_base = count_base.where(Mention.is_deleted == False)
             
             # Apply the same filters to count query
             if source_id:
@@ -364,7 +366,6 @@ def list_mentions(
                         Mention.title.ilike(search_term),
                         Mention.snippet.ilike(search_term),
                         Mention.content.ilike(search_term),
-                        Mention.domain.ilike(search_term),
                         Mention.keyword_text.ilike(search_term),
                     )
                 )
@@ -397,9 +398,8 @@ def list_mentions(
             word_content = case((Mention.content.ilike(f"% {q} %"), 40), else_=0)
             sub_content = case((Mention.content.ilike(search_term), 20), else_=0)
             keyword_match = case((Mention.keyword_text.ilike(search_term), 50), else_=0)
-            domain_match = case((Mention.domain.ilike(search_term), 15), else_=0)
             
-            relevance_expr = exact_title + word_title + sub_title + word_content + sub_content + keyword_match + domain_match
+            relevance_expr = exact_title + word_title + sub_title + word_content + sub_content + keyword_match
 
         # Sorting
         if q and not job_id and relevance_expr is not None:

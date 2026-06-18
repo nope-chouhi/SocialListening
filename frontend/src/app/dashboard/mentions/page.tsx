@@ -1405,9 +1405,19 @@ function MentionsPageContent() {
                            <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-500 mt-1">
                              <span>{mention.domain || mention.source_type}</span>
                              <span>•</span>
-                             <span>Influence score: {mention.influence_score || 'N/A'}/10</span>
+                             <span>Influence: {mention.influence_score || 'N/A'}/10</span>
+                             <span>•</span>
+                             <span className={mention.risk_score && mention.risk_score >= 80 ? 'text-rose-600 font-bold' : ''}>Risk: {mention.risk_score ?? mention.ai_analysis?.risk_score ?? 'N/A'}</span>
                              <span>•</span>
                              <span>{mention.published_at ? new Date(mention.published_at).toLocaleString() : new Date(mention.collected_at!).toLocaleString()}</span>
+                             {mention.ai_analysis?.ai_provider && (
+                               <>
+                                 <span>•</span>
+                                 <span className="bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400 px-1.5 py-0.5 rounded text-[10px] font-bold">
+                                   {(mention.ai_analysis.ai_provider.includes('gemini') || mention.ai_analysis.ai_provider.includes('openai')) ? 'Real AI' : 'Fallback AI'}
+                                 </span>
+                               </>
+                             )}
                            </div>
                         </div>
                         {/* Sentiment Badge */}
