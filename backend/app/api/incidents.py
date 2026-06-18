@@ -10,6 +10,7 @@ from app.core.database import get_db
 from app.core.security import get_current_active_user
 from app.models.user import User
 from app.models.incident import Incident, IncidentStatus, IncidentLog
+from app.services.notification_service import notify_incident_assigned
 from app.core.tenant import apply_tenant_filter
 
 router = APIRouter()
@@ -31,6 +32,7 @@ class IncidentUpdateBody(BaseModel):
     resolution_notes: Optional[str] = None
     outcome: Optional[str] = None
     deadline: Optional[str] = None
+    owner_id: Optional[int] = None
 
 
 class IncidentLogBody(BaseModel):
@@ -182,6 +184,7 @@ def update_incident(
         raise HTTPException(status_code=404, detail="Incident not found")
 
     old_status = incident.status
+    old_owner_id = incident.owner_id
 
     if body.title is not None:
         incident.title = body.title
@@ -195,7 +198,10 @@ def update_incident(
         try:
             incident.deadline = datetime.fromisoformat(body.deadline.replace('Z', '+00:00'))
         except ValueError:
-            raise HTTPException(status_code=400, detail="Äá»‹nh dáº¡ng deadline khÃ´ng há»£p lá»‡")
+            raise HTTPException(status_code=400, detail="Định dạng deadline không hợp lệ")
+
+    if body.owner_id is not None:
+        incident.owner_id = body.owner_id
 
     if body.status is not None:
         # Validate status
@@ -227,6 +233,13 @@ def update_incident(
         )
         db.add(log)
         db.commit()
+
+    # Trigger notification if assigned
+    if body.owner_id is not None and old_owner_id != body.owner_id:
+        try:
+            notify_incident_assigned(db, incident.id, body.owner_id)
+        except Exception as e:
+            print(f"Notification failed for incident {incident.id}: {e}")
 
     return {
         "id": incident.id,

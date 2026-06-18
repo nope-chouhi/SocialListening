@@ -13,7 +13,8 @@ from app.models.keyword import Keyword
 from app.models.mention import Mention, AIAnalysis, SentimentScore
 from app.services.crawler_service import CrawlerService
 from app.services.social_crawler_service import social_crawler_service
-from app.services.sentiment_client import analyze_sentiment, map_to_ai_sentiment
+from app.services.ai_service import analyze_mention
+from app.services.notification_service import notify_high_risk_mention
 
 logger = logging.getLogger(__name__)
 crawler_service = CrawlerService()
@@ -21,12 +22,9 @@ crawler_service = CrawlerService()
 DEFAULT_PLATFORMS = ["reddit", "news"]  # twitter needs bearer token
 
 
-def _risk_from_sentiment(sentiment: str, score: float) -> float:
-    if sentiment == "negative":
-        return min(95.0, 50 + score * 45)
-    if sentiment == "positive":
-        return max(5.0, 20 - score * 15)
-    return 25.0
+def _risk_from_sentiment(sentiment: str, risk_score: float) -> float:
+    # Use the real risk score provided by AI, fallback logic below
+    return max(0.0, min(100.0, float(risk_score)))
 
 
 def _persist_mentions(db, raw_mentions: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
@@ -62,16 +60,28 @@ def _persist_mentions(db, raw_mentions: List[Dict[str, Any]]) -> List[Dict[str, 
             text_for_ai = f"{raw.get('title') or ''} {content}".strip()
             
             try:
-                sentiment_result = analyze_sentiment(text_for_ai)
-                simple_sentiment = sentiment_result.get("sentiment", "neutral")
-                confidence = float(sentiment_result.get("confidence", 0) or 0) * 100
+                analysis_result = analyze_mention(text_for_ai)
+                simple_sentiment = analysis_result.get("sentiment", "neutral")
+                confidence = float(analysis_result.get("confidence_score", 80.0))
+                risk_score_raw = analysis_result.get("risk_score", 0.0)
+                crisis_level = int(analysis_result.get("crisis_level", 1))
+                summary_vi = analysis_result.get("summary_vi", content[:200])
+                suggested_action = analysis_result.get("suggested_action", "monitor")
+                responsible_department = analysis_result.get("responsible_department", "PR")
+                ai_provider = analysis_result.get("ai_provider", "openai")
             except Exception as sentiment_error:
                 logger.warning(f"[SENTIMENT] Failed for {url}: {sentiment_error}")
-                sentiment_result = {}
+                # Fail gracefully by logging, but still record the mention without AI data
+                # Since AI analysis is critical for production, we leave the values null or neutral.
+                analysis_result = {}
                 simple_sentiment = "neutral"
                 confidence = 0.0
-                
-            ai_sentiment = map_to_ai_sentiment(simple_sentiment)
+                risk_score_raw = 0.0
+                crisis_level = 1
+                summary_vi = content[:200]
+                suggested_action = "monitor"
+                responsible_department = "PR"
+                ai_provider = "unknown"
 
             interactions = int(raw.get("interactions") or 0)
             reach = int(raw.get("reach_estimate") or interactions * 5 or 0)
@@ -99,11 +109,10 @@ def _persist_mentions(db, raw_mentions: List[Dict[str, Any]]) -> List[Dict[str, 
             db.add(mention)
             db.flush()
 
-            risk = _risk_from_sentiment(simple_sentiment, float(sentiment_result.get("score", 0) or 0))
-            crisis = 4 if simple_sentiment == "negative" and risk >= 70 else (2 if simple_sentiment == "negative" else 1)
+            risk = _risk_from_sentiment(simple_sentiment, risk_score_raw)
 
             try:
-                sent_enum = SentimentScore(ai_sentiment) if ai_sentiment in [e.value for e in SentimentScore] else SentimentScore.NEUTRAL
+                sent_enum = SentimentScore(simple_sentiment) if simple_sentiment in [e.value for e in SentimentScore] else SentimentScore.NEUTRAL
             except ValueError:
                 sent_enum = SentimentScore.NEUTRAL
 
@@ -111,16 +120,31 @@ def _persist_mentions(db, raw_mentions: List[Dict[str, Any]]) -> List[Dict[str, 
                 mention_id=mention.id,
                 sentiment=sent_enum,
                 risk_score=risk,
-                crisis_level=crisis,
-                summary_vi=content[:200],
-                suggested_action="monitor" if risk < 60 else "respond",
-                responsible_department="PR",
+                crisis_level=crisis_level,
+                summary_vi=summary_vi,
+                suggested_action=suggested_action,
+                responsible_department=responsible_department,
                 confidence_score=confidence,
-                ai_provider="distilbert-sentiment",
-                model_version="distilbert-sst-2",
+                ai_provider=ai_provider,
+                model_version="v1",
                 processing_time_ms=0,
             )
             db.add(analysis)
+            db.flush()
+
+            # Trigger notification if high risk or crisis
+            if risk >= 80 or crisis_level >= 4:
+                try:
+                    # Provide analysis result dictionary to avoid circular dependency / DB refresh issues inside notification
+                    notify_high_risk_mention(db, mention.id, {
+                        "risk_score": risk,
+                        "crisis_level": crisis_level,
+                        "sentiment": simple_sentiment,
+                        "summary_vi": summary_vi,
+                        "suggested_action": suggested_action
+                    })
+                except Exception as notify_err:
+                    logger.error(f"Failed to notify high risk mention {mention.id}: {notify_err}")
 
             created.append({
                 "id": mention.id,
