@@ -1075,10 +1075,12 @@ def summarize_current_results(
     current_user: User = Depends(get_current_active_user)
 ):
     """Generate AI summary of current filtered results"""
-    from app.services.ai_service import summarize_mentions_batch
+    from app.services.ai_service import generate_executive_brief
     
     # Get mentions based on request
-    if req.mention_ids:
+    if req.mention_ids is not None:
+        if not req.mention_ids:
+            raise HTTPException(status_code=400, detail="No mention ids provided for summary.")
         mentions = db.execute(
             apply_tenant_filter(select(Mention), Mention, current_user).where(Mention.id.in_(req.mention_ids))
         ).scalars().all()
@@ -1129,9 +1131,18 @@ def summarize_current_results(
             "published_at": m.published_at.isoformat() if m.published_at else None
         })
     
+    # Format mention data into string
+    lines = []
+    for md in mention_data:
+        text_content = md['content'] if md['content'] else ''
+        lines.append(f"- {md['title']}: {text_content[:200]}...")
+    content_to_summarize = "\n".join(lines)
+    if len(content_to_summarize) > 20000:
+        content_to_summarize = content_to_summarize[:20000] + "..."
+
     # Call AI service for summary
     try:
-        summary_result = summarize_mentions_batch(mention_data)
+        summary_result = generate_executive_brief(content_to_summarize)
         
         # Calculate sentiment breakdown
         sentiment_counts = {}
@@ -1140,21 +1151,16 @@ def summarize_current_results(
             sentiment_counts[sent] = sentiment_counts.get(sent, 0) + 1
         
         return {
-            "summary": summary_result.get("summary", ""),
-            "key_insights": summary_result.get("key_insights", []),
+            "summary": summary_result.get("full_brief", summary_result.get("summary_3_lines", "")),
+            "key_insights": summary_result.get("key_entities", []),
             "sentiment_breakdown": sentiment_counts,
             "total_mentions": len(mentions),
             "mention_ids": [m.id for m in mentions]
         }
     except Exception as e:
-        # Fallback to simple summary if AI fails
-        return {
-            "summary": f"Tìm thấy {len(mentions)} mentions. Không thể tạo AI summary do lỗi: {str(e)}",
-            "key_insights": [],
-            "sentiment_breakdown": {},
-            "total_mentions": len(mentions),
-            "mention_ids": [m.id for m in mentions]
-        }
+        import logging
+        logging.error(f"AI summarize failed: {str(e)}")
+        raise HTTPException(status_code=503, detail="AI Service is currently unavailable. Please try again later.")
 
 class UpdateMuteRequest(BaseModel):
     is_muted: bool

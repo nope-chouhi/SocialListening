@@ -429,7 +429,7 @@ export const mentions = {
     return response.data;
   },
   summarize: async (data: { mention_ids?: number[]; filters?: any; project_id?: number }) => {
-    const response = await api.post('/api/mentions/summarize', data);
+    const response = await api.post('/api/mentions/summarize', data, { timeout: 20000 });
     return response.data;
   },
 };

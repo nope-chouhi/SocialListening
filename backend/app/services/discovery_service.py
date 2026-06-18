@@ -719,11 +719,22 @@ def run_discovery_job(db: Session, job_id: int) -> DiscoveryJob:
     for domain, ddata in domain_data.items():
         try:
             # Check if discovered source already exists for this domain
-            existing_ds = db.execute(
+            existing_records = db.execute(
                 select(DiscoveredSource).where(
                     DiscoveredSource.domain == domain,
-                )
-            ).scalar_one_or_none()
+                ).order_by(DiscoveredSource.id.desc())
+            ).scalars().all()
+            
+            existing_ds = None
+            if existing_records:
+                existing_ds = existing_records[0]
+                if len(existing_records) > 1:
+                    project_info = f", project_id={job.project_id}" if hasattr(job, 'project_id') else ""
+                    logger.warning(
+                        f"[DUPLICATE_DISCOVERED_SOURCE] Multiple rows found for domain='{domain}'{project_info}. "
+                        f"Selected ID={existing_ds.id}. Count={len(existing_records)}. "
+                        "This indicates deduplication or unique constraints may need cleanup."
+                    )
 
             source_type = _guess_source_type(domain, ddata.get("title", ""))
             matched_kws = list(ddata.get("matched_keywords", set()))

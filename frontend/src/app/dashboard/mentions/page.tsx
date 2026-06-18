@@ -523,8 +523,8 @@ function MentionsPageContent() {
       setSummarizeDrawerOpen(true);
       toast.success('Đã tạo tóm tắt AI');
     } catch (error: any) {
-      console.error('Error summarizing:', error);
-      toast.error(error?.response?.data?.detail || 'Lỗi khi tạo tóm tắt AI. Có thể AI chưa được cấu hình.');
+      console.error('[API Error] POST /api/mentions/summarize ->', error?.response?.status || error.message);
+      toast.error(error?.response?.data?.detail || 'Không tạo được tóm tắt AI lúc này');
     } finally {
       setSummarizing(false);
     }
