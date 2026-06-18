@@ -12,7 +12,7 @@ export function SeverityBadge({ severity }: { severity: string }) {
   
   return (
     <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium border tracking-wide shadow-sm ${bgClass}`}>
-      {severity?.toUpperCase() || 'UNKNOWN'}
+      {severity ? severity.toUpperCase() : 'CHƯA XÁC ĐỊNH'}
     </span>
   );
 }
@@ -28,7 +28,7 @@ export function SentimentBadge({ sentiment }: { sentiment: string }) {
   
   return (
     <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium border tracking-wide shadow-sm ${bgClass}`}>
-      {sentiment?.replace('_', ' ').toUpperCase() || 'N/A'}
+      {sentiment ? sentiment.replace('_', ' ').toUpperCase() : 'CHƯA PHÂN TÍCH'}
     </span>
   );
 }

@@ -41,7 +41,7 @@ export default function SentimentTag({ sentiment, size = 'sm' }: SentimentTagPro
     return (
       <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] bg-gray-100 dark:bg-gray-800 text-gray-400 rounded-full border border-gray-200 dark:border-gray-700">
         <span className="w-1.5 h-1.5 rounded-full bg-gray-300" />
-        N/A
+        Chưa phân tích
       </span>
     );
   }

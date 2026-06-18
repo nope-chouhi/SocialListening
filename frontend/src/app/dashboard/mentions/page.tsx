@@ -1405,9 +1405,9 @@ function MentionsPageContent() {
                            <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-500 mt-1">
                              <span>{mention.domain || mention.source_type}</span>
                              <span>•</span>
-                             <span>Influence: {mention.influence_score || 'N/A'}/10</span>
+                             <span>Ảnh hưởng: {mention.influence_score ? `\${mention.influence_score}/10` : 'Chưa có dữ liệu'}</span>
                              <span>•</span>
-                             <span className={mention.risk_score && mention.risk_score >= 80 ? 'text-rose-600 font-bold' : ''}>Risk: {mention.risk_score ?? mention.ai_analysis?.risk_score ?? 'N/A'}</span>
+                             <span className={mention.risk_score && mention.risk_score >= 80 ? 'text-rose-600 font-bold' : ''}>Rủi ro: {mention.risk_score ?? mention.ai_analysis?.risk_score ?? 'Chưa phân tích'}</span>
                              <span>•</span>
                              <span>{mention.published_at ? new Date(mention.published_at).toLocaleString() : new Date(mention.collected_at!).toLocaleString()}</span>
                              {mention.ai_analysis?.ai_provider && (
