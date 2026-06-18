@@ -19,7 +19,7 @@ from app.services.notification_service import notify_high_risk_mention
 logger = logging.getLogger(__name__)
 crawler_service = CrawlerService()
 
-DEFAULT_PLATFORMS = ["reddit", "news"]  # twitter needs bearer token
+DEFAULT_PLATFORMS = ["reddit", "news", "google_news"]  # twitter needs bearer token
 
 
 def _risk_from_sentiment(sentiment: str, risk_score: float) -> float:
@@ -41,8 +41,8 @@ def _persist_mentions(db, raw_mentions: List[Dict[str, Any]]) -> List[Dict[str, 
                 continue
 
             existing = db.execute(
-                select(Mention).where(Mention.url == url)
-            ).scalar_one_or_none()
+                select(Mention).where(Mention.url == url).order_by(Mention.id.desc())
+            ).scalars().first()
             if existing:
                 continue
 
@@ -52,8 +52,8 @@ def _persist_mentions(db, raw_mentions: List[Dict[str, Any]]) -> List[Dict[str, 
 
             content_hash = crawler_service.calculate_content_hash(content)
             dup = db.execute(
-                select(Mention).where(Mention.content_hash == content_hash)
-            ).scalar_one_or_none()
+                select(Mention).where(Mention.content_hash == content_hash).order_by(Mention.id.desc())
+            ).scalars().first()
             if dup:
                 continue
 
@@ -201,6 +201,10 @@ def run_social_crawl_sync():
         logger.info(f"[SocialCrawl] Crawling {len(keyword_list)} keywords on {platforms}")
 
         raw = asyncio.run(social_crawler_service.crawl_keywords(keyword_list, platforms))
+        if not raw:
+            logger.warning("No active crawl provider configured or all providers failed/returned 0 results.")
+            return
+
         success_count, error_count, errors, created = _persist_mentions(db, raw)
         logger.info(f"[SocialCrawl] {success_count} inserted, {error_count} failed from {len(raw)} fetched")
 

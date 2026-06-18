@@ -359,14 +359,14 @@ def start_scheduler(is_embedded: bool = False):
 
     if scheduler_started:
         logger.info("Scheduler already started, skipping")
-        return
+        return True
 
     # If starting as embedded, we don't check SCHEDULER_ENABLED env, we assume caller verified ENABLE_EMBEDDED_SCHEDULER
     if not is_embedded:
         scheduler_enabled = os.getenv("SCHEDULER_ENABLED", "true").lower() == "true"
         if not scheduler_enabled:
             logger.info("Scheduler disabled by environment variable SCHEDULER_ENABLED=false")
-            return
+            return False
 
     _is_embedded_mode = is_embedded
 
@@ -385,11 +385,11 @@ def start_scheduler(is_embedded: bool = False):
             next_run_time=datetime.now(timezone.utc) + timedelta(seconds=30)  # First run 30s after start
         )
 
-        # Social platform crawl (Twitter/Reddit/News) every 5 minutes
+        # Social platform crawl (Twitter/Reddit/News)
         from app.core.config import settings as app_settings
         if app_settings.SOCIAL_CRAWL_ENABLED:
             from app.services.social_crawl_job import run_social_crawl_sync
-            social_interval = app_settings.SOCIAL_CRAWL_INTERVAL_MINUTES
+            social_interval = app_settings.SCAN_INTERVAL_MINUTES
             scheduler.add_job(
                 run_social_crawl_sync,
                 IntervalTrigger(minutes=social_interval),
@@ -405,9 +405,12 @@ def start_scheduler(is_embedded: bool = False):
 
         mode_str = "embedded" if is_embedded else "standalone"
         logger.info(f"✅ Background scheduler ({mode_str}) started (interval: {interval_minutes} min)")
+        return True
 
     except Exception as e:
+        scheduler_started = False
         logger.error(f"❌ Failed to start scheduler: {e}")
+        return False
 
 
 def stop_scheduler():
