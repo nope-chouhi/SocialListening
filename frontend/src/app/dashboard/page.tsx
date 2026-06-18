@@ -86,6 +86,10 @@ export default function DashboardPage() {
         setMetrics(summaryRes.value);
         newData.metrics = summaryRes.value;
       } else {
+        const err = summaryRes.reason;
+        const statusCode = err?.response?.status || 'Unknown';
+        const safeMsg = err?.message || String(err);
+        console.error(`[Dashboard] Failed to load summary. Endpoint: /api/dashboard/summary. Status: ${statusCode}. Error: ${safeMsg}`);
         toast.error('Không tải được dữ liệu tổng quan');
       }
 
