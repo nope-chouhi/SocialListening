@@ -198,13 +198,18 @@ export default function MentionDetailPage() {
               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-indigo-500 to-transparent opacity-50" />
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-lg font-bold text-white">AI Analysis</h3>
-                {(mention.ai_analysis.ai_provider === 'dummy' || mention.ai_analysis.ai_provider === 'dummy_ai') && (
-                  <span className="px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase text-orange-400 bg-orange-500/10 rounded-md border border-orange-500/20">
-                    LEGACY (RULE-BASED)
+                {mention.ai_analysis.ai_provider === 'failed' && (
+                  <span className="px-2.5 py-1 text-xs font-bold tracking-wider text-red-400 bg-red-500/10 rounded-md border border-red-500/20">
+                    AI FAILED
                   </span>
                 )}
-                {mention.ai_analysis.ai_provider && mention.ai_analysis.ai_provider !== 'dummy' && mention.ai_analysis.ai_provider !== 'dummy_ai' && (
-                  <span className="px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase text-indigo-400 bg-indigo-500/10 rounded-md border border-indigo-500/20">
+                {(mention.ai_analysis.ai_provider === 'dummy' || mention.ai_analysis.ai_provider === 'dummy_ai') && (
+                  <span className="px-2.5 py-1 text-xs font-bold tracking-wider text-amber-400 bg-amber-500/10 rounded-md border border-amber-500/20">
+                    RULE-BASED
+                  </span>
+                )}
+                {mention.ai_analysis.ai_provider && !['dummy', 'dummy_ai', 'failed'].includes(mention.ai_analysis.ai_provider) && (
+                  <span className="px-2.5 py-1 text-xs font-bold tracking-wider text-indigo-400 bg-indigo-500/10 rounded-md border border-indigo-500/20 uppercase">
                     {mention.ai_analysis.ai_provider}
                   </span>
                 )}

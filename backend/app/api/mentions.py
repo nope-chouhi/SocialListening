@@ -778,6 +778,11 @@ def analyze_mention(
         analysis_result = service_analyze_mention(mention.content, mention.title)
     except Exception as e:
         err_str = str(e).lower()
+        
+        mention.verification_status = "failed"
+        mention.verification_error = f"AI analysis failed: {str(e)}"
+        db.commit()
+        
         from fastapi.responses import JSONResponse
         if any(key in err_str for key in ["incorrect api key", "invalid_api_key", "401", "authenticationerror", "ai_provider_not_configured", "openai_dependency_missing", "api key is missing", "not configured"]):
             return JSONResponse(

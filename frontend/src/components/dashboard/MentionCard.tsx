@@ -62,12 +62,17 @@ export default function MentionCard({ mention, onActionComplete, userRole }: Men
           </div>
         </div>
         <div className="flex space-x-1.5 items-center">
+          {mention.ai_provider === 'failed' && (
+            <span className="px-2 py-0.5 text-[9px] font-bold tracking-wider text-red-400 bg-red-500/10 rounded-md border border-red-500/20 shadow-sm" title="AI Service Unavailable">
+              AI FAILED
+            </span>
+          )}
           {['dummy', 'dummy_ai', 'dummy_fallback'].includes(mention.ai_provider) && (
             <span className="px-2 py-0.5 text-[9px] font-bold tracking-wider text-amber-400 bg-amber-500/10 rounded-md border border-amber-500/20 shadow-sm">
               RULE-BASED
             </span>
           )}
-          {mention.ai_provider && !['dummy', 'dummy_ai', 'dummy_fallback'].includes(mention.ai_provider) && (
+          {mention.ai_provider && !['dummy', 'dummy_ai', 'dummy_fallback', 'failed'].includes(mention.ai_provider) && (
             <span className="px-2 py-0.5 text-[9px] font-bold tracking-wider text-indigo-400 bg-indigo-500/10 rounded-md border border-indigo-500/20 shadow-sm">
               {mention.ai_provider.toUpperCase()}
             </span>

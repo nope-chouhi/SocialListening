@@ -101,6 +101,12 @@ def get_worker_status(
             worker_mode = "none"
             scheduler_enabled = False
 
+    try:
+        from app.services.ai_service import get_ai_status
+        ai_system_status = get_ai_status()
+    except Exception as e:
+        ai_system_status = {"ai_available": False, "error": str(e)}
+
     return {
         "scheduler_enabled": scheduler_enabled,
         "worker_mode": worker_mode,
@@ -109,5 +115,6 @@ def get_worker_status(
         "active_sources": active_sources,
         "due_sources": due_sources,
         "running_jobs": status_record.running_jobs if status_record else 0,
-        "last_error": safe_last_error
+        "last_error": safe_last_error,
+        "ai_system": ai_system_status
     }

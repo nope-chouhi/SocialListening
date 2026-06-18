@@ -71,17 +71,16 @@ def _persist_mentions(db, raw_mentions: List[Dict[str, Any]]) -> List[Dict[str, 
                 ai_provider = analysis_result.get("ai_provider", "openai")
             except Exception as sentiment_error:
                 logger.warning(f"[SENTIMENT] Failed for {url}: {sentiment_error}")
-                # Fail gracefully by logging, but still record the mention without AI data
-                # Since AI analysis is critical for production, we leave the values null or neutral.
+                # AI failed. Do not record neutral metrics. Let it remain unanalyzed.
                 analysis_result = {}
-                simple_sentiment = "neutral"
-                confidence = 0.0
-                risk_score_raw = 0.0
-                crisis_level = 1
-                summary_vi = content[:200]
-                suggested_action = "monitor"
-                responsible_department = "PR"
-                ai_provider = "unknown"
+                simple_sentiment = None
+                confidence = None
+                risk_score_raw = None
+                crisis_level = None
+                summary_vi = ""
+                suggested_action = None
+                responsible_department = None
+                ai_provider = "failed"
 
             interactions = int(raw.get("interactions") or 0)
             reach = int(raw.get("reach_estimate") or interactions * 5 or 0)
@@ -109,35 +108,39 @@ def _persist_mentions(db, raw_mentions: List[Dict[str, Any]]) -> List[Dict[str, 
                 extraction_source="social_crawler",
                 matched_keywords=[{"keyword": raw.get("keyword")}] if raw.get("keyword") else None,
                 meta_data=raw.get("metadata", {}),
+                verification_status="failed" if ai_provider == "failed" else "verified",
+                verification_error="AI analysis failed" if ai_provider == "failed" else None
             )
             db.add(mention)
             db.flush()
 
-            risk = _risk_from_sentiment(simple_sentiment, risk_score_raw)
+            risk = 0.0
+            if ai_provider != "failed":
+                risk = _risk_from_sentiment(simple_sentiment, risk_score_raw)
 
-            try:
-                sent_enum = SentimentScore(simple_sentiment) if simple_sentiment in [e.value for e in SentimentScore] else SentimentScore.NEUTRAL
-            except ValueError:
-                sent_enum = SentimentScore.NEUTRAL
+                try:
+                    sent_enum = SentimentScore(simple_sentiment) if simple_sentiment in [e.value for e in SentimentScore] else SentimentScore.NEUTRAL
+                except ValueError:
+                    sent_enum = SentimentScore.NEUTRAL
 
-            analysis = AIAnalysis(
-                mention_id=mention.id,
-                sentiment=sent_enum,
-                risk_score=risk,
-                crisis_level=crisis_level,
-                summary_vi=summary_vi,
-                suggested_action=suggested_action,
-                responsible_department=responsible_department,
-                confidence_score=confidence,
-                ai_provider=ai_provider,
-                model_version="v1",
-                processing_time_ms=0,
-            )
-            db.add(analysis)
+                analysis = AIAnalysis(
+                    mention_id=mention.id,
+                    sentiment=sent_enum,
+                    risk_score=risk,
+                    crisis_level=crisis_level,
+                    summary_vi=summary_vi,
+                    suggested_action=suggested_action,
+                    responsible_department=responsible_department,
+                    confidence_score=confidence,
+                    ai_provider=ai_provider,
+                    model_version="1.0",
+                    processing_time_ms=0
+                )
+                db.add(analysis)
             db.flush()
 
             # Trigger notification if high risk or crisis
-            if risk >= 80 or crisis_level >= 4:
+            if risk >= 80 or (crisis_level and crisis_level >= 4):
                 try:
                     # Provide analysis result dictionary to avoid circular dependency / DB refresh issues inside notification
                     notify_high_risk_mention(db, mention.id, {

@@ -163,10 +163,9 @@ def manual_scan(
                 ai_expansions = cached_expansions
                 provider = "cache"
             else:
-                from app.services.ai_service import get_ai_provider
-                ai = get_ai_provider()
-                ai_expansions = ai.expand_keyword(q)[:8]  # Limit max 8 words
-                provider = ai.provider_name if hasattr(ai, 'provider_name') else "AI_Provider"
+                from app.services.ai_service import expand_keyword as ai_expand_keyword
+                ai_expansions = ai_expand_keyword(q)[:8]  # Limit max 8 words
+                provider = "AI_Manager"
                 
                 # Save to caches (24 hours = 86400 seconds)
                 try:

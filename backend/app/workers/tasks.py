@@ -263,6 +263,17 @@ async def _analyze_mention_async(mention_id: int, alert_threshold: float):
             
         except Exception as e:
             await db.rollback()
+            try:
+                # Re-fetch mention to mark as failed
+                result = await db.execute(select(Mention).where(Mention.id == mention_id))
+                mention = result.scalar_one_or_none()
+                if mention:
+                    mention.verification_status = "failed"
+                    mention.verification_error = f"AI analysis failed: {str(e)}"
+                    db.add(mention)
+                    await db.commit()
+            except Exception:
+                pass
             return {"error": str(e), "mention_id": mention_id}
 
 
