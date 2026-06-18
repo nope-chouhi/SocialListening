@@ -192,7 +192,21 @@ def get_dashboard_summary(
                 select(func.count(DiscoveredSource.id)).where(DiscoveredSource.status == DiscoveredSourceStatus.APPROVED)
             ).scalar() or 0
         except Exception as e:
+            db.rollback()
             logger.warning(f"Discovery stats query failed (table may not exist yet): {e}")
+            
+        # AI failed count
+        try:
+            ai_failed_query = apply_tenant_filter(select(func.count(Mention.id)), Mention, current_user).where(
+                and_(Mention.collected_at >= start_date, Mention.verification_status == "failed")
+            )
+            if project_id:
+                ai_failed_query = ai_failed_query.where(Mention.project_id == project_id)
+            ai_failed_count = db.execute(ai_failed_query).scalar() or 0
+        except Exception as e:
+            db.rollback()
+            logger.error(f"Error querying ai failed count: {e}")
+            ai_failed_count = 0
         
         return {
             "total_mentions": total_mentions,
@@ -204,6 +218,7 @@ def get_dashboard_summary(
             "discovered_sources_count": discovered_sources_count,
             "candidate_sources_count": candidate_sources_count,
             "approved_sources_count": approved_sources_count,
+            "ai_failed_count": ai_failed_count,
             "latest_mentions": latest_mentions_data,
             "latest_alerts": latest_alerts_data
         }
@@ -219,6 +234,7 @@ def get_dashboard_summary(
             "discovered_sources_count": 0,
             "candidate_sources_count": 0,
             "approved_sources_count": 0,
+            "ai_failed_count": 0,
             "latest_mentions": [],
             "latest_alerts": []
         }

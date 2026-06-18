@@ -241,7 +241,8 @@ class GrokProvider(AIProvider):
 
     def _handle_grok_error(self, e: Exception):
         import openai
-        if isinstance(e, openai.AuthenticationError):
+        err_str = str(e).lower()
+        if isinstance(e, openai.AuthenticationError) or "incorrect api key" in err_str or "invalid_api_key" in err_str:
             raise AIAuthError(f"Grok Auth Error: {str(e)}")
         elif isinstance(e, (openai.RateLimitError, openai.APITimeoutError, openai.APIConnectionError, openai.InternalServerError)):
             raise AITemporaryError(f"Grok Temporary Error: {str(e)}")
@@ -390,8 +391,8 @@ class GeminiProvider(AIProvider):
 
     def _handle_gemini_error(self, e: Exception):
         err_str = str(e).lower()
-        if "api_key" in err_str or "unauthenticated" in err_str or "permission" in err_str:
-            raise AIAuthError(f"Gemini Auth Error: {str(e)}")
+        if "api_key" in err_str or "unauthenticated" in err_str or "permission" in err_str or "nonetype" in err_str or "dependency" in err_str:
+            raise AIAuthError(f"Gemini Auth/Config Error: {str(e)}")
         elif "quota" in err_str or "429" in err_str or "exhausted" in err_str or "timeout" in err_str or "503" in err_str:
             raise AITemporaryError(f"Gemini Temporary Error: {str(e)}")
         else:
@@ -409,6 +410,8 @@ class GeminiProvider(AIProvider):
             raise AIProviderMalformedResponseError(f"Gemini JSON parse error: {e}")
 
     def analyze_mention(self, content: str, title: Optional[str] = None) -> Dict:
+        if self.model is None:
+            raise AIAuthError("Gemini dependency missing or not configured")
         if not content:
             raise AIInternalValidationError("Empty content provided for analysis.")
         start_time = time.time()
