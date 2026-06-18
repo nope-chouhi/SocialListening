@@ -16,7 +16,8 @@ config = context.config
 
 # Override sqlalchemy.url with environment variable if available
 if settings.DATABASE_URL:
-    config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
+    escaped_url = settings.DATABASE_URL.replace("%", "%%")
+    config.set_main_option("sqlalchemy.url", escaped_url)
 
 # Interpret the config file for Python logging
 if config.config_file_name is not None:

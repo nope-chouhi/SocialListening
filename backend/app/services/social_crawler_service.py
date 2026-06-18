@@ -28,7 +28,7 @@ class SocialCrawlerService:
     async def crawl_twitter(self, keyword: str, limit: int = 50) -> List[Dict[str, Any]]:
         token = settings.TWITTER_BEARER_TOKEN or os.getenv("TWITTER_BEARER_TOKEN", "")
         if not token:
-            logger.info("Twitter crawl skipped: TWITTER_BEARER_TOKEN not set")
+            logger.debug("Twitter crawl skipped: TWITTER_BEARER_TOKEN not set")
             return []
 
         url = "https://api.twitter.com/2/tweets/search/recent"
@@ -81,7 +81,7 @@ class SocialCrawlerService:
                 response.raise_for_status()
                 data = response.json()
         except Exception as e:
-            logger.warning(f"Reddit crawler blocked or failed for '{keyword}'. Skipping Reddit. (Reason: {e})")
+            logger.debug(f"Reddit crawler blocked or failed for '{keyword}'. Skipping Reddit. (Reason: {e})")
             return []
 
         children = (data.get("data") or {}).get("children") or []
@@ -114,7 +114,7 @@ class SocialCrawlerService:
                 response.raise_for_status()
                 xml_data = response.text
         except Exception as e:
-            logger.warning(f"Google News crawler failed for '{keyword}'. Reason: {e}")
+            logger.debug(f"Google News crawler failed for '{keyword}'. Reason: {e}")
             return []
             
         try:
@@ -161,7 +161,7 @@ class SocialCrawlerService:
     async def crawl_news(self, keyword: str, limit: int = 50) -> List[Dict[str, Any]]:
         api_key = settings.NEWS_API_KEY or os.getenv("NEWS_API_KEY", "")
         if not api_key:
-            logger.info("News crawl skipped: NEWS_API_KEY not set")
+            logger.debug("News crawl skipped: NEWS_API_KEY not set")
             return []
 
         url = "https://newsapi.org/v2/everything"
