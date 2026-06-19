@@ -103,6 +103,19 @@ export default function MentionDetailPage() {
     return 'bg-emerald-500/10 border-emerald-500/20';
   };
 
+  const getSafeUrl = (url: string | null | undefined) => {
+    const trimmed = (url || '').trim();
+    if (!trimmed || trimmed.startsWith('/')) return '';
+    try {
+      const parsed = new URL(trimmed);
+      if (!['http:', 'https:'].includes(parsed.protocol)) return '';
+      if (['news.google.com', 'www.news.google.com'].includes(parsed.hostname.toLowerCase())) return '';
+      return parsed.href;
+    } catch {
+      return '';
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -154,18 +167,15 @@ export default function MentionDetailPage() {
             </div>
             <div className="mt-8 pt-5 border-t border-gray-800">
               {(() => {
-                const bestUrl = mention.canonical_url || mention.url || mention.original_url;
-                if (!bestUrl || bestUrl.trim() === '' || bestUrl.startsWith('/')) return null;
-                const isFallback = bestUrl.startsWith('https://news.google.com');
+                const bestUrl = getSafeUrl(mention.canonical_url || mention.url || '');
+                if (!bestUrl) return null;
                 return (
                   <a 
                     href={bestUrl} 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className={`inline-flex items-center font-medium transition-colors ${
-                      isFallback ? 'text-amber-400 hover:text-amber-300' : 'text-indigo-400 hover:text-indigo-300'
-                    }`}
-                    title={isFallback ? "Fallback URL (Proxy)" : "Nguồn bài viết"}
+                    className="inline-flex items-center font-medium transition-colors text-indigo-400 hover:text-indigo-300"
+                    title="Nguon bai viet"
                   >
                     <ExternalLink className="w-4 h-4 mr-2" />
                     Xem nguồn gốc

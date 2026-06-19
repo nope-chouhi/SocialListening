@@ -15,6 +15,7 @@ from app.services.crawler_service import CrawlerService
 from app.services.social_crawler_service import social_crawler_service
 from app.services.ai_service import analyze_mention
 from app.services.notification_service import notify_high_risk_mention
+from app.services.url_utils import clean_final_url, domain_from_url, is_google_news_discovery_url
 
 logger = logging.getLogger(__name__)
 crawler_service = CrawlerService()
@@ -36,8 +37,11 @@ def _persist_mentions(db, raw_mentions: List[Dict[str, Any]]) -> List[Dict[str, 
 
     for raw in raw_mentions:
         try:
-            url = raw.get("url")
+            raw_url = raw.get("canonical_url") or raw.get("url")
+            url = clean_final_url(raw_url)
             if not url:
+                if is_google_news_discovery_url(raw.get("url") or raw.get("original_url")):
+                    logger.info("[PERSIST] Skipped unresolved Google News discovery URL: %s", raw.get("url") or raw.get("original_url"))
                 continue
 
             existing = db.execute(
@@ -94,8 +98,8 @@ def _persist_mentions(db, raw_mentions: List[Dict[str, Any]]) -> List[Dict[str, 
                 content_hash=content_hash,
                 url=url,
                 original_url=raw.get("original_url"),
-                canonical_url=raw.get("url"), # if available, url is the resolved one
-                domain=raw.get("domain"),
+                canonical_url=url,
+                domain=raw.get("domain") or domain_from_url(url),
                 author=raw.get("author"),
                 published_at=raw.get("timestamp"),
                 collected_at=datetime.now(timezone.utc),
