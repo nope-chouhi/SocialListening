@@ -77,29 +77,35 @@ function LoginContent() {
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [loading]);
 
+  const clearAuthSession = () => {
+    const keysToRemove = [
+      'access_token',
+      'refresh_token',
+      'cached_user',
+      'nope_auth_storage_version',
+      'auth_store',
+      'permissions',
+      'selected_project_id',
+      'health_error'
+    ];
+    keysToRemove.forEach(key => localStorage.removeItem(key));
+  };
+
+  const handleResetSession = () => {
+    clearAuthSession();
+    window.location.reload();
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
+    setLoginPhase('authenticating');
 
     try {
-      // If backend is not known to be ready, we must wake it first.
-      // Since Vercel proxy times out in 10s, we CANNOT send auth.login through proxy
-      // while backend is cold. We must wait for wakeBackend (direct call) to succeed.
-      if (serverStatus !== 'ready') {
-        setLoginPhase('waking');
-        const wakeOk = await wakeBackend(); // This will wait up to 90s
-        if (!wakeOk) {
-          setError('Máy chủ không phản hồi sau 90s. Vui lòng kiểm tra lại dịch vụ Render.');
-          return;
-        }
-        setServerStatus('ready');
-      }
+      // Clear stale auth/session keys before attempting to log in
+      clearAuthSession();
 
-      // Backend is now awake. Authenticate through Next.js proxy.
-      setLoginPhase('authenticating');
-      
-      // The backend is awake, so this should take < 2s. 
       // We give it 15s max to handle slow network.
       const timeout = new Promise<never>((_, reject) =>
         setTimeout(() => reject(new Error('TIMEOUT')), 15000)
@@ -231,12 +237,22 @@ function LoginContent() {
           </p>
         )}
 
-        <div className="text-center text-sm text-gray-500 dark:text-gray-400">
-          <p>Chưa có tài khoản?{' '}
-            <a href="/register" className="font-medium text-blue-600 hover:text-blue-500">
-              Đăng ký ngay
-            </a>
-          </p>
+        <div className="flex flex-col items-center gap-3 mt-4">
+          <div className="text-center text-sm text-gray-500 dark:text-gray-400">
+            <p>Chưa có tài khoản?{' '}
+              <a href="/register" className="font-medium text-blue-600 hover:text-blue-500">
+                Đăng ký ngay
+              </a>
+            </p>
+          </div>
+          
+          <button
+            onClick={handleResetSession}
+            type="button"
+            className="text-xs font-medium text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 underline underline-offset-2 transition-colors"
+          >
+            Reset phiên đăng nhập
+          </button>
         </div>
       </div>
     </div>
