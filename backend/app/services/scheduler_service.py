@@ -347,6 +347,26 @@ def scan_all_due_sources():
     finally:
         db.close()
 
+def update_heartbeat_job():
+    """Update heartbeat in DB every minute so worker appears 'running'."""
+    global _last_heartbeat
+    _last_heartbeat = datetime.now(timezone.utc)
+    db = get_db()
+    try:
+        from app.models.system_settings import WorkerStatus
+        from sqlalchemy.sql import func
+        status = db.query(WorkerStatus).first()
+        if not status:
+            status = WorkerStatus(id=1, running_jobs=0)
+            db.add(status)
+        else:
+            status.last_heartbeat = func.now()
+        db.commit()
+    except Exception as e:
+        logger.error(f"[Worker Heartbeat] Failed: {e}")
+    finally:
+        db.close()
+
 
 _is_embedded_mode = False
 
@@ -373,9 +393,17 @@ def start_scheduler(is_embedded: bool = False):
     try:
         # Use SCAN_INTERVAL_MINUTES from settings, default 15
         interval_minutes = settings.SCAN_INTERVAL_MINUTES
-        # Use 1 minute interval for embedded mode to ensure heartbeat updates frequently
-        actual_interval = 1 if is_embedded else interval_minutes
+        actual_interval = interval_minutes
         
+        # Add heartbeat job every 1 minute
+        scheduler.add_job(
+            update_heartbeat_job,
+            IntervalTrigger(minutes=1),
+            id='heartbeat_job',
+            name='Update Heartbeat',
+            replace_existing=True
+        )
+
         scheduler.add_job(
             scan_all_due_sources,
             IntervalTrigger(minutes=actual_interval),
