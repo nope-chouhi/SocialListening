@@ -1,15 +1,30 @@
-## Description
-<!-- Please include a summary of the changes and the related issue. -->
+## Summary
+<!-- Describe what this PR changes and why. -->
 
-## Type of change
+## Changes Made
+<!-- List concrete changes. -->
+
+## Files Changed
+<!-- List important files and their purpose. -->
+
+## Verification
+<!-- List commands/tests run and results. -->
+
+## Risks / Notes
+<!-- Mention any known risk, follow-up, or deployment note. -->
+
+## Type of Change
 - [ ] Bug fix
 - [ ] New feature
 - [ ] Refactoring / Tech debt
-- [ ] Documentation update
+- [ ] Documentation / Governance update
 
-## Checklist:
-- [ ] I have not pushed directly to main
-- [ ] I have not included frontend/tsconfig.tsbuildinfo in this commit
-- [ ] I have not created fake UI/data/API/AI
-- [ ] I am not bypassing branch protection
-- [ ] All changes are fully tested and functional
+## Safety Checklist
+- [ ] I did not push directly to main
+- [ ] I did not run deploy.bat
+- [ ] I did not include frontend/tsconfig.tsbuildinfo
+- [ ] I did not include temporary scripts, fix_*.py, or deploy_trigger.txt
+- [ ] I did not create fake UI/data/API/AI
+- [ ] I did not create fake neutral AI fallback
+- [ ] Failed AI states are marked clearly
+- [ ] Files changed have been reviewed
