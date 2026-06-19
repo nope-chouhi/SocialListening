@@ -66,10 +66,36 @@ function setCachedUser(user: User | null) {
   } catch {}
 }
 
+const CURRENT_AUTH_STORAGE_VERSION = '1.0.0';
+
+function checkAndResetStaleStorage() {
+  if (typeof window === 'undefined') return;
+  try {
+    const version = localStorage.getItem('nope_auth_storage_version');
+    if (version !== CURRENT_AUTH_STORAGE_VERSION) {
+      const keysToRemove = [
+        'access_token',
+        'refresh_token',
+        'cached_user',
+        'auth_store',
+        'permissions',
+        'selected_project_id',
+        'health_error'
+      ];
+      keysToRemove.forEach(key => localStorage.removeItem(key));
+      localStorage.setItem('nope_auth_storage_version', CURRENT_AUTH_STORAGE_VERSION);
+      console.warn('[Auth] Storage version updated. Stale auth keys cleared.');
+    }
+  } catch (err) {
+    // ignore
+  }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   // Initialize from cache IMMEDIATELY — no async, no loading state
   const [user, setUser] = useState<User | null>(() => {
     if (typeof window === 'undefined') return null;
+    checkAndResetStaleStorage();
     const token = localStorage.getItem('access_token');
     if (!token) return null;
     // Check token not expired

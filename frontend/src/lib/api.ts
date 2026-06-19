@@ -148,7 +148,12 @@ export const auth = {
     formData.append('username', email);
     formData.append('password', password);
     const response = await api.post('/api/auth/login', formData, {
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      headers: { 
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      },
     });
     if (response.data.access_token) {
       localStorage.setItem('access_token', response.data.access_token);
@@ -156,7 +161,13 @@ export const auth = {
     return response.data;
   },
   getContext: async () => {
-    const response = await api.get('/api/auth/me/context');
+    const response = await api.get('/api/auth/me/context', {
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    });
     return response.data;
   },
   register: async (email: string, password: string, full_name: string) => {
@@ -167,7 +178,13 @@ export const auth = {
     localStorage.removeItem('access_token');
   },
   getCurrentUser: async () => {
-    const response = await api.get('/api/auth/me');
+    const response = await api.get('/api/auth/me', {
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    });
     return response.data;
   },
 };
