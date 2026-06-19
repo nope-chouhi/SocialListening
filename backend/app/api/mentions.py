@@ -180,6 +180,7 @@ def list_mentions(
     is_muted: Optional[bool] = Query(None),
     min_influence_score: Optional[float] = Query(None),
     sort_by: Optional[str] = Query("newest", pattern="^(newest|oldest|risk_high|risk_low|influence_high|engagement_high)$"),
+    refresh: Optional[bool] = Query(False),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
@@ -189,7 +190,7 @@ def list_mentions(
     try:
         # Cache implementation
         cache_key = None
-        if q and not job_id:
+        if q and not job_id and not refresh:
             try:
                 # Create a deterministic key based on search parameters
                 params_str = f"proj:{project_id}_q:{q}_src:{source_type}_{source_types}_sent:{sentiment}_{sentiments}_d:{date_from}_{date_to}_p:{page}_ps:{page_size}_sort:{sort_by}_risk:{min_risk_score}"

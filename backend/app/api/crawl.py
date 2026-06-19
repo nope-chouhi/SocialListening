@@ -424,7 +424,8 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
                     "keywords": keyword_texts,
                     "limit": max_results,
                     "language": "",
-                    "country": ""
+                    "country": "",
+                    "project_id": project_id
                 }
                 disc_job = create_discovery_job(db, user_id=user_id, request_data=req_data)
                 db.commit()
