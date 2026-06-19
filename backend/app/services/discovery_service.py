@@ -356,6 +356,7 @@ def _guess_source_type(domain: str, title: str = "", body: str = "") -> str:
 def create_discovery_job(db: Session, user_id: int, request_data: dict) -> DiscoveryJob:
     """Create a discovery job record in DB."""
     job = DiscoveryJob(
+        project_id=request_data.get("project_id"),
         keyword_group_id=request_data.get("keyword_group_id"),
         status=DiscoveryJobStatus.QUEUED,
         query_keywords=request_data.get("keywords", []),

@@ -532,7 +532,7 @@ function MentionsPageContent() {
 
   /* ─── DATA FETCHING ─────────────────────────────────────────────────── */
 
-  const fetchMentions = useCallback(async () => {
+  const fetchMentions = useCallback(async (forceRefresh = false) => {
     const fetchId = ++currentFetchIdRef.current;
     try {
       setLoading(true);
@@ -546,6 +546,9 @@ function MentionsPageContent() {
         page_size: 20,
         sort_by: filters.sort_by,
       };
+      if (forceRefresh === true) {
+        params.refresh = true;
+      }
       if (initialJobId) {
         params.job_id = initialJobId;
       } else {
@@ -783,7 +786,7 @@ function MentionsPageContent() {
           
           if (status === 'COMPLETED' || status === 'PARTIAL_FAILED') {
             setSearchState('AUTO_SCAN_COMPLETED');
-            fetchMentions();
+            fetchMentions(true);
           } else if (status === 'COMPLETED_NO_RESULTS') {
             setSearchState('AUTO_SCAN_NO_RESULTS');
           } else {
@@ -809,6 +812,8 @@ function MentionsPageContent() {
     searchTimeout.current = setTimeout(() => {
       setSearchTerm(val);
       setPage(1);
+      setActiveScanJobId(null);
+      setSearchState('IDLE');
       const newParams = new URLSearchParams(searchParams?.toString() || '');
       if (val) {
         newParams.set('q', val);
@@ -1275,7 +1280,9 @@ function MentionsPageContent() {
                 <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
                   <Search className="w-8 h-8 text-gray-400" />
                 </div>
-                <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Chưa có đề cập nào</h3>
+                <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">
+                  {searchTerm ? `Không tìm thấy đề cập nào cho từ khóa: ${searchTerm}` : 'Chưa có đề cập nào'}
+                </h3>
                 <p className="text-gray-500 dark:text-gray-500 max-w-sm mb-4">Dự án của bạn chưa thu thập được đề cập nào, hoặc dữ liệu không khớp với bộ lọc.</p>
                 {dateRange !== 'all' && (
                   <div className="bg-yellow-50 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-200 text-sm px-4 py-2 rounded-lg max-w-md mb-6 border border-yellow-200 dark:border-yellow-800/30">
