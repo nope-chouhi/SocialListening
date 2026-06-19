@@ -4,10 +4,12 @@ Platform giám sát và xử lý khủng hoảng danh tiếng trên mạng xã h
 
 ## 🚀 Quick Start
 
-### Deploy to GitHub
-```bash
-deploy.bat
-```
+### Contribution Workflow
+
+The `main` branch is protected. All changes must go through a Pull Request.
+1. Create a new branch from `main`: `git checkout -b <feature-branch>`
+2. Make your changes and commit them.
+3. Push the branch and create a Pull Request on GitHub.
 
 ### Run Backend Locally
 ```bash

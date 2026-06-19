@@ -81,8 +81,8 @@
 ## 🔄 Deployment Status:
 
 - ✅ **Code**: Đã push lên GitHub
-- ⏳ **Backend**: Cần deploy lên Render (auto-deploy từ GitHub)
-- ⏳ **Frontend**: Cần deploy lên Vercel (auto-deploy từ GitHub)
+- ⏳ **Backend**: Cần deploy lên Render (manual deploy sau khi merge PR)
+- ⏳ **Frontend**: Cần deploy lên Vercel (manual deploy sau khi merge PR)
 - ⏳ **Database**: Cần chạy migration để thêm các trường mới
 
 ## 🚀 Bước tiếp theo:
