@@ -55,8 +55,8 @@
 ## 🔄 Đang Deploy
 
 **GitHub:** ✅ Pushed to main (commit fc0aead)  
-**Render:** ⏳ Auto-deploying (2-5 phút)  
-**Vercel:** ⏳ Auto-deploying (1-2 phút)
+**Render:** ⏳ Manual deploy from main (2-5 phút)  
+**Vercel:** ⏳ Manual deploy from main (1-2 phút)
 
 ---
 
