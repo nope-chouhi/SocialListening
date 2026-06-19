@@ -227,7 +227,7 @@ function getSafeUrl(url: string | null | undefined): string | null {
 
   try {
     const parsed = new URL(tUrl);
-    if (parsed.hostname === 'news.google.com' || parsed.hostname === 'www.news.google.com') {
+    if (isBlockedVisitHost(parsed.hostname) || isMediaFilePath(parsed.pathname)) {
       return null;
     }
   } catch {}
@@ -249,7 +249,7 @@ function getSafeUrl(url: string | null | undefined): string | null {
     if (/^[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+/.test(tUrl)) {
       try {
         const normalized = new URL(`https://${tUrl}`);
-        if (normalized.hostname === 'news.google.com' || normalized.hostname === 'www.news.google.com') {
+        if (isBlockedVisitHost(normalized.hostname) || isMediaFilePath(normalized.pathname)) {
           return null;
         }
         return normalized.href;
@@ -257,6 +257,36 @@ function getSafeUrl(url: string | null | undefined): string | null {
     }
   }
   return null;
+}
+
+function isBlockedVisitHost(hostname: string): boolean {
+  const host = hostname.toLowerCase();
+  return (
+    host === 'news.google.com' ||
+    host === 'www.news.google.com' ||
+    host === 'lh3.googleusercontent.com' ||
+    host === 'googleusercontent.com' ||
+    host.endsWith('.googleusercontent.com')
+  );
+}
+
+function isMediaFilePath(pathname: string): boolean {
+  return /\.(jpg|jpeg|png|gif|webp|bmp|svg|avif|ico)$/i.test(pathname);
+}
+
+function keywordToText(keyword: any): string | null {
+  if (typeof keyword === 'string') return keyword.trim() || null;
+  if (!keyword || typeof keyword !== 'object') return null;
+  const value = keyword.keyword ?? keyword.name ?? keyword.value ?? keyword.text ?? keyword.search_query;
+  return typeof value === 'string' && value.trim() ? value.trim() : null;
+}
+
+function keywordTexts(keywords: any[] | null | undefined): string[] {
+  return (keywords || []).map(keywordToText).filter((value): value is string => Boolean(value));
+}
+
+function getMentionSourceLabel(mention: MentionItem): string {
+  return mention.domain || 'Không xác định';
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -635,8 +665,7 @@ function MentionsPageContent() {
             } else {
               setSearchState('AUTO_SCAN_STARTING');
             }
-            try {
-              const res = await crawl.manualScan({
+            crawl.manualScan({
                 project_id: activeProject.id,
                 query: searchTerm,
                 expand_keywords: true,
@@ -646,7 +675,8 @@ function MentionsPageContent() {
                 auto_triggered: true,
                 reason: 'live_search_low_results',
                 current_result_count: data.total
-              });
+              }).then((res) => {
+              if (fetchId !== currentFetchIdRef.current) return;
               if (res.message === "Returned existing recent job to prevent duplicate crawl" || res.message === "Returned existing running job to prevent duplicate crawl") {
                 toast.success(`Đang theo dõi tiến độ quét '${searchTerm}'...`, { icon: '🔍' });
               } else {
@@ -657,11 +687,11 @@ function MentionsPageContent() {
               setScanJobStatus({ status: 'QUEUED' });
               setSearchState('AUTO_SCAN_RUNNING');
               scanStartTimeRef.current = Date.now();
-            } catch (err) {
+            }).catch((err) => {
               console.error('Scan error:', err);
               setSearchState(data.total > 0 ? 'LOCAL_RESULTS_FOUND' : 'AUTO_SCAN_FAILED');
               scannedKeywordsRef.current?.delete(keywordLower);
-            }
+            });
           } else {
             // Sufficient results, no need to auto-scan
             setSearchState('LOCAL_RESULTS_FOUND');
@@ -1440,7 +1470,7 @@ function MentionsPageContent() {
                               </div>
                             )}
                            <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-500 mt-1">
-                             <span>{mention.domain || mention.source_type}</span>
+                              <span>{getMentionSourceLabel(mention)}</span>
                              <span>•</span>
                              <span>Ảnh hưởng: {mention.influence_score ? `\${mention.influence_score}/10` : 'Chưa có dữ liệu'}</span>
                              <span>•</span>
@@ -1531,8 +1561,8 @@ function MentionsPageContent() {
                       })()}
                       {/* Hashtags Mock */}
                       <div className="flex flex-wrap items-center gap-2 mt-3">
-                        {(mention.matched_keywords || []).map((kw, i) => (
-                           <span key={i} className="text-xs font-medium text-blue-600 cursor-pointer hover:underline">#{kw.keyword}</span>
+                        {keywordTexts(mention.matched_keywords).map((kw, i) => (
+                           <span key={i} className="text-xs font-medium text-blue-600 cursor-pointer hover:underline">#{kw}</span>
                         ))}
                       </div>
                     </div>

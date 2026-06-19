@@ -17,7 +17,15 @@ from app.models.alert import Alert, AlertStatus, AlertSeverity
 from app.models.incident import Incident, IncidentStatus, IncidentLog
 from app.services.ai_service import analyze_mention as service_analyze_mention
 from app.services.notification_service import notify_high_risk_mention
-from app.services.url_utils import clean_final_url, domain_from_url, is_google_news_discovery_url
+from app.services.url_utils import (
+    clean_final_url,
+    domain_from_url,
+    is_blocked_final_url,
+    is_google_news_discovery_url,
+    is_google_media_url,
+    is_media_file_url,
+    is_safe_display_domain,
+)
 import os
 from math import ceil
 
@@ -30,14 +38,11 @@ _MENTIONS_SEARCH_CACHE = {}
 router = APIRouter()
 
 
-_GOOGLE_NEWS_DOMAINS = {"news.google.com", "www.news.google.com", "google_news.com"}
-
-
 def _safe_domain(domain: Optional[str]) -> Optional[str]:
     value = (domain or "").strip()
-    if not value:
-        return None
-    return None if value.lower() in _GOOGLE_NEWS_DOMAINS else value
+    if value.startswith("www."):
+        value = value[4:]
+    return value if is_safe_display_domain(value) else None
 
 
 def _mention_link_fields(mention: Mention):
@@ -47,12 +52,18 @@ def _mention_link_fields(mention: Mention):
     if not visit_url:
         if is_google_news_discovery_url(raw_url):
             reason = "Google News RSS discovery URL was not resolved to the publisher URL"
+        elif is_google_media_url(raw_url):
+            reason = "Google media/thumbnail URL is not a publisher article URL"
+        elif is_media_file_url(raw_url):
+            reason = "Media file URL is not a publisher article URL"
+        elif is_blocked_final_url(raw_url):
+            reason = "URL is not a valid publisher article URL"
         elif raw_url:
             reason = "Invalid or unsupported Visit URL"
         else:
             reason = "No Visit URL available"
 
-    display_domain = domain_from_url(visit_url) or _safe_domain(mention.domain)
+    display_domain = domain_from_url(visit_url)
     metadata = dict(mention.meta_data or {})
     metadata["visit_url_available"] = bool(visit_url)
     if reason:

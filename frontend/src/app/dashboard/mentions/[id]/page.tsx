@@ -7,6 +7,32 @@ import { mentions as mentionsApi, alerts as alertsApi, incidents as incidentsApi
 import toast, { Toaster } from 'react-hot-toast';
 import ExecutiveBriefModal from '@/components/dashboard/ExecutiveBriefModal';
 
+function isBlockedVisitHost(hostname: string): boolean {
+  const host = hostname.toLowerCase();
+  return (
+    host === 'news.google.com' ||
+    host === 'www.news.google.com' ||
+    host === 'lh3.googleusercontent.com' ||
+    host === 'googleusercontent.com' ||
+    host.endsWith('.googleusercontent.com')
+  );
+}
+
+function isMediaFilePath(pathname: string): boolean {
+  return /\.(jpg|jpeg|png|gif|webp|bmp|svg|avif|ico)$/i.test(pathname);
+}
+
+function keywordToText(keyword: any): string | null {
+  if (typeof keyword === 'string') return keyword.trim() || null;
+  if (!keyword || typeof keyword !== 'object') return null;
+  const value = keyword.keyword ?? keyword.name ?? keyword.value ?? keyword.text ?? keyword.search_query;
+  return typeof value === 'string' && value.trim() ? value.trim() : null;
+}
+
+function keywordTexts(keywords: any[] | null | undefined): string[] {
+  return (keywords || []).map(keywordToText).filter((value): value is string => Boolean(value));
+}
+
 export default function MentionDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -109,7 +135,7 @@ export default function MentionDetailPage() {
     try {
       const parsed = new URL(trimmed);
       if (!['http:', 'https:'].includes(parsed.protocol)) return '';
-      if (['news.google.com', 'www.news.google.com'].includes(parsed.hostname.toLowerCase())) return '';
+      if (isBlockedVisitHost(parsed.hostname) || isMediaFilePath(parsed.pathname)) return '';
       return parsed.href;
     } catch {
       return '';
@@ -186,13 +212,13 @@ export default function MentionDetailPage() {
           </div>
 
           {/* Matched Keywords */}
-          {mention.matched_keywords && mention.matched_keywords.length > 0 && (
+          {keywordTexts(mention.matched_keywords).length > 0 && (
             <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-6 sm:p-8">
               <h3 className="text-lg font-bold text-white mb-5 flex items-center">Từ khóa khớp</h3>
               <div className="flex flex-wrap gap-2.5">
-                {mention.matched_keywords.map((kw: any, idx: number) => (
+                {keywordTexts(mention.matched_keywords).map((kw: string, idx: number) => (
                   <span key={idx} className="px-3 py-1.5 bg-indigo-500/10 text-indigo-400 text-sm rounded-lg font-semibold tracking-wide border border-indigo-500/20 uppercase">
-                    {kw.keyword}
+                    {kw}
                   </span>
                 ))}
               </div>

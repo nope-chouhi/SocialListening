@@ -24,6 +24,32 @@ const SourceIcon = ({ type, className }: { type: string, className?: string }) =
   }
 };
 
+function isBlockedVisitHost(hostname: string): boolean {
+  const host = hostname.toLowerCase();
+  return (
+    host === 'news.google.com' ||
+    host === 'www.news.google.com' ||
+    host === 'lh3.googleusercontent.com' ||
+    host === 'googleusercontent.com' ||
+    host.endsWith('.googleusercontent.com')
+  );
+}
+
+function isMediaFilePath(pathname: string): boolean {
+  return /\.(jpg|jpeg|png|gif|webp|bmp|svg|avif|ico)$/i.test(pathname);
+}
+
+function keywordToText(keyword: any): string | null {
+  if (typeof keyword === 'string') return keyword.trim() || null;
+  if (!keyword || typeof keyword !== 'object') return null;
+  const value = keyword.keyword ?? keyword.name ?? keyword.value ?? keyword.text ?? keyword.search_query;
+  return typeof value === 'string' && value.trim() ? value.trim() : null;
+}
+
+function keywordTexts(keywords: any[] | null | undefined): string[] {
+  return (keywords || []).map(keywordToText).filter((value): value is string => Boolean(value));
+}
+
 export default function MentionCard({ mention, onActionComplete, userRole }: MentionCardProps) {
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
 
@@ -59,7 +85,7 @@ export default function MentionCard({ mention, onActionComplete, userRole }: Men
       if (!url || url.trim() === '' || url.startsWith('/')) return '';
       const parsed = new URL(url);
       if (!['http:', 'https:'].includes(parsed.protocol)) return '';
-      if (parsed.hostname === 'news.google.com' || parsed.hostname === 'www.news.google.com') return '';
+      if (isBlockedVisitHost(parsed.hostname) || isMediaFilePath(parsed.pathname)) return '';
       return parsed.href;
     } catch {
       return '';
@@ -67,11 +93,9 @@ export default function MentionCard({ mention, onActionComplete, userRole }: Men
   };
 
   const bestUrl = getSafeUrl(mention.canonical_url || mention.url || '');
+  const keywordLabels = keywordTexts(mention.matched_keywords);
 
   const getSourceDisplay = () => {
-    if (mention.source_name && mention.source_name.toLowerCase() !== 'unknown') {
-      return mention.source_name;
-    }
     if (mention.domain && mention.domain.toLowerCase() !== 'unknown') {
       return mention.domain;
     }
@@ -125,9 +149,9 @@ export default function MentionCard({ mention, onActionComplete, userRole }: Men
       </div>
 
       <div className="mt-4 flex flex-wrap gap-2">
-        {mention.matched_keywords && mention.matched_keywords.length > 0 && (
+        {keywordLabels.length > 0 && (
           <span className="px-2.5 py-1 bg-[#111827] border border-gray-700 text-gray-400 text-[11px] tracking-wide font-medium rounded-md shadow-sm">
-            KW: {mention.matched_keywords.join(', ')}
+            KW: {keywordLabels.join(', ')}
           </span>
         )}
         <RiskBadge score={mention.risk_score} />

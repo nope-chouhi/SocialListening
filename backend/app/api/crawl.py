@@ -113,6 +113,56 @@ def debug_auto_discovery(
 import time
 _EXPANDED_KEYWORDS_CACHE = {}
 
+
+def _expand_scan_keyword(q: str):
+    q_lower = q.lower().strip()
+    expansions = [q_lower] if q_lower else []
+    provider = "fallback"
+
+    if not q_lower:
+        return expansions, provider
+
+    try:
+        cache_key = f"expand_keyword_v2:{q_lower}"
+        cached_expansions = None
+
+        try:
+            from app.core.config import settings
+            import redis
+            import json
+            if getattr(settings, "REDIS_URL", None):
+                r = redis.from_url(settings.REDIS_URL, decode_responses=True)
+                cached_val = r.get(cache_key)
+                if cached_val:
+                    cached_expansions = json.loads(cached_val)
+        except ImportError:
+            pass
+        except Exception:
+            pass
+
+        if cached_expansions is None and q_lower in _EXPANDED_KEYWORDS_CACHE:
+            timestamp, cached_val = _EXPANDED_KEYWORDS_CACHE[q_lower]
+            if time.time() - timestamp < 86400:
+                cached_expansions = cached_val
+
+        if cached_expansions is None:
+            from app.services.ai_service import expand_keyword as ai_expand_keyword
+            cached_expansions = ai_expand_keyword(q)[:8]
+            provider = "AI_Manager"
+            _EXPANDED_KEYWORDS_CACHE[q_lower] = (time.time(), cached_expansions or [])
+        else:
+            provider = "cache"
+
+        for item in cached_expansions or []:
+            item_lower = str(item or "").lower().strip()
+            if item_lower and item_lower not in expansions:
+                expansions.append(item_lower)
+    except Exception as e:
+        import logging
+        logging.error(f"AI expansion failed in background scan: {e}")
+
+    return list(dict.fromkeys(expansions)), provider
+
 @router.post("/manual-scan")
 def manual_scan(
     body: ManualScanRequest,
@@ -205,17 +255,11 @@ def manual_scan(
                 
         return list(set(expansions)), provider
 
-    provider_used = "none"
+    provider_used = "deferred" if body.expand_keywords else "none"
     if body.query:
         query_kw = body.query.strip().lower()
         if query_kw:
-            if body.expand_keywords:
-                expanded, provider_used = expand_keyword(query_kw)
-                for exp in expanded:
-                    if exp not in keyword_texts:
-                        keyword_texts.append(exp)
-            else:
-                keyword_texts.append(query_kw)
+            keyword_texts.append(query_kw)
 
     if body.keywords:
         for kw in body.keywords:
@@ -228,6 +272,7 @@ def manual_scan(
 
     mode = getattr(body, "mode", "HYBRID") or "HYBRID"
     project_id = body.project_id
+    query_key = (body.query or "").strip().lower() or "|".join(sorted(keyword_texts))
     
     import os
     env_max = os.getenv("CRAWL_MAX_RESULTS_PER_SOURCE")
@@ -261,10 +306,10 @@ def manual_scan(
         if meta.get("project_id") != project_id:
             continue
             
-        ej_keywords = set(meta.get("keywords", []))
+        ej_query_key = (meta.get("query_key") or meta.get("query") or "").strip().lower()
         ej_source_types = set(meta.get("source_types", []))
         
-        if meta.get("mode", ej.job_type) == mode and set(keyword_texts) == ej_keywords and set(body.source_types or []) == ej_source_types:
+        if meta.get("mode", ej.job_type) == mode and ej_query_key == query_key and set(body.source_types or []) == ej_source_types:
             # If auto-triggered, we don't return an existing completed job to frontend if it's already done (or we could return it as completed so UI doesn't spin)
             # Actually, if it's completed, we shouldn't trigger a new one, but returning COMPLETED is fine.
             return {
@@ -272,7 +317,7 @@ def manual_scan(
                 "status": ej.status.value if hasattr(ej.status, 'value') else ej.status,
                 "mode": mode,
                 "project_id": project_id,
-                "keywords": list(ej_keywords),
+                "keywords": meta.get("keywords", []),
                 "message": "Returned existing recent job to prevent duplicate crawl"
             }
 
@@ -286,6 +331,7 @@ def manual_scan(
         started_at=datetime.now(timezone.utc),
         meta_data={
             "query": body.query,
+            "query_key": query_key,
             "project_id": project_id, 
             "mode": mode, 
             "keywords": keyword_texts,
@@ -320,6 +366,7 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
     from app.models.mention import Mention
     from app.core.config import settings
     from app.services.url_utils import clean_final_url, domain_from_url
+    from sqlalchemy.orm.attributes import flag_modified
     import hashlib
     import time
     import unicodedata
@@ -339,6 +386,14 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
         
         job.status = CrawlJobStatus.RUNNING
         job.started_at = datetime.now(timezone.utc)
+        current_meta = job.meta_data or {}
+        original_query = current_meta.get("query")
+        provider_used = current_meta.get("provider", "none")
+        if current_meta.get("expand_keywords") and original_query:
+            expanded_keywords, provider_used = _expand_scan_keyword(original_query)
+            for expanded_kw in expanded_keywords:
+                if expanded_kw and expanded_kw not in keyword_texts:
+                    keyword_texts.append(expanded_kw)
         
         # Check environment capabilities
         has_serpapi = bool(settings.SERPAPI_API_KEY)
@@ -392,13 +447,11 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
         }
         
         # Ensure we keep existing keys from DB meta_data
-        current_meta = job.meta_data or {}
-        # Preserve original_query if it was in the initial meta
-        original_query = current_meta.get("query")
         current_meta.update({
             "summary": summary,
             "project_id": project_id,
             "keywords": keyword_texts,
+            "provider": provider_used,
             "started_at": job.started_at.isoformat() if job.started_at else None
         })
         if original_query:
@@ -411,7 +464,6 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
         run_discovery = mode in ("AUTO_DISCOVERY", "HYBRID")
         
         def commit_summary():
-            from sqlalchemy.orm.attributes import flag_modified
             cur = job.meta_data or {}
             # Update summary but keep all other fields intact
             cur["summary"] = summary
