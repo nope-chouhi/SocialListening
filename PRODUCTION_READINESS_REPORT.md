@@ -480,12 +480,12 @@ Total Tests: 22
 
 **Frontend**: ✅ Vercel
 - URL: https://social-listening-azure.vercel.app
-- Auto-deploys on push to main
+- Manual deploy from main after PR merge
 - Build time: ~2-3 minutes
 
 **Backend**: ✅ Render
 - URL: https://social-listening-backend.onrender.com
-- Auto-deploys on push to main
+- Manual deploy from main after PR merge
 - Build time: ~3-5 minutes
 - Command: `alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT`
 

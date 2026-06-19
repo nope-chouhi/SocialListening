@@ -316,7 +316,7 @@ Estimated time for first deployment:
 
 **Total**: ~45-60 minutes for first deployment
 
-Subsequent deployments will be faster (5-10 minutes) as they auto-deploy on git push.
+Subsequent deployments will be faster (5-10 minutes) as they must be manually deployed after PR merge.
 
 ---
 
