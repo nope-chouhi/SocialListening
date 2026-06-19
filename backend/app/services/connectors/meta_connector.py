@@ -115,3 +115,27 @@ class MetaConnector:
         except Exception as e:
             logger.error(f"Meta token validation failed: {e}")
             return False
+
+    def get_page_feed(self, access_token: str, page_id: str, limit: int = 50) -> List[Dict[str, Any]]:
+        """Fetch feed/posts from a Facebook Page."""
+        url = f"{self.graph_url}/{page_id}/feed"
+        params = {
+            "access_token": access_token,
+            "fields": "id,message,created_time,permalink_url,from,attachments{media_type,url,title}",
+            "limit": limit
+        }
+        resp = requests.get(url, params=params, timeout=15)
+        resp.raise_for_status()
+        return resp.json().get("data", [])
+
+    def get_ig_media(self, access_token: str, ig_user_id: str, limit: int = 50) -> List[Dict[str, Any]]:
+        """Fetch media/posts from an Instagram Business account."""
+        url = f"{self.graph_url}/{ig_user_id}/media"
+        params = {
+            "access_token": access_token,
+            "fields": "id,caption,media_url,permalink,timestamp,media_type,owner",
+            "limit": limit
+        }
+        resp = requests.get(url, params=params, timeout=15)
+        resp.raise_for_status()
+        return resp.json().get("data", [])

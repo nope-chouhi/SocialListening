@@ -8,6 +8,7 @@ class SourceType(str, Enum):
     FACEBOOK_PAGE = "facebook_page"
     FACEBOOK_GROUP = "facebook_group"
     FACEBOOK_PROFILE = "facebook_profile"
+    INSTAGRAM_BUSINESS = "instagram_business"
     YOUTUBE_CHANNEL = "youtube_channel"
     YOUTUBE_VIDEO = "youtube_video"
     WEBSITE = "website"

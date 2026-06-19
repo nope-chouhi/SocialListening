@@ -282,6 +282,78 @@ def test_rss_feed(url: str) -> Dict:
     }
 
 
+def crawl_meta_source(db: Session, source: Source) -> Dict:
+    from app.models.integration import SocialIntegrationAccount
+    from app.services.connectors.meta_connector import MetaConnector
+    from app.core.crypto import decrypt_token
+
+    acc = db.execute(
+        select(SocialIntegrationAccount).where(
+            SocialIntegrationAccount.external_id == source.platform_id,
+            SocialIntegrationAccount.provider == ('facebook' if source.source_type == 'facebook_page' else 'instagram')
+        )
+    ).scalars().first()
+
+    if not acc:
+        return {"success": False, "articles": [], "feed_title": "", "error": "Tài khoản Meta không được tìm thấy."}
+
+    meta_json = acc.metadata_json or {}
+    encrypted_page_token = meta_json.get("page_access_token")
+    if not encrypted_page_token:
+         return {"success": False, "articles": [], "feed_title": "", "error": "Không có token cho tài khoản này."}
+
+    page_access_token = decrypt_token(encrypted_page_token)
+    if not page_access_token:
+         return {"success": False, "articles": [], "feed_title": "", "error": "Lỗi giải mã token."}
+
+    connector = MetaConnector()
+    articles = []
+    
+    try:
+        if source.source_type == 'facebook_page':
+            feed = connector.get_page_feed(page_access_token, source.platform_id)
+            for item in feed:
+                content = item.get("message", "")
+                title = content[:500] if content else None
+                
+                published_at_str = item.get("created_time")
+                published_at = datetime.fromisoformat(published_at_str.replace('+0000', '+00:00')) if published_at_str else None
+                
+                articles.append({
+                    "title": title,
+                    "content": content,
+                    "url": item.get("permalink_url") or f"https://facebook.com/{item.get('id')}",
+                    "author": item.get("from", {}).get("name") or acc.name,
+                    "published_at": published_at
+                })
+        elif source.source_type == 'instagram_business':
+            media = connector.get_ig_media(page_access_token, source.platform_id)
+            for item in media:
+                content = item.get("caption", "")
+                title = content[:500] if content else None
+                
+                published_at_str = item.get("timestamp")
+                published_at = datetime.fromisoformat(published_at_str.replace('+0000', '+00:00')) if published_at_str else None
+                
+                articles.append({
+                    "title": title,
+                    "content": content,
+                    "url": item.get("permalink") or item.get("media_url"),
+                    "author": acc.name,
+                    "published_at": published_at
+                })
+                
+        return {
+            "success": True,
+            "articles": articles,
+            "feed_title": acc.name,
+            "error": None
+        }
+    except Exception as e:
+        logger.error(f"Error crawling Meta source {source.platform_id}: {e}")
+        return {"success": False, "articles": [], "feed_title": "", "error": f"Lỗi Meta API: {str(e)}"}
+
+
 def crawl_source(db: Session, source_id: int, job_id: int = None) -> Dict:
     """
     Crawl a source and save mentions.
@@ -343,6 +415,8 @@ def crawl_source(db: Session, source_id: int, job_id: int = None) -> Dict:
         result = crawl_rss_feed(source.url)
     elif source.source_type in ('website', 'manual_url', 'forum'):
         result = crawl_html_page(source.url)
+    elif source.source_type in ('facebook_page', 'instagram_business'):
+        result = crawl_meta_source(db, source)
     else:
         logger.info(f"Source type {source.source_type} not yet supported for automated crawling")
         return {
