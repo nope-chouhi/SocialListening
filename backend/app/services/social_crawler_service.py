@@ -187,7 +187,7 @@ class SocialCrawlerService:
                 final_link = await self._resolve_news_url(client, original_link) if original_link else None
                 link_resolution_failed = bool(original_link and is_google_news_discovery_url(original_link) and not final_link)
                 
-                domain = domain_from_url(final_link) or domain_from_url(source_url) or ""
+                domain = domain_from_url(final_link) or ""
                 metadata = {"discovery_url": original_link}
                 if link_resolution_failed:
                     metadata.update({

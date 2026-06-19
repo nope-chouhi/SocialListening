@@ -15,6 +15,7 @@ from app.models.source_item import SourceItem
 from app.models.keyword import Keyword, KeywordGroup
 from app.models.mention import Mention
 from app.core.config import settings
+from app.services.url_utils import clean_final_url, domain_from_url, extract_google_news_embedded_url, is_google_news_discovery_url
 
 logger = logging.getLogger(__name__)
 
@@ -78,6 +79,11 @@ def fetch_and_parse_feed(url: str) -> Dict:
             title = entry.get('title', '').strip()
             link = entry.get('link', '').strip()
             guid = entry.get('id', '') or entry.get('guid', '') or link
+            final_link = clean_final_url(link) or extract_google_news_embedded_url(link)
+            if not final_link:
+                logger.info("Skipping RSS entry with invalid/discovery/media URL: %s", link)
+                continue
+            discovery_url = link if is_google_news_discovery_url(link) else None
             
             # Content / description
             description = entry.get('summary', '') or entry.get('description', '')
@@ -127,7 +133,10 @@ def fetch_and_parse_feed(url: str) -> Dict:
             
             items.append({
                 "title": title,
-                "url": link,
+                "url": final_link,
+                "canonical_url": final_link,
+                "original_url": discovery_url,
+                "domain": domain_from_url(final_link),
                 "guid": guid,
                 "snippet": snippet,
                 "html_description": description,
@@ -215,7 +224,7 @@ def run_rss_collector(db: Session, source_ids: List[int] = None) -> Dict:
                     source_name=source.name,
                     url=item["url"],
                     normalized_url=norm_url,
-                    domain=source.domain or "vnexpress.net",
+                    domain=item.get("domain"),
                     title=item["title"],
                     snippet=item["snippet"],
                     author=item["author"],
@@ -225,6 +234,7 @@ def run_rss_collector(db: Session, source_ids: List[int] = None) -> Dict:
                     image_url=item["image_url"],
                     media_url=item["media_url"],
                     media_thumbnail=item["media_thumbnail"],
+                    raw_payload_json={"discovery_url": item.get("original_url")} if item.get("original_url") else None,
                     content_hash=content_hash,
                     status="collected"
                 )
@@ -263,9 +273,11 @@ def run_rss_collector(db: Session, source_ids: List[int] = None) -> Dict:
                         source_id=source.id,
                         source_type="rss",
                         platform=source.platform or "web",
-                        domain=source.domain or "vnexpress.net",
+                        domain=item.get("domain"),
                         title=item["title"],
                         url=norm_url,
+                        canonical_url=item.get("canonical_url") or norm_url,
+                        original_url=item.get("original_url"),
                         snippet=item["snippet"],
                         content=item["html_description"],
                         content_hash=content_hash,
