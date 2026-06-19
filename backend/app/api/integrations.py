@@ -10,6 +10,7 @@ from app.core.database import get_db
 from app.core.security import get_current_active_user
 from app.models.user import User
 from app.models.integration import SocialIntegration, SocialIntegrationAccount, OAuthState
+from app.models.source import Source, SourceType
 from app.services.connectors.meta_connector import MetaConnector
 from app.core.crypto import encrypt_token, decrypt_token
 import secrets
@@ -274,17 +275,42 @@ def meta_callback(
         existing_map = {acc.external_id: acc for acc in existing_accs}
         
         for acc in accounts:
+            meta = {}
+            if acc.get("page_access_token"):
+                meta["page_access_token"] = encrypt_token(acc["page_access_token"])
+
             if acc["id"] not in existing_map:
+                source_type = SourceType.FACEBOOK_PAGE if acc["platform"] == "facebook" else SourceType.INSTAGRAM_BUSINESS
+                source_url = f"https://{acc['platform']}.com/{acc['id']}"
+
                 new_acc = SocialIntegrationAccount(
                     integration_id=integration.id,
                     provider=acc["platform"],
                     account_type="page" if acc["platform"] == "facebook" else "instagram_business",
                     external_id=acc["id"],
                     name=acc["name"],
-                    selected=True # default select new accounts
+                    selected=True, # default select new accounts
+                    metadata_json=meta
                 )
                 db.add(new_acc)
-        
+                
+                # Create the corresponding Source record automatically
+                new_source = Source(
+                    user_id=user_id,
+                    name=acc["name"],
+                    source_type=source_type,
+                    url=source_url,
+                    platform=acc["platform"],
+                    platform_id=acc["id"],
+                    is_active=True,
+                    crawl_frequency="daily",
+                    schedule_hours=[9, 15, 21]
+                )
+                db.add(new_source)
+            else:
+                existing_acc = existing_map[acc["id"]]
+                existing_acc.metadata_json = meta
+                
         db.commit()
         # Ensure we redirect to the dedicated Meta Integration page
         from fastapi.responses import RedirectResponse
@@ -353,6 +379,17 @@ def select_meta_account(req: SelectAccountRequest, db: Session = Depends(get_db)
         raise HTTPException(status_code=404, detail="Không tìm thấy tài khoản.")
         
     acc.selected = req.selected
+    
+    # Sync with Source table
+    source = db.execute(
+        select(Source).where(
+            Source.user_id == current_user.id,
+            Source.platform_id == req.account_id
+        )
+    ).scalar_one_or_none()
+    if source:
+        source.is_active = req.selected
+        
     db.commit()
     return {"success": True, "selected": acc.selected}
 
@@ -390,6 +427,21 @@ def meta_disconnect(db: Session = Depends(get_db), current_user: User = Depends(
     ).scalar_one_or_none()
     
     if integration:
+        # Also deactivate associated Sources
+        accounts = db.execute(
+            select(SocialIntegrationAccount).where(
+                SocialIntegrationAccount.integration_id == integration.id
+            )
+        ).scalars().all()
+        account_ids = [acc.external_id for acc in accounts]
+        if account_ids:
+            db.execute(
+                Source.__table__.update().where(
+                    Source.user_id == current_user.id,
+                    Source.platform_id.in_(account_ids)
+                ).values(is_active=False)
+            )
+
         db.execute(
             SocialIntegrationAccount.__table__.delete().where(
                 SocialIntegrationAccount.integration_id == integration.id

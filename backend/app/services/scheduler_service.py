@@ -124,7 +124,7 @@ def get_due_sources(db: Session) -> List[Source]:
             continue
             
         # Skip unsupported sources
-        is_supported = (source.source_type or '').lower() in ['rss', 'website']
+        is_supported = (source.source_type or '').lower() in ['rss', 'website', 'facebook_page', 'instagram_business']
         if not is_supported:
             continue
 
