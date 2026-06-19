@@ -34,7 +34,10 @@ interface MentionItem {
   source_type: string;
   title: string | null;
   content: string;
-  url: string;
+  url: string | null;
+  canonical_url?: string | null;
+  original_url?: string | null;
+  visit_url_invalid_reason?: string | null;
   author: string | null;
   published_at: string | null;
   collected_at: string | null;
@@ -221,6 +224,13 @@ function getSafeUrl(url: string | null | undefined): string | null {
       lowerUrl.startsWith('vbscript:')) {
     return null;
   }
+
+  try {
+    const parsed = new URL(tUrl);
+    if (parsed.hostname === 'news.google.com' || parsed.hostname === 'www.news.google.com') {
+      return null;
+    }
+  } catch {}
   
   // Accept explicitly allowed schemes
   if (lowerUrl.startsWith('http://') || lowerUrl.startsWith('https://')) {
@@ -237,7 +247,13 @@ function getSafeUrl(url: string | null | undefined): string | null {
   } catch (e) {
     // If URL parse fails but it looks like a domain without scheme, add https://
     if (/^[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+/.test(tUrl)) {
-      return `https://${tUrl}`;
+      try {
+        const normalized = new URL(`https://${tUrl}`);
+        if (normalized.hostname === 'news.google.com' || normalized.hostname === 'www.news.google.com') {
+          return null;
+        }
+        return normalized.href;
+      } catch {}
     }
   }
   return null;
@@ -291,6 +307,12 @@ function MentionsPageContent() {
       setSearchTerm(q);
       setSearchInput(q);
       setPage(1);
+      setMentionsList([]);
+      setTotalMentions(0);
+      setTotalPages(1);
+      setActiveScanJobId(null);
+      setActiveScanKeyword('');
+      setScanJobStatus(null);
       // Reset scanned keywords when query changes so new scan triggers
       if (q) {
         scannedKeywordsRef.current?.clear();
@@ -552,7 +574,7 @@ function MentionsPageContent() {
       if (initialJobId) {
         params.job_id = initialJobId;
       } else {
-        // Apply q instead of keyword to allow searching across title, snippet, content, url, domain
+        // Apply q instead of keyword so backend searches only title, snippet, and content.
         if (searchTerm) {
           params.q = searchTerm;
         }
@@ -812,7 +834,12 @@ function MentionsPageContent() {
     searchTimeout.current = setTimeout(() => {
       setSearchTerm(val);
       setPage(1);
+      setMentionsList([]);
+      setTotalMentions(0);
+      setTotalPages(1);
       setActiveScanJobId(null);
+      setActiveScanKeyword('');
+      setScanJobStatus(null);
       setSearchState('IDLE');
       const newParams = new URLSearchParams(searchParams?.toString() || '');
       if (val) {
@@ -872,8 +899,11 @@ function MentionsPageContent() {
   };
 
   const handleVisit = async (mention: MentionItem) => {
-    const safeUrl = getSafeUrl(mention.url);
-    if (!safeUrl) return;
+    const safeUrl = getSafeUrl(mention.canonical_url || mention.url);
+    if (!safeUrl) {
+      toast.error(mention.visit_url_invalid_reason || 'Khong co link bai goc hop le');
+      return;
+    }
     
     window.open(safeUrl, '_blank', 'noopener,noreferrer');
     
@@ -1513,10 +1543,10 @@ function MentionsPageContent() {
                 <div className="bg-gray-50 dark:bg-[#0a0f1c]/50 px-5 py-3 border-t border-gray-100 dark:border-white/5 flex flex-wrap items-center justify-between gap-3">
                    <div className="flex flex-wrap items-center gap-4">
                      {(() => {
-                       const safeUrl = getSafeUrl(mention.url);
+                        const safeUrl = getSafeUrl(mention.canonical_url || mention.url);
                        if (!safeUrl) {
                          return (
-                           <div className="flex items-center gap-1.5 text-xs font-bold text-gray-400 cursor-not-allowed group/tooltip relative">
+                            <div className="flex items-center gap-1.5 text-xs font-bold text-gray-400 cursor-not-allowed group/tooltip relative" title={mention.visit_url_invalid_reason || 'Khong co link bai goc hop le'}>
                              <Link2Off className="w-3.5 h-3.5" /> Visit
                              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover/tooltip:block px-2 py-1 bg-gray-800 text-white text-[10px] rounded whitespace-nowrap z-10">Không có link bài gốc</div>
                            </div>

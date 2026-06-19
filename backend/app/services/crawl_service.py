@@ -17,6 +17,12 @@ from app.models.keyword import Keyword, KeywordGroup
 from app.models.mention import Mention, AIAnalysis
 from app.models.alert import Alert, AlertSeverity, AlertStatus
 from app.models.crawl import CrawlJob, CrawlJobStatus
+from app.services.url_utils import (
+    clean_final_url,
+    domain_from_url,
+    extract_google_news_embedded_url,
+    is_google_news_discovery_url,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -195,10 +201,24 @@ def crawl_rss_feed(url: str) -> Dict:
             if not link and not content:
                 continue  # Skip empty entries
 
+            discovery_url = link if is_google_news_discovery_url(link) else None
+            final_url = clean_final_url(link) or extract_google_news_embedded_url(link)
+            if discovery_url and not final_url:
+                logger.info("Skipping unresolved Google News RSS discovery URL: %s", discovery_url)
+                continue
+
+            article_url = final_url or clean_final_url(link) or clean_final_url(url)
+            if not article_url:
+                logger.info("Skipping RSS entry with invalid URL: %s", link or url)
+                continue
+
             articles.append({
                 'title': title[:500] if title else None,
                 'content': content,
-                'url': link or url,
+                'url': article_url,
+                'canonical_url': article_url,
+                'original_url': discovery_url,
+                'domain': domain_from_url(article_url),
                 'author': author[:500] if author else None,
                 'published_at': published_at
             })
@@ -475,6 +495,9 @@ def crawl_source(db: Session, source_id: int, job_id: int = None) -> Dict:
                 content=article['content'],
                 content_hash=content_hash,
                 url=article['url'],
+                canonical_url=article.get('canonical_url') or article['url'],
+                original_url=article.get('original_url'),
+                domain=article.get('domain'),
                 author=article.get('author'),
                 published_at=article.get('published_at'),
                 collected_at=datetime.now(timezone.utc),

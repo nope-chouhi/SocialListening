@@ -22,7 +22,7 @@ router = APIRouter()
 def match_and_create_mentions(db: Session, source_item: SourceItem, active_keywords: List[Keyword], project_id: Optional[int] = None) -> int:
     """Run matching engine for a source_item against keywords and create Mentions."""
     mentions_created = 0
-    search_text = f"{source_item.title or ''} {source_item.snippet or ''} {source_item.content or ''} {source_item.url or ''}".lower()
+    search_text = f"{source_item.title or ''} {source_item.snippet or ''} {source_item.content or ''}".lower()
     
     for kw in active_keywords:
         kw_text = kw.keyword.lower().strip()

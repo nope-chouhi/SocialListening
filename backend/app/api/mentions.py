@@ -17,6 +17,7 @@ from app.models.alert import Alert, AlertStatus, AlertSeverity
 from app.models.incident import Incident, IncidentStatus, IncidentLog
 from app.services.ai_service import analyze_mention as service_analyze_mention
 from app.services.notification_service import notify_high_risk_mention
+from app.services.url_utils import clean_final_url, domain_from_url, is_google_news_discovery_url
 import os
 from math import ceil
 
@@ -27,6 +28,37 @@ import hashlib
 _MENTIONS_SEARCH_CACHE = {}
 
 router = APIRouter()
+
+
+_GOOGLE_NEWS_DOMAINS = {"news.google.com", "www.news.google.com", "google_news.com"}
+
+
+def _safe_domain(domain: Optional[str]) -> Optional[str]:
+    value = (domain or "").strip()
+    if not value:
+        return None
+    return None if value.lower() in _GOOGLE_NEWS_DOMAINS else value
+
+
+def _mention_link_fields(mention: Mention):
+    visit_url = clean_final_url(mention.canonical_url) or clean_final_url(mention.url)
+    raw_url = mention.url or mention.canonical_url or mention.original_url
+    reason = None
+    if not visit_url:
+        if is_google_news_discovery_url(raw_url):
+            reason = "Google News RSS discovery URL was not resolved to the publisher URL"
+        elif raw_url:
+            reason = "Invalid or unsupported Visit URL"
+        else:
+            reason = "No Visit URL available"
+
+    display_domain = domain_from_url(visit_url) or _safe_domain(mention.domain)
+    metadata = dict(mention.meta_data or {})
+    metadata["visit_url_available"] = bool(visit_url)
+    if reason:
+        metadata["visit_url_invalid_reason"] = reason
+
+    return visit_url, display_domain, metadata, reason
 
 
 @router.get("/summary")
@@ -56,8 +88,6 @@ def get_mentions_summary(
                 Mention.title.ilike(search_term),
                 Mention.snippet.ilike(search_term),
                 Mention.content.ilike(search_term),
-                Mention.domain.ilike(search_term),
-                Mention.keyword_text.ilike(search_term),
             ))
         if date_from:
             base_filter.append(Mention.collected_at >= date_from)
@@ -283,8 +313,8 @@ def list_mentions(
             query = query.where(
                 or_(
                     Mention.title.ilike(search_pattern),
-                    Mention.content.ilike(search_pattern),
-                    Mention.author.ilike(search_pattern)
+                    Mention.snippet.ilike(search_pattern),
+                    Mention.content.ilike(search_pattern)
                 )
             )
 
@@ -295,7 +325,6 @@ def list_mentions(
                     Mention.title.ilike(search_term),
                     Mention.snippet.ilike(search_term),
                     Mention.content.ilike(search_term),
-                    Mention.keyword_text.ilike(search_term),
                 )
             )
 
@@ -357,8 +386,8 @@ def list_mentions(
                 count_base = count_base.where(
                     or_(
                         Mention.title.ilike(search_pattern),
-                        Mention.content.ilike(search_pattern),
-                        Mention.author.ilike(search_pattern)
+                        Mention.snippet.ilike(search_pattern),
+                        Mention.content.ilike(search_pattern)
                     )
                 )
 
@@ -369,7 +398,6 @@ def list_mentions(
                         Mention.title.ilike(search_term),
                         Mention.snippet.ilike(search_term),
                         Mention.content.ilike(search_term),
-                        Mention.keyword_text.ilike(search_term),
                     )
                 )
             
@@ -398,11 +426,12 @@ def list_mentions(
             exact_title = case((Mention.title.ilike(f"{q}"), 100), else_=0)
             word_title = case((Mention.title.ilike(f"% {q} %"), 85), else_=0)
             sub_title = case((Mention.title.ilike(search_term), 60), else_=0)
+            word_snippet = case((Mention.snippet.ilike(f"% {q} %"), 35), else_=0)
+            sub_snippet = case((Mention.snippet.ilike(search_term), 15), else_=0)
             word_content = case((Mention.content.ilike(f"% {q} %"), 40), else_=0)
             sub_content = case((Mention.content.ilike(search_term), 20), else_=0)
-            keyword_match = case((Mention.keyword_text.ilike(search_term), 50), else_=0)
             
-            relevance_expr = exact_title + word_title + sub_title + word_content + sub_content + keyword_match
+            relevance_expr = exact_title + word_title + sub_title + word_snippet + sub_snippet + word_content + sub_content
 
         # Sorting
         if q and not job_id and relevance_expr is not None:
@@ -477,13 +506,8 @@ def list_mentions(
             if q:
                 ql = q.lower()
                 m_title = (m.title or "").lower()
-                m_content = (m.content or "").lower() + " " + (m.snippet or "").lower()
-                m_source = (m.domain or "").lower() + " " + (src.name.lower() if src and src.name else "")
-                m_keywords = []
-                if m.matched_keywords and isinstance(m.matched_keywords, list):
-                    m_keywords = [kw.get("keyword", "").lower() for kw in m.matched_keywords if isinstance(kw, dict)]
-                elif m.keyword_text:
-                    m_keywords = [m.keyword_text.lower()]
+                m_snippet = (m.snippet or "").lower()
+                m_content = (m.content or "").lower()
                 
                 if ql == m_title:
                     matched_in.append("Title")
@@ -493,18 +517,18 @@ def list_mentions(
                     if match_strength != "exact": match_strength = "strong"
                 elif ql in m_title:
                     matched_in.append("Title")
-                    
+
+                if ql in m_snippet and "Snippet" not in matched_in:
+                    matched_in.append("Snippet")
+                    if f" {ql} " in f" {m_snippet} " and match_strength not in ("exact", "strong"):
+                        match_strength = "strong"
+
                 if ql in m_content and "Content" not in matched_in:
                     matched_in.append("Content")
                     if f" {ql} " in f" {m_content} " and match_strength not in ("exact", "strong"):
                         match_strength = "strong"
-                        
-                if ql in m_source and "Source" not in matched_in:
-                    matched_in.append("Source")
-                
-                if any(ql in kw or kw in ql for kw in m_keywords) and "Keyword" not in matched_in:
-                    matched_in.append("Keyword")
-                    if match_strength != "exact": match_strength = "strong"
+
+            visit_url, display_domain, metadata, visit_url_invalid_reason = _mention_link_fields(m)
 
             result_items.append({
                 "id": m.id,
@@ -514,13 +538,14 @@ def list_mentions(
                 "source_name": src.name if src else "Unknown",
                 "source_type": m.source_type or (src.source_type.value if src and hasattr(src.source_type, 'value') else (src.source_type if src else "web")),
                 "platform": m.platform,
-                "domain": m.domain,
+                "domain": display_domain,
                 "title": m.title or m.domain or m.url or "Không có tiêu đề",
                 "content": m.content,
                 "snippet": m.snippet or "Không có đoạn trích",
-                "url": m.url,
-                "canonical_url": m.canonical_url,
+                "url": visit_url,
+                "canonical_url": visit_url,
                 "original_url": m.original_url,
+                "visit_url_invalid_reason": visit_url_invalid_reason,
                 "verification_status": m.verification_status,
                 "verification_error": m.verification_error,
                 "ai_provider": analysis.ai_provider if analysis else None,
@@ -535,7 +560,7 @@ def list_mentions(
                 "collected_at": m.collected_at.isoformat() if m.collected_at else None,
                 "is_reviewed": m.is_reviewed,
                 "matched_keywords": m.matched_keywords or [],
-                "metadata": m.meta_data or {},
+                "metadata": metadata,
                 "ai_analysis": {
                     "sentiment": analysis.sentiment.value if analysis and hasattr(analysis.sentiment, 'value') else (analysis.sentiment if analysis else None),
                     "risk_score": analysis.risk_score if analysis else None,
@@ -606,6 +631,10 @@ def record_mention_visit(
     
     if not mention:
         raise HTTPException(status_code=404, detail="Mention not found")
+
+    visit_url, _, _, visit_url_invalid_reason = _mention_link_fields(mention)
+    if not visit_url:
+        raise HTTPException(status_code=400, detail=visit_url_invalid_reason or "No valid Visit URL available")
         
     try:
         import hashlib
@@ -617,7 +646,7 @@ def record_mention_visit(
             mention_id=mention_id,
             user_id=current_user.id,
             project_id=mention.project_id,
-            original_url=mention.url,
+            original_url=visit_url,
             source_type=mention.source_type,
             user_agent=user_agent,
             ip_hash=ip_hash
@@ -668,8 +697,6 @@ def export_mentions_csv(
                 Mention.title.ilike(search_term),
                 Mention.snippet.ilike(search_term),
                 Mention.content.ilike(search_term),
-                Mention.url.ilike(search_term),
-                Mention.domain.ilike(search_term),
             )
         )
     if date_from:
@@ -739,24 +766,27 @@ def get_mention(
     if mention.source_id:
         src = db.execute(select(Source).where(Source.id == mention.source_id)).scalar_one_or_none()
 
+    visit_url, display_domain, metadata, visit_url_invalid_reason = _mention_link_fields(mention)
+
     return {
         "id": mention.id,
         "source_id": mention.source_id,
         "source_name": src.name if src else "Unknown",
         "source_type": mention.source_type or (src.source_type.value if src and hasattr(src.source_type, 'value') else (src.source_type if src else "web")),
         "platform": mention.platform,
-        "domain": mention.domain,
+        "domain": display_domain,
         "title": mention.title,
         "content": mention.content,
-        "url": mention.url,
-        "canonical_url": mention.canonical_url,
+        "url": visit_url,
+        "canonical_url": visit_url,
         "original_url": mention.original_url,
+        "visit_url_invalid_reason": visit_url_invalid_reason,
         "author": mention.author,
         "published_at": mention.published_at.isoformat() if mention.published_at else None,
         "collected_at": mention.collected_at.isoformat() if mention.collected_at else None,
         "matched_keywords": mention.matched_keywords,
         "platform_post_id": mention.platform_post_id,
-        "metadata": mention.meta_data,
+        "metadata": metadata,
         "verification_status": mention.verification_status,
         "verification_error": mention.verification_error,
         "ai_provider": analysis.ai_provider if analysis else None,

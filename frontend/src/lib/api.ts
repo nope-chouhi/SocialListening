@@ -1,20 +1,20 @@
 import axios, { AxiosError } from 'axios';
 
-const rawApiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const configuredApiUrl = (process.env.NEXT_PUBLIC_API_URL || '').trim();
+const rawApiUrl = configuredApiUrl || (process.env.NODE_ENV === 'development' ? 'http://localhost:8000' : '');
 const BACKEND_URL = rawApiUrl.endsWith('/') ? rawApiUrl.slice(0, -1) : rawApiUrl;
 
 /** Exported so debug panels can show the configured backend URL */
 export const API_BASE_URL = BACKEND_URL;
 
-// In production, requests go through Next.js rewrites (same-origin proxy).
-// In dev, requests also go through Next.js rewrites (configured in next.config.js).
-// No baseURL needed — all /api/* paths are relative to the current origin.
-if (typeof window !== 'undefined' && !process.env.NEXT_PUBLIC_API_URL) {
-  console.error('[API] NEXT_PUBLIC_API_URL is not configured! Rewrites will proxy to localhost:8000.');
+// API module calls the configured backend directly. If production lacks
+// NEXT_PUBLIC_API_URL, requests fall back to same-origin /api rewrites.
+if (typeof window !== 'undefined' && !configuredApiUrl && process.env.NODE_ENV === 'production') {
+  console.error('[API] NEXT_PUBLIC_API_URL is not configured. Falling back to same-origin /api proxy.');
 }
 
 export const api = axios.create({
-  // No baseURL — requests go to same origin, proxied by Next.js rewrites
+  ...(BACKEND_URL ? { baseURL: BACKEND_URL } : {}),
   headers: {
     'Content-Type': 'application/json',
   },

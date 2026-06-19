@@ -14,6 +14,12 @@ import re
 import html
 
 from app.core.config import settings
+from app.services.url_utils import (
+    clean_final_url,
+    domain_from_url,
+    extract_google_news_embedded_url,
+    is_google_news_discovery_url,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -26,36 +32,41 @@ class SocialCrawlerService:
         self.user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         self._url_cache = {}
 
-    async def _resolve_news_url(self, client: httpx.AsyncClient, url: str) -> str:
+    async def _resolve_news_url(self, client: httpx.AsyncClient, url: str) -> Optional[str]:
         if url in self._url_cache:
             return self._url_cache[url]
 
-        # Try base64 decode first for Google News RSS articles
-        if "news.google.com/rss/articles/" in url:
-            try:
-                import base64
-                import re
-                b64_str = url.split("articles/")[1].split("?")[0]
-                # Pad to multiple of 4
-                b64_str += "=" * ((4 - len(b64_str) % 4) % 4)
-                decoded = base64.urlsafe_b64decode(b64_str)
-                match = re.search(rb"https?://[a-zA-Z0-9-._~:/?#\[\]@!$&\'()*+,;=%]+", decoded)
-                if match:
-                    final_url = match.group(0).decode("utf-8")
-                    self._url_cache[url] = final_url
-                    return final_url
-            except Exception as e:
-                logger.debug(f"Base64 decode failed for {url}: {e}")
+        embedded_url = extract_google_news_embedded_url(url)
+        if embedded_url:
+            self._url_cache[url] = embedded_url
+            return embedded_url
+
+        direct_url = clean_final_url(url)
+        if direct_url:
+            self._url_cache[url] = direct_url
+            return direct_url
 
         try:
             # Fallback to HTTP redirect resolution
-            response = await client.get(url, timeout=5.0, follow_redirects=True)
-            final_url = str(response.url)
-            self._url_cache[url] = final_url
-            return final_url
+            response = await client.get(url, timeout=8.0, follow_redirects=True, headers={"User-Agent": self.user_agent})
+            final_url = clean_final_url(str(response.url))
+            if final_url:
+                self._url_cache[url] = final_url
+                return final_url
+
+            if is_google_news_discovery_url(url):
+                candidates = re.findall(r"https?://[^\"'<>\\\s]+", response.text or "")
+                for raw_candidate in candidates:
+                    possible_url = html.unescape(urllib.parse.unquote(raw_candidate)).rstrip(").,;]")
+                    final_url = clean_final_url(possible_url)
+                    if final_url:
+                        self._url_cache[url] = final_url
+                        return final_url
         except Exception as e:
             logger.debug(f"Failed to resolve URL {url}: {e}")
-            return url
+
+        self._url_cache[url] = None
+        return None
 
     async def crawl_twitter(self, keyword: str, limit: int = 50) -> List[Dict[str, Any]]:
         token = settings.TWITTER_BEARER_TOKEN or os.getenv("TWITTER_BEARER_TOKEN", "")
@@ -160,6 +171,7 @@ class SocialCrawlerService:
                 description = item.findtext('description', '')
                 source = item.find('source')
                 source_name = source.text if source is not None else 'Google News'
+                source_url = source.attrib.get('url') if source is not None else None
                 
                 ts = datetime.now(timezone.utc)
                 if pubDate:
@@ -172,13 +184,16 @@ class SocialCrawlerService:
                 clean_description = html.unescape(re.sub(r'<[^>]+>', '', description)) if description else ''
                 clean_content = clean_description or title
                 
-                final_link = await self._resolve_news_url(client, original_link) if original_link else ''
-                link_resolution_failed = (final_link == original_link) and original_link.startswith("https://news.google.com")
+                final_link = await self._resolve_news_url(client, original_link) if original_link else None
+                link_resolution_failed = bool(original_link and is_google_news_discovery_url(original_link) and not final_link)
                 
-                domain = ""
-                if final_link:
-                    parsed = urllib.parse.urlparse(final_link)
-                    domain = parsed.netloc.replace("www.", "")
+                domain = domain_from_url(final_link) or domain_from_url(source_url) or ""
+                metadata = {"discovery_url": original_link}
+                if link_resolution_failed:
+                    metadata.update({
+                        "link_resolution_failed": True,
+                        "visit_url_invalid_reason": "Google News RSS discovery URL could not be resolved to the publisher article URL",
+                    })
                         
                 return {
                     "source": "google_news",
@@ -187,10 +202,11 @@ class SocialCrawlerService:
                     "author": source_name,
                     "title": title,
                     "content": clean_content,
-                    "url": final_link or original_link,
+                    "url": final_link,
                     "original_url": original_link,
+                    "canonical_url": final_link,
                     "domain": domain,
-                    "metadata": {"link_resolution_failed": link_resolution_failed} if link_resolution_failed else {},
+                    "metadata": metadata,
                     "timestamp": ts,
                     "interactions": 0,
                     "reach_estimate": 500,

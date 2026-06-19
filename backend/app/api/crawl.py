@@ -319,6 +319,7 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
     from app.models.crawl import CrawlJob, CrawlJobStatus
     from app.models.mention import Mention
     from app.core.config import settings
+    from app.services.url_utils import clean_final_url, domain_from_url
     import hashlib
     import time
     import unicodedata
@@ -356,6 +357,7 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
                 "results_after_keyword_match": 0,
                 "mentions_created": 0,
                 "duplicates_skipped": 0,
+                "invalid_links_skipped": 0,
                 "error": None,
                 "skip_reason": "Not configured" if not web_ready else None
             },
@@ -365,6 +367,7 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
                 "raw_results_count": 0,
                 "mentions_created": 0,
                 "duplicates_skipped": 0,
+                "invalid_links_skipped": 0,
                 "error": None,
                 "skip_reason": "Not configured" if not has_youtube else None
             },
@@ -374,6 +377,7 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
                 "raw_results_count": 0,
                 "mentions_created": 0,
                 "duplicates_skipped": 0,
+                "invalid_links_skipped": 0,
                 "error": None,
                 "skip_reason": None
             },
@@ -382,6 +386,7 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
             "urls_crawled": 0,
             "new_mentions_created": 0,
             "duplicates_skipped": 0,
+            "invalid_links_skipped": 0,
             "old_mentions_existing": 0,
             "errors": []
         }
@@ -551,10 +556,8 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
 
         # ── WRITE ALL RESULTS TO DB (single-threaded, safe) ──────────────────
         for (adapter_name, r) in all_raw_results:
-            url = r.get("url")
-            if not url:
-                continue
-            url = str(url).lower().strip()
+            raw_url = r.get("canonical_url") or r.get("url")
+            url = clean_final_url(raw_url)
             title = str(r.get("title") or "")
             snippet = str(r.get("snippet") if adapter_name == "web" else r.get("content") or "")
 
@@ -567,9 +570,15 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
             else:
                 summary["social"]["raw_results_count"] += 1
 
+            if not url:
+                if raw_url or r.get("original_url"):
+                    summary[adapter_name]["invalid_links_skipped"] += 1
+                    summary["invalid_links_skipped"] += 1
+                continue
+
             # Keyword match
             matched_kw = None
-            search_text = strip_accents((title + " " + snippet + " " + url).lower())
+            search_text = strip_accents((title + " " + snippet).lower())
             for kw in keyword_texts:
                 if strip_accents(kw.lower()) in search_text:
                     matched_kw = kw
@@ -583,7 +592,7 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
                 )
 
             content_hash = hashlib.sha256(
-                f"{project_id}_{matched_kw}_{url}_{title}".encode()
+                f"{project_id}_{matched_kw}_{url.lower()}_{title}".encode()
             ).hexdigest()
 
             if content_hash in seen_hashes:
@@ -602,7 +611,7 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
                 continue
 
             seen_hashes.add(content_hash)
-            parsed_domain = urlparse(url).netloc
+            parsed_domain = domain_from_url(url) or urlparse(url).netloc
 
             if adapter_name == "web":
                 src_type, platform, author, published_at = "web", "web", "", None
@@ -614,7 +623,7 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
             else:
                 src_type = r.get("source_type", "social")
                 platform = r.get("platform", "social")
-                parsed_domain = platform + ".com"
+                parsed_domain = r.get("domain") or parsed_domain
                 author = (r.get("author") or "")[:500]
                 published_at = r.get("timestamp")
 
@@ -629,11 +638,15 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
                 snippet=snippet[:1000] if snippet else None,
                 content=snippet[:10000] if snippet else None,
                 url=url,
+                original_url=r.get("original_url"),
+                canonical_url=url,
                 content_hash=content_hash,
                 collected_at=datetime.now(timezone.utc),
                 is_reviewed=False,
                 author=author,
                 published_at=published_at,
+                matched_keywords=[{"keyword": matched_kw}],
+                meta_data=r.get("metadata") or {},
             )
             db.add(mention)
             summary[adapter_name]["mentions_created"] += 1
@@ -666,7 +679,14 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
         meta_data_final["raw_results_count"] = meta_data_final["actual_raw_results_count"]
         meta_data_final["created_mentions_count"] = summary.get("new_mentions_created", 0)
         meta_data_final["duplicate_mentions_count"] = summary.get("duplicates_skipped", 0)
-        meta_data_final["skipped_low_relevance_count"] = meta_data_final["actual_raw_results_count"] - meta_data_final["created_mentions_count"] - meta_data_final["duplicate_mentions_count"]
+        meta_data_final["invalid_links_skipped"] = summary.get("invalid_links_skipped", 0)
+        meta_data_final["skipped_low_relevance_count"] = max(
+            0,
+            meta_data_final["actual_raw_results_count"]
+            - meta_data_final["created_mentions_count"]
+            - meta_data_final["duplicate_mentions_count"]
+            - meta_data_final["invalid_links_skipped"]
+        )
         meta_data_final["failed_sources"] = summary["errors"]
         meta_data_final["duration_seconds"] = time.time() - start_time
         meta_data_final["status"] = job.status.name

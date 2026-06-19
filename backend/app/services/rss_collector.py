@@ -234,7 +234,7 @@ def run_rss_collector(db: Session, source_ids: List[int] = None) -> Dict:
                 
                 # Matching engine
                 matched_kws = []
-                text_to_match = strip_accents(f"{item['title']} {item['snippet']} {norm_url}".lower())
+                text_to_match = strip_accents(f"{item['title']} {item['snippet']}".lower())
                 
                 project_id = None
                 
