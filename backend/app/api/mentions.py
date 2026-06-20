@@ -137,7 +137,15 @@ def get_mentions_summary(
             
             condition = Mention.source_type.in_(list(mapped_types))
             if 'web' in st_list:
-                condition = or_(condition, Mention.source_type.is_(None))
+                valid_url_cond = and_(
+                    Mention.url.isnot(None),
+                    Mention.url.notilike('%googleusercontent.com%'),
+                    Mention.url.notilike('%corp.google.com%'),
+                    Mention.url.notilike('%uberproxy%'),
+                    Mention.url.notilike('%/rss%'),
+                    Mention.url.notilike('%.xml')
+                )
+                condition = or_(condition, and_(Mention.source_type.is_(None), valid_url_cond))
             base_filter.append(condition)
         if sentiment:
             sentiments_list = [s.strip() for s in sentiment.split(",")]
@@ -341,7 +349,15 @@ def list_mentions(
                 else: mapped_types.add(st)
             condition = Mention.source_type.in_(list(mapped_types))
             if 'web' in st_list:
-                condition = or_(condition, Mention.source_type.is_(None))
+                valid_url_cond = and_(
+                    Mention.url.isnot(None),
+                    Mention.url.notilike('%googleusercontent.com%'),
+                    Mention.url.notilike('%corp.google.com%'),
+                    Mention.url.notilike('%uberproxy%'),
+                    Mention.url.notilike('%/rss%'),
+                    Mention.url.notilike('%.xml')
+                )
+                condition = or_(condition, and_(Mention.source_type.is_(None), valid_url_cond))
             query = query.where(condition)
         elif source_types and not need_source_join:
             mapped_types = set()
@@ -354,7 +370,15 @@ def list_mentions(
                 else: mapped_types.add(st)
             condition = Mention.source_type.in_(list(mapped_types))
             if 'web' in source_types:
-                condition = or_(condition, Mention.source_type.is_(None))
+                valid_url_cond = and_(
+                    Mention.url.isnot(None),
+                    Mention.url.notilike('%googleusercontent.com%'),
+                    Mention.url.notilike('%corp.google.com%'),
+                    Mention.url.notilike('%uberproxy%'),
+                    Mention.url.notilike('%/rss%'),
+                    Mention.url.notilike('%.xml')
+                )
+                condition = or_(condition, and_(Mention.source_type.is_(None), valid_url_cond))
             query = query.where(condition)
         if domain and not need_source_join:
             query = query.where(Mention.domain.ilike(f"%{domain}%"))
@@ -439,7 +463,15 @@ def list_mentions(
                 
                 condition = Mention.source_type.in_(list(mapped_types))
                 if 'web' in st_list:
-                    condition = or_(condition, Mention.source_type.is_(None))
+                    valid_url_cond = and_(
+                        Mention.url.isnot(None),
+                        Mention.url.notilike('%googleusercontent.com%'),
+                        Mention.url.notilike('%corp.google.com%'),
+                        Mention.url.notilike('%uberproxy%'),
+                        Mention.url.notilike('%/rss%'),
+                        Mention.url.notilike('%.xml')
+                    )
+                    condition = or_(condition, and_(Mention.source_type.is_(None), valid_url_cond))
                 count_base = count_base.where(condition)
             if source_types:
                 mapped_types = set()
@@ -453,7 +485,15 @@ def list_mentions(
                 
                 condition = Mention.source_type.in_(list(mapped_types))
                 if 'web' in source_types:
-                    condition = or_(condition, Mention.source_type.is_(None))
+                    valid_url_cond = and_(
+                        Mention.url.isnot(None),
+                        Mention.url.notilike('%googleusercontent.com%'),
+                        Mention.url.notilike('%corp.google.com%'),
+                        Mention.url.notilike('%uberproxy%'),
+                        Mention.url.notilike('%/rss%'),
+                        Mention.url.notilike('%.xml')
+                    )
+                    condition = or_(condition, and_(Mention.source_type.is_(None), valid_url_cond))
                 count_base = count_base.where(condition)
             if domain:
                 count_base = count_base.where(Mention.domain.ilike(f"%{domain}%"))
