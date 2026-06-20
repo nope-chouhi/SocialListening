@@ -805,6 +805,12 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
                 author = (r.get("author") or "")[:500]
                 published_at = r.get("timestamp")
 
+            m_data = r.get("metadata") or {}
+            if r.get("source_provenance"):
+                m_data["source_provenance"] = r["source_provenance"]
+            if r.get("relevance_score") is not None:
+                m_data["relevance_score"] = r["relevance_score"]
+
             mention = Mention(
                 project_id=project_id,
                 job_id=job_id,
@@ -824,7 +830,7 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
                 author=author,
                 published_at=published_at,
                 matched_keywords=[{"keyword": matched_kw}],
-                meta_data=r.get("metadata") or {},
+                meta_data=m_data,
             )
             db.add(mention)
             summary[adapter_name]["mentions_created"] += 1
