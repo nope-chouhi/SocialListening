@@ -1391,7 +1391,7 @@ function MentionsPageContent() {
                                 {mention.matched_in && mention.matched_in.length > 0 ? (
                                   <div className="text-[11px] text-indigo-600 dark:text-indigo-400 font-medium flex gap-1.5 items-center bg-indigo-50 dark:bg-indigo-900/20 px-2 py-0.5 rounded-full border border-indigo-100 dark:border-indigo-800/30">
                                     <Search className="w-3 h-3" />
-                                    Matched in: {mention.matched_in.join(', ')}
+                                    {mention.matched_in.includes('Search provider') ? 'Matched by: Search provider' : `Matched in: ${mention.matched_in.join(', ')}`}
                                   </div>
                                 ) : (
                                   <div className="text-[11px] text-gray-500 dark:text-gray-400 font-medium flex gap-1.5 items-center bg-gray-50 dark:bg-white/5 px-2 py-0.5 rounded-full border border-gray-200 dark:border-white/10">

@@ -520,7 +520,6 @@ def list_mentions(
             count_base = apply_tenant_filter(select(Mention), Mention, current_user)
             count_base = count_base.where(Mention.verification_status != 'synthetic')
             count_base = count_base.where(Mention.is_deleted == False)
-            
             global_valid_url_cond_count = or_(
                 Mention.url.is_(None),
                 and_(
