@@ -118,8 +118,7 @@ def get_mentions_summary(
             base_filter.append(or_(
                 Mention.title.ilike(search_term),
                 Mention.snippet.ilike(search_term),
-                Mention.content.ilike(search_term),
-                Mention.keyword_text.ilike(search_term)
+                Mention.content.ilike(search_term)
             ))
         if date_from:
             base_filter.append(Mention.collected_at >= date_from)
@@ -127,7 +126,19 @@ def get_mentions_summary(
             base_filter.append(Mention.collected_at <= date_to)
         if source_type:
             st_list = [s.strip() for s in source_type.split(",")]
-            base_filter.append(Mention.source_type.in_(st_list))
+            mapped_types = set()
+            for st in st_list:
+                if st == 'web': mapped_types.update(['web', 'website', 'web_search', 'article', 'unknown'])
+                elif st == 'video': mapped_types.update(['video', 'videos', 'youtube', 'yt'])
+                elif st == 'blog': mapped_types.update(['blog', 'forum', 'blogs_forums', 'blogs/forums'])
+                elif st == 'rss': mapped_types.update(['rss', 'feed', 'rss_feed'])
+                elif st == 'news': mapped_types.update(['news', 'newspaper', 'article_news'])
+                else: mapped_types.add(st)
+            
+            condition = Mention.source_type.in_(list(mapped_types))
+            if 'web' in st_list:
+                condition = or_(condition, Mention.source_type.is_(None))
+            base_filter.append(condition)
         if sentiment:
             sentiments_list = [s.strip() for s in sentiment.split(",")]
             base_filter.append(Mention.sentiment.in_(sentiments_list))
@@ -320,9 +331,31 @@ def list_mentions(
         # In case source_type is directly on mention (new model)
         if source_type and not need_source_join:
             st_list = [s.strip() for s in source_type.split(",")]
-            query = query.where(Mention.source_type.in_(st_list))
+            mapped_types = set()
+            for st in st_list:
+                if st == 'web': mapped_types.update(['web', 'website', 'web_search', 'article', 'unknown'])
+                elif st == 'video': mapped_types.update(['video', 'videos', 'youtube', 'yt'])
+                elif st == 'blog': mapped_types.update(['blog', 'forum', 'blogs_forums', 'blogs/forums'])
+                elif st == 'rss': mapped_types.update(['rss', 'feed', 'rss_feed'])
+                elif st == 'news': mapped_types.update(['news', 'newspaper', 'article_news'])
+                else: mapped_types.add(st)
+            condition = Mention.source_type.in_(list(mapped_types))
+            if 'web' in st_list:
+                condition = or_(condition, Mention.source_type.is_(None))
+            query = query.where(condition)
         elif source_types and not need_source_join:
-            query = query.where(Mention.source_type.in_(source_types))
+            mapped_types = set()
+            for st in source_types:
+                if st == 'web': mapped_types.update(['web', 'website', 'web_search', 'article', 'unknown'])
+                elif st == 'video': mapped_types.update(['video', 'videos', 'youtube', 'yt'])
+                elif st == 'blog': mapped_types.update(['blog', 'forum', 'blogs_forums', 'blogs/forums'])
+                elif st == 'rss': mapped_types.update(['rss', 'feed', 'rss_feed'])
+                elif st == 'news': mapped_types.update(['news', 'newspaper', 'article_news'])
+                else: mapped_types.add(st)
+            condition = Mention.source_type.in_(list(mapped_types))
+            if 'web' in source_types:
+                condition = or_(condition, Mention.source_type.is_(None))
+            query = query.where(condition)
         if domain and not need_source_join:
             query = query.where(Mention.domain.ilike(f"%{domain}%"))
         if sentiment:
@@ -346,8 +379,7 @@ def list_mentions(
                 or_(
                     Mention.title.ilike(search_pattern),
                     Mention.snippet.ilike(search_pattern),
-                    Mention.content.ilike(search_pattern),
-                    Mention.keyword_text.ilike(search_pattern)
+                    Mention.content.ilike(search_pattern)
                 )
             )
 
@@ -357,8 +389,7 @@ def list_mentions(
                 or_(
                     Mention.title.ilike(search_term),
                     Mention.snippet.ilike(search_term),
-                    Mention.content.ilike(search_term),
-                    Mention.keyword_text.ilike(search_term)
+                    Mention.content.ilike(search_term)
                 )
             )
 
@@ -397,9 +428,33 @@ def list_mentions(
             # Direct mention filters
             if source_type:
                 st_list = [s.strip() for s in source_type.split(",")]
-                count_base = count_base.where(Mention.source_type.in_(st_list))
+                mapped_types = set()
+                for st in st_list:
+                    if st == 'web': mapped_types.update(['web', 'website', 'web_search', 'article', 'unknown'])
+                    elif st == 'video': mapped_types.update(['video', 'videos', 'youtube', 'yt'])
+                    elif st == 'blog': mapped_types.update(['blog', 'forum', 'blogs_forums', 'blogs/forums'])
+                    elif st == 'rss': mapped_types.update(['rss', 'feed', 'rss_feed'])
+                    elif st == 'news': mapped_types.update(['news', 'newspaper', 'article_news'])
+                    else: mapped_types.add(st)
+                
+                condition = Mention.source_type.in_(list(mapped_types))
+                if 'web' in st_list:
+                    condition = or_(condition, Mention.source_type.is_(None))
+                count_base = count_base.where(condition)
             if source_types:
-                count_base = count_base.where(Mention.source_type.in_(source_types))
+                mapped_types = set()
+                for st in source_types:
+                    if st == 'web': mapped_types.update(['web', 'website', 'web_search', 'article', 'unknown'])
+                    elif st == 'video': mapped_types.update(['video', 'videos', 'youtube', 'yt'])
+                    elif st == 'blog': mapped_types.update(['blog', 'forum', 'blogs_forums', 'blogs/forums'])
+                    elif st == 'rss': mapped_types.update(['rss', 'feed', 'rss_feed'])
+                    elif st == 'news': mapped_types.update(['news', 'newspaper', 'article_news'])
+                    else: mapped_types.add(st)
+                
+                condition = Mention.source_type.in_(list(mapped_types))
+                if 'web' in source_types:
+                    condition = or_(condition, Mention.source_type.is_(None))
+                count_base = count_base.where(condition)
             if domain:
                 count_base = count_base.where(Mention.domain.ilike(f"%{domain}%"))
             if sentiment:
@@ -421,8 +476,7 @@ def list_mentions(
                     or_(
                         Mention.title.ilike(search_pattern),
                         Mention.snippet.ilike(search_pattern),
-                        Mention.content.ilike(search_pattern),
-                        Mention.keyword_text.ilike(search_pattern)
+                        Mention.content.ilike(search_pattern)
                     )
                 )
 
@@ -432,8 +486,7 @@ def list_mentions(
                     or_(
                         Mention.title.ilike(search_term),
                         Mention.snippet.ilike(search_term),
-                        Mention.content.ilike(search_term),
-                        Mention.keyword_text.ilike(search_term)
+                        Mention.content.ilike(search_term)
                     )
                 )
 
