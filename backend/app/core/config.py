@@ -33,17 +33,12 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440  # 24 hours
     
     # AI Provider Failover Chain
-    AI_PROVIDER_CHAIN: str = "gemini,grok"
+    AI_PROVIDER_CHAIN: str = "gemini"
     AI_PROVIDER: Optional[str] = None  # Legacy fallback
     
     # Gemini
     GEMINI_API_KEY: str = ""
     GEMINI_MODEL: str = "gemini-2.5-flash"
-    
-    # Grok (xAI)
-    GROK_API_KEY: str = ""
-    GROK_MODEL: str = "grok-4.3"
-    GROK_BASE_URL: str = "https://api.x.ai/v1"
     
     # OpenAI (optional)
     OPENAI_API_KEY: str = ""

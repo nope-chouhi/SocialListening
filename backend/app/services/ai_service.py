@@ -39,7 +39,7 @@ class AIInternalValidationError(Exception):
 
 class AIProvider(ABC):
     """Abstract base class for AI providers"""
-    
+
     @property
     @abstractmethod
     def name(self) -> str:
@@ -88,7 +88,7 @@ class OpenAIProvider(AIProvider):
         except ImportError:
             logger.warning("openai package not installed.")
             self.client = None
-            
+
     def _handle_openai_error(self, e: Exception):
         import openai
         if isinstance(e, openai.AuthenticationError):
@@ -114,7 +114,7 @@ class OpenAIProvider(AIProvider):
             raise AIInternalValidationError("Empty content provided for analysis.")
         start_time = time.time()
         full_text = f"{title}\n\n{content}" if title else content
-        
+
         prompt = f"""Phân tích nội dung sau đây và trả về kết quả dưới dạng JSON:
 Nội dung: {full_text}
 Yêu cầu phân tích:
@@ -140,14 +140,14 @@ Trả về JSON thuần túy:"""
             )
             result_text = response.choices[0].message.content.strip()
             result = self._parse_json(result_text)
-            
+
             result["sentiment"] = result.get("sentiment", "neutral")
             result["risk_score"] = float(result.get("risk_score", 50))
             result["crisis_level"] = int(result.get("crisis_level", 2))
             result["summary_vi"] = result.get("summary_vi", "")
             result["suggested_action"] = result.get("suggested_action", "monitor")
             result["responsible_department"] = result.get("responsible_department", "customer_service")
-            
+
             result["processing_time_ms"] = int((time.time() - start_time) * 1000)
             result["ai_provider"] = self.name
             result["model_version"] = self.model
@@ -212,156 +212,6 @@ Bạn phải trả về JSON thuần túy:
         except Exception as e:
             self._handle_openai_error(e)
 
-
-# ============================================================================
-# GROK PROVIDER (xAI)
-# ============================================================================
-
-class GrokProvider(AIProvider):
-    @property
-    def name(self) -> str:
-        return "grok"
-
-    def is_configured(self) -> bool:
-        return bool(settings.GROK_API_KEY)
-
-    def __init__(self):
-        if not self.is_configured():
-            return
-        try:
-            from openai import OpenAI
-            self.client = OpenAI(
-                api_key=settings.GROK_API_KEY,
-                base_url=settings.GROK_BASE_URL
-            )
-            self.model = settings.GROK_MODEL
-        except ImportError:
-            logger.warning("openai package not installed.")
-            self.client = None
-
-    def _handle_grok_error(self, e: Exception):
-        import openai
-        err_str = str(e).lower()
-        if isinstance(e, openai.AuthenticationError) or "incorrect api key" in err_str or "invalid_api_key" in err_str:
-            raise AIAuthError(f"Grok Auth Error: {str(e)}")
-        elif isinstance(e, (openai.RateLimitError, openai.APITimeoutError, openai.APIConnectionError, openai.InternalServerError)):
-            raise AITemporaryError(f"Grok Temporary Error: {str(e)}")
-        else:
-            raise AIProviderMalformedResponseError(f"Grok Error: {str(e)}")
-
-    def _parse_json(self, text: str) -> Dict:
-        if text.startswith("```"):
-            text = text.split("```")[1]
-            if text.startswith("json"):
-                text = text[4:]
-            text = text.strip()
-        try:
-            return json.loads(text)
-        except json.JSONDecodeError as e:
-            raise AIProviderMalformedResponseError(f"Grok JSON parse error: {e}")
-
-    def analyze_mention(self, content: str, title: Optional[str] = None) -> Dict:
-        if not content:
-            raise AIInternalValidationError("Empty content provided for analysis.")
-        start_time = time.time()
-        full_text = f"{title}\n\n{content}" if title else content
-        
-        prompt = f"""Phân tích nội dung sau đây và trả về kết quả dưới dạng JSON:
-Nội dung: {full_text}
-Yêu cầu phân tích:
-1. sentiment: (positive, neutral, negative)
-2. risk_score: (0-100)
-3. crisis_level: (1-5)
-4. summary_vi: Tóm tắt ngắn gọn
-5. suggested_action: (monitor, respond, escalate, legal_review)
-6. responsible_department: (customer_service, PR, legal, executive)
-7. confidence_score: (0-100)
-Trả về JSON thuần túy:"""
-
-        try:
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=[
-                    {"role": "system", "content": "Bạn là chuyên gia phân tích social listening. Trả về JSON thuần túy."},
-                    {"role": "user", "content": prompt}
-                ],
-                temperature=0.3,
-                max_tokens=800,
-                timeout=settings.AI_PROVIDER_TIMEOUT_SECONDS
-            )
-            result_text = response.choices[0].message.content.strip()
-            result = self._parse_json(result_text)
-            
-            result["sentiment"] = result.get("sentiment", "neutral")
-            result["risk_score"] = float(result.get("risk_score", 50))
-            result["crisis_level"] = int(result.get("crisis_level", 2))
-            result["summary_vi"] = result.get("summary_vi", "")
-            result["suggested_action"] = result.get("suggested_action", "monitor")
-            result["responsible_department"] = result.get("responsible_department", "customer_service")
-            
-            result["processing_time_ms"] = int((time.time() - start_time) * 1000)
-            result["ai_provider"] = self.name
-            result["model_version"] = self.model
-            return result
-        except Exception as e:
-            self._handle_grok_error(e)
-
-    def generate_executive_brief(self, content: str) -> Dict:
-        prompt = f"""Tạo báo cáo điều hành (Executive Brief) cho nội dung sau:
-{content}
-Bạn phải trả về JSON thuần túy:
-{{
-  "summary_3_lines": "...",
-  "zalo_brief": "...",
-  "full_brief": "...",
-  "risk_level": "low/medium/high/critical",
-  "recommended_decision": "...",
-  "owner": "...",
-  "deadline": "..."
-}}"""
-        try:
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=[
-                    {"role": "system", "content": "Bạn là chuyên gia phân tích khủng hoảng. Trả về JSON thuần túy."},
-                    {"role": "user", "content": prompt}
-                ],
-                temperature=0.3,
-                max_tokens=800,
-                timeout=settings.AI_PROVIDER_TIMEOUT_SECONDS
-            )
-            return self._parse_json(response.choices[0].message.content.strip())
-        except Exception as e:
-            self._handle_grok_error(e)
-
-    def expand_keyword(self, keyword: str) -> list[str]:
-        prompt = f"""Given the keyword '{keyword}', generate 5 synonyms. Return ONLY a valid JSON array of strings."""
-        try:
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.7,
-                max_tokens=150,
-                timeout=settings.AI_PROVIDER_TIMEOUT_SECONDS
-            )
-            res = self._parse_json(response.choices[0].message.content.strip())
-            if isinstance(res, list): return [str(x) for x in res]
-            return []
-        except Exception as e:
-            self._handle_grok_error(e)
-
-    def draft_response(self, prompt: str, max_tokens: int = 300) -> str:
-        try:
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.7,
-                max_tokens=max_tokens,
-                timeout=settings.AI_PROVIDER_TIMEOUT_SECONDS
-            )
-            return response.choices[0].message.content.strip()
-        except Exception as e:
-            self._handle_grok_error(e)
 
 
 # ============================================================================
@@ -416,7 +266,7 @@ class GeminiProvider(AIProvider):
             raise AIInternalValidationError("Empty content provided for analysis.")
         start_time = time.time()
         full_text = f"{title}\n\n{content}" if title else content
-        
+
         prompt = f"""Phân tích nội dung sau đây và trả về kết quả dưới dạng JSON:
 Nội dung: {full_text}
 Yêu cầu phân tích:
@@ -433,14 +283,14 @@ Trả về JSON thuần túy:"""
             response = self.model.generate_content(prompt)
             result_text = response.text.strip()
             result = self._parse_json(result_text)
-            
+
             result["sentiment"] = result.get("sentiment", "neutral")
             result["risk_score"] = float(result.get("risk_score", 50))
             result["crisis_level"] = int(result.get("crisis_level", 2))
             result["summary_vi"] = result.get("summary_vi", "")
             result["suggested_action"] = result.get("suggested_action", "monitor")
             result["responsible_department"] = result.get("responsible_department", "customer_service")
-            
+
             result["processing_time_ms"] = int((time.time() - start_time) * 1000)
             result["ai_provider"] = self.name
             result["model_version"] = self.model_name
@@ -493,10 +343,10 @@ class PhoBERTProvider(AIProvider):
     @property
     def name(self) -> str:
         return "phobert"
-        
+
     def is_configured(self) -> bool:
         return getattr(self, "_available", False)
-        
+
     def __init__(self):
         try:
             from transformers import pipeline
@@ -507,7 +357,7 @@ class PhoBERTProvider(AIProvider):
 
     def analyze_mention(self, content: str, title: Optional[str] = None) -> Dict:
         raise AIProviderMalformedResponseError("PhoBERT unavailable")
-        
+
     def generate_executive_brief(self, content: str) -> Dict:
         raise AIProviderMalformedResponseError("PhoBERT does not support executive brief.")
 
@@ -524,20 +374,17 @@ class PhoBERTProvider(AIProvider):
 
 class AIProviderManager:
     """Manages the AI provider chain, cooldowns, and routing."""
-    
+
     def __init__(self):
         self._providers: Dict[str, AIProvider] = {}
         self._cooldowns: Dict[str, float] = {}
-        
+
         gemini = GeminiProvider()
         if gemini.is_configured(): self._providers["gemini"] = gemini
-        
-        grok = GrokProvider()
-        if grok.is_configured(): self._providers["grok"] = grok
-        
+
         openai_prov = OpenAIProvider()
         if openai_prov.is_configured(): self._providers["openai"] = openai_prov
-        
+
         chain_str = getattr(settings, "AI_PROVIDER_CHAIN", None)
         if chain_str:
             self._chain = [p.strip().lower() for p in chain_str.split(",") if p.strip()]
@@ -546,8 +393,23 @@ class AIProviderManager:
             if legacy:
                 self._chain = [legacy.lower()]
             else:
-                self._chain = ["gemini", "grok"]
-                
+                self._chain = ["gemini"]
+
+        # Filter out unsupported providers
+        supported_providers = {"gemini", "openai"}
+        filtered_chain = []
+        for p in self._chain:
+            if p in supported_providers:
+                filtered_chain.append(p)
+            else:
+                logger.warning(f"Unsupported or disabled AI provider '{p}' in AI_PROVIDER_CHAIN. Falling back to 'gemini'.")
+
+        if not filtered_chain:
+            logger.warning("No valid AI providers found in chain. Defaulting to 'gemini'.")
+            filtered_chain = ["gemini"]
+
+        self._chain = filtered_chain
+
         self.last_successful_provider = None
         self.last_error_category = None
 
@@ -558,7 +420,7 @@ class AIProviderManager:
             rem = int(ts + settings.AI_PROVIDER_COOLDOWN_SECONDS - now)
             if rem > 0:
                 cooldown_state[p] = f"{rem}s remaining"
-        
+
         return {
             "chain": self._chain,
             "configured_providers": list(self._providers.keys()),
@@ -572,7 +434,7 @@ class AIProviderManager:
         """Executes an AI method with provider failover."""
         now = time.time()
         last_exception = None
-        
+
         # Clean up expired cooldowns
         expired = [p for p, ts in self._cooldowns.items() if now > ts + settings.AI_PROVIDER_COOLDOWN_SECONDS]
         for p in expired:
@@ -581,13 +443,13 @@ class AIProviderManager:
         for provider_name in self._chain:
             if provider_name not in self._providers:
                 continue
-                
+
             if provider_name in self._cooldowns:
                 continue # Skip provider in cooldown
-                
+
             provider = self._providers[provider_name]
             method = getattr(provider, method_name)
-            
+
             for attempt in range(settings.AI_PROVIDER_MAX_RETRIES):
                 try:
                     result = method(*args, **kwargs)
@@ -622,7 +484,7 @@ class AIProviderManager:
                     self.last_error_category = "unknown_error"
                     last_exception = e
                     break
-        
+
         # If we got here, all providers failed or chain is empty
         logger.error(f"All AI providers in chain failed. Last error: {str(last_exception)}")
         raise RuntimeError(f"AI Service Unavailable. Last error: {self.last_error_category} - {str(last_exception)}")

@@ -1,4 +1,4 @@
-﻿"""
+"""
 Search provider chain for manual/ad-hoc scans.
 Provider order controlled by SEARCH_PROVIDER_ORDER (default: serper,tavily,rss).
 Missing API keys cause graceful skip, not failure.
@@ -42,6 +42,7 @@ def _normalize_result(
     title: str,
     snippet: str,
     raw_url: str,
+    keyword: str,
     published_at: Optional[Any] = None,
     source_name: str = "",
 ) -> Optional[Dict[str, Any]]:
@@ -55,6 +56,7 @@ def _normalize_result(
         "title": (title or "").strip()[:500],
         "snippet": (snippet or "").strip()[:1000],
         "url": url,
+        "matched_keyword": keyword,
         "published_at": published_at,
         "source_name": (source_name or source_domain)[:200],
         "source_domain": source_domain,
@@ -114,7 +116,9 @@ def _run_serper(keywords: List[str], max_results: int, timeout_s: int) -> Tuple[
                         title=item.get("title", ""),
                         snippet=item.get("snippet", ""),
                         raw_url=item.get("link", ""),
-                        source_name=item.get("displayLink", ""),
+                        keyword=kw,
+                        published_at=item.get("date"),
+                        source_name=item.get("source", ""),
                     )
                     if normed is None:
                         summary["invalid_url_skipped"] += 1
@@ -127,7 +131,7 @@ def _run_serper(keywords: List[str], max_results: int, timeout_s: int) -> Tuple[
                     summary["valid_results"] += 1
 
             except requests.Timeout:
-                logger.warning("Serper timeout for keyword '%s'", keyword)
+                logger.warning("Serper timeout for keyword '%s'", kw)
                 continue
             except requests.RequestException as e:
                 logger.warning("Serper request error: %s", e)
@@ -158,8 +162,8 @@ def _run_tavily(keywords: List[str], max_results: int, timeout_s: int) -> Tuple[
 
     try:
         per_kw = max(5, max_results // max(len(keywords), 1))
-        for keyword in keywords:
-            if not keyword or not keyword.strip():
+        for kw in keywords:
+            if not kw or not kw.strip():
                 continue
             if len(results) >= max_results:
                 break
@@ -169,7 +173,7 @@ def _run_tavily(keywords: List[str], max_results: int, timeout_s: int) -> Tuple[
                     headers={"Content-Type": "application/json"},
                     json={
                         "api_key": api_key,
-                        "query": keyword.strip(),
+                        "query": kw.strip(),
                         "search_depth": "basic",
                         "max_results": min(per_kw, 10),
                         "include_answer": False,
@@ -206,7 +210,9 @@ def _run_tavily(keywords: List[str], max_results: int, timeout_s: int) -> Tuple[
                         title=item.get("title", ""),
                         snippet=item.get("content", ""),
                         raw_url=item.get("url", ""),
+                        keyword=kw,
                         published_at=published_at,
+                        source_name="",
                     )
                     if normed is None:
                         summary["invalid_url_skipped"] += 1
@@ -219,7 +225,7 @@ def _run_tavily(keywords: List[str], max_results: int, timeout_s: int) -> Tuple[
                     summary["valid_results"] += 1
 
             except requests.Timeout:
-                logger.warning("Tavily timeout for keyword '%s'", keyword)
+                logger.warning("Tavily timeout for keyword '%s'", kw)
                 continue
             except requests.RequestException as e:
                 logger.warning("Tavily request error: %s", e)
@@ -284,6 +290,15 @@ def run_provider_chain(
     order_raw = (settings.SEARCH_PROVIDER_ORDER or "serper,tavily,rss").strip()
     provider_order = [p.strip().lower() for p in order_raw.split(",") if p.strip()]
 
+    logger.info(
+        "SEARCH_PROVIDER_CHAIN_START: provider_order=%s serper_key_configured=%s tavily_key_configured=%s max_results=%s timeout_seconds=%s",
+        provider_order,
+        bool(settings.SERPER_API_KEY),
+        bool(settings.TAVILY_API_KEY),
+        max_results,
+        timeout_s
+    )
+
     all_results: List[Dict] = []
     summaries: Dict[str, Dict] = {}
     seen_urls: set = set()
@@ -326,11 +341,24 @@ def run_provider_chain(
                 all_results.append(item)
 
         logger.info(
-            "Provider '%s': status=%s valid=%d invalid_skipped=%d",
+            "SEARCH_PROVIDER_DONE: provider=%s status=%s duration_ms=unknown raw_results=%d valid_results=%d invalid_url_skipped=%d duplicate_skipped=%d created_mentions=%d error=%s",
             provider,
             summary.get("status"),
+            summary.get("raw_results", 0),
             summary.get("valid_results", 0),
             summary.get("invalid_url_skipped", 0),
+            summary.get("duplicate_skipped", 0),
+            summary.get("created_mentions", 0),
+            summary.get("error")
         )
+
+    logger.info(
+        "SEARCH_PROVIDER_CHAIN_COMPLETE: total_raw_results=%d total_valid_results=%d total_created_mentions=%d total_invalid_url_skipped=%d total_duplicate_skipped=%d",
+        sum(s.get("raw_results", 0) for s in summaries.values()),
+        sum(s.get("valid_results", 0) for s in summaries.values()),
+        sum(s.get("created_mentions", 0) for s in summaries.values()),
+        sum(s.get("invalid_url_skipped", 0) for s in summaries.values()),
+        sum(s.get("duplicate_skipped", 0) for s in summaries.values())
+    )
 
     return all_results, summaries
