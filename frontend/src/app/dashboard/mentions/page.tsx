@@ -12,7 +12,7 @@ import {
   SearchCode, Download, CheckSquare, Square, Calendar,
   Scan, ChevronLeft, ChevronRight, Info
 } from 'lucide-react';
-import { mentions as mentionsApi, dashboard, keywords as keywordsApi, crawl, savedFilters } from '@/lib/api';
+import { mentions as mentionsApi, dashboard, keywords as keywordsApi, crawl, savedFilters, integrations } from '@/lib/api';
 import { useProject } from '@/contexts/ProjectContext';
 import toast, { Toaster } from 'react-hot-toast';
 import Link from 'next/link';
@@ -98,7 +98,7 @@ const SENTIMENT_OPTIONS = [
   { value: 'negative', label: 'Tiêu cực', dot: 'bg-rose-500', bg: 'bg-rose-500/10 border-rose-500/20 text-rose-400' },
 ];
 
-const SOURCE_TYPE_OPTIONS = [
+const DEFAULT_SOURCE_TYPE_OPTIONS = [
   { value: 'web', label: 'Web', icon: Globe, color: 'text-blue-400', disabled: false },
   { value: 'news', label: 'News', icon: FileText, color: 'text-gray-400', disabled: false },
   { value: 'blog', label: 'Blogs/Forums', icon: FileText, color: 'text-green-400', disabled: false },
@@ -251,6 +251,7 @@ function MentionsPageContent() {
   const [sentimentSummary, setSentimentSummary] = useState<any>(null);
   const [trendData, setTrendData] = useState<any[]>([]);
   const [sourceCounts, setSourceCounts] = useState<Record<string, number>>({});
+  const [capabilities, setCapabilities] = useState<any>(null);
   const { activeProject, setActiveProject, projects, fetchProjects } = useProject();
   const { confirm, prompt } = useDialog();
   // UI state
@@ -717,6 +718,46 @@ function MentionsPageContent() {
   useEffect(() => {
     fetchChartData();
   }, [activeProject?.id]);
+
+  useEffect(() => {
+    integrations.capabilities().then(setCapabilities).catch(console.error);
+  }, []);
+
+  // Compute dynamic source options based on capabilities
+  const sourceTypeOptions = React.useMemo(() => {
+    return DEFAULT_SOURCE_TYPE_OPTIONS.map(opt => {
+      let updatedOpt = { ...opt };
+      
+      if (capabilities) {
+        if (opt.value === 'facebook_page' && capabilities.facebook) {
+          if (capabilities.facebook.status === 'READY') {
+            updatedOpt.disabled = false;
+            updatedOpt.msg = 'Đã kết nối';
+          }
+        }
+        if (opt.value === 'instagram' && capabilities.instagram) {
+          if (capabilities.instagram.status === 'READY') {
+            updatedOpt.disabled = false;
+            updatedOpt.msg = 'Đã kết nối';
+          }
+        }
+        if (opt.value === 'tiktok' && capabilities.tiktok) {
+          if (capabilities.tiktok.status === 'READY') {
+            updatedOpt.disabled = false;
+            updatedOpt.msg = 'Đã kết nối';
+          }
+        }
+        if (opt.value === 'twitter' && capabilities.twitter) {
+          if (capabilities.twitter.status === 'READY') {
+            updatedOpt.disabled = false;
+            updatedOpt.msg = 'Đã kết nối';
+          }
+        }
+      }
+      
+      return updatedOpt;
+    });
+  }, [capabilities]);
 
   useEffect(() => {
     // Reset state on project change to prevent stale data
@@ -1648,7 +1689,7 @@ function MentionsPageContent() {
            </div>
            {/* Active Sources — vertical list */}
            <div className="flex flex-col gap-1.5">
-             {SOURCE_TYPE_OPTIONS.filter(s => !s.disabled).map((src) => {
+             {sourceTypeOptions.filter(s => !s.disabled).map((src) => {
                const currentSources = filters.source_type ? filters.source_type.split(',') : [];
                const isSelected = currentSources.includes(src.value);
                const count = sourceCounts[src.value] || 0;
@@ -1683,20 +1724,28 @@ function MentionsPageContent() {
            {/* Unavailable / Connector Sources */}
            <div className="mt-4 pt-3 border-t border-gray-100 dark:border-white/5 flex flex-col gap-1.5">
              <div className="text-[11px] text-gray-400 dark:text-gray-500 font-bold uppercase tracking-wider mb-1 px-1">Nguồn kết nối</div>
-             {SOURCE_TYPE_OPTIONS.filter(s => s.disabled).map((src) => (
-                 <div
-                   key={src.value}
-                   className="flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium border border-transparent bg-gray-50 dark:bg-[#0a0f1c] text-gray-400 dark:text-gray-500"
-                 >
-                   <div className="flex items-center gap-2">
-                     <src.icon className="w-4 h-4 shrink-0 opacity-50" />
-                     <span className="truncate">{src.label}</span>
-                   </div>
-                   <span className="text-[10px] font-bold text-gray-400 bg-gray-200 dark:bg-white/10 dark:text-gray-400 px-1.5 py-0.5 rounded uppercase tracking-wider">
-                     {src.msg}
-                   </span>
-                 </div>
-             ))}
+             {sourceTypeOptions.filter(s => s.disabled).map((src) => {
+                 const content = (
+                  <div className="flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium border border-transparent bg-gray-50 dark:bg-[#0a0f1c] text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors cursor-pointer">
+                    <div className="flex items-center gap-2">
+                      <src.icon className="w-4 h-4 shrink-0 opacity-50" />
+                      <span className="truncate">{src.label}</span>
+                    </div>
+                    <span className="text-[10px] font-bold text-gray-400 bg-gray-200 dark:bg-white/10 dark:text-gray-400 px-1.5 py-0.5 rounded uppercase tracking-wider">
+                      {src.msg}
+                    </span>
+                  </div>
+                 );
+                 if (src.msg === 'Kết nối') {
+                   const href = src.value === 'tiktok' ? '/dashboard/integrations' : '/dashboard/integrations/meta';
+                   return (
+                     <Link key={src.value} href={href}>
+                       {content}
+                     </Link>
+                   );
+                 }
+                 return <div key={src.value}>{content}</div>;
+              })}
            </div>
         </div>
 
