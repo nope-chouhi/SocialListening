@@ -49,8 +49,9 @@ def _safe_domain(domain: Optional[str]) -> Optional[str]:
 
 
 def _mention_link_fields(mention: Mention):
-    visit_url = clean_final_url(mention.canonical_url) or clean_final_url(mention.url)
-    raw_url = mention.url or mention.canonical_url or mention.original_url
+    from app.services.url_utils import get_url_blocked_reason, recover_google_redirect_url, clean_final_url, domain_from_url
+
+    visit_url = None
     reason = None
 
     metadata = dict(mention.meta_data or {})
@@ -58,33 +59,45 @@ def _mention_link_fields(mention: Mention):
 
     if prov:
         if not prov.get("is_clickable", True):
-            visit_url = None
             reason = prov.get("blocked_reason") or "source_rejected_by_quality_gate"
         elif prov.get("source_confidence", 1.0) < 0.4:
-            visit_url = None
             reason = "low_source_confidence"
-        elif prov.get("final_canonical_url"):
-            visit_url = prov["final_canonical_url"]
+
+    if not reason:
+        candidates = []
+        if prov.get("final_canonical_url"):
+            candidates.append(prov["final_canonical_url"])
+        if mention.canonical_url:
+            candidates.append(mention.canonical_url)
+        if mention.url:
+            candidates.append(mention.url)
+
+        for cand in candidates:
+            if cand:
+                cand_clean = clean_final_url(cand)
+                if not cand_clean:
+                    cand_clean = cand
+                recovered = recover_google_redirect_url(cand_clean)
+                final_cand = recovered if recovered else cand_clean
+
+                blocked_reason = get_url_blocked_reason(final_cand)
+                if not blocked_reason:
+                    visit_url = final_cand
+                    break
 
     if not visit_url and not reason:
-        if is_google_news_discovery_url(raw_url):
-            reason = "Google News RSS discovery URL was not resolved to the publisher URL"
-        elif is_google_amp_url(raw_url):
-            reason = "Google AMP URL was not resolved to the publisher URL"
-        elif is_google_media_url(raw_url):
-            reason = "Google media/thumbnail URL is not a publisher article URL"
-        elif is_tracking_or_static_host(raw_url) or has_blocked_path(raw_url):
-            reason = "Tracking, analytics, ad, CDN, or static asset URL is not a publisher article URL"
-        elif is_media_file_url(raw_url):
-            reason = "Static, media, or document file URL is not a publisher article URL"
-        elif is_blocked_final_url(raw_url):
-            reason = "URL is not a valid publisher article URL"
-        elif raw_url:
-            reason = "Invalid or unsupported Visit URL"
+        raw_url = mention.url or mention.canonical_url or mention.original_url
+        if raw_url:
+            recovered = recover_google_redirect_url(raw_url)
+            eval_url = recovered if recovered else raw_url
+            reason = get_url_blocked_reason(eval_url) or "invalid_visit_url"
         else:
             reason = "No Visit URL available"
 
-    display_domain = prov.get("final_domain") or domain_from_url(visit_url)
+    display_domain = prov.get("final_domain") if prov.get("final_domain") else domain_from_url(visit_url)
+    if not display_domain or not visit_url:
+        display_domain = "Không xác định"
+
     metadata["visit_url_available"] = bool(visit_url)
     if reason:
         metadata["visit_url_invalid_reason"] = reason
@@ -134,7 +147,7 @@ def get_mentions_summary(
                 elif st == 'rss': mapped_types.update(['rss', 'feed', 'rss_feed'])
                 elif st == 'news': mapped_types.update(['news', 'newspaper', 'article_news'])
                 else: mapped_types.add(st)
-            
+
             condition = Mention.source_type.in_(list(mapped_types))
             if 'web' in st_list:
                 valid_url_cond = and_(
@@ -304,7 +317,7 @@ def get_mentions_source_counts(
             elif st in ['rss', 'feed', 'rss_feed']: mapped = 'rss'
             elif st in ['web', 'website', 'web_search', 'article', 'unknown']: mapped = 'web'
             else: mapped = 'web'  # safe fallback
-            
+
             counts[mapped] += count
 
         return counts
@@ -398,7 +411,7 @@ def list_mentions(
         # Mentions filtering directly
         query = query.where(Mention.verification_status != 'synthetic')
         query = query.where(Mention.is_deleted == False)
-        
+
         global_valid_url_cond = or_(
             Mention.url.is_(None),
             and_(
@@ -520,7 +533,7 @@ def list_mentions(
             count_base = apply_tenant_filter(select(Mention), Mention, current_user)
             count_base = count_base.where(Mention.verification_status != 'synthetic')
             count_base = count_base.where(Mention.is_deleted == False)
-            
+
             global_valid_url_cond_count = or_(
                 Mention.url.is_(None),
                 and_(
@@ -561,7 +574,7 @@ def list_mentions(
                     elif st == 'rss': mapped_types.update(['rss', 'feed', 'rss_feed'])
                     elif st == 'news': mapped_types.update(['news', 'newspaper', 'article_news'])
                     else: mapped_types.add(st)
-                
+
                 condition = Mention.source_type.in_(list(mapped_types))
                 if 'web' in st_list:
                     valid_url_cond = and_(
@@ -583,7 +596,7 @@ def list_mentions(
                     elif st == 'rss': mapped_types.update(['rss', 'feed', 'rss_feed'])
                     elif st == 'news': mapped_types.update(['news', 'newspaper', 'article_news'])
                     else: mapped_types.add(st)
-                
+
                 condition = Mention.source_type.in_(list(mapped_types))
                 if 'web' in source_types:
                     valid_url_cond = and_(
