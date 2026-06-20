@@ -99,17 +99,17 @@ const SENTIMENT_OPTIONS = [
 ];
 
 const SOURCE_TYPE_OPTIONS = [
-  { value: 'website', label: 'Web', icon: Globe, color: 'text-blue-400', disabled: false },
+  { value: 'web', label: 'Web', icon: Globe, color: 'text-blue-400', disabled: false },
   { value: 'news', label: 'News', icon: FileText, color: 'text-gray-400', disabled: false },
-  { value: 'forum', label: 'Blogs/Forums', icon: FileText, color: 'text-green-400', disabled: false },
-  { value: 'youtube_video', label: 'YouTube', icon: Youtube, color: 'text-red-400', disabled: false },
+  { value: 'blog', label: 'Blogs/Forums', icon: FileText, color: 'text-green-400', disabled: false },
+  { value: 'video', label: 'YouTube', icon: Youtube, color: 'text-red-400', disabled: false },
   { value: 'rss', label: 'RSS', icon: Rss, color: 'text-orange-400', disabled: false },
-  { value: 'facebook_page', label: 'Facebook', icon: Facebook, color: 'text-blue-500', disabled: true, msg: 'Connect required' },
-  { value: 'instagram', label: 'Instagram', icon: Instagram, color: 'text-fuchsia-500', disabled: true, msg: 'Connect required' },
-  { value: 'twitter', label: 'X/Twitter', icon: Twitter, color: 'text-sky-400', disabled: true, msg: 'Coming soon' },
-  { value: 'reddit', label: 'Reddit', icon: Globe, color: 'text-orange-400', disabled: true, msg: 'Coming soon' },
-  { value: 'tiktok', label: 'TikTok', icon: Video, color: 'text-pink-400', disabled: true, msg: 'Connector required' },
-  { value: 'podcast', label: 'Podcasts', icon: Mic, color: 'text-purple-400', disabled: true, msg: 'Coming soon' },
+  { value: 'facebook_page', label: 'Facebook', icon: Facebook, color: 'text-blue-500', disabled: true, msg: 'Kết nối' },
+  { value: 'instagram', label: 'Instagram', icon: Instagram, color: 'text-fuchsia-500', disabled: true, msg: 'Kết nối' },
+  { value: 'twitter', label: 'X/Twitter', icon: Twitter, color: 'text-sky-400', disabled: true, msg: 'Sắp hỗ trợ' },
+  { value: 'reddit', label: 'Reddit', icon: Globe, color: 'text-orange-400', disabled: true, msg: 'Sắp hỗ trợ' },
+  { value: 'tiktok', label: 'TikTok', icon: Video, color: 'text-pink-400', disabled: true, msg: 'Kết nối' },
+  { value: 'podcast', label: 'Podcasts', icon: Mic, color: 'text-purple-400', disabled: true, msg: 'Sắp hỗ trợ' },
 ];
 
 const SORT_OPTIONS = [
@@ -250,6 +250,7 @@ function MentionsPageContent() {
   const [chartLoading, setChartLoading] = useState(false);
   const [sentimentSummary, setSentimentSummary] = useState<any>(null);
   const [trendData, setTrendData] = useState<any[]>([]);
+  const [sourceCounts, setSourceCounts] = useState<Record<string, number>>({});
   const { activeProject, setActiveProject, projects, fetchProjects } = useProject();
   const { confirm, prompt } = useDialog();
   // UI state
@@ -674,9 +675,44 @@ function MentionsPageContent() {
     }
   };
 
+  const fetchSourceCounts = useCallback(async () => {
+    if (!activeProject && !searchTerm && !initialJobId) return;
+    try {
+      const params: any = {};
+      if (initialJobId) {
+        params.job_id = initialJobId;
+      } else {
+        if (searchTerm) params.q = searchTerm;
+        if (filters.sentiment) params.sentiment = filters.sentiment;
+        if (filters.min_risk_score !== null) params.min_risk_score = filters.min_risk_score;
+        if (filters.min_influence_score !== null) params.min_influence_score = filters.min_influence_score;
+
+        if (dateRange && dateRange !== 'all') {
+          const now = new Date();
+          const from = new Date();
+          if (dateRange === '1d') from.setDate(now.getDate() - 1);
+          else if (dateRange === '7d') from.setDate(now.getDate() - 7);
+          else if (dateRange === '30d') from.setDate(now.getDate() - 30);
+          else if (dateRange === '90d') from.setDate(now.getDate() - 90);
+          params.date_from = from.toISOString();
+          params.date_to = now.toISOString();
+        }
+      }
+      if (activeProject) params.project_id = activeProject.id;
+      const counts = await mentionsApi.sourceCounts(params);
+      setSourceCounts(counts);
+    } catch (error) {
+      console.error('Error fetching source counts:', error);
+    }
+  }, [filters.sentiment, filters.min_risk_score, filters.min_influence_score, initialJobId, searchTerm, activeProject, dateRange]);
+
   useEffect(() => {
     fetchMentions();
   }, [fetchMentions, activeProject]);
+
+  useEffect(() => {
+    fetchSourceCounts();
+  }, [fetchSourceCounts]);
 
   useEffect(() => {
     fetchChartData();
@@ -1610,11 +1646,12 @@ function MentionsPageContent() {
                </button>
              )}
            </div>
-           {/* Active Sources — 2-column chip grid */}
-           <div className="grid grid-cols-2 gap-1.5">
+           {/* Active Sources — vertical list */}
+           <div className="flex flex-col gap-1.5">
              {SOURCE_TYPE_OPTIONS.filter(s => !s.disabled).map((src) => {
                const currentSources = filters.source_type ? filters.source_type.split(',') : [];
                const isSelected = currentSources.includes(src.value);
+               const count = sourceCounts[src.value] || 0;
                return (
                  <button
                    key={src.value}
@@ -1628,33 +1665,38 @@ function MentionsPageContent() {
                      setFilters({ ...filters, source_type: next.length ? next.join(',') : null });
                      setPage(1);
                    }}
-                   className={`flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-medium transition-all duration-150 border ${
+                   className={`flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 border ${
                      isSelected
                        ? 'bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-700/50 text-blue-700 dark:text-blue-300 shadow-sm'
-                       : 'bg-white dark:bg-transparent border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-white/20 hover:bg-gray-50 dark:hover:bg-white/5'
+                       : count > 0 ? 'bg-white dark:bg-transparent border-gray-200 dark:border-white/10 text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:hover:border-white/20 hover:bg-gray-50 dark:hover:bg-white/5' : 'bg-gray-50 dark:bg-[#0a0f1c] border-transparent text-gray-400 dark:text-gray-600 hover:bg-gray-100 dark:hover:bg-white/5'
                    }`}
                  >
-                   <src.icon className={`w-3.5 h-3.5 shrink-0 ${isSelected ? 'text-blue-600 dark:text-blue-400' : src.color}`} />
-                   <span className="truncate">{src.label}</span>
+                   <div className="flex items-center gap-2">
+                     <src.icon className={`w-4 h-4 shrink-0 ${isSelected ? 'text-blue-600 dark:text-blue-400' : count > 0 ? src.color : 'text-gray-400 dark:text-gray-600'}`} />
+                     <span className="truncate">{src.label}</span>
+                   </div>
+                   <span className={`text-xs font-bold ${isSelected ? 'text-blue-600 dark:text-blue-400' : count > 0 ? 'text-gray-500 dark:text-gray-400' : 'text-gray-400 dark:text-gray-600'}`}>{count.toLocaleString('vi-VN')}</span>
                  </button>
                );
              })}
            </div>
-           {/* Unavailable / Connector Sources — collapsed */}
-           <div className="mt-4 pt-3 border-t border-gray-100 dark:border-white/5">
-             <p className="text-[11px] text-gray-400 dark:text-gray-500 font-medium leading-relaxed">
-               <span className="text-gray-500 dark:text-gray-400 font-bold">Nguồn khác:</span>{' '}
-               {SOURCE_TYPE_OPTIONS.filter(s => s.disabled).map((s, i, arr) => (
-                 <span key={s.value}>
-                   <span className="text-gray-400 dark:text-gray-500">{s.label}</span>
-                   {i < arr.length - 1 && <span className="text-gray-300 dark:text-gray-600"> · </span>}
-                 </span>
-               ))}
-               {' '}
-               <span className="inline-block ml-1 text-[9px] font-bold text-blue-600 bg-blue-50 border border-blue-100 px-1.5 py-0.5 rounded uppercase tracking-wider align-middle dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-300">
-                 Sắp hỗ trợ
-               </span>
-             </p>
+           {/* Unavailable / Connector Sources */}
+           <div className="mt-4 pt-3 border-t border-gray-100 dark:border-white/5 flex flex-col gap-1.5">
+             <div className="text-[11px] text-gray-400 dark:text-gray-500 font-bold uppercase tracking-wider mb-1 px-1">Nguồn kết nối</div>
+             {SOURCE_TYPE_OPTIONS.filter(s => s.disabled).map((src) => (
+                 <div
+                   key={src.value}
+                   className="flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium border border-transparent bg-gray-50 dark:bg-[#0a0f1c] text-gray-400 dark:text-gray-500"
+                 >
+                   <div className="flex items-center gap-2">
+                     <src.icon className="w-4 h-4 shrink-0 opacity-50" />
+                     <span className="truncate">{src.label}</span>
+                   </div>
+                   <span className="text-[10px] font-bold text-gray-400 bg-gray-200 dark:bg-white/10 dark:text-gray-400 px-1.5 py-0.5 rounded uppercase tracking-wider">
+                     {src.msg}
+                   </span>
+                 </div>
+             ))}
            </div>
         </div>
 
