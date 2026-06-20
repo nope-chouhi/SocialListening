@@ -1640,72 +1640,98 @@ function MentionsPageContent() {
       {/* ─── RIGHT SIDEBAR (FILTERS - 25%) ───────────────────────────────── */}
       <div className="hidden lg:block w-[300px] xl:w-[320px] shrink-0 space-y-4 pb-8">
 
-        {/* Date Filter */}
+        {/* Date Range — Segmented Pill Selector */}
         <div className="bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10 p-4">
-           <div className="flex items-center gap-2 text-sm font-bold text-gray-800 dark:text-gray-100">
-             <Calendar className="w-4 h-4 text-gray-500 dark:text-gray-500" />
-             <select
-               value={dateRange}
-               onChange={(e) => setDateRange(e.target.value)}
-               className="bg-transparent border-none outline-none cursor-pointer flex-1 font-bold dark:text-gray-100"
-             >
-               <option value="all" className="dark:bg-gray-800">Tất cả thời gian</option>
-               <option value="1d" className="dark:bg-gray-800">Hôm nay</option>
-               <option value="7d" className="dark:bg-gray-800">7 ngày qua</option>
-               <option value="30d" className="dark:bg-gray-800">30 ngày qua</option>
-               <option value="90d" className="dark:bg-gray-800">90 ngày qua</option>
-             </select>
+           <div className="flex items-center gap-2 mb-3">
+             <Calendar className="w-4 h-4 text-gray-400" />
+             <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100">Date Range</h3>
            </div>
+           <div className="grid grid-cols-5 gap-0.5 bg-gray-100 dark:bg-white/[0.06] p-1 rounded-lg">
+             {[
+               { value: '1d', label: 'Hôm nay' },
+               { value: '7d', label: '7N' },
+               { value: '30d', label: '30N' },
+               { value: '90d', label: '90N' },
+               { value: 'all', label: 'Tất cả' },
+             ].map((opt) => (
+               <button
+                 key={opt.value}
+                 onClick={() => { setDateRange(opt.value); setPage(1); }}
+                 className={`px-1.5 py-1.5 text-[11px] font-bold rounded-md transition-all duration-150 whitespace-nowrap ${
+                   dateRange === opt.value
+                     ? 'bg-white dark:bg-[#1a2332] text-blue-600 dark:text-blue-400 shadow-sm ring-1 ring-black/5 dark:ring-white/10'
+                     : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                 }`}
+               >
+                 {opt.label}
+               </button>
+             ))}
+           </div>
+           <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-2 font-medium">
+             {dateRange === 'all' ? 'Tất cả thời gian' : dateRange === '1d' ? 'Hôm nay' : dateRange === '7d' ? '7 ngày qua' : dateRange === '30d' ? '30 ngày qua' : '90 ngày qua'}
+           </p>
         </div>
 
-        {/* Sources Filter */}
+        {/* Sources — Active Grid + Collapsed Unavailable */}
         <div className="bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10 p-4">
-           <div className="flex items-center justify-between mb-4">
+           <div className="flex items-center justify-between mb-3">
              <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100 flex items-center gap-1.5">
-               Sources <Info className="w-3.5 h-3.5 text-gray-400" />
+               Sources
              </h3>
-             <span className="text-xs text-gray-500 dark:text-gray-500 cursor-pointer hover:underline">Show all</span>
+             {filters.source_type && (
+               <button
+                 onClick={() => { setFilters({ ...filters, source_type: null }); setPage(1); }}
+                 className="text-[11px] font-medium text-blue-500 hover:text-blue-600 transition-colors"
+               >
+                 Clear
+               </button>
+             )}
            </div>
-           <div className="grid grid-cols-2 gap-y-3 gap-x-2">
-             {SOURCE_TYPE_OPTIONS.map((src) => {
+           {/* Active Sources — 2-column chip grid */}
+           <div className="grid grid-cols-2 gap-1.5">
+             {SOURCE_TYPE_OPTIONS.filter(s => !s.disabled).map((src) => {
                const currentSources = filters.source_type ? filters.source_type.split(',') : [];
                const isSelected = currentSources.includes(src.value);
                return (
-                 <div key={src.value} className="flex items-start gap-2">
-                   <input
-                     type="checkbox"
-                     checked={isSelected}
-                     disabled={src.disabled}
-                     onChange={() => {
-                        if (!src.disabled) {
-                          let next = [...currentSources];
-                          if (isSelected) {
-                            next = next.filter(s => s !== src.value);
-                          } else {
-                            next.push(src.value);
-                          }
-                          setFilters({ ...filters, source_type: next.length ? next.join(',') : null });
-                          setPage(1);
-                        }
-                     }}
-                     className="mt-0.5 rounded border-gray-300 text-emerald-500 focus:ring-emerald-500 disabled:opacity-50"
-                   />
-                   <div className={`flex flex-col ${src.disabled ? 'opacity-50' : ''}`}>
-                     <span className="text-xs font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
-                       <div className={`w-5 h-5 rounded-full flex items-center justify-center bg-gray-100 dark:bg-white/10 ${src.color}`}>
-                          <src.icon className="w-3 h-3" />
-                       </div>
-                       {src.label}
-                     </span>
-                     {src.disabled && (
-                        <span className="mt-1 ml-6 text-[9px] font-bold bg-gray-500 text-white px-1.5 py-0.5 rounded uppercase tracking-wider w-max">
-                          {src.msg || 'COMING SOON'}
-                        </span>
-                     )}
-                   </div>
-                 </div>
+                 <button
+                   key={src.value}
+                   onClick={() => {
+                     let next = [...currentSources];
+                     if (isSelected) {
+                       next = next.filter(s => s !== src.value);
+                     } else {
+                       next.push(src.value);
+                     }
+                     setFilters({ ...filters, source_type: next.length ? next.join(',') : null });
+                     setPage(1);
+                   }}
+                   className={`flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-medium transition-all duration-150 border ${
+                     isSelected
+                       ? 'bg-blue-50 dark:bg-blue-500/10 border-blue-200 dark:border-blue-500/30 text-blue-700 dark:text-blue-300'
+                       : 'bg-white dark:bg-white/[0.03] border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-white/20'
+                   }`}
+                 >
+                   <src.icon className={`w-3.5 h-3.5 shrink-0 ${isSelected ? 'text-blue-500 dark:text-blue-400' : src.color}`} />
+                   <span className="truncate">{src.label}</span>
+                 </button>
                );
              })}
+           </div>
+           {/* Unavailable / Connector Sources — collapsed */}
+           <div className="mt-3 pt-3 border-t border-gray-100 dark:border-white/5">
+             <p className="text-[11px] text-gray-400 dark:text-gray-500 font-medium leading-relaxed">
+               <span className="text-gray-500 dark:text-gray-400 font-semibold">More sources:</span>{' '}
+               {SOURCE_TYPE_OPTIONS.filter(s => s.disabled).map((s, i, arr) => (
+                 <span key={s.value}>
+                   <span className="text-gray-400 dark:text-gray-500">{s.label}</span>
+                   {i < arr.length - 1 && <span className="text-gray-300 dark:text-gray-600"> · </span>}
+                 </span>
+               ))}
+               {' '}
+               <span className="inline-block ml-0.5 text-[9px] font-bold text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-white/[0.06] px-1.5 py-0.5 rounded uppercase tracking-wider align-middle">
+                 Coming Soon
+               </span>
+             </p>
            </div>
         </div>
 
