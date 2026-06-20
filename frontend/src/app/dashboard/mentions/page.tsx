@@ -12,7 +12,7 @@ import {
   SearchCode, Download, CheckSquare, Square, Calendar,
   Scan, ChevronLeft, ChevronRight, Info
 } from 'lucide-react';
-import { mentions as mentionsApi, dashboard, keywords as keywordsApi, crawl, savedFilters } from '@/lib/api';
+import { mentions as mentionsApi, dashboard, keywords as keywordsApi, crawl, savedFilters, integrations } from '@/lib/api';
 import { useProject } from '@/contexts/ProjectContext';
 import toast, { Toaster } from 'react-hot-toast';
 import Link from 'next/link';
@@ -98,18 +98,18 @@ const SENTIMENT_OPTIONS = [
   { value: 'negative', label: 'Tiêu cực', dot: 'bg-rose-500', bg: 'bg-rose-500/10 border-rose-500/20 text-rose-400' },
 ];
 
-const SOURCE_TYPE_OPTIONS = [
-  { value: 'website', label: 'Web', icon: Globe, color: 'text-blue-400', disabled: false },
+const DEFAULT_SOURCE_TYPE_OPTIONS = [
+  { value: 'web', label: 'Web', icon: Globe, color: 'text-blue-400', disabled: false },
   { value: 'news', label: 'News', icon: FileText, color: 'text-gray-400', disabled: false },
-  { value: 'forum', label: 'Blogs/Forums', icon: FileText, color: 'text-green-400', disabled: false },
-  { value: 'youtube_video', label: 'Videos (YouTube)', icon: Youtube, color: 'text-red-400', disabled: false },
+  { value: 'blog', label: 'Blogs/Forums', icon: FileText, color: 'text-green-400', disabled: false },
+  { value: 'video', label: 'YouTube', icon: Youtube, color: 'text-red-400', disabled: false },
   { value: 'rss', label: 'RSS', icon: Rss, color: 'text-orange-400', disabled: false },
-  { value: 'facebook_page', label: 'Facebook', icon: Facebook, color: 'text-blue-500', disabled: true, msg: 'Connect required' },
-  { value: 'instagram', label: 'Instagram', icon: Instagram, color: 'text-fuchsia-500', disabled: true, msg: 'Connect required' },
-  { value: 'twitter', label: 'X/Twitter', icon: Twitter, color: 'text-sky-400', disabled: true, msg: 'Coming soon' },
-  { value: 'reddit', label: 'Reddit', icon: Globe, color: 'text-orange-400', disabled: true, msg: 'Coming soon' },
-  { value: 'tiktok', label: 'TikTok', icon: Video, color: 'text-pink-400', disabled: true, msg: 'Connector required' },
-  { value: 'podcast', label: 'Podcasts', icon: Mic, color: 'text-purple-400', disabled: true, msg: 'Coming soon' },
+  { value: 'facebook_page', label: 'Facebook', icon: Facebook, color: 'text-blue-500', disabled: true, msg: 'Kết nối' },
+  { value: 'instagram', label: 'Instagram', icon: Instagram, color: 'text-fuchsia-500', disabled: true, msg: 'Kết nối' },
+  { value: 'twitter', label: 'X/Twitter', icon: Twitter, color: 'text-sky-400', disabled: true, msg: 'Sắp hỗ trợ' },
+  { value: 'reddit', label: 'Reddit', icon: Globe, color: 'text-orange-400', disabled: true, msg: 'Sắp hỗ trợ' },
+  { value: 'tiktok', label: 'TikTok', icon: Video, color: 'text-pink-400', disabled: true, msg: 'Kết nối' },
+  { value: 'podcast', label: 'Podcasts', icon: Mic, color: 'text-purple-400', disabled: true, msg: 'Sắp hỗ trợ' },
 ];
 
 const SORT_OPTIONS = [
@@ -250,6 +250,8 @@ function MentionsPageContent() {
   const [chartLoading, setChartLoading] = useState(false);
   const [sentimentSummary, setSentimentSummary] = useState<any>(null);
   const [trendData, setTrendData] = useState<any[]>([]);
+  const [sourceCounts, setSourceCounts] = useState<Record<string, number>>({});
+  const [capabilities, setCapabilities] = useState<any>(null);
   const { activeProject, setActiveProject, projects, fetchProjects } = useProject();
   const { confirm, prompt } = useDialog();
   // UI state
@@ -278,9 +280,6 @@ function MentionsPageContent() {
       setSearchTerm(q);
       setSearchInput(q);
       setPage(1);
-      setMentionsList([]);
-      setTotalMentions(0);
-      setTotalPages(1);
       setActiveScanJobId(null);
       setActiveScanKeyword('');
       setScanJobStatus(null);
@@ -309,7 +308,7 @@ function MentionsPageContent() {
   const [saveFilterModalOpen, setSaveFilterModalOpen] = useState(false);
   const [saveFilterName, setSaveFilterName] = useState('');
   const [saveFilterOverwrite, setSaveFilterOverwrite] = useState(false);
-  const [dateRange, setDateRange] = useState('7d');
+  const [dateRange, setDateRange] = useState('30d');
   const [summarizeDrawerOpen, setSummarizeDrawerOpen] = useState(false);
   const [summarizing, setSummarizing] = useState(false);
   const [aiSummary, setAiSummary] = useState<any>(null);
@@ -677,13 +676,88 @@ function MentionsPageContent() {
     }
   };
 
+  const fetchSourceCounts = useCallback(async () => {
+    if (!activeProject && !searchTerm && !initialJobId) return;
+    try {
+      const params: any = {};
+      if (initialJobId) {
+        params.job_id = initialJobId;
+      } else {
+        if (searchTerm) params.q = searchTerm;
+        if (filters.sentiment) params.sentiment = filters.sentiment;
+        if (filters.min_risk_score !== null) params.min_risk_score = filters.min_risk_score;
+        if (filters.min_influence_score !== null) params.min_influence_score = filters.min_influence_score;
+
+        if (dateRange && dateRange !== 'all') {
+          const now = new Date();
+          const from = new Date();
+          if (dateRange === '1d') from.setDate(now.getDate() - 1);
+          else if (dateRange === '7d') from.setDate(now.getDate() - 7);
+          else if (dateRange === '30d') from.setDate(now.getDate() - 30);
+          else if (dateRange === '90d') from.setDate(now.getDate() - 90);
+          params.date_from = from.toISOString();
+          params.date_to = now.toISOString();
+        }
+      }
+      if (activeProject) params.project_id = activeProject.id;
+      const counts = await mentionsApi.sourceCounts(params);
+      setSourceCounts(counts);
+    } catch (error) {
+      console.error('Error fetching source counts:', error);
+    }
+  }, [filters.sentiment, filters.min_risk_score, filters.min_influence_score, initialJobId, searchTerm, activeProject, dateRange]);
+
   useEffect(() => {
     fetchMentions();
   }, [fetchMentions, activeProject]);
 
   useEffect(() => {
+    fetchSourceCounts();
+  }, [fetchSourceCounts]);
+
+  useEffect(() => {
     fetchChartData();
   }, [activeProject?.id]);
+
+  useEffect(() => {
+    integrations.capabilities().then(setCapabilities).catch(console.error);
+  }, []);
+
+  // Compute dynamic source options based on capabilities
+  const sourceTypeOptions = React.useMemo(() => {
+    return DEFAULT_SOURCE_TYPE_OPTIONS.map(opt => {
+      let updatedOpt = { ...opt };
+      
+      if (capabilities) {
+        if (opt.value === 'facebook_page' && capabilities.facebook) {
+          if (capabilities.facebook.status === 'READY') {
+            updatedOpt.disabled = false;
+            updatedOpt.msg = 'Đã kết nối';
+          }
+        }
+        if (opt.value === 'instagram' && capabilities.instagram) {
+          if (capabilities.instagram.status === 'READY') {
+            updatedOpt.disabled = false;
+            updatedOpt.msg = 'Đã kết nối';
+          }
+        }
+        if (opt.value === 'tiktok' && capabilities.tiktok) {
+          if (capabilities.tiktok.status === 'READY') {
+            updatedOpt.disabled = false;
+            updatedOpt.msg = 'Đã kết nối';
+          }
+        }
+        if (opt.value === 'twitter' && capabilities.twitter) {
+          if (capabilities.twitter.status === 'READY') {
+            updatedOpt.disabled = false;
+            updatedOpt.msg = 'Đã kết nối';
+          }
+        }
+      }
+      
+      return updatedOpt;
+    });
+  }, [capabilities]);
 
   useEffect(() => {
     // Reset state on project change to prevent stale data
@@ -802,9 +876,6 @@ function MentionsPageContent() {
     searchTimeout.current = setTimeout(() => {
       setSearchTerm(val);
       setPage(1);
-      setMentionsList([]);
-      setTotalMentions(0);
-      setTotalPages(1);
       setActiveScanJobId(null);
       setActiveScanKeyword('');
       setScanJobStatus(null);
@@ -1050,19 +1121,24 @@ function MentionsPageContent() {
 
         {/* Chart Section */}
         <div className="bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10 overflow-hidden">
-          <div className="flex items-center border-b border-gray-100 dark:border-white/5">
-            <button
-              onClick={() => setActiveChartTab('reach')}
-              className={`px-6 py-3 border-b-2 text-sm font-bold ${activeChartTab === 'reach' ? 'border-blue-600 text-gray-900 dark:text-white' : 'border-transparent text-gray-500 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
-            >
-              Mentions & Reach
-            </button>
-            <button
-              onClick={() => setActiveChartTab('sentiment')}
-              className={`px-6 py-3 border-b-2 text-sm font-bold ${activeChartTab === 'sentiment' ? 'border-blue-600 text-gray-900 dark:text-white' : 'border-transparent text-gray-500 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
-            >
-              Sentiment
-            </button>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-gray-100 dark:border-white/5 gap-2 pb-2 sm:pb-0">
+            <div className="flex items-center">
+              <button
+                onClick={() => setActiveChartTab('reach')}
+                className={`px-4 sm:px-6 py-3 border-b-2 text-sm font-bold ${activeChartTab === 'reach' ? 'border-blue-600 text-gray-900 dark:text-white' : 'border-transparent text-gray-500 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+              >
+                Mentions & Reach
+              </button>
+              <button
+                onClick={() => setActiveChartTab('sentiment')}
+                className={`px-4 sm:px-6 py-3 border-b-2 text-sm font-bold ${activeChartTab === 'sentiment' ? 'border-blue-600 text-gray-900 dark:text-white' : 'border-transparent text-gray-500 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+              >
+                Cảm xúc
+              </button>
+            </div>
+            <div className="text-[11px] font-medium text-gray-400 hidden xl:block mr-2 px-4 text-right">
+               Xu hướng đề cập trong dự án (Không phụ thuộc bộ lọc hiện tại)
+            </div>
             <div className="ml-auto pr-4 flex items-center gap-2">
                <div className="flex bg-gray-100 dark:bg-white/10 p-0.5 rounded-lg border border-gray-200 dark:border-white/10">
                  <button
@@ -1168,136 +1244,63 @@ function MentionsPageContent() {
               ))}
             </div>
           ) : mentionsList.length === 0 ? (
-            searchState === 'TYPING' ? (
-              <div className="py-20 flex flex-col items-center justify-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
-                <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-4" />
-                <p className="text-gray-500 dark:text-gray-500">Đang nhập từ khóa...</p>
-              </div>
-            ) : searchState === 'SEARCHING_DB' ? (
-              <div className="py-20 flex flex-col items-center justify-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
-                <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-4" />
-                <p className="text-gray-500 dark:text-gray-500">Đang tìm mentions hiện có liên quan đến '{searchTerm}'...</p>
-              </div>
-            ) : ['AUTO_SCAN_STARTING', 'AUTO_SCAN_RUNNING'].includes(searchState) ? (
-              <div className="py-20 flex flex-col items-center justify-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
-                <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-4" />
-                <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Đang quét thêm nguồn mới cho '{searchTerm}'...</h3>
-                <p className="text-gray-500 dark:text-gray-500 mb-4">Hệ thống đang tìm kiếm trên Web Search, YouTube và các nguồn đã cấu hình.</p>
-                {activeProject && searchTerm.toLowerCase().trim() !== activeProject.name.toLowerCase().trim() && !activeProject.name.toLowerCase().trim().includes(searchTerm.toLowerCase().trim()) && (
-                  <div className="bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 text-xs px-3 py-1.5 rounded-md mb-4 border border-yellow-200 dark:border-yellow-800/30">
-                    <span className="font-semibold">Lưu ý:</span> Đang tìm '{searchTerm}' trong project '{activeProject.name}'
-                  </div>
-                )}
-                {scanJobStatus && (
-                   <div className="w-full max-w-lg mt-4 bg-gray-50 dark:bg-white/5 p-4 rounded-lg text-sm text-gray-600 dark:text-gray-400 text-left space-y-1 border border-gray-200 dark:border-white/10">
-                     <p><span className="font-semibold">ID Quá trình (Job ID):</span> {scanJobStatus.job_id || activeScanJobId || 'Đang tạo...'}</p>
-                     <p><span className="font-semibold">Trạng thái:</span> {scanJobStatus.status}</p>
-                     {scanJobStatus.meta_data?.provider && <p><span className="font-semibold">Nguồn mở rộng từ khóa:</span> {scanJobStatus.meta_data.provider}</p>}
-                     {scanJobStatus.meta_data?.expanded_keywords && <p><span className="font-semibold">Từ khóa đang quét:</span> {scanJobStatus.meta_data.expanded_keywords.join(', ')}</p>}
-                     {scanJobStatus.meta_data?.source_types && scanJobStatus.meta_data.source_types.length > 0 && <p><span className="font-semibold">Các loại nguồn quét:</span> {scanJobStatus.meta_data.source_types.join(', ')}</p>}
-
-                     {(scanJobStatus.meta_data?.raw_results_count !== undefined || scanJobStatus.summary?.web?.called) && (
-                       <div className="pt-2 mt-2 border-t border-gray-200 dark:border-gray-700 space-y-1">
-                         <p><span className="font-semibold">Kết quả thô tìm được:</span> {scanJobStatus.meta_data?.raw_results_count || (scanJobStatus.summary ? ((scanJobStatus.summary.web?.raw_results_count || 0) + (scanJobStatus.summary.youtube?.raw_results_count || 0) + (scanJobStatus.summary.social?.raw_results_count || 0)) : 0)}</p>
-                         <p><span className="font-semibold">Bài viết hợp lệ mới:</span> {scanJobStatus.meta_data?.created_mentions_count || 0}</p>
-                         <p><span className="font-semibold">Bỏ qua do trùng lặp:</span> {scanJobStatus.meta_data?.duplicate_mentions_count || scanJobStatus.summary?.duplicates_skipped || 0}</p>
-                         {scanJobStatus.meta_data?.skipped_low_relevance_count > 0 && <p><span className="font-semibold">Bỏ qua do không khớp sát nghĩa:</span> {scanJobStatus.meta_data.skipped_low_relevance_count}</p>}
-                         {scanJobStatus.meta_data?.failed_sources && scanJobStatus.meta_data.failed_sources.length > 0 && (
-                           <p className="text-red-500 font-medium"><span className="font-semibold">Lỗi ở nguồn:</span> {scanJobStatus.meta_data.failed_sources.join('; ')}</p>
+              <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
+                {searchState === 'TYPING' || searchState === 'SEARCHING_DB' ? (
+                  <>
+                    <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-4" />
+                    <p className="text-gray-500 dark:text-gray-500">{searchState === 'TYPING' ? 'Đang nhập từ khóa...' : `Đang tìm kiếm '${searchTerm}'...`}</p>
+                  </>
+                ) : (
+                  <>
+                    <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
+                      <Search className="w-8 h-8 text-gray-400" />
+                    </div>
+                    {dateRange === '1d' ? (
+                       <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Không có kết quả trong hôm nay.</h3>
+                    ) : (
+                       <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">
+                         {searchTerm ? `Không tìm thấy kết quả cho '${searchTerm}'.` : 'Chưa có dữ liệu.'}
+                       </h3>
+                    )}
+                    
+                    {dateRange === '1d' ? (
+                       <div className="flex flex-wrap gap-3 mt-4 justify-center">
+                         <button onClick={() => { setDateRange('7d'); setPage(1); }} className="px-4 py-2 bg-blue-50 text-blue-600 border border-blue-100 hover:bg-blue-100 rounded-lg text-sm font-medium transition-colors">Mở rộng 7 ngày</button>
+                         <button onClick={() => { setDateRange('30d'); setPage(1); }} className="px-4 py-2 bg-blue-50 text-blue-600 border border-blue-100 hover:bg-blue-100 rounded-lg text-sm font-medium transition-colors">Mở rộng 30 ngày</button>
+                         {filters.source_type && (
+                           <button onClick={() => { setFilters(prev => ({...prev, source_type: null})); setPage(1); }} className="px-4 py-2 bg-gray-100 text-gray-600 border border-gray-200 hover:bg-gray-200 rounded-lg text-sm font-medium transition-colors">Xóa lọc nguồn</button>
                          )}
                        </div>
-                     )}
-                   </div>
+                    ) : (
+                       <p className="text-gray-500 dark:text-gray-500 mb-6 max-w-sm">Có thể dữ liệu nằm ngoài phạm vi thời gian hoặc bộ lọc quá nghiêm ngặt.</p>
+                    )}
+
+                    {['AUTO_SCAN_STARTING', 'AUTO_SCAN_RUNNING'].includes(searchState) && (
+                      <div className="mt-6 flex items-center gap-2 text-blue-600 bg-blue-50 dark:bg-blue-900/30 px-4 py-2 rounded-lg text-sm font-medium">
+                        <Loader2 className="w-4 h-4 animate-spin" /> Đang quét thêm dữ liệu trên Internet...
+                      </div>
+                    )}
+                    
+                    {searchState === 'NO_LOCAL_RESULTS' && !['AUTO_SCAN_STARTING', 'AUTO_SCAN_RUNNING'].includes(searchState) && searchTerm && (
+                      <div className="mt-4">
+                        <button onClick={handleScanClick} disabled={activeScanJobId !== null || searchTerm.length < 2} className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2 disabled:opacity-50">
+                          <Search className="w-4 h-4" /> Thử quét lại (Scan Now)
+                        </button>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
-            ) : searchState === 'AUTO_SCAN_NO_RESULTS' ? (
-              <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
-                <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
-                  <Search className="w-8 h-8 text-gray-400" />
-                </div>
-                <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Không tìm thấy kết quả nào sau khi đã quét các nguồn cho '{searchTerm}'.</h3>
-                <div className="w-full max-w-lg mt-4 bg-gray-50 dark:bg-white/5 p-4 rounded-lg text-sm text-gray-600 dark:text-gray-400 text-left space-y-2 border border-gray-200 dark:border-white/10 mb-6">
-                   <p className="font-bold text-gray-800 dark:text-gray-200">Chi tiết quét dữ liệu (Job #{scanJobStatus?.job_id || activeScanJobId}):</p>
-                   <p>• Trạng thái cuối: <span className="font-medium">{scanJobStatus?.status}</span></p>
-                   {scanJobStatus?.meta_data?.expanded_keywords && <p>• Đã quét qua các từ khóa: <span className="font-medium">{scanJobStatus.meta_data.expanded_keywords.join(', ')}</span></p>}
-
-                   <p>• Tổng kết quả thô thu được từ Internet: <span className="font-medium">{scanJobStatus?.meta_data?.raw_results_count || 0}</span></p>
-                   {scanJobStatus?.meta_data?.raw_results_count === 0 && (
-                     <p className="text-yellow-600 dark:text-yellow-400 ml-4">→ Nguyên nhân 1: Toàn bộ nguồn (Web, YouTube...) hoàn toàn không trả về bài viết nào cho từ khóa này.</p>
-                   )}
-
-                   {scanJobStatus?.meta_data?.duplicate_mentions_count > 0 && (
-                     <p>• Kết quả trùng lặp: <span className="font-medium">{scanJobStatus.meta_data.duplicate_mentions_count}</span></p>
-                   )}
-                   {scanJobStatus?.meta_data?.skipped_low_relevance_count > 0 && (
-                     <p>• Kết quả bị loại vì không sát nghĩa: <span className="font-medium">{scanJobStatus.meta_data.skipped_low_relevance_count}</span></p>
-                   )}
-
-                   {(scanJobStatus?.meta_data?.raw_results_count > 0 && (scanJobStatus?.meta_data?.created_mentions_count === 0)) && (
-                     <p className="text-yellow-600 dark:text-yellow-400 mt-2">→ Nguyên nhân: Nguồn có trả về dữ liệu, nhưng toàn bộ đã bị lọc bỏ do trùng lặp dữ liệu cũ, không khớp sát ngữ cảnh, hoặc bị chặn bởi bộ lọc hiện tại.</p>
-                   )}
-
-                   {scanJobStatus?.meta_data?.failed_sources && scanJobStatus.meta_data.failed_sources.length > 0 && (
-                      <p className="text-red-500 mt-2">• Nguồn bị lỗi trong quá trình quét: {scanJobStatus.meta_data.failed_sources.join('; ')}</p>
-                   )}
-                </div>
-                <div className="flex gap-3">
-                   <button onClick={handleScanClick} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors">Thử quét lại</button>
-                   <button onClick={() => { setSearchTerm(''); router.push('/dashboard/mentions'); }} className="px-4 py-2 bg-gray-200 dark:bg-white/10 hover:bg-gray-300 dark:hover:bg-white/20 text-gray-800 dark:text-white rounded-lg text-sm font-medium transition-colors">Xóa bộ lọc</button>
-                </div>
-              </div>
-            ) : searchState === 'NO_LOCAL_RESULTS' ? (
-              <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
-                <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
-                  <Search className="w-8 h-8 text-gray-400" />
-                </div>
-                <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Không tìm thấy kết quả đã lưu cho '{searchTerm}' trong bộ lọc hiện tại.</h3>
-                {dateRange !== 'all' && (
-                  <div className="bg-yellow-50 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-200 text-sm px-4 py-3 rounded-lg max-w-md mb-6 border border-yellow-200 dark:border-yellow-800/30">
-                    <span className="font-semibold block mb-1">Gợi ý:</span>
-                    Có thể từ khóa có dữ liệu ngoài phạm vi thời gian đã chọn. Thử mở rộng sang 30 ngày, 90 ngày hoặc Tất cả thời gian.
-                  </div>
-                )}
-                {searchTerm.length < 2 && (
-                  <p className="text-gray-500 dark:text-gray-500 mb-6 max-w-sm">Từ khóa quá ngắn để tự động quét internet (cần ít nhất 2 ký tự).</p>
-                )}
-                <div className="flex flex-col items-center gap-2 mt-2">
-                  <p className="text-sm text-gray-500">Bạn có thể bấm Scan Now để quét thêm nguồn.</p>
-                  <button
-                    onClick={handleScanClick}
-                    disabled={activeScanJobId !== null || searchTerm.length < 2}
-                    className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
-                  >
-                    <Search className="w-4 h-4" />
-                    Scan Now
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
-                <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
-                  <Search className="w-8 h-8 text-gray-400" />
-                </div>
-                <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">
-                  {searchTerm ? `Không tìm thấy đề cập nào cho từ khóa: ${searchTerm}` : 'Chưa có đề cập nào'}
-                </h3>
-                <p className="text-gray-500 dark:text-gray-500 max-w-sm mb-4">Dự án của bạn chưa thu thập được đề cập nào, hoặc dữ liệu không khớp với bộ lọc.</p>
-                {dateRange !== 'all' && (
-                  <div className="bg-yellow-50 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-200 text-sm px-4 py-2 rounded-lg max-w-md mb-6 border border-yellow-200 dark:border-yellow-800/30">
-                    Có thể dữ liệu nằm ngoài phạm vi thời gian hiện tại. Hãy thử mở rộng bộ lọc ngày.
-                  </div>
-                )}
-              </div>
-            )
           ) : (
             <div className="space-y-4">
-              {loading && (
-                <div className="flex items-center justify-center py-2 text-blue-500 text-sm font-medium gap-2">
-                  <Loader2 className="w-4 h-4 animate-spin" /> Đang tải dữ liệu...
+              {loading && mentionsList.length > 0 && (
+                <div className="sticky top-0 z-10 flex items-center justify-center py-2 text-blue-600 bg-blue-50/90 dark:bg-blue-900/40 backdrop-blur-sm border border-blue-100 dark:border-blue-800/50 text-sm font-medium gap-2 rounded-lg shadow-sm">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  {searchTerm ? `Đang cập nhật kết quả cho "${searchTerm}"...` : 'Đang cập nhật danh sách...'}
                 </div>
               )}
-              {searchState === 'TYPING' && !loading && (
-                <div className="flex items-center justify-center py-2 text-gray-500 text-sm font-medium gap-2">
+              {searchState === 'TYPING' && !loading && mentionsList.length > 0 && (
+                <div className="sticky top-0 z-10 flex items-center justify-center py-2 text-gray-500 bg-gray-50/90 dark:bg-gray-800/40 backdrop-blur-sm border border-gray-100 dark:border-gray-700 text-sm font-medium gap-2 rounded-lg shadow-sm">
                   <Loader2 className="w-4 h-4 animate-spin" /> Đang nhập từ khóa...
                 </div>
               )}
@@ -1388,7 +1391,7 @@ function MentionsPageContent() {
                                 {mention.matched_in && mention.matched_in.length > 0 ? (
                                   <div className="text-[11px] text-indigo-600 dark:text-indigo-400 font-medium flex gap-1.5 items-center bg-indigo-50 dark:bg-indigo-900/20 px-2 py-0.5 rounded-full border border-indigo-100 dark:border-indigo-800/30">
                                     <Search className="w-3 h-3" />
-                                    Matched in: {mention.matched_in.join(', ')}
+                                    {mention.matched_in.includes('Search provider') ? 'Matched by: Search provider' : `Matched in: ${mention.matched_in.join(', ')}`}
                                   </div>
                                 ) : (
                                   <div className="text-[11px] text-gray-500 dark:text-gray-400 font-medium flex gap-1.5 items-center bg-gray-50 dark:bg-white/5 px-2 py-0.5 rounded-full border border-gray-200 dark:border-white/10">
@@ -1640,72 +1643,109 @@ function MentionsPageContent() {
       {/* ─── RIGHT SIDEBAR (FILTERS - 25%) ───────────────────────────────── */}
       <div className="hidden lg:block w-[300px] xl:w-[320px] shrink-0 space-y-4 pb-8">
 
-        {/* Date Filter */}
+        {/* Date Range — Segmented Pill Selector */}
         <div className="bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10 p-4">
-           <div className="flex items-center gap-2 text-sm font-bold text-gray-800 dark:text-gray-100">
-             <Calendar className="w-4 h-4 text-gray-500 dark:text-gray-500" />
-             <select
-               value={dateRange}
-               onChange={(e) => setDateRange(e.target.value)}
-               className="bg-transparent border-none outline-none cursor-pointer flex-1 font-bold dark:text-gray-100"
-             >
-               <option value="all" className="dark:bg-gray-800">Tất cả thời gian</option>
-               <option value="1d" className="dark:bg-gray-800">Hôm nay</option>
-               <option value="7d" className="dark:bg-gray-800">7 ngày qua</option>
-               <option value="30d" className="dark:bg-gray-800">30 ngày qua</option>
-               <option value="90d" className="dark:bg-gray-800">90 ngày qua</option>
-             </select>
+           <div className="flex items-center gap-2 mb-3">
+             <Calendar className="w-4 h-4 text-gray-400" />
+             <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100">Thời gian</h3>
+           </div>
+           <div className="flex flex-wrap gap-1.5">
+             {[
+               { value: '1d', label: 'Hôm nay' },
+               { value: '7d', label: '7N' },
+               { value: '30d', label: '30N' },
+               { value: '90d', label: '90N' },
+               { value: 'all', label: 'Tất cả' },
+             ].map((opt) => (
+               <button
+                 key={opt.value}
+                 onClick={() => { setDateRange(opt.value); setPage(1); }}
+                 className={`px-3 py-1.5 text-xs font-bold rounded-full transition-all duration-150 border whitespace-nowrap ${
+                   dateRange === opt.value
+                     ? 'bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-900/30 dark:border-blue-700 dark:text-blue-300 shadow-sm'
+                     : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50 dark:bg-transparent dark:border-white/10 dark:text-gray-400 dark:hover:bg-white/5'
+                 }`}
+               >
+                 {opt.label}
+               </button>
+             ))}
            </div>
         </div>
 
-        {/* Sources Filter */}
+        {/* Sources — Active Grid + Collapsed Unavailable */}
         <div className="bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10 p-4">
            <div className="flex items-center justify-between mb-4">
              <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100 flex items-center gap-1.5">
-               Sources <Info className="w-3.5 h-3.5 text-gray-400" />
+               Nguồn
              </h3>
-             <span className="text-xs text-gray-500 dark:text-gray-500 cursor-pointer hover:underline">Show all</span>
+             {filters.source_type && (
+               <button
+                 onClick={() => { setFilters({ ...filters, source_type: null }); setPage(1); }}
+                 className="text-[11px] font-bold text-gray-500 hover:text-gray-700 bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded transition-colors"
+               >
+                 Xóa lọc
+               </button>
+             )}
            </div>
-           <div className="grid grid-cols-2 gap-y-3 gap-x-2">
-             {SOURCE_TYPE_OPTIONS.map((src) => {
+           {/* Active Sources — vertical list */}
+           <div className="flex flex-col gap-1.5">
+             {sourceTypeOptions.filter(s => !s.disabled).map((src) => {
                const currentSources = filters.source_type ? filters.source_type.split(',') : [];
                const isSelected = currentSources.includes(src.value);
+               const count = sourceCounts[src.value] || 0;
                return (
-                 <div key={src.value} className="flex items-start gap-2">
-                   <input
-                     type="checkbox"
-                     checked={isSelected}
-                     disabled={src.disabled}
-                     onChange={() => {
-                        if (!src.disabled) {
-                          let next = [...currentSources];
-                          if (isSelected) {
-                            next = next.filter(s => s !== src.value);
-                          } else {
-                            next.push(src.value);
-                          }
-                          setFilters({ ...filters, source_type: next.length ? next.join(',') : null });
-                          setPage(1);
-                        }
-                     }}
-                     className="mt-0.5 rounded border-gray-300 text-emerald-500 focus:ring-emerald-500 disabled:opacity-50"
-                   />
-                   <div className={`flex flex-col ${src.disabled ? 'opacity-50' : ''}`}>
-                     <span className="text-xs font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
-                       <div className={`w-5 h-5 rounded-full flex items-center justify-center bg-gray-100 dark:bg-white/10 ${src.color}`}>
-                          <src.icon className="w-3 h-3" />
-                       </div>
-                       {src.label}
-                     </span>
-                     {src.disabled && (
-                        <span className="mt-1 ml-6 text-[9px] font-bold bg-gray-500 text-white px-1.5 py-0.5 rounded uppercase tracking-wider w-max">
-                          {src.msg || 'COMING SOON'}
-                        </span>
-                     )}
+                 <button
+                   key={src.value}
+                   onClick={() => {
+                     let next = [...currentSources];
+                     if (isSelected) {
+                       next = next.filter(s => s !== src.value);
+                     } else {
+                       next.push(src.value);
+                     }
+                     setFilters({ ...filters, source_type: next.length ? next.join(',') : null });
+                     setPage(1);
+                   }}
+                   className={`flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 border ${
+                     isSelected
+                       ? 'bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-700/50 text-blue-700 dark:text-blue-300 shadow-sm'
+                       : count > 0 ? 'bg-white dark:bg-transparent border-gray-200 dark:border-white/10 text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:hover:border-white/20 hover:bg-gray-50 dark:hover:bg-white/5' : 'bg-gray-50 dark:bg-[#0a0f1c] border-transparent text-gray-400 dark:text-gray-600 hover:bg-gray-100 dark:hover:bg-white/5'
+                   }`}
+                 >
+                   <div className="flex items-center gap-2">
+                     <src.icon className={`w-4 h-4 shrink-0 ${isSelected ? 'text-blue-600 dark:text-blue-400' : count > 0 ? src.color : 'text-gray-400 dark:text-gray-600'}`} />
+                     <span className="truncate">{src.label}</span>
                    </div>
-                 </div>
+                   <span className={`text-xs font-bold ${isSelected ? 'text-blue-600 dark:text-blue-400' : count > 0 ? 'text-gray-500 dark:text-gray-400' : 'text-gray-400 dark:text-gray-600'}`}>{count.toLocaleString('vi-VN')}</span>
+                 </button>
                );
              })}
+           </div>
+           {/* Unavailable / Connector Sources */}
+           <div className="mt-4 pt-3 border-t border-gray-100 dark:border-white/5 flex flex-col gap-1.5">
+             <div className="text-[11px] text-gray-400 dark:text-gray-500 font-bold uppercase tracking-wider mb-1 px-1">Nguồn kết nối</div>
+             {sourceTypeOptions.filter(s => s.disabled).map((src) => {
+                 const content = (
+                  <div className="flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium border border-transparent bg-gray-50 dark:bg-[#0a0f1c] text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors cursor-pointer">
+                    <div className="flex items-center gap-2">
+                      <src.icon className="w-4 h-4 shrink-0 opacity-50" />
+                      <span className="truncate">{src.label}</span>
+                    </div>
+                    <span className="text-[10px] font-bold text-gray-400 bg-gray-200 dark:bg-white/10 dark:text-gray-400 px-1.5 py-0.5 rounded uppercase tracking-wider">
+                      {src.msg}
+                    </span>
+                  </div>
+                 );
+                 if (src.msg === 'Kết nối') {
+                   const href = src.value === 'tiktok' ? '/dashboard/integrations' : '/dashboard/integrations/meta';
+                   return (
+                     <Link key={src.value} href={href}>
+                       {content}
+                     </Link>
+                   );
+                 }
+                 return <div key={src.value}>{content}</div>;
+              })}
            </div>
         </div>
 
@@ -1713,7 +1753,7 @@ function MentionsPageContent() {
         <div className="bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10 p-4">
            <div className="flex items-center justify-between mb-4">
              <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100 flex items-center gap-1.5">
-               Sentiment <Info className="w-3.5 h-3.5 text-gray-400" />
+               Cảm xúc <Info className="w-3.5 h-3.5 text-gray-400" />
              </h3>
            </div>
            <div className="flex flex-col gap-3">
@@ -1766,7 +1806,7 @@ function MentionsPageContent() {
         <div className="bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10 p-4">
            <div className="flex items-center justify-between mb-4">
              <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100 flex items-center gap-1.5">
-               Influence score <Info className="w-3.5 h-3.5 text-gray-400" />
+               Điểm ảnh hưởng <Info className="w-3.5 h-3.5 text-gray-400" />
              </h3>
            </div>
            <div className="px-2">

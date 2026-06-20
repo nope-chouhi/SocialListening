@@ -118,8 +118,7 @@ def get_mentions_summary(
             base_filter.append(or_(
                 Mention.title.ilike(search_term),
                 Mention.snippet.ilike(search_term),
-                Mention.content.ilike(search_term),
-                Mention.keyword_text.ilike(search_term)
+                Mention.content.ilike(search_term)
             ))
         if date_from:
             base_filter.append(Mention.collected_at >= date_from)
@@ -127,7 +126,27 @@ def get_mentions_summary(
             base_filter.append(Mention.collected_at <= date_to)
         if source_type:
             st_list = [s.strip() for s in source_type.split(",")]
-            base_filter.append(Mention.source_type.in_(st_list))
+            mapped_types = set()
+            for st in st_list:
+                if st == 'web': mapped_types.update(['web', 'website', 'web_search', 'article', 'unknown'])
+                elif st == 'video': mapped_types.update(['video', 'videos', 'youtube', 'yt'])
+                elif st == 'blog': mapped_types.update(['blog', 'forum', 'blogs_forums', 'blogs/forums'])
+                elif st == 'rss': mapped_types.update(['rss', 'feed', 'rss_feed'])
+                elif st == 'news': mapped_types.update(['news', 'newspaper', 'article_news'])
+                else: mapped_types.add(st)
+            
+            condition = Mention.source_type.in_(list(mapped_types))
+            if 'web' in st_list:
+                valid_url_cond = and_(
+                    Mention.url.isnot(None),
+                    Mention.url.notilike('%googleusercontent.com%'),
+                    Mention.url.notilike('%corp.google.com%'),
+                    Mention.url.notilike('%uberproxy%'),
+                    Mention.url.notilike('%/rss%'),
+                    Mention.url.notilike('%.xml')
+                )
+                condition = or_(condition, and_(Mention.source_type.is_(None), valid_url_cond))
+            base_filter.append(condition)
         if sentiment:
             sentiments_list = [s.strip() for s in sentiment.split(",")]
             base_filter.append(Mention.sentiment.in_(sentiments_list))
@@ -220,6 +239,81 @@ def get_mentions_summary(
         }
 
 
+@router.get("/source-counts")
+def get_mentions_source_counts(
+    project_id: Optional[int] = Query(None),
+    job_id: Optional[int] = Query(None),
+    q: Optional[str] = Query(None),
+    date_from: Optional[datetime] = None,
+    date_to: Optional[datetime] = None,
+    sentiment: Optional[str] = None,
+    min_influence_score: Optional[int] = None,
+    is_muted: Optional[bool] = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Get source counts for mentions with active filters"""
+    try:
+        from sqlalchemy import or_, and_, func, select
+        base = apply_tenant_filter(select(Mention.source_type, func.count(Mention.id)), Mention, current_user)
+        base = base.where(Mention.verification_status != 'synthetic')
+        base = base.where(Mention.is_deleted == False)
+
+        global_valid_url_cond = or_(
+            Mention.url.is_(None),
+            and_(
+                Mention.url.notilike('%news.google.com/rss/articles/%'),
+                Mention.url.notilike('%googleusercontent.com%'),
+                Mention.url.notilike('%corp.google.com%'),
+                Mention.url.notilike('%uberproxy%'),
+                Mention.url.notilike('%/rss%'),
+                Mention.url.notilike('%.xml')
+            )
+        )
+        base = base.where(global_valid_url_cond)
+
+        if project_id: base = base.where(Mention.project_id == project_id)
+        if job_id: base = base.where(Mention.job_id == job_id)
+        if q and not job_id:
+            search_term = f"%{q}%"
+            base = base.where(or_(
+                Mention.title.ilike(search_term),
+                Mention.snippet.ilike(search_term),
+                Mention.content.ilike(search_term)
+            ))
+        if date_from and not job_id: base = base.where(Mention.collected_at >= date_from)
+        if date_to and not job_id: base = base.where(Mention.collected_at <= date_to)
+        if is_muted is not None: base = base.where(Mention.is_muted == is_muted)
+        else: base = base.where(Mention.is_muted == False)
+        if min_influence_score is not None: base = base.where(Mention.influence_score >= min_influence_score)
+        if sentiment:
+            sentiments_list = [s.strip() for s in sentiment.split(",")]
+            base = base.where(Mention.sentiment.in_(sentiments_list))
+
+        base = base.group_by(Mention.source_type)
+        rows = db.execute(base).all()
+
+        counts = {
+            'web': 0, 'news': 0, 'blog': 0, 'video': 0, 'rss': 0
+        }
+        for st, count in rows:
+            if not st: mapped = 'web'
+            elif st in ['news', 'newspaper', 'article_news']: mapped = 'news'
+            elif st in ['video', 'videos', 'youtube', 'yt']: mapped = 'video'
+            elif st in ['blog', 'forum', 'blogs_forums', 'blogs/forums']: mapped = 'blog'
+            elif st in ['rss', 'feed', 'rss_feed']: mapped = 'rss'
+            elif st in ['web', 'website', 'web_search', 'article', 'unknown']: mapped = 'web'
+            else: mapped = 'web'  # safe fallback
+            
+            counts[mapped] += count
+
+        return counts
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f"Error querying source counts: {e}")
+        return {'web': 0, 'news': 0, 'blog': 0, 'video': 0, 'rss': 0}
+
+
 @router.get("")
 def list_mentions(
     page: int = Query(1, ge=1),
@@ -304,6 +398,19 @@ def list_mentions(
         # Mentions filtering directly
         query = query.where(Mention.verification_status != 'synthetic')
         query = query.where(Mention.is_deleted == False)
+        
+        global_valid_url_cond = or_(
+            Mention.url.is_(None),
+            and_(
+                Mention.url.notilike('%news.google.com/rss/articles/%'),
+                Mention.url.notilike('%googleusercontent.com%'),
+                Mention.url.notilike('%corp.google.com%'),
+                Mention.url.notilike('%uberproxy%'),
+                Mention.url.notilike('%/rss%'),
+                Mention.url.notilike('%.xml')
+            )
+        )
+        query = query.where(global_valid_url_cond)
         if project_id:
             query = query.where(Mention.project_id == project_id)
         if job_id:
@@ -320,9 +427,47 @@ def list_mentions(
         # In case source_type is directly on mention (new model)
         if source_type and not need_source_join:
             st_list = [s.strip() for s in source_type.split(",")]
-            query = query.where(Mention.source_type.in_(st_list))
+            mapped_types = set()
+            for st in st_list:
+                if st == 'web': mapped_types.update(['web', 'website', 'web_search', 'article', 'unknown'])
+                elif st == 'video': mapped_types.update(['video', 'videos', 'youtube', 'yt'])
+                elif st == 'blog': mapped_types.update(['blog', 'forum', 'blogs_forums', 'blogs/forums'])
+                elif st == 'rss': mapped_types.update(['rss', 'feed', 'rss_feed'])
+                elif st == 'news': mapped_types.update(['news', 'newspaper', 'article_news'])
+                else: mapped_types.add(st)
+            condition = Mention.source_type.in_(list(mapped_types))
+            if 'web' in st_list:
+                valid_url_cond = and_(
+                    Mention.url.isnot(None),
+                    Mention.url.notilike('%googleusercontent.com%'),
+                    Mention.url.notilike('%corp.google.com%'),
+                    Mention.url.notilike('%uberproxy%'),
+                    Mention.url.notilike('%/rss%'),
+                    Mention.url.notilike('%.xml')
+                )
+                condition = or_(condition, and_(Mention.source_type.is_(None), valid_url_cond))
+            query = query.where(condition)
         elif source_types and not need_source_join:
-            query = query.where(Mention.source_type.in_(source_types))
+            mapped_types = set()
+            for st in source_types:
+                if st == 'web': mapped_types.update(['web', 'website', 'web_search', 'article', 'unknown'])
+                elif st == 'video': mapped_types.update(['video', 'videos', 'youtube', 'yt'])
+                elif st == 'blog': mapped_types.update(['blog', 'forum', 'blogs_forums', 'blogs/forums'])
+                elif st == 'rss': mapped_types.update(['rss', 'feed', 'rss_feed'])
+                elif st == 'news': mapped_types.update(['news', 'newspaper', 'article_news'])
+                else: mapped_types.add(st)
+            condition = Mention.source_type.in_(list(mapped_types))
+            if 'web' in source_types:
+                valid_url_cond = and_(
+                    Mention.url.isnot(None),
+                    Mention.url.notilike('%googleusercontent.com%'),
+                    Mention.url.notilike('%corp.google.com%'),
+                    Mention.url.notilike('%uberproxy%'),
+                    Mention.url.notilike('%/rss%'),
+                    Mention.url.notilike('%.xml')
+                )
+                condition = or_(condition, and_(Mention.source_type.is_(None), valid_url_cond))
+            query = query.where(condition)
         if domain and not need_source_join:
             query = query.where(Mention.domain.ilike(f"%{domain}%"))
         if sentiment:
@@ -346,8 +491,7 @@ def list_mentions(
                 or_(
                     Mention.title.ilike(search_pattern),
                     Mention.snippet.ilike(search_pattern),
-                    Mention.content.ilike(search_pattern),
-                    Mention.keyword_text.ilike(search_pattern)
+                    Mention.content.ilike(search_pattern)
                 )
             )
 
@@ -357,8 +501,7 @@ def list_mentions(
                 or_(
                     Mention.title.ilike(search_term),
                     Mention.snippet.ilike(search_term),
-                    Mention.content.ilike(search_term),
-                    Mention.keyword_text.ilike(search_term)
+                    Mention.content.ilike(search_term)
                 )
             )
 
@@ -377,6 +520,18 @@ def list_mentions(
             count_base = apply_tenant_filter(select(Mention), Mention, current_user)
             count_base = count_base.where(Mention.verification_status != 'synthetic')
             count_base = count_base.where(Mention.is_deleted == False)
+            global_valid_url_cond_count = or_(
+                Mention.url.is_(None),
+                and_(
+                    Mention.url.notilike('%news.google.com/rss/articles/%'),
+                    Mention.url.notilike('%googleusercontent.com%'),
+                    Mention.url.notilike('%corp.google.com%'),
+                    Mention.url.notilike('%uberproxy%'),
+                    Mention.url.notilike('%/rss%'),
+                    Mention.url.notilike('%.xml')
+                )
+            )
+            count_base = count_base.where(global_valid_url_cond_count)
 
             # Apply the same filters to count query
             if source_id:
@@ -397,9 +552,49 @@ def list_mentions(
             # Direct mention filters
             if source_type:
                 st_list = [s.strip() for s in source_type.split(",")]
-                count_base = count_base.where(Mention.source_type.in_(st_list))
+                mapped_types = set()
+                for st in st_list:
+                    if st == 'web': mapped_types.update(['web', 'website', 'web_search', 'article', 'unknown'])
+                    elif st == 'video': mapped_types.update(['video', 'videos', 'youtube', 'yt'])
+                    elif st == 'blog': mapped_types.update(['blog', 'forum', 'blogs_forums', 'blogs/forums'])
+                    elif st == 'rss': mapped_types.update(['rss', 'feed', 'rss_feed'])
+                    elif st == 'news': mapped_types.update(['news', 'newspaper', 'article_news'])
+                    else: mapped_types.add(st)
+                
+                condition = Mention.source_type.in_(list(mapped_types))
+                if 'web' in st_list:
+                    valid_url_cond = and_(
+                        Mention.url.isnot(None),
+                        Mention.url.notilike('%googleusercontent.com%'),
+                        Mention.url.notilike('%corp.google.com%'),
+                        Mention.url.notilike('%uberproxy%'),
+                        Mention.url.notilike('%/rss%'),
+                        Mention.url.notilike('%.xml')
+                    )
+                    condition = or_(condition, and_(Mention.source_type.is_(None), valid_url_cond))
+                count_base = count_base.where(condition)
             if source_types:
-                count_base = count_base.where(Mention.source_type.in_(source_types))
+                mapped_types = set()
+                for st in source_types:
+                    if st == 'web': mapped_types.update(['web', 'website', 'web_search', 'article', 'unknown'])
+                    elif st == 'video': mapped_types.update(['video', 'videos', 'youtube', 'yt'])
+                    elif st == 'blog': mapped_types.update(['blog', 'forum', 'blogs_forums', 'blogs/forums'])
+                    elif st == 'rss': mapped_types.update(['rss', 'feed', 'rss_feed'])
+                    elif st == 'news': mapped_types.update(['news', 'newspaper', 'article_news'])
+                    else: mapped_types.add(st)
+                
+                condition = Mention.source_type.in_(list(mapped_types))
+                if 'web' in source_types:
+                    valid_url_cond = and_(
+                        Mention.url.isnot(None),
+                        Mention.url.notilike('%googleusercontent.com%'),
+                        Mention.url.notilike('%corp.google.com%'),
+                        Mention.url.notilike('%uberproxy%'),
+                        Mention.url.notilike('%/rss%'),
+                        Mention.url.notilike('%.xml')
+                    )
+                    condition = or_(condition, and_(Mention.source_type.is_(None), valid_url_cond))
+                count_base = count_base.where(condition)
             if domain:
                 count_base = count_base.where(Mention.domain.ilike(f"%{domain}%"))
             if sentiment:
@@ -421,8 +616,7 @@ def list_mentions(
                     or_(
                         Mention.title.ilike(search_pattern),
                         Mention.snippet.ilike(search_pattern),
-                        Mention.content.ilike(search_pattern),
-                        Mention.keyword_text.ilike(search_pattern)
+                        Mention.content.ilike(search_pattern)
                     )
                 )
 
@@ -432,8 +626,7 @@ def list_mentions(
                     or_(
                         Mention.title.ilike(search_term),
                         Mention.snippet.ilike(search_term),
-                        Mention.content.ilike(search_term),
-                        Mention.keyword_text.ilike(search_term)
+                        Mention.content.ilike(search_term)
                     )
                 )
 

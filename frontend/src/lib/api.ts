@@ -378,6 +378,10 @@ export const mentions = {
     const response = await api.get('/api/mentions', { params });
     return response.data;
   },
+  sourceCounts: async (params?: any) => {
+    const response = await api.get('/api/mentions/source-counts', { params });
+    return response.data;
+  },
   get: async (id: number) => {
     const response = await api.get(`/api/mentions/${id}`);
     return response.data;
@@ -931,6 +935,13 @@ export const collectors = {
   },
   getStatus: async () => {
     const response = await api.get('/api/collectors/status');
+    return response.data;
+  },
+};
+
+export const integrations = {
+  capabilities: async () => {
+    const response = await api.get('/api/integrations/capabilities');
     return response.data;
   },
 };
