@@ -1646,17 +1646,18 @@ function MentionsPageContent() {
              <Calendar className="w-4 h-4 text-gray-400" />
              <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100">Date Range</h3>
            </div>
-           <div className="grid grid-cols-4 gap-1 bg-gray-100 dark:bg-white/[0.06] p-1 rounded-lg">
+           <div className="grid grid-cols-5 gap-0.5 bg-gray-100 dark:bg-white/[0.06] p-1 rounded-lg">
              {[
-               { value: '7d', label: '7D' },
-               { value: '30d', label: '30D' },
-               { value: '90d', label: '90D' },
-               { value: 'all', label: 'All' },
+               { value: '1d', label: 'Hôm nay' },
+               { value: '7d', label: '7N' },
+               { value: '30d', label: '30N' },
+               { value: '90d', label: '90N' },
+               { value: 'all', label: 'Tất cả' },
              ].map((opt) => (
                <button
                  key={opt.value}
                  onClick={() => { setDateRange(opt.value); setPage(1); }}
-                 className={`px-2 py-1.5 text-xs font-bold rounded-md transition-all duration-150 ${
+                 className={`px-1.5 py-1.5 text-[11px] font-bold rounded-md transition-all duration-150 whitespace-nowrap ${
                    dateRange === opt.value
                      ? 'bg-white dark:bg-[#1a2332] text-blue-600 dark:text-blue-400 shadow-sm ring-1 ring-black/5 dark:ring-white/10'
                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
@@ -1667,7 +1668,7 @@ function MentionsPageContent() {
              ))}
            </div>
            <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-2 font-medium">
-             {dateRange === 'all' ? 'All time' : dateRange === '7d' ? 'Last 7 days' : dateRange === '30d' ? 'Last 30 days' : 'Last 90 days'}
+             {dateRange === 'all' ? 'Tất cả thời gian' : dateRange === '1d' ? 'Hôm nay' : dateRange === '7d' ? '7 ngày qua' : dateRange === '30d' ? '30 ngày qua' : '90 ngày qua'}
            </p>
         </div>
 
