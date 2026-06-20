@@ -1216,13 +1216,14 @@ function MentionsPageContent() {
               </div>
           ) : (
             <div className="space-y-4">
-              {loading && (
-                <div className="flex items-center justify-center py-2 text-blue-500 text-sm font-medium gap-2">
-                  <Loader2 className="w-4 h-4 animate-spin" /> Đang tải dữ liệu...
+              {loading && mentionsList.length > 0 && (
+                <div className="sticky top-0 z-10 flex items-center justify-center py-2 text-blue-600 bg-blue-50/90 dark:bg-blue-900/40 backdrop-blur-sm border border-blue-100 dark:border-blue-800/50 text-sm font-medium gap-2 rounded-lg shadow-sm">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  {searchTerm ? `Đang cập nhật kết quả cho "${searchTerm}"...` : 'Đang cập nhật danh sách...'}
                 </div>
               )}
-              {searchState === 'TYPING' && !loading && (
-                <div className="flex items-center justify-center py-2 text-gray-500 text-sm font-medium gap-2">
+              {searchState === 'TYPING' && !loading && mentionsList.length > 0 && (
+                <div className="sticky top-0 z-10 flex items-center justify-center py-2 text-gray-500 bg-gray-50/90 dark:bg-gray-800/40 backdrop-blur-sm border border-gray-100 dark:border-gray-700 text-sm font-medium gap-2 rounded-lg shadow-sm">
                   <Loader2 className="w-4 h-4 animate-spin" /> Đang nhập từ khóa...
                 </div>
               )}
