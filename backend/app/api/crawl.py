@@ -31,7 +31,7 @@ class ManualScanRequest(BaseModel):
     source_types: Optional[List[str]] = []
     date_range: Optional[str] = None
     expand_keywords: Optional[bool] = False
-    
+
     keyword_group_ids: Optional[List[int]] = []
     keywords: Optional[List[str]] = []
     source_ids: Optional[List[int]] = []
@@ -57,7 +57,7 @@ def _run_discovery_bg(job_id: int):
 def get_capabilities():
     from app.core.config import settings
     has_serpapi = bool(settings.SERPAPI_API_KEY)
-    
+
     return {
         "web_search": {
             "enabled": True,
@@ -86,7 +86,7 @@ def debug_auto_discovery(
     has_serpapi = bool(settings.SERPAPI_API_KEY)
     if not has_serpapi:
         return {"success": False, "error": "Chưa cấu hình SERPAPI_API_KEY"}
-    
+
     try:
         from app.services.serpapi_provider import search
         results = search(
@@ -174,17 +174,17 @@ def manual_scan(
     Manual scan: Live pipeline for API adapters.
     """
     keyword_texts = []
-    
+
     def expand_keyword(q: str):
         q_lower = q.lower().strip()
         expansions = [q_lower]
         provider = "fallback"
-        
+
         # Try AI expansion first
         try:
             cache_key = f"expand_keyword_v2:{q_lower}"
             cached_expansions = None
-            
+
             # Try Redis first
             try:
                 from app.core.config import settings
@@ -199,13 +199,13 @@ def manual_scan(
                 pass
             except Exception as e:
                 pass
-                
+
             # Try RAM cache fallback
             if cached_expansions is None and q_lower in _EXPANDED_KEYWORDS_CACHE:
                 timestamp, cached_val = _EXPANDED_KEYWORDS_CACHE[q_lower]
                 if time.time() - timestamp < 86400:
                     cached_expansions = cached_val
-                    
+
             if cached_expansions is not None:
                 for e in cached_expansions:
                     if e and e not in expansions:
@@ -216,7 +216,7 @@ def manual_scan(
                 from app.services.ai_service import expand_keyword as ai_expand_keyword
                 ai_expansions = ai_expand_keyword(q)[:8]  # Limit max 8 words
                 provider = "AI_Manager"
-                
+
                 # Save to caches (24 hours = 86400 seconds)
                 try:
                     from app.core.config import settings
@@ -228,7 +228,7 @@ def manual_scan(
                 except Exception:
                     pass
                 _EXPANDED_KEYWORDS_CACHE[q_lower] = (time.time(), ai_expansions or [])
-                
+
                 if ai_expansions:
                     for e in ai_expansions:
                         e_lower = e.lower().strip()
@@ -237,7 +237,7 @@ def manual_scan(
         except Exception as e:
             import logging
             logging.error(f"AI expansion failed in manual_scan: {e}")
-            
+
         # Hardcoded specific domain fallback/augmentation
         hardcoded = []
         if q_lower == "báo":
@@ -248,11 +248,11 @@ def manual_scan(
             hardcoded = ["tth group", "tth hospital", "bệnh viện tth", "bệnh viện đa khoa tth"]
         elif q_lower == "bệnh viện":
             hardcoded = ["phòng khám", "y tế", "hospital", "healthcare", "bác sĩ"]
-            
+
         for h in hardcoded:
             if h not in expansions:
                 expansions.append(h)
-                
+
         return list(set(expansions)), provider
 
     provider_used = "deferred" if body.expand_keywords else "none"
@@ -273,14 +273,14 @@ def manual_scan(
     mode = getattr(body, "mode", "HYBRID") or "HYBRID"
     project_id = body.project_id
     query_key = (body.query or "").strip().lower() or "|".join(sorted(keyword_texts))
-    
+
     import os
     env_max = os.getenv("CRAWL_MAX_RESULTS_PER_SOURCE")
     try:
         default_max = int(env_max) if env_max else 50
     except ValueError:
         default_max = 50
-    
+
     # Cap max_results at 100 to avoid overload
     req_max = body.max_results or default_max
     max_results = min(req_max, 100)
@@ -290,7 +290,7 @@ def manual_scan(
     recent_limit_active = datetime.now(timezone.utc) - timedelta(minutes=15)
     # Check completed in last 5 min
     recent_limit_completed = datetime.now(timezone.utc) - timedelta(minutes=5)
-    
+
     existing_jobs = db.execute(
         select(CrawlJob).where(
             or_(
@@ -299,16 +299,16 @@ def manual_scan(
             )
         )
     ).scalars().all()
-    
+
     for ej in existing_jobs:
         meta = ej.meta_data or {}
         # Only check jobs for the same project
         if meta.get("project_id") != project_id:
             continue
-            
+
         ej_query_key = (meta.get("query_key") or meta.get("query") or "").strip().lower()
         ej_source_types = set(meta.get("source_types", []))
-        
+
         if meta.get("mode", ej.job_type) == mode and ej_query_key == query_key and set(body.source_types or []) == ej_source_types:
             # If auto-triggered, we don't return an existing completed job to frontend if it's already done (or we could return it as completed so UI doesn't spin)
             # Actually, if it's completed, we shouldn't trigger a new one, but returning COMPLETED is fine.
@@ -332,8 +332,8 @@ def manual_scan(
         meta_data={
             "query": body.query,
             "query_key": query_key,
-            "project_id": project_id, 
-            "mode": mode, 
+            "project_id": project_id,
+            "mode": mode,
             "keywords": keyword_texts,
             "provider": provider_used,
             "user_id": current_user.id,
@@ -370,21 +370,29 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
     import hashlib
     import time
     import unicodedata
-    
+
     def strip_accents(s: str) -> str:
         if not s: return ""
         s = s.replace('đ', 'd').replace('Đ', 'D')
         return ''.join(c for c in unicodedata.normalize('NFD', s) if unicodedata.category(c) != 'Mn')
-    
+
     db = SessionLocal()
     start_time = time.time()
-    
+
     try:
         job = db.execute(select(CrawlJob).where(CrawlJob.id == job_id)).scalar_one_or_none()
         if not job: return
-        
+
         job.status = CrawlJobStatus.RUNNING
         job.started_at = datetime.now(timezone.utc)
+
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info(
+            "MANUAL_SCAN_START: job_id=%s project_id=%s keywords_count=%d mode=%s",
+            job_id, project_id, len(keyword_texts), mode
+        )
+
         current_meta = job.meta_data or {}
         original_query = current_meta.get("query")
         provider_used = current_meta.get("provider", "none")
@@ -393,7 +401,7 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
             for expanded_kw in expanded_keywords:
                 if expanded_kw and expanded_kw not in keyword_texts:
                     keyword_texts.append(expanded_kw)
-        
+
         # Check environment capabilities
         has_serpapi = bool(settings.SERPAPI_API_KEY)
         is_serpapi_provider = getattr(settings, "WEB_SEARCH_PROVIDER", "").lower() == "serpapi"
@@ -401,7 +409,7 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
         auto_discovery = str(auto_discovery_val).lower() in ("true", "1", "yes")
         web_ready = has_serpapi and is_serpapi_provider and auto_discovery
         has_youtube = bool(getattr(settings, "YOUTUBE_API_KEY", ""))
-        
+
         summary = {
             "web": {
                 "status": "READY" if web_ready else ("SKIPPED" if not is_serpapi_provider else "CONFIG_REQUIRED"),
@@ -454,7 +462,7 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
             "old_mentions_existing": 0,
             "errors": []
         }
-        
+
         # Ensure we keep existing keys from DB meta_data
         current_meta.update({
             "summary": summary,
@@ -469,9 +477,9 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
         db.commit()
 
         seen_hashes = set()
-        
+
         run_discovery = mode in ("AUTO_DISCOVERY", "HYBRID")
-        
+
         def commit_summary():
             cur = job.meta_data or {}
             # Update summary but keep all other fields intact
@@ -480,35 +488,47 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
             flag_modified(job, "meta_data")
             db.commit()
         if run_discovery:
-            # Trigger discovery job
-            from app.services.discovery_service import create_discovery_job, run_discovery_job
-            try:
-                from app.models.user import User
-                first_user = db.query(User).first()
-                user_id = first_user.id if first_user else 1
-                req_data = {
-                    "keywords": keyword_texts,
-                    "limit": max_results,
-                    "language": "",
-                    "country": "",
-                    "project_id": project_id
-                }
-                disc_job = create_discovery_job(db, user_id=user_id, request_data=req_data)
-                db.commit()
-                def _run_discovery_bg(d_id):
-                    from app.core.database import SessionLocal
-                    bg_db = SessionLocal()
-                    try:
-                        run_discovery_job(bg_db, d_id)
-                    finally:
-                        bg_db.close()
-                import threading
-                threading.Thread(target=_run_discovery_bg, args=(disc_job.id,)).start()
-            except Exception as e:
-                db.rollback()
-                import logging
-                logging.getLogger(__name__).error(f"Failed to create discovery job from scan: {e}")
-            
+            # Prevent discovery spam: Only trigger if there's no recent discovery job for this keyword
+            from app.models.discovery import DiscoveryJob
+            last_job = db.execute(
+                select(DiscoveryJob)
+                .filter(DiscoveryJob.project_id == project_id)
+                .order_by(DiscoveryJob.created_at.desc())
+                .limit(1)
+            ).scalar_one_or_none()
+
+            # Cooldown of 6 hours (21600 seconds)
+            if not last_job or (datetime.now(timezone.utc) - last_job.created_at).total_seconds() > 21600:
+                from app.services.discovery_service import create_discovery_job, run_discovery_job
+                try:
+                    from app.models.user import User
+                    first_user = db.query(User).first()
+                    user_id = first_user.id if first_user else 1
+                    req_data = {
+                        "keywords": keyword_texts,
+                        "limit": max_results,
+                        "language": "",
+                        "country": "",
+                        "project_id": project_id
+                    }
+                    disc_job = create_discovery_job(db, user_id=user_id, request_data=req_data)
+                    db.commit()
+                    def _run_discovery_bg(d_id):
+                        from app.core.database import SessionLocal
+                        bg_db = SessionLocal()
+                        try:
+                            run_discovery_job(bg_db, d_id)
+                        finally:
+                            bg_db.close()
+                    import threading
+                    threading.Thread(target=_run_discovery_bg, args=(disc_job.id,)).start()
+                except Exception as e:
+                    db.rollback()
+                    import logging
+                    logging.getLogger(__name__).error(f"Failed to create discovery job from scan: {e}")
+            else:
+                logger.info(f"Skipping auto-discovery for project {project_id} due to 6h cooldown.")
+
         def is_timeout():
             return (time.time() - start_time) > 120
 
@@ -710,11 +730,21 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
             # Keyword match
             matched_kw = None
             search_text = strip_accents((title + " " + snippet).lower())
-            for kw in keyword_texts:
-                if strip_accents(kw.lower()) in search_text:
-                    matched_kw = kw
-                    break
+            if adapter_name == "search_chain":
+                # Provider already matched this keyword to generate the result, don't drop it.
+                matched_kw = r.get("matched_keyword")
+                if not matched_kw and keyword_texts:
+                    matched_kw = keyword_texts[0]
+            else:
+                # Local exact match for other adapters
+                for kw in keyword_texts:
+                    kw_norm = strip_accents(kw.lower())
+                    if kw_norm in search_text:
+                        matched_kw = kw
+                        break
+
             if not matched_kw:
+                summary[adapter_name]["invalid_links_skipped"] += 1
                 continue
 
             if adapter_name == "web":
@@ -789,7 +819,7 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
 
         db.flush()
         commit_summary()
-        
+
         # Final status
         if is_timeout():
             job.status = CrawlJobStatus.TIMEOUT
@@ -831,6 +861,11 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
         flag_modified(job, "meta_data")
         db.commit()
 
+        logger.info(
+            "MANUAL_SCAN_COMPLETE: job_id=%s status=%s total_created_mentions=%d total_errors=%d",
+            job_id, job.status.name, meta_data_final["created_mentions_count"], len(summary["errors"])
+        )
+
     except Exception as e:
         if 'job' in locals() and job:
             db.rollback()
@@ -856,14 +891,14 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
 def crawl_source(source: Source, keyword_texts: List[str], keywords: List[Keyword], db: Session) -> List[dict]:
     """Crawl a source and extract mentions matching keywords"""
     mentions = []
-    
+
     try:
         # Check if already marked invalid_rss_feed
         if source.last_error and source.last_error.startswith("invalid_rss_feed"):
             raise ValueError(source.last_error)
 
         is_rss = source.source_type == 'rss'
-        
+
         # Try RSS first
         if is_rss:
             from app.services.crawl_service import validate_rss_feed
@@ -885,7 +920,7 @@ def crawl_source(source: Source, keyword_texts: List[str], keywords: List[Keywor
                 full_text = f"{title} {content}".lower()
                 import unicodedata
                 full_text_norm = unicodedata.normalize('NFC', full_text)
-                
+
                 # Check if any keyword matches
                 matched = []
                 for i, kw_text in enumerate(keyword_texts):
@@ -895,7 +930,7 @@ def crawl_source(source: Source, keyword_texts: List[str], keywords: List[Keywor
                             'keyword_id': keywords[i].id,
                             'keyword': keywords[i].keyword
                         })
-                
+
                 if matched:
                     mentions.append({
                         'title': title,
@@ -905,7 +940,7 @@ def crawl_source(source: Source, keyword_texts: List[str], keywords: List[Keywor
                         'published_at': datetime(*entry.published_parsed[:6]) if hasattr(entry, 'published_parsed') and entry.published_parsed else None,
                         'matched_keywords': matched
                     })
-        
+
         # Try regular web scraping
         else:
             headers = {
@@ -918,21 +953,21 @@ def crawl_source(source: Source, keyword_texts: List[str], keywords: List[Keywor
                 raise ValueError("timeout: Kết nối hết hạn (timeout). Vui lòng thử lại sau.")
             except Exception as e:
                 raise ValueError(f"website_fetch_failed: Lấy dữ liệu trang web thất bại: {str(e)}")
-            
+
             soup = BeautifulSoup(response.content, 'html.parser')
-            
+
             # Remove script and style elements
             for script in soup(["script", "style"]):
                 script.decompose()
-            
+
             # Get text
             text = soup.get_text()
             lines = (line.strip() for line in text.splitlines())
             chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
             text = ' '.join(chunk for chunk in chunks if chunk)
-            
+
             text_lower = text.lower()
-            
+
             # Check if any keyword matches
             matched = []
             for i, kw_text in enumerate(keyword_texts):
@@ -941,12 +976,12 @@ def crawl_source(source: Source, keyword_texts: List[str], keywords: List[Keywor
                         'keyword_id': keywords[i].id,
                         'keyword': keywords[i].keyword
                     })
-            
+
             if matched:
                 # Try to extract title
                 title = soup.find('title')
                 title_text = title.string if title else source.name
-                
+
                 mentions.append({
                     'title': title_text,
                     'content': text[:5000],  # Limit content length
@@ -955,11 +990,11 @@ def crawl_source(source: Source, keyword_texts: List[str], keywords: List[Keywor
                     'published_at': datetime.now(timezone.utc),
                     'matched_keywords': matched
                 })
-    
+
     except Exception as e:
         print(f"Error crawling {source.url}: {str(e)}")
         raise
-    
+
     return mentions
 
 
@@ -972,9 +1007,9 @@ def get_scan_history(
 ):
     """Get scan history (recent mentions)"""
     from math import ceil
-    
+
     total = db.execute(apply_tenant_filter(select(func.count(Mention.id)), Mention, current_user)).scalar() or 0
-    
+
     offset = (page - 1) * page_size
     mentions = db.execute(
         apply_tenant_filter(select(Mention), Mention, current_user)
@@ -982,7 +1017,7 @@ def get_scan_history(
         .offset(offset)
         .limit(page_size)
     ).scalars().all()
-    
+
     return {
         "items": [
             {
@@ -1031,21 +1066,21 @@ def get_crawl_jobs(
 ):
     """Get crawl job history"""
     from math import ceil
-    
+
     query = select(CrawlJob)
-    
+
     if status:
         query = query.where(CrawlJob.status == status)
-    
+
     total = db.execute(select(func.count()).select_from(query.subquery())).scalar() or 0
-    
+
     offset = (page - 1) * page_size
     jobs = db.execute(
         query.order_by(CrawlJob.created_at.desc())
         .offset(offset)
         .limit(page_size)
     ).scalars().all()
-    
+
     return {
         "items": [
             {
@@ -1084,9 +1119,9 @@ def get_crawl_job(
     job = db.execute(select(CrawlJob).where(CrawlJob.id == job_id)).scalar_one_or_none()
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
-        
+
     meta = job.meta_data or {}
-    
+
     return {
         "job_id": job.id,
         "status": job.status.value if hasattr(job.status, 'value') else job.status,
@@ -1188,14 +1223,14 @@ async def test_crawl(
     try:
         from app.services.social_crawler_service import social_crawler_service
         from app.services.social_crawl_job import _persist_mentions
-        
+
         raw = await social_crawler_service.crawl_keywords([keyword], [platform])
         # Note: crawl_keywords in social_crawler_service.py doesn't seem to take `limit`, so I omitted it
-        
+
         logger.info(f"[DEBUG] Raw results from crawler: {len(raw)}")
-        
+
         success_count, error_count, errors, created = _persist_mentions(db, raw)
-        
+
         return {
             "raw_count": len(raw),
             "inserted": success_count,
