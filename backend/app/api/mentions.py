@@ -323,6 +323,19 @@ def list_mentions(
         # Mentions filtering directly
         query = query.where(Mention.verification_status != 'synthetic')
         query = query.where(Mention.is_deleted == False)
+        
+        global_valid_url_cond = or_(
+            Mention.url.is_(None),
+            and_(
+                Mention.url.notilike('%news.google.com/rss/articles/%'),
+                Mention.url.notilike('%googleusercontent.com%'),
+                Mention.url.notilike('%corp.google.com%'),
+                Mention.url.notilike('%uberproxy%'),
+                Mention.url.notilike('%/rss%'),
+                Mention.url.notilike('%.xml')
+            )
+        )
+        query = query.where(global_valid_url_cond)
         if project_id:
             query = query.where(Mention.project_id == project_id)
         if job_id:
@@ -432,6 +445,19 @@ def list_mentions(
             count_base = apply_tenant_filter(select(Mention), Mention, current_user)
             count_base = count_base.where(Mention.verification_status != 'synthetic')
             count_base = count_base.where(Mention.is_deleted == False)
+            
+            global_valid_url_cond_count = or_(
+                Mention.url.is_(None),
+                and_(
+                    Mention.url.notilike('%news.google.com/rss/articles/%'),
+                    Mention.url.notilike('%googleusercontent.com%'),
+                    Mention.url.notilike('%corp.google.com%'),
+                    Mention.url.notilike('%uberproxy%'),
+                    Mention.url.notilike('%/rss%'),
+                    Mention.url.notilike('%.xml')
+                )
+            )
+            count_base = count_base.where(global_valid_url_cond_count)
 
             # Apply the same filters to count query
             if source_id:
