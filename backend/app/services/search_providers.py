@@ -340,13 +340,82 @@ def run_provider_chain(
         summaries[provider] = summary
 
         for item in items:
-            url = item.get("url", "")
-            if url and url not in seen_urls:
-                seen_urls.add(url)
-                all_results.append(item)
+            # We don't filter seen_urls yet until resolution to avoid dropping valid redirect targets
+            all_results.append(item)
 
+    # Run source resolution in parallel
+    from app.services.source_resolution_service import resolve_source
+    import concurrent.futures
+
+    resolved_results = []
+
+    def _resolve(item):
+        prov = item.get("provider", "unknown")
+        raw_url = item.get("url", "") # This was raw_url mapped to url in _normalize_result temporarily
+        keyword = item.get("matched_keyword", "")
+        title = item.get("title", "")
+        snippet = item.get("snippet", "")
+
+        # In _normalize_result we temporarily put raw url into "url".
+        # We also need the active query. We'll use the matched_keyword.
+        prov_summary = resolve_source(prov, raw_url, title, snippet, keyword)
+        item["source_provenance"] = prov_summary
+
+        # Override fields with resolved
+        if prov_summary["final_canonical_url"]:
+            item["url"] = prov_summary["final_canonical_url"]
+        if prov_summary["final_domain"]:
+            item["source_domain"] = prov_summary["final_domain"]
+        if prov_summary.get("relevance_score") is not None:
+            item["relevance_score"] = prov_summary["relevance_score"]
+
+        return item
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
+        future_to_item = {executor.submit(_resolve, item): item for item in all_results}
+        for future in concurrent.futures.as_completed(future_to_item):
+            try:
+                res_item = future.result()
+                prov = res_item.get("provider")
+                prov_summary = res_item.get("source_provenance", {})
+
+                # Metrics
+                if prov in summaries:
+                    s = summaries[prov]
+                    s["candidate_urls_count"] = s.get("candidate_urls_count", 0) + 1
+
+                    if prov_summary.get("blocked_reason"):
+                        s["invalid_url_skipped"] = s.get("invalid_url_skipped", 0) + 1
+                        br = prov_summary["blocked_reason"]
+                        s["reject_reasons"] = s.get("reject_reasons", {})
+                        s["reject_reasons"][br] = s["reject_reasons"].get(br, 0) + 1
+                    elif not prov_summary.get("is_clickable") or prov_summary.get("source_confidence", 0) < 0.4:
+                        s["hidden_low_confidence_count"] = s.get("hidden_low_confidence_count", 0) + 1
+                        s["invalid_url_skipped"] = s.get("invalid_url_skipped", 0) + 1
+                        reason = "low_confidence"
+                        s["reject_reasons"] = s.get("reject_reasons", {})
+                        s["reject_reasons"][reason] = s["reject_reasons"].get(reason, 0) + 1
+                    else:
+                        s["article_eligible_count"] = s.get("article_eligible_count", 0) + 1
+                        s["source_resolution_success_count"] = s.get("source_resolution_success_count", 0) + 1
+
+                        url = res_item.get("url")
+                        if url and url not in seen_urls:
+                            seen_urls.add(url)
+                            resolved_results.append(res_item)
+                            s["valid_results"] = s.get("valid_results", 0) + 1
+                        else:
+                            s["duplicate_skipped"] = s.get("duplicate_skipped", 0) + 1
+
+            except Exception as e:
+                logger.error("Error in source resolution worker: %s", e)
+
+    for provider in provider_order:
+        if provider not in summaries:
+            continue
+        summary = summaries[provider]
         logger.info(
-            "SEARCH_PROVIDER_DONE: provider=%s status=%s duration_ms=unknown raw_results=%d valid_results=%d invalid_url_skipped=%d duplicate_skipped=%d created_mentions=%d error=%s",
+            "SEARCH_PROVIDER_DONE: provider=%s status=%s raw_results=%d valid_results=%d invalid_url_skipped=%d duplicate_skipped=%d created_mentions=%d error=%s",
             provider,
             summary.get("status"),
             summary.get("raw_results", 0),
@@ -358,12 +427,11 @@ def run_provider_chain(
         )
 
     logger.info(
-        "SEARCH_PROVIDER_CHAIN_COMPLETE: total_raw_results=%d total_valid_results=%d total_created_mentions=%d total_invalid_url_skipped=%d total_duplicate_skipped=%d",
+        "SEARCH_PROVIDER_CHAIN_COMPLETE: total_raw_results=%d total_valid_results=%d total_invalid_url_skipped=%d total_duplicate_skipped=%d",
         sum(s.get("raw_results", 0) for s in summaries.values()),
         sum(s.get("valid_results", 0) for s in summaries.values()),
-        sum(s.get("created_mentions", 0) for s in summaries.values()),
         sum(s.get("invalid_url_skipped", 0) for s in summaries.values()),
         sum(s.get("duplicate_skipped", 0) for s in summaries.values())
     )
 
-    return all_results, summaries
+    return resolved_results, summaries

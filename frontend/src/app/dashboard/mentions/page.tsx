@@ -357,7 +357,7 @@ function MentionsPageContent() {
   };
 
   const hasSyncedUrlProject = useRef(false);
-  
+
   // NEW SCAN STATES
   const [activeScanJobId, setActiveScanJobId] = useState<number | null>(null);
   const [activeScanKeyword, setActiveScanKeyword] = useState<string>('');
@@ -412,7 +412,7 @@ function MentionsPageContent() {
 
       // Check if filter with same name exists
       const existingFilter = savedFiltersList.find((sf: any) => sf.name === saveFilterName.trim());
-      
+
       if (existingFilter && !saveFilterOverwrite) {
         const ok = await confirm({
           title: 'Ghi đè bộ lọc',
@@ -454,7 +454,7 @@ function MentionsPageContent() {
     try {
       const filter = await savedFilters.get(filterId);
       const filterJson = filter.filter_json;
-      
+
       // Apply filters
       setFilters({
         sentiment: filterJson.sentiment || null,
@@ -465,7 +465,7 @@ function MentionsPageContent() {
       });
       setSearchTerm(filterJson.search_term || '');
       setSearchInput(filterJson.search_term || '');
-      
+
       toast.success('Đã áp dụng bộ lọc');
       setSavedFiltersOpen(false);
     } catch (error) {
@@ -496,21 +496,21 @@ function MentionsPageContent() {
     try {
       setSummarizing(true);
       setAiSummary(null);
-      
+
       const payload: any = {
         project_id: activeProject?.id,
       };
-      
+
       // Add filters
       if (filters.sentiment) payload.filters = { ...payload.filters, sentiment: filters.sentiment };
       if (filters.source_type) payload.filters = { ...payload.filters, source_type: filters.source_type };
       if (filters.min_risk_score !== null) payload.filters = { ...payload.filters, min_risk_score: filters.min_risk_score };
       if (filters.min_influence_score !== null) payload.filters = { ...payload.filters, min_influence_score: filters.min_influence_score };
       if (searchTerm) payload.filters = { ...payload.filters, search_query: searchTerm };
-      
+
       // If specific mention IDs are selected (future feature), add them
       // For now, summarize based on current filtered view
-      
+
       const result = await mentionsApi.summarize(payload);
       setAiSummary(result);
       setSummarizeDrawerOpen(true);
@@ -534,7 +534,7 @@ function MentionsPageContent() {
       if (currentPage === 1) {
         setMentionsList([]);
       }
-      
+
       const params: any = {
         page: currentPage,
         page_size: 20,
@@ -562,7 +562,7 @@ function MentionsPageContent() {
           else if (dateRange === '7d') from.setDate(now.getDate() - 7);
           else if (dateRange === '30d') from.setDate(now.getDate() - 30);
           else if (dateRange === '90d') from.setDate(now.getDate() - 90);
-          
+
           params.date_from = from.toISOString();
           params.date_to = now.toISOString();
         }
@@ -571,7 +571,7 @@ function MentionsPageContent() {
 
       const data = await mentionsApi.list(params);
       if (fetchId !== currentFetchIdRef.current) return;
-      
+
       setMentionsList(data.items);
       setTotalMentions(data.total);
       setTotalPages(data.total_pages);
@@ -581,7 +581,7 @@ function MentionsPageContent() {
         const keywordLower = searchTerm.toLowerCase().trim();
         const allowlist = ['tth', 'fpt', 'vtv', 'vnpt', 'f88', '24h'];
         const isAllowedShort = allowlist.includes(keywordLower);
-        
+
         if ((keywordLower.length >= 3 || isAllowedShort) && !scannedKeywordsRef.current?.has(keywordLower)) {
           if (data.total < 20) {
             scannedKeywordsRef.current?.add(keywordLower);
@@ -653,7 +653,7 @@ function MentionsPageContent() {
       let range = '30d';
       if (dateRange === '1d') range = 'today';
       else if (dateRange === '7d') range = '7d';
-      
+
       const res = await dashboard.trends(range, activeProject?.id);
       if (res && res.items) {
         const mappedData = res.items.map((item: any) => {
@@ -689,13 +689,13 @@ function MentionsPageContent() {
     // Reset state on project change to prevent stale data
     setMentionsList([]);
     setPage(1);
-    
+
     const newParams = new URLSearchParams(searchParams?.toString() || '');
     if (newParams.has('job_id')) {
       newParams.delete('job_id');
       router.replace(`/dashboard/mentions?${newParams.toString()}`);
     }
-    
+
     // Explicitly call fetchMentions here to ensure it loads immediately on project switch
     fetchMentions();
     fetchChartData();
@@ -737,11 +737,11 @@ function MentionsPageContent() {
       return;
     }
     const keyword = searchTerm || activeProject.name || 'TTH';
-    
+
     // Warn if scanning a keyword that differs from the project name
     const projectNameStr = activeProject.name.toLowerCase().trim();
     const keywordStr = keyword.toLowerCase().trim();
-    
+
     if (projectNameStr !== keywordStr && !projectNameStr.includes(keywordStr)) {
       setScanConfirm({ isOpen: true, keyword });
     } else {
@@ -766,7 +766,7 @@ function MentionsPageContent() {
         if (['COMPLETED', 'COMPLETED_NO_RESULTS', 'FAILED', 'PARTIAL_FAILED', 'TIMEOUT'].includes(status)) {
           clearInterval(interval);
           scanStartTimeRef.current = null;
-          
+
           if (status === 'COMPLETED' || status === 'PARTIAL_FAILED') {
             setSearchState('AUTO_SCAN_COMPLETED');
             setPage(1);
@@ -872,9 +872,9 @@ function MentionsPageContent() {
       toast.error(mention.visit_url_invalid_reason || 'Khong co link bai goc hop le');
       return;
     }
-    
+
     window.open(safeUrl, '_blank', 'noopener,noreferrer');
-    
+
     // Optimistic update
     setMentionsList(prev => prev.map(m => {
       if (m.id === mention.id) {
@@ -886,7 +886,7 @@ function MentionsPageContent() {
       }
       return m;
     }));
-    
+
     try {
       await mentionsApi.visit(mention.id);
     } catch (error) {
@@ -955,10 +955,10 @@ function MentionsPageContent() {
   return (
     <div className="flex flex-col lg:flex-row gap-6 max-w-[1600px] mx-auto min-h-screen">
       <Toaster position="top-right" />
-      
+
       {/* ─── LEFT MAIN COLUMN (75%) ─────────────────────────────────────────── */}
       <div className="flex-1 w-full lg:w-[75%] min-w-0 flex flex-col gap-6">
-        
+
         {/* Header & Filter Controls */}
         <div className="flex flex-col gap-3 bg-white dark:bg-[#050A15] p-4 rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
            <div className="flex flex-wrap items-center justify-between gap-4">
@@ -986,18 +986,18 @@ function MentionsPageContent() {
                    </div>
                  )}
                </div>
-               
+
                {hasActiveFilters && (
                  <button onClick={() => { setFilters({ ...filters, sentiment: null, source_type: null, min_risk_score: null, min_influence_score: null }); setPage(1); }} className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 dark:text-gray-100 font-medium transition-colors">
                    <RefreshCw className="w-3.5 h-3.5" /> Clear filters
                  </button>
                )}
-               
+
                <button onClick={openSaveFilterModal} className="flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700 font-bold transition-colors">
                  <SlidersHorizontal className="w-3.5 h-3.5" /> Save filters
                </button>
              </div>
-             
+
              <div className="flex items-center gap-3">
                 <button onClick={() => { fetchMentions(); fetchChartData(); }} className="p-2 text-gray-400 hover:text-blue-600 transition-colors">
                   <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
@@ -1005,7 +1005,7 @@ function MentionsPageContent() {
                 <button onClick={handleExportCsv} className="p-2 text-gray-400 hover:text-blue-600 transition-colors">
                   <Download className="w-4 h-4" />
                 </button>
-                <button 
+                <button
                    onClick={handleScanClick}
                    disabled={activeScanJobId !== null}
                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
@@ -1015,7 +1015,7 @@ function MentionsPageContent() {
                  </button>
              </div>
            </div>
-           
+
            {/* Scan / Search Status */}
            {(searchTerm || activeScanJobId || scanJobStatus) && (
              <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-gray-100 dark:border-white/5 text-sm text-gray-600 dark:text-gray-400">
@@ -1024,14 +1024,14 @@ function MentionsPageContent() {
                    Tìm thấy <span className="font-bold text-gray-900 dark:text-white">{totalMentions}</span> kết quả cho <span className="text-blue-600 font-bold">'{searchTerm}'</span>
                  </span>
                )}
-               
+
                {activeScanJobId && (
                  <span className="flex items-center gap-1.5 text-blue-600 bg-blue-50 dark:bg-blue-900/20 px-2 py-0.5 rounded-md">
                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
                    Đang quét thêm nguồn mới để mở rộng kết quả...
                  </span>
                )}
-               
+
                {!activeScanJobId && scanJobStatus && scanJobStatus.status === 'COMPLETED' && (
                  <span className="flex items-center gap-1.5 text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-0.5 rounded-md">
                    <CheckCircle2 className="w-3.5 h-3.5" />
@@ -1051,13 +1051,13 @@ function MentionsPageContent() {
         {/* Chart Section */}
         <div className="bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10 overflow-hidden">
           <div className="flex items-center border-b border-gray-100 dark:border-white/5">
-            <button 
+            <button
               onClick={() => setActiveChartTab('reach')}
               className={`px-6 py-3 border-b-2 text-sm font-bold ${activeChartTab === 'reach' ? 'border-blue-600 text-gray-900 dark:text-white' : 'border-transparent text-gray-500 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
             >
               Mentions & Reach
             </button>
-            <button 
+            <button
               onClick={() => setActiveChartTab('sentiment')}
               className={`px-6 py-3 border-b-2 text-sm font-bold ${activeChartTab === 'sentiment' ? 'border-blue-600 text-gray-900 dark:text-white' : 'border-transparent text-gray-500 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
             >
@@ -1065,22 +1065,22 @@ function MentionsPageContent() {
             </button>
             <div className="ml-auto pr-4 flex items-center gap-2">
                <div className="flex bg-gray-100 dark:bg-white/10 p-0.5 rounded-lg border border-gray-200 dark:border-white/10">
-                 <button 
+                 <button
                    onClick={() => setChartTimeRange('days')}
                    className={`px-3 py-1 text-xs font-medium rounded shadow-sm ${chartTimeRange === 'days' ? 'bg-white dark:bg-[#050A15] text-gray-800 dark:text-gray-100' : 'text-gray-500 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
                  >Days</button>
-                 <button 
+                 <button
                    onClick={() => setChartTimeRange('weeks')}
                    className={`px-3 py-1 text-xs font-medium rounded shadow-sm ${chartTimeRange === 'weeks' ? 'bg-white dark:bg-[#050A15] text-gray-800 dark:text-gray-100' : 'text-gray-500 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
                  >Weeks</button>
-                 <button 
+                 <button
                    onClick={() => setChartTimeRange('months')}
                    className={`px-3 py-1 text-xs font-medium rounded shadow-sm ${chartTimeRange === 'months' ? 'bg-white dark:bg-[#050A15] text-gray-800 dark:text-gray-100' : 'text-gray-500 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
                  >Months</button>
                </div>
             </div>
           </div>
-          
+
           <div className="p-4 h-64">
             {chartLoading ? (
               <div className="w-full h-full flex items-center justify-center">
@@ -1131,7 +1131,7 @@ function MentionsPageContent() {
            <div className="text-sm font-medium text-gray-500 dark:text-gray-500">
              {loading && !mentionsList.length ? 'Đang tải...' : totalMentions >= 0 ? `${totalMentions.toLocaleString()} kết quả ${searchTerm ? `cho '${searchTerm}'` : ''}` : 'Đang tải...'}
            </div>
-           
+
            {totalPages > 1 && (
              <div className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400">
                {Array.from({ length: Math.min(5, totalPages) }).map((_, i) => (
@@ -1195,7 +1195,7 @@ function MentionsPageContent() {
                      {scanJobStatus.meta_data?.provider && <p><span className="font-semibold">Nguồn mở rộng từ khóa:</span> {scanJobStatus.meta_data.provider}</p>}
                      {scanJobStatus.meta_data?.expanded_keywords && <p><span className="font-semibold">Từ khóa đang quét:</span> {scanJobStatus.meta_data.expanded_keywords.join(', ')}</p>}
                      {scanJobStatus.meta_data?.source_types && scanJobStatus.meta_data.source_types.length > 0 && <p><span className="font-semibold">Các loại nguồn quét:</span> {scanJobStatus.meta_data.source_types.join(', ')}</p>}
-                     
+
                      {(scanJobStatus.meta_data?.raw_results_count !== undefined || scanJobStatus.summary?.web?.called) && (
                        <div className="pt-2 mt-2 border-t border-gray-200 dark:border-gray-700 space-y-1">
                          <p><span className="font-semibold">Kết quả thô tìm được:</span> {scanJobStatus.meta_data?.raw_results_count || (scanJobStatus.summary ? ((scanJobStatus.summary.web?.raw_results_count || 0) + (scanJobStatus.summary.youtube?.raw_results_count || 0) + (scanJobStatus.summary.social?.raw_results_count || 0)) : 0)}</p>
@@ -1220,23 +1220,23 @@ function MentionsPageContent() {
                    <p className="font-bold text-gray-800 dark:text-gray-200">Chi tiết quét dữ liệu (Job #{scanJobStatus?.job_id || activeScanJobId}):</p>
                    <p>• Trạng thái cuối: <span className="font-medium">{scanJobStatus?.status}</span></p>
                    {scanJobStatus?.meta_data?.expanded_keywords && <p>• Đã quét qua các từ khóa: <span className="font-medium">{scanJobStatus.meta_data.expanded_keywords.join(', ')}</span></p>}
-                   
+
                    <p>• Tổng kết quả thô thu được từ Internet: <span className="font-medium">{scanJobStatus?.meta_data?.raw_results_count || 0}</span></p>
                    {scanJobStatus?.meta_data?.raw_results_count === 0 && (
                      <p className="text-yellow-600 dark:text-yellow-400 ml-4">→ Nguyên nhân 1: Toàn bộ nguồn (Web, YouTube...) hoàn toàn không trả về bài viết nào cho từ khóa này.</p>
                    )}
-                   
+
                    {scanJobStatus?.meta_data?.duplicate_mentions_count > 0 && (
                      <p>• Kết quả trùng lặp: <span className="font-medium">{scanJobStatus.meta_data.duplicate_mentions_count}</span></p>
                    )}
                    {scanJobStatus?.meta_data?.skipped_low_relevance_count > 0 && (
                      <p>• Kết quả bị loại vì không sát nghĩa: <span className="font-medium">{scanJobStatus.meta_data.skipped_low_relevance_count}</span></p>
                    )}
-                   
+
                    {(scanJobStatus?.meta_data?.raw_results_count > 0 && (scanJobStatus?.meta_data?.created_mentions_count === 0)) && (
                      <p className="text-yellow-600 dark:text-yellow-400 mt-2">→ Nguyên nhân: Nguồn có trả về dữ liệu, nhưng toàn bộ đã bị lọc bỏ do trùng lặp dữ liệu cũ, không khớp sát ngữ cảnh, hoặc bị chặn bởi bộ lọc hiện tại.</p>
                    )}
-                   
+
                    {scanJobStatus?.meta_data?.failed_sources && scanJobStatus.meta_data.failed_sources.length > 0 && (
                       <p className="text-red-500 mt-2">• Nguồn bị lỗi trong quá trình quét: {scanJobStatus.meta_data.failed_sources.join('; ')}</p>
                    )}
@@ -1263,7 +1263,7 @@ function MentionsPageContent() {
                 )}
                 <div className="flex flex-col items-center gap-2 mt-2">
                   <p className="text-sm text-gray-500">Bạn có thể bấm Scan Now để quét thêm nguồn.</p>
-                  <button 
+                  <button
                     onClick={handleScanClick}
                     disabled={activeScanJobId !== null || searchTerm.length < 2}
                     className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
@@ -1370,7 +1370,7 @@ function MentionsPageContent() {
                     }`}>
                       <SourceIcon type={mention.source_type} className="w-6 h-6" />
                     </div>
-                    
+
                     {/* Content */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-4 mb-1">
@@ -1387,12 +1387,12 @@ function MentionsPageContent() {
                               <div className="flex items-center gap-2 mt-1 mb-1 flex-wrap">
                                 {mention.matched_in && mention.matched_in.length > 0 ? (
                                   <div className="text-[11px] text-indigo-600 dark:text-indigo-400 font-medium flex gap-1.5 items-center bg-indigo-50 dark:bg-indigo-900/20 px-2 py-0.5 rounded-full border border-indigo-100 dark:border-indigo-800/30">
-                                    <Search className="w-3 h-3" /> 
+                                    <Search className="w-3 h-3" />
                                     Matched in: {mention.matched_in.join(', ')}
                                   </div>
                                 ) : (
                                   <div className="text-[11px] text-gray-500 dark:text-gray-400 font-medium flex gap-1.5 items-center bg-gray-50 dark:bg-white/5 px-2 py-0.5 rounded-full border border-gray-200 dark:border-white/10">
-                                    <Search className="w-3 h-3" /> 
+                                    <Search className="w-3 h-3" />
                                     Semantic / AI Match
                                   </div>
                                 )}
@@ -1419,12 +1419,12 @@ function MentionsPageContent() {
                                <>
                                  <span>•</span>
                                  <span className={
-                                   mention.ai_analysis.ai_provider === 'failed' 
-                                   ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 px-1.5 py-0.5 rounded text-[10px] font-bold" 
+                                   mention.ai_analysis.ai_provider === 'failed'
+                                   ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 px-1.5 py-0.5 rounded text-[10px] font-bold"
                                    : "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400 px-1.5 py-0.5 rounded text-[10px] font-bold"
                                  }>
-                                   {mention.ai_analysis.ai_provider === 'failed' ? 'AI FAILED' : 
-                                    ['dummy', 'dummy_ai'].includes(mention.ai_analysis.ai_provider) ? 'RULE-BASED' : 
+                                   {mention.ai_analysis.ai_provider === 'failed' ? 'AI FAILED' :
+                                    ['dummy', 'dummy_ai'].includes(mention.ai_analysis.ai_provider) ? 'RULE-BASED' :
                                     mention.ai_analysis.ai_provider.toUpperCase()}
                                  </span>
                                </>
@@ -1449,20 +1449,20 @@ function MentionsPageContent() {
                            <ChevronDown className="w-3 h-3 pointer-events-none" />
                         </div>
                       </div>
-                      
+
                       {/* Body */}
                       <p className="text-sm text-gray-700 dark:text-gray-300 mt-3 line-clamp-3 leading-relaxed">
                         {highlightText(mention.snippet || mention.content?.substring(0, 300) || '', searchTerm)}
                       </p>
-                      
+
                       {/* Media Rendering */}
                       {(() => {
                         const meta = mention.metadata || (mention as any).meta_data;
                         if (!meta) return null;
-                        
+
                         const mediaUrl = meta.media_url;
                         const imageUrl = meta.image_url || meta.media_thumbnail;
-                        
+
                         if (mediaUrl) {
                           // Check if it's a video file (mp4, webm, etc)
                           if (mediaUrl.match(/\.(mp4|webm|ogg)$/i)) {
@@ -1487,7 +1487,7 @@ function MentionsPageContent() {
                              );
                           }
                         }
-                        
+
                         if (imageUrl) {
                           return (
                             <div className="mt-3 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-800 max-w-sm">
@@ -1506,7 +1506,7 @@ function MentionsPageContent() {
                     </div>
                   </div>
                 </div>
-                
+
                 {/* Actions Footer */}
                 <div className="bg-gray-50 dark:bg-[#0a0f1c]/50 px-5 py-3 border-t border-gray-100 dark:border-white/5 flex flex-wrap items-center justify-between gap-3">
                    <div className="flex flex-wrap items-center gap-4">
@@ -1526,7 +1526,7 @@ function MentionsPageContent() {
                          </button>
                        );
                      })()}
-                     
+
                      {mention.is_visited && (
                        <div className="flex items-center gap-1.5 text-[11px] font-medium text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-500/20">
                          <CheckCircle2 className="w-3 h-3" /> Đã xem
@@ -1534,11 +1534,11 @@ function MentionsPageContent() {
                        </div>
                      )}
 
-                     <button 
+                     <button
                        onClick={() => handleAction(mention.id, 'review', () => mentionsApi.markReviewed(mention.id), 'Đã đánh dấu xem')}
                        className={`flex items-center gap-1.5 text-xs font-bold transition-colors ${
-                         mention.is_reviewed 
-                           ? 'text-emerald-600 dark:text-emerald-400 hover:text-emerald-700' 
+                         mention.is_reviewed
+                           ? 'text-emerald-600 dark:text-emerald-400 hover:text-emerald-700'
                            : 'text-gray-500 hover:text-gray-700'
                        }`}
                        title="Đánh dấu đã xem"
@@ -1546,7 +1546,7 @@ function MentionsPageContent() {
                        <CheckCircle2 className="w-3.5 h-3.5" /> Đã xem
                      </button>
                      {(!mention.sentiment || !mention.risk_score) && (
-                       <button 
+                       <button
                          onClick={() => handleAction(mention.id, 'analyze', () => mentionsApi.analyze(mention.id), 'Đã phân tích xong')}
                          className="flex items-center gap-1.5 text-xs font-medium text-purple-600 hover:text-purple-700 transition-colors"
                          title="Phân tích AI"
@@ -1555,7 +1555,7 @@ function MentionsPageContent() {
                        </button>
                      )}
                      {(mention.risk_score !== undefined && mention.risk_score >= 50) && (
-                       <button 
+                       <button
                          onClick={() => handleAction(mention.id, 'alert', () => mentionsApi.createAlert(mention.id), 'Đã tạo cảnh báo rủi ro')}
                          className="flex items-center gap-1.5 text-xs font-medium text-rose-600 hover:text-rose-700 transition-colors"
                          title="Tạo cảnh báo"
@@ -1563,7 +1563,7 @@ function MentionsPageContent() {
                          <AlertTriangle className="w-3.5 h-3.5" /> Tạo cảnh báo
                        </button>
                      )}
-                     <button 
+                     <button
                        onClick={async () => {
                          const currentTags = mention.tags ? (Array.isArray(mention.tags) ? mention.tags.join(', ') : mention.tags) : '';
                          const input = await prompt({
@@ -1585,16 +1585,16 @@ function MentionsPageContent() {
                      <button onClick={() => handleToggleAddToReport(mention.id, mention.add_to_report)} className={`flex items-center gap-1.5 text-xs font-medium ${mention.add_to_report ? 'text-indigo-600' : 'text-gray-500 dark:text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 dark:text-gray-100'}`}>
                        <FileText className="w-3.5 h-3.5" /> {mention.add_to_report ? 'Remove from PDF' : 'Add to PDF report'}
                      </button>
-                     <button 
+                     <button
                        disabled={!mention.author}
-                       onClick={() => handleAction(mention.id, 'mute_author', () => mentionsApi.muteAuthor(mention.author!, activeProject!.id), `Đã ẩn tác giả ${mention.author}`)} 
+                       onClick={() => handleAction(mention.id, 'mute_author', () => mentionsApi.muteAuthor(mention.author!, activeProject!.id), `Đã ẩn tác giả ${mention.author}`)}
                        className="flex items-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 disabled:opacity-50"
                      >
                        <Eye className="w-3.5 h-3.5" /> Mute author
                      </button>
-                     <button 
+                     <button
                        disabled={!mention.domain}
-                       onClick={() => handleAction(mention.id, 'mute_domain', () => mentionsApi.muteDomain(mention.domain!, activeProject!.id), `Đã ẩn nguồn ${mention.domain}`)} 
+                       onClick={() => handleAction(mention.id, 'mute_domain', () => mentionsApi.muteDomain(mention.domain!, activeProject!.id), `Đã ẩn nguồn ${mention.domain}`)}
                        className="flex items-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 disabled:opacity-50"
                      >
                        <Eye className="w-3.5 h-3.5" /> Mute site
@@ -1639,12 +1639,12 @@ function MentionsPageContent() {
 
       {/* ─── RIGHT SIDEBAR (FILTERS - 25%) ───────────────────────────────── */}
       <div className="hidden lg:block w-[300px] xl:w-[320px] shrink-0 space-y-4 pb-8">
-        
+
         {/* Date Filter */}
         <div className="bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10 p-4">
            <div className="flex items-center gap-2 text-sm font-bold text-gray-800 dark:text-gray-100">
              <Calendar className="w-4 h-4 text-gray-500 dark:text-gray-500" />
-             <select 
+             <select
                value={dateRange}
                onChange={(e) => setDateRange(e.target.value)}
                className="bg-transparent border-none outline-none cursor-pointer flex-1 font-bold dark:text-gray-100"
@@ -1672,8 +1672,8 @@ function MentionsPageContent() {
                const isSelected = currentSources.includes(src.value);
                return (
                  <div key={src.value} className="flex items-start gap-2">
-                   <input 
-                     type="checkbox" 
+                   <input
+                     type="checkbox"
                      checked={isSelected}
                      disabled={src.disabled}
                      onChange={() => {
@@ -1688,7 +1688,7 @@ function MentionsPageContent() {
                           setPage(1);
                         }
                      }}
-                     className="mt-0.5 rounded border-gray-300 text-emerald-500 focus:ring-emerald-500 disabled:opacity-50" 
+                     className="mt-0.5 rounded border-gray-300 text-emerald-500 focus:ring-emerald-500 disabled:opacity-50"
                    />
                    <div className={`flex flex-col ${src.disabled ? 'opacity-50' : ''}`}>
                      <span className="text-xs font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
@@ -1718,8 +1718,8 @@ function MentionsPageContent() {
            </div>
            <div className="flex flex-col gap-3">
              <label className="flex items-center gap-2 cursor-pointer">
-               <input 
-                  type="checkbox" 
+               <input
+                  type="checkbox"
                   checked={filters.sentiment?.split(',').includes('negative') || false}
                   onChange={() => {
                     const current = filters.sentiment ? filters.sentiment.split(',') : [];
@@ -1727,13 +1727,13 @@ function MentionsPageContent() {
                     setFilters({...filters, sentiment: next.length ? next.join(',') : null});
                     setPage(1);
                   }}
-                  className="rounded border-gray-300 text-rose-500 focus:ring-rose-500" 
+                  className="rounded border-gray-300 text-rose-500 focus:ring-rose-500"
                />
                <span className="text-xs font-medium text-rose-600">Negative</span>
              </label>
              <label className="flex items-center gap-2 cursor-pointer">
-               <input 
-                  type="checkbox" 
+               <input
+                  type="checkbox"
                   checked={filters.sentiment?.split(',').includes('neutral') || false}
                   onChange={() => {
                     const current = filters.sentiment ? filters.sentiment.split(',') : [];
@@ -1741,13 +1741,13 @@ function MentionsPageContent() {
                     setFilters({...filters, sentiment: next.length ? next.join(',') : null});
                     setPage(1);
                   }}
-                  className="rounded border-gray-300 text-gray-500 dark:text-gray-500 focus:ring-gray-500" 
+                  className="rounded border-gray-300 text-gray-500 dark:text-gray-500 focus:ring-gray-500"
                />
                <span className="text-xs font-medium text-gray-600 dark:text-gray-400">Neutral</span>
              </label>
              <label className="flex items-center gap-2 cursor-pointer">
-               <input 
-                  type="checkbox" 
+               <input
+                  type="checkbox"
                   checked={filters.sentiment?.split(',').includes('positive') || false}
                   onChange={() => {
                     const current = filters.sentiment ? filters.sentiment.split(',') : [];
@@ -1755,7 +1755,7 @@ function MentionsPageContent() {
                     setFilters({...filters, sentiment: next.length ? next.join(',') : null});
                     setPage(1);
                   }}
-                  className="rounded border-gray-300 text-emerald-500 focus:ring-emerald-500" 
+                  className="rounded border-gray-300 text-emerald-500 focus:ring-emerald-500"
                />
                <span className="text-xs font-medium text-emerald-600">Positive</span>
              </label>
@@ -1770,16 +1770,16 @@ function MentionsPageContent() {
              </h3>
            </div>
            <div className="px-2">
-             <input 
-               type="range" 
-               min="0" 
-               max="10" 
+             <input
+               type="range"
+               min="0"
+               max="10"
                value={filters.min_influence_score || 0}
                onChange={(e) => {
                  setFilters({ ...filters, min_influence_score: parseInt(e.target.value) });
                  setPage(1);
                }}
-               className="w-full h-1 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer accent-blue-600" 
+               className="w-full h-1 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer accent-blue-600"
              />
              <div className="flex justify-between text-[10px] text-gray-500 dark:text-gray-500 mt-2 font-medium">
                <span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span>
