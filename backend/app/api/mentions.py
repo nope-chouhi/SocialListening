@@ -106,6 +106,7 @@ def get_mentions_summary(
                 Mention.title.ilike(search_term),
                 Mention.snippet.ilike(search_term),
                 Mention.content.ilike(search_term),
+                Mention.keyword_text.ilike(search_term)
             ))
         if date_from:
             base_filter.append(Mention.collected_at >= date_from)
@@ -332,7 +333,8 @@ def list_mentions(
                 or_(
                     Mention.title.ilike(search_pattern),
                     Mention.snippet.ilike(search_pattern),
-                    Mention.content.ilike(search_pattern)
+                    Mention.content.ilike(search_pattern),
+                    Mention.keyword_text.ilike(search_pattern)
                 )
             )
 
@@ -343,6 +345,7 @@ def list_mentions(
                     Mention.title.ilike(search_term),
                     Mention.snippet.ilike(search_term),
                     Mention.content.ilike(search_term),
+                    Mention.keyword_text.ilike(search_term)
                 )
             )
 
@@ -405,7 +408,8 @@ def list_mentions(
                     or_(
                         Mention.title.ilike(search_pattern),
                         Mention.snippet.ilike(search_pattern),
-                        Mention.content.ilike(search_pattern)
+                        Mention.content.ilike(search_pattern),
+                        Mention.keyword_text.ilike(search_pattern)
                     )
                 )
 
@@ -416,6 +420,7 @@ def list_mentions(
                         Mention.title.ilike(search_term),
                         Mention.snippet.ilike(search_term),
                         Mention.content.ilike(search_term),
+                        Mention.keyword_text.ilike(search_term)
                     )
                 )
             

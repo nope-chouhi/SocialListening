@@ -621,7 +621,15 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
 
         # Mark Serper/Tavily chain as running
         summary["adapters_ready"].append("search_chain")
-        summary["search_chain"] = {"status": "RUNNING", "called": True, "providers": {}}
+        summary["search_chain"] = {
+            "status": "RUNNING",
+            "called": True,
+            "providers": {},
+            "raw_results_count": 0,
+            "mentions_created": 0,
+            "duplicates_skipped": 0,
+            "invalid_links_skipped": 0
+        }
         commit_summary()
 
         # Launch all adapters in parallel
@@ -668,6 +676,11 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
                     )
                     summary["search_chain"]["providers"] = chain_summaries
                     summary["search_chain"]["status"] = "COMPLETED"
+                    summary["search_chain"]["raw_results_count"] = sum(s.get("raw_results", 0) for s in chain_summaries.values())
+                    summary["search_chain"]["duplicates_skipped"] = sum(s.get("duplicate_skipped", 0) for s in chain_summaries.values())
+                    summary["search_chain"]["invalid_links_skipped"] = sum(s.get("invalid_url_skipped", 0) for s in chain_summaries.values())
+                    # mentions_created is tracked below in the DB insert loop
+
                     # Wrap results with adapter tag for downstream processing
                     return [("search_chain", r) for r in chain_results]
                 except Exception as e:
@@ -855,6 +868,31 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
         meta_data_final["failed_sources"] = summary["errors"]
         meta_data_final["duration_seconds"] = time.time() - start_time
         meta_data_final["status"] = job.status.name
+
+        # Temporary admin/debug-safe fields
+        meta_data_final["provider_summary"] = summary.get("search_chain", {})
+        meta_data_final["last_error"] = job.error_message
+
+        # Count visible mentions for the query
+        try:
+            visible_count = db.execute(
+                select(func.count(Mention.id))
+                .where(Mention.project_id == project_id)
+                .where(
+                    or_(
+                        Mention.title.ilike(f"%{keyword_texts[0]}%"),
+                        Mention.snippet.ilike(f"%{keyword_texts[0]}%"),
+                        Mention.content.ilike(f"%{keyword_texts[0]}%"),
+                        Mention.keyword_text.ilike(f"%{keyword_texts[0]}%")
+                    )
+                )
+                .where(Mention.is_muted == False)
+                .where(Mention.is_deleted == False)
+            ).scalar() or 0
+            meta_data_final["visible_mentions_for_query"] = visible_count
+        except Exception as e:
+            meta_data_final["visible_mentions_for_query"] = -1
+
         job.meta_data = meta_data_final
         job.completed_at = datetime.now(timezone.utc)
         job.mentions_found = meta_data_final["created_mentions_count"]
