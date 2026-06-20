@@ -107,9 +107,9 @@ function LoginContent() {
       // Clear stale auth/session keys before attempting to log in
       clearAuthSession();
 
-      // We give it 15s max to handle slow network.
+      // We give it 90s max to handle slow network and Render cold starts.
       const timeout = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('TIMEOUT')), 15000)
+        setTimeout(() => reject(new Error('TIMEOUT')), 90000)
       );
       
       const result = await Promise.race([auth.login(email, password), timeout]) as any;
