@@ -22,6 +22,8 @@ BLOCKED_NAMESPACE_HOSTS = {
     "ogp.me",
     "www.ogp.me",
     "rdf.data-vocabulary.org",
+    "angular.dev",
+    "www.angular.dev",
 }
 BLOCKED_FINAL_HOSTS = {
     "google-analytics.com",

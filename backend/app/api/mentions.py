@@ -52,7 +52,21 @@ def _mention_link_fields(mention: Mention):
     visit_url = clean_final_url(mention.canonical_url) or clean_final_url(mention.url)
     raw_url = mention.url or mention.canonical_url or mention.original_url
     reason = None
-    if not visit_url:
+
+    metadata = dict(mention.meta_data or {})
+    prov = metadata.get("source_provenance", {})
+
+    if prov:
+        if not prov.get("is_clickable", True):
+            visit_url = None
+            reason = prov.get("blocked_reason") or "source_rejected_by_quality_gate"
+        elif prov.get("source_confidence", 1.0) < 0.4:
+            visit_url = None
+            reason = "low_source_confidence"
+        elif prov.get("final_canonical_url"):
+            visit_url = prov["final_canonical_url"]
+
+    if not visit_url and not reason:
         if is_google_news_discovery_url(raw_url):
             reason = "Google News RSS discovery URL was not resolved to the publisher URL"
         elif is_google_amp_url(raw_url):
@@ -70,8 +84,7 @@ def _mention_link_fields(mention: Mention):
         else:
             reason = "No Visit URL available"
 
-    display_domain = domain_from_url(visit_url)
-    metadata = dict(mention.meta_data or {})
+    display_domain = prov.get("final_domain") or domain_from_url(visit_url)
     metadata["visit_url_available"] = bool(visit_url)
     if reason:
         metadata["visit_url_invalid_reason"] = reason
@@ -95,7 +108,7 @@ def get_mentions_summary(
     logger = logging.getLogger(__name__)
     try:
         from app.models.mention import SentimentScore
-        
+
         # Build base filter
         base_filter = [Mention.is_muted == False, Mention.is_deleted == False, Mention.verification_status != 'synthetic']
         if project_id:
@@ -118,7 +131,7 @@ def get_mentions_summary(
         if sentiment:
             sentiments_list = [s.strip() for s in sentiment.split(",")]
             base_filter.append(Mention.sentiment.in_(sentiments_list))
-        
+
         # Total mentions
         try:
             total = db.execute(
@@ -128,17 +141,17 @@ def get_mentions_summary(
             db.rollback()
             logger.error(f"Error querying total mentions: {e}")
             total = 0
-        
+
         # Sentiment counts
         try:
             positive = db.execute(
                 apply_tenant_filter(select(func.count(Mention.id)), Mention, current_user).where(and_(*base_filter, Mention.sentiment == 'positive'))
             ).scalar() or 0
-            
+
             neutral = db.execute(
                 apply_tenant_filter(select(func.count(Mention.id)), Mention, current_user).where(and_(*base_filter, Mention.sentiment == 'neutral'))
             ).scalar() or 0
-            
+
             negative = db.execute(
                 apply_tenant_filter(select(func.count(Mention.id)), Mention, current_user).where(and_(*base_filter, Mention.sentiment == 'negative'))
             ).scalar() or 0
@@ -148,7 +161,7 @@ def get_mentions_summary(
             positive = 0
             neutral = 0
             negative = 0
-        
+
         # By source type
         try:
             source_type_counts = {}
@@ -163,7 +176,7 @@ def get_mentions_summary(
             db.rollback()
             logger.error(f"Error querying source type counts: {e}")
             source_type_counts = {}
-        
+
         # By day (last 7 days)
         try:
             now = datetime.now(timezone.utc)
@@ -184,7 +197,7 @@ def get_mentions_summary(
             db.rollback()
             logger.error(f"Error querying by_day counts: {e}")
             by_day = []
-        
+
         return {
             "total": total,
             "positive": positive,
@@ -244,7 +257,7 @@ def list_mentions(
                 # Create a deterministic key based on search parameters
                 params_str = f"proj:{project_id}_q:{q}_src:{source_type}_{source_types}_sent:{sentiment}_{sentiments}_d:{date_from}_{date_to}_p:{page}_ps:{page_size}_sort:{sort_by}_risk:{min_risk_score}"
                 cache_key = f"mentions_search:{hashlib.md5(params_str.encode()).hexdigest()}"
-                
+
                 # Check redis first
                 try:
                     from app.core.config import settings
@@ -258,7 +271,7 @@ def list_mentions(
                     pass
                 except Exception:
                     pass
-                
+
                 # Fallback to in-memory cache
                 if cache_key in _MENTIONS_SEARCH_CACHE:
                     timestamp, cached_val = _MENTIONS_SEARCH_CACHE[cache_key]
@@ -277,7 +290,7 @@ def list_mentions(
 
         if source_id:
             query = query.where(Mention.source_id == source_id)
-            
+
         if need_source_join:
             query = query.join(Source, Source.id == Mention.source_id)
             if source_type:
@@ -303,7 +316,7 @@ def list_mentions(
             query = query.where(Mention.is_muted == False)
         if min_influence_score is not None:
             query = query.where(Mention.influence_score >= min_influence_score)
-        
+
         # In case source_type is directly on mention (new model)
         if source_type and not need_source_join:
             st_list = [s.strip() for s in source_type.split(",")]
@@ -320,10 +333,10 @@ def list_mentions(
 
         if author:
             query = query.where(Mention.author.ilike(f"%{author}%"))
-            
+
         if date_from and not job_id:
             query = query.where(Mention.collected_at >= date_from)
-            
+
         if date_to and not job_id:
             query = query.where(Mention.collected_at <= date_to)
 
@@ -354,7 +367,7 @@ def list_mentions(
                 query = query.join(AIAnalysis, AIAnalysis.mention_id == Mention.id)
             else:
                 query = query.outerjoin(AIAnalysis, AIAnalysis.mention_id == Mention.id)
-                
+
             if min_risk_score is not None:
                 query = query.where(AIAnalysis.risk_score >= min_risk_score)
 
@@ -364,7 +377,7 @@ def list_mentions(
             count_base = apply_tenant_filter(select(Mention), Mention, current_user)
             count_base = count_base.where(Mention.verification_status != 'synthetic')
             count_base = count_base.where(Mention.is_deleted == False)
-            
+
             # Apply the same filters to count query
             if source_id:
                 count_base = count_base.where(Mention.source_id == source_id)
@@ -380,7 +393,7 @@ def list_mentions(
                 count_base = count_base.where(Mention.is_muted == False)
             if min_influence_score is not None:
                 count_base = count_base.where(Mention.influence_score >= min_influence_score)
-            
+
             # Direct mention filters
             if source_type:
                 st_list = [s.strip() for s in source_type.split(",")]
@@ -394,14 +407,14 @@ def list_mentions(
                 count_base = count_base.where(Mention.sentiment.in_(sentiments_list))
             elif sentiments:
                 count_base = count_base.where(Mention.sentiment.in_(sentiments))
-            
+
             if author:
                 count_base = count_base.where(Mention.author.ilike(f"%{author}%"))
             if date_from:
                 count_base = count_base.where(Mention.collected_at >= date_from)
             if date_to:
                 count_base = count_base.where(Mention.collected_at <= date_to)
-            
+
             if search_query and not job_id:
                 search_pattern = f"%{search_query}%"
                 count_base = count_base.where(
@@ -423,7 +436,7 @@ def list_mentions(
                         Mention.keyword_text.ilike(search_term)
                     )
                 )
-            
+
             # Execute count
             total = db.execute(select(func.count()).select_from(count_base.subquery())).scalar() or 0
         except Exception as e:
@@ -453,7 +466,7 @@ def list_mentions(
             sub_snippet = case((Mention.snippet.ilike(search_term), 15), else_=0)
             word_content = case((Mention.content.ilike(f"% {q} %"), 40), else_=0)
             sub_content = case((Mention.content.ilike(search_term), 20), else_=0)
-            
+
             relevance_expr = exact_title + word_title + sub_title + word_snippet + sub_snippet + word_content + sub_content
 
         # Sorting
@@ -531,7 +544,7 @@ def list_mentions(
                 m_title = (m.title or "").lower()
                 m_snippet = (m.snippet or "").lower()
                 m_content = (m.content or "").lower()
-                
+
                 if ql == m_title:
                     matched_in.append("Title")
                     match_strength = "exact"
@@ -550,6 +563,9 @@ def list_mentions(
                     matched_in.append("Content")
                     if f" {ql} " in f" {m_content} " and match_strength not in ("exact", "strong"):
                         match_strength = "strong"
+
+                if not matched_in and (m.keyword_text and ql in m.keyword_text.lower()):
+                    matched_in.append("Search provider")
 
             visit_url, display_domain, metadata, visit_url_invalid_reason = _mention_link_fields(m)
 
@@ -610,7 +626,7 @@ def list_mentions(
             "has_next": page < total_pages,
             "has_prev": page > 1
         }
-        
+
         if cache_key:
             try:
                 # Save to redis
@@ -624,7 +640,7 @@ def list_mentions(
                     pass
                 except Exception:
                     pass
-                
+
                 # Save to in-memory cache
                 _MENTIONS_SEARCH_CACHE[cache_key] = (time.time(), response_data)
             except Exception as e:
@@ -647,18 +663,18 @@ def record_mention_visit(
 ):
     """Ghi nhận lượt xem của user đối với 1 mention"""
     from app.models.mention import MentionVisit
-    
+
     mention = db.execute(
         select(Mention).where(Mention.id == mention_id)
     ).scalar_one_or_none()
-    
+
     if not mention:
         raise HTTPException(status_code=404, detail="Mention not found")
 
     visit_url, _, _, visit_url_invalid_reason = _mention_link_fields(mention)
     if not visit_url:
         raise HTTPException(status_code=400, detail=visit_url_invalid_reason or "No valid Visit URL available")
-        
+
     try:
         import hashlib
         user_agent = request.headers.get("user-agent", "")
@@ -675,10 +691,10 @@ def record_mention_visit(
             ip_hash=ip_hash
         )
         db.add(visit)
-        
+
         mention.visit_count = (mention.visit_count or 0) + 1
         mention.last_visited_at = datetime.now(timezone.utc)
-        
+
         db.commit()
         return {"success": True, "visit_count": mention.visit_count, "last_visited_at": mention.last_visited_at.isoformat()}
     except Exception as e:
@@ -851,11 +867,11 @@ def analyze_mention(
         analysis_result = service_analyze_mention(mention.content, mention.title)
     except Exception as e:
         err_str = str(e).lower()
-        
+
         mention.verification_status = "failed"
         mention.verification_error = f"AI analysis failed: {str(e)}"
         db.commit()
-        
+
         from fastapi.responses import JSONResponse
         if any(key in err_str for key in ["incorrect api key", "invalid_api_key", "401", "authenticationerror", "ai_provider_not_configured", "openai_dependency_missing", "api key is missing", "not configured"]):
             return JSONResponse(
@@ -874,7 +890,7 @@ def analyze_mention(
                 "message": "Không thể thực hiện phân tích do lỗi hệ thống AI. Vui lòng thử lại sau."
             }
         )
-    
+
     # Get AI provider name for tracking
     from app.core.config import settings
     ai_provider = settings.AI_PROVIDER.lower()
@@ -912,7 +928,7 @@ def analyze_mention(
         db.add(analysis)
         db.commit()
         db.refresh(analysis)
-    
+
     # Send notification if high risk
     if analysis_result['risk_score'] >= 70:
         try:
@@ -1130,7 +1146,7 @@ def summarize_current_results(
 ):
     """Generate AI summary of current filtered results"""
     from app.services.ai_service import generate_executive_brief
-    
+
     # Get mentions based on request
     if req.mention_ids is not None:
         if not req.mention_ids:
@@ -1142,28 +1158,28 @@ def summarize_current_results(
         # Build query from filters
         query = apply_tenant_filter(select(Mention), Mention, current_user)
         filters = req.filters or {}
-        
+
         if filters.get("project_id"):
             query = query.where(Mention.project_id == filters["project_id"])
         elif req.project_id:
             query = query.where(Mention.project_id == req.project_id)
-        
+
         if filters.get("sentiment"):
             query = query.where(Mention.sentiment == filters["sentiment"])
-        
+
         if filters.get("source_type"):
             query = query.where(Mention.source_type == filters["source_type"])
-        
+
         if filters.get("date_from"):
             query = query.where(Mention.collected_at >= filters["date_from"])
-        
+
         if filters.get("date_to"):
             query = query.where(Mention.collected_at <= filters["date_to"])
-        
+
         query = query.where(Mention.is_muted == False).where(Mention.is_deleted == False)
-        
+
         mentions = db.execute(query.limit(50)).scalars().all()
-    
+
     if not mentions:
         return {
             "summary": "Không có mentions để tóm tắt.",
@@ -1171,7 +1187,7 @@ def summarize_current_results(
             "sentiment_breakdown": {},
             "total_mentions": 0
         }
-    
+
     # Prepare mention data for AI
     mention_data = []
     for m in mentions:
@@ -1184,7 +1200,7 @@ def summarize_current_results(
             "domain": m.domain,
             "published_at": m.published_at.isoformat() if m.published_at else None
         })
-    
+
     # Format mention data into string
     lines = []
     for md in mention_data:
@@ -1197,13 +1213,13 @@ def summarize_current_results(
     # Call AI service for summary
     try:
         summary_result = generate_executive_brief(content_to_summarize)
-        
+
         # Calculate sentiment breakdown
         sentiment_counts = {}
         for m in mentions:
             sent = m.sentiment or "unknown"
             sentiment_counts[sent] = sentiment_counts.get(sent, 0) + 1
-        
+
         return {
             "summary": summary_result.get("full_brief", summary_result.get("summary_3_lines", "")),
             "key_insights": summary_result.get("key_entities", []),
