@@ -151,7 +151,7 @@ def fetch_and_parse_feed(url: str) -> Dict:
     except Exception as e:
         return {"success": False, "error": str(e)}
 
-def run_rss_collector(db: Session, source_ids: List[int] = None) -> Dict:
+def run_rss_collector(db: Session, source_ids: List[int] = None, ad_hoc_keywords: List[str] = None, ad_hoc_project_id: int = None) -> Dict:
     """Run RSS collection for given sources or all active RSS sources."""
     query = select(Source).where(Source.is_active == True, Source.source_type == 'rss')
     if source_ids:
@@ -248,12 +248,20 @@ def run_rss_collector(db: Session, source_ids: List[int] = None) -> Dict:
                 
                 project_id = None
                 
+                # Match ad-hoc keywords first
+                for kw in (ad_hoc_keywords or []):
+                    kw_norm = strip_accents(kw.lower())
+                    if kw_norm in text_to_match:
+                        matched_kws.append({"keyword": kw, "count": text_to_match.count(kw_norm)})
+                        if not project_id and ad_hoc_project_id:
+                            project_id = ad_hoc_project_id
+
                 for kw in active_keywords:
                     kw_norm = strip_accents(kw.keyword.lower())
                     if kw_norm in text_to_match:
                         matched_kws.append({"keyword": kw.keyword, "count": text_to_match.count(kw_norm)})
                         
-                if matched_kws:
+                if matched_kws and not project_id:
                     # Assign to the project of the first matched keyword
                     first_kw = active_keywords[0]
                     kw_group = db.query(KeywordGroup).get(first_kw.group_id)
@@ -266,10 +274,10 @@ def run_rss_collector(db: Session, source_ids: List[int] = None) -> Dict:
                     )
                 ).scalar_one_or_none()
                 
-                if not m_exists:
+                if not m_exists and matched_kws:
                     mention = Mention(
                         project_id=project_id,
-                        keyword_text=matched_kws[0]["keyword"] if matched_kws else "Tất cả tin tức",
+                        keyword_text=matched_kws[0]["keyword"],
                         source_id=source.id,
                         source_type="rss",
                         platform=source.platform or "web",
