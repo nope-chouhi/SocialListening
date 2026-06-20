@@ -192,12 +192,22 @@ def is_google_utility_url(url: Optional[str]) -> bool:
         return False
     hostname = (parsed.hostname or "").lower()
     path = parsed.path.lower()
+    query = parsed.query.lower()
 
     if hostname in GOOGLE_UTILITY_HOSTS:
         return True
+
+    if hostname.endswith(".corp.google.com") or "uberproxy" in hostname or "pen-redirect" in hostname:
+        return True
+
     if hostname in {"google.com", "www.google.com"}:
         if path.startswith("/account") or path.startswith("/settings") or path.startswith("/help"):
             return True
+        if path.startswith("/log") or path.startswith("/url") or path.startswith("/search") or path.startswith("/preferences") or path.startswith("/alerts") or path.startswith("/finance"):
+            return True
+        if "format=json" in query and "hasfast=true" in query:
+            return True
+
     return False
 
 
@@ -231,17 +241,79 @@ def is_namespace_url(url: Optional[str]) -> bool:
     return hostname in BLOCKED_NAMESPACE_HOSTS
 
 
+def get_url_blocked_reason(url: Optional[str]) -> Optional[str]:
+    candidate = _trim_url(url)
+    if not candidate:
+        return "invalid_or_empty_url"
+
+    if is_google_news_discovery_url(candidate):
+        return "google_news_discovery_url"
+    if is_google_media_url(candidate):
+        return "google_media_url"
+    if is_google_amp_url(candidate):
+        return "google_amp_url"
+
+    # Check specifically for google log/redirects vs other utility
+    if is_google_utility_url(candidate):
+        try:
+            parsed = urlparse(candidate)
+            path = parsed.path.lower()
+            hostname = (parsed.hostname or "").lower()
+            if hostname in {"google.com", "www.google.com"} and (path.startswith("/log") or path.startswith("/url")):
+                return "google_internal_log_url" if path.startswith("/log") else "google_redirect_url"
+            if "corp.google.com" in hostname or "uberproxy" in hostname or "pen-redirect" in hostname:
+                return "google_proxy_or_redirect_url"
+        except Exception:
+            pass
+        return "google_utility_page"
+
+    if is_tracking_or_static_host(candidate):
+        return "static_asset"
+    if is_media_file_url(candidate):
+        return "static_asset"
+    if has_blocked_path(candidate):
+        return "static_asset"
+    if is_namespace_url(candidate):
+        return "namespace_url"
+
+    return None
+
+
 def is_blocked_final_url(url: Optional[str]) -> bool:
-    return (
-        is_google_news_discovery_url(url)
-        or is_google_media_url(url)
-        or is_google_amp_url(url)
-        or is_google_utility_url(url)
-        or is_tracking_or_static_host(url)
-        or is_media_file_url(url)
-        or has_blocked_path(url)
-        or is_namespace_url(url)
-    )
+    return get_url_blocked_reason(url) is not None
+
+
+def recover_google_redirect_url(url: Optional[str]) -> Optional[str]:
+    candidate = _trim_url(url)
+    if not candidate:
+        return None
+
+    try:
+        parsed = urlparse(candidate)
+        hostname = (parsed.hostname or "").lower()
+        path = parsed.path.lower()
+
+        # Only attempt recovery on google domains and specific redirect paths
+        if hostname not in {"google.com", "www.google.com"}:
+            return None
+        if not (path.startswith("/url") or path.startswith("/log") or path.startswith("/search") or path.startswith("/alerts")):
+            return None
+
+        from urllib.parse import parse_qs
+        qs = parse_qs(parsed.query)
+
+        for param in ["url", "q", "u", "target", "continue", "adurl"]:
+            if param in qs and qs[param]:
+                val = str(qs[param][0]).strip()
+                if is_http_url(val):
+                    # decode recursively just in case
+                    val = unquote(val)
+                    # Check if the recovered url is also blocked
+                    if not get_url_blocked_reason(val):
+                        return val
+    except Exception:
+        pass
+    return None
 
 
 def clean_final_url(url: Optional[str]) -> Optional[str]:

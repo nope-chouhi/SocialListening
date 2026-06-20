@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional
 import requests
 from bs4 import BeautifulSoup
 
-from app.services.url_utils import is_blocked_final_url, clean_final_url
+from app.services.url_utils import is_blocked_final_url, clean_final_url, recover_google_redirect_url, get_url_blocked_reason
 
 logger = logging.getLogger(__name__)
 
@@ -80,15 +80,22 @@ def resolve_source(
         "blocked_reason": None,
         "title_similarity": 0.0,
         "relevance_score": 0.0,
-        "relevance_reasons": []
+        "relevance_reasons": [],
+        "was_recovered_from_google_redirect": False
     }
 
     if not raw_provider_url or not raw_provider_url.startswith("http"):
         provenance["blocked_reason"] = "non_http_scheme"
         return provenance
 
-    if is_blocked_final_url(raw_provider_url):
-        provenance["blocked_reason"] = "provider_url_blocked_before_fetch"
+    recovered = recover_google_redirect_url(raw_provider_url)
+    if recovered:
+        raw_provider_url = recovered
+        provenance["was_recovered_from_google_redirect"] = True
+
+    blocked_reason = get_url_blocked_reason(raw_provider_url)
+    if blocked_reason:
+        provenance["blocked_reason"] = blocked_reason
         return provenance
 
     try:
@@ -161,9 +168,14 @@ def resolve_source(
 
         final_url = None
         for candidate in final_candidates:
-            if candidate and not is_blocked_final_url(candidate):
-                final_url = candidate
-                break
+            if candidate:
+                recovered_cand = recover_google_redirect_url(candidate)
+                if recovered_cand:
+                    candidate = recovered_cand
+                    provenance["was_recovered_from_google_redirect"] = True
+                if not get_url_blocked_reason(candidate):
+                    final_url = candidate
+                    break
 
         if not final_url:
             provenance["blocked_reason"] = "all_identity_signals_blocked"
