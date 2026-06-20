@@ -51,6 +51,11 @@ def _normalize_result(
     if not url:
         return None
     source_domain = domain_from_url(url) or ""
+    # Filter out empty or "Không xác định" (unknown) so we cleanly fall back to the parsed domain.
+    s_name = (source_name or "").strip()
+    if s_name.lower() in ("", "không xác định", "unknown"):
+        s_name = source_domain
+
     return {
         "provider": provider,
         "title": (title or "").strip()[:500],
@@ -58,7 +63,7 @@ def _normalize_result(
         "url": url,
         "matched_keyword": keyword,
         "published_at": published_at,
-        "source_name": (source_name or source_domain)[:200],
+        "source_name": s_name[:200],
         "source_domain": source_domain,
     }
 
@@ -116,7 +121,7 @@ def _run_serper(keywords: List[str], max_results: int, timeout_s: int) -> Tuple[
                         title=item.get("title", ""),
                         snippet=item.get("snippet", ""),
                         raw_url=item.get("link", ""),
-                        keyword=kw,
+                        keyword=keyword,
                         published_at=item.get("date"),
                         source_name=item.get("source", ""),
                     )
@@ -131,7 +136,7 @@ def _run_serper(keywords: List[str], max_results: int, timeout_s: int) -> Tuple[
                     summary["valid_results"] += 1
 
             except requests.Timeout:
-                logger.warning("Serper timeout for keyword '%s'", kw)
+                logger.warning("Serper timeout for keyword '%s'", keyword)
                 continue
             except requests.RequestException as e:
                 logger.warning("Serper request error: %s", e)
@@ -142,8 +147,8 @@ def _run_serper(keywords: List[str], max_results: int, timeout_s: int) -> Tuple[
 
     except Exception as e:
         summary["status"] = PROVIDER_STATUS_FAILED
-        summary["error"] = str(e)
-        logger.error("Serper provider error: %s", e)
+        summary["error"] = f"{type(e).__name__}: {str(e)}"
+        logger.error("Serper provider error: %s", e, exc_info=True)
 
     return results, summary
 
