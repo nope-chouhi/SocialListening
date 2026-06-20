@@ -6,6 +6,7 @@ import {
 import { SentimentBadge, RiskBadge, CrisisLevelBadge } from './Badges';
 import DashboardQuickActionButton from './DashboardQuickActionButton';
 import { mentions } from '@/lib/api';
+import { getSafeVisitUrl } from '@/lib/visit-url';
 import toast from 'react-hot-toast';
 
 interface MentionCardProps {
@@ -23,21 +24,6 @@ const SourceIcon = ({ type, className }: { type: string, className?: string }) =
     default: return <Globe className={className} />;
   }
 };
-
-function isBlockedVisitHost(hostname: string): boolean {
-  const host = hostname.toLowerCase();
-  return (
-    host === 'news.google.com' ||
-    host === 'www.news.google.com' ||
-    host === 'lh3.googleusercontent.com' ||
-    host === 'googleusercontent.com' ||
-    host.endsWith('.googleusercontent.com')
-  );
-}
-
-function isMediaFilePath(pathname: string): boolean {
-  return /\.(jpg|jpeg|png|gif|webp|bmp|svg|avif|ico)$/i.test(pathname);
-}
 
 function keywordToText(keyword: any): string | null {
   if (typeof keyword === 'string') return keyword.trim() || null;
@@ -81,15 +67,7 @@ export default function MentionCard({ mention, onActionComplete, userRole }: Men
   };
 
   const getSafeUrl = (url: string) => {
-    try {
-      if (!url || url.trim() === '' || url.startsWith('/')) return '';
-      const parsed = new URL(url);
-      if (!['http:', 'https:'].includes(parsed.protocol)) return '';
-      if (isBlockedVisitHost(parsed.hostname) || isMediaFilePath(parsed.pathname)) return '';
-      return parsed.href;
-    } catch {
-      return '';
-    }
+    return getSafeVisitUrl(url);
   };
 
   const bestUrl = getSafeUrl(mention.canonical_url || mention.url || '');

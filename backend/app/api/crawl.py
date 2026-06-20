@@ -370,7 +370,6 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
     import hashlib
     import time
     import unicodedata
-    from urllib.parse import urlparse
     
     def strip_accents(s: str) -> str:
         if not s: return ""
@@ -663,7 +662,7 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
                 continue
 
             seen_hashes.add(content_hash)
-            parsed_domain = domain_from_url(url) or urlparse(url).netloc
+            parsed_domain = domain_from_url(url)
 
             if adapter_name == "web":
                 src_type, platform, author, published_at = "web", "web", "", None
@@ -675,7 +674,6 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
             else:
                 src_type = r.get("source_type", "social")
                 platform = r.get("platform", "social")
-                parsed_domain = r.get("domain") or parsed_domain
                 author = (r.get("author") or "")[:500]
                 published_at = r.get("timestamp")
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, ShieldAlert, Activity, Clock, FileText, Link2, AlertTriangle, MessageSquare } from 'lucide-react';
 import { incidents as incidentsApi, mentions as mentionsApi, getErrorMessage } from '@/lib/api';
+import { getSafeVisitUrl } from '@/lib/visit-url';
 import { SentimentBadge, RiskBadge, CrisisLevelBadge } from '@/components/dashboard/Badges';
 import toast from 'react-hot-toast';
 
@@ -197,14 +198,14 @@ export default function CrisisWarRoomModal({ isOpen, onClose, incident }: Crisis
                     <p className="text-sm text-gray-300 bg-[#0B1220] p-3 rounded-lg border border-gray-800 line-clamp-4 leading-relaxed mb-4">
                       {mention.content}
                     </p>
-                    <a 
-                      href={mention.url} 
+                    {getSafeVisitUrl(mention.canonical_url || mention.url) && (<a
+                      href={getSafeVisitUrl(mention.canonical_url || mention.url)}
                       target="_blank" 
                       rel="noopener noreferrer"
                       className="w-full flex items-center justify-center px-4 py-2.5 bg-gray-800 hover:bg-gray-700 text-white text-xs font-semibold rounded-lg transition-colors border border-gray-700 hover:border-gray-600"
                     >
                       <Link2 className="w-3.5 h-3.5 mr-1.5" /> Xem Tại Nguồn
-                    </a>
+                    </a>)}
                   </div>
                 )}
 

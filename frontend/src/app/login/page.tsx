@@ -8,7 +8,9 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 /** Cache user profile after login so AuthContext reads instantly on next page */
 function cacheUserAfterLogin(token: string) {
   try {
-    fetch('/api/auth/me', { headers: { Authorization: `Bearer ${token}` } })
+    const backendUrl = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/+$/, '');
+    const meUrl = backendUrl ? `${backendUrl}/api/auth/me` : '/api/auth/me';
+    fetch(meUrl, { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' })
       .then(r => r.ok ? r.json() : null)
       .then(user => {
         if (user) localStorage.setItem('cached_user', JSON.stringify(user));
@@ -82,7 +84,6 @@ function LoginContent() {
       'access_token',
       'refresh_token',
       'cached_user',
-      'nope_auth_storage_version',
       'auth_store',
       'permissions',
       'selected_project_id',

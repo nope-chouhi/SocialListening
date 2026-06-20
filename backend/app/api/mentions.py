@@ -24,6 +24,9 @@ from app.services.url_utils import (
     is_google_news_discovery_url,
     is_google_media_url,
     is_media_file_url,
+    is_google_amp_url,
+    is_tracking_or_static_host,
+    has_blocked_path,
     is_safe_display_domain,
 )
 import os
@@ -52,10 +55,14 @@ def _mention_link_fields(mention: Mention):
     if not visit_url:
         if is_google_news_discovery_url(raw_url):
             reason = "Google News RSS discovery URL was not resolved to the publisher URL"
+        elif is_google_amp_url(raw_url):
+            reason = "Google AMP URL was not resolved to the publisher URL"
         elif is_google_media_url(raw_url):
             reason = "Google media/thumbnail URL is not a publisher article URL"
+        elif is_tracking_or_static_host(raw_url) or has_blocked_path(raw_url):
+            reason = "Tracking, analytics, ad, CDN, or static asset URL is not a publisher article URL"
         elif is_media_file_url(raw_url):
-            reason = "Media file URL is not a publisher article URL"
+            reason = "Static, media, or document file URL is not a publisher article URL"
         elif is_blocked_final_url(raw_url):
             reason = "URL is not a valid publisher article URL"
         elif raw_url:

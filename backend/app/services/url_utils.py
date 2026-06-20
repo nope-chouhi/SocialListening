@@ -9,7 +9,49 @@ GOOGLE_NEWS_HOSTS = {"news.google.com", "www.news.google.com"}
 GOOGLE_MEDIA_HOST_SUFFIXES = ("googleusercontent.com",)
 GOOGLE_MEDIA_HOSTS = {"lh3.googleusercontent.com"}
 GENERIC_NEWS_DOMAINS = {"google_news.com"}
-IMAGE_EXTENSIONS = (
+BLOCKED_FINAL_HOSTS = {
+    "google-analytics.com",
+    "www.google-analytics.com",
+    "googletagmanager.com",
+    "www.googletagmanager.com",
+    "googleadservices.com",
+    "www.googleadservices.com",
+    "doubleclick.net",
+    "www.doubleclick.net",
+    "gstatic.com",
+    "www.gstatic.com",
+}
+BLOCKED_FINAL_HOST_SUFFIXES = (
+    "google-analytics.com",
+    "googletagmanager.com",
+    "googleadservices.com",
+    "doubleclick.net",
+    "gstatic.com",
+)
+STATIC_HOST_LABELS = {
+    "ad",
+    "ads",
+    "analytics",
+    "asset",
+    "assets",
+    "cdn",
+    "css",
+    "font",
+    "fonts",
+    "gtag",
+    "image",
+    "images",
+    "img",
+    "js",
+    "media",
+    "pagead",
+    "script",
+    "scripts",
+    "static",
+    "tag",
+    "tracking",
+}
+BLOCKED_FILE_EXTENSIONS = (
     ".jpg",
     ".jpeg",
     ".png",
@@ -19,6 +61,22 @@ IMAGE_EXTENSIONS = (
     ".svg",
     ".avif",
     ".ico",
+    ".js",
+    ".css",
+    ".woff",
+    ".woff2",
+    ".ttf",
+    ".mp4",
+    ".webm",
+    ".pdf",
+)
+BLOCKED_PATH_PATTERNS = (
+    "/analytics.js",
+    "/gtag/js",
+    "/collect",
+    "/ads",
+    "/pagead/",
+    "/recaptcha/",
 )
 
 
@@ -59,6 +117,39 @@ def is_google_media_url(url: Optional[str]) -> bool:
     return hostname in GOOGLE_MEDIA_HOSTS or any(hostname == suffix or hostname.endswith(f".{suffix}") for suffix in GOOGLE_MEDIA_HOST_SUFFIXES)
 
 
+def _hostname(url: Optional[str]) -> str:
+    try:
+        return (urlparse(_trim_url(url)).hostname or "").lower()
+    except Exception:
+        return ""
+
+
+def is_tracking_or_static_host(url: Optional[str]) -> bool:
+    hostname = _hostname(url)
+    if not hostname:
+        return False
+    if hostname in BLOCKED_FINAL_HOSTS:
+        return True
+    if any(hostname == suffix or hostname.endswith(f".{suffix}") for suffix in BLOCKED_FINAL_HOST_SUFFIXES):
+        return True
+
+    labels = {label for label in hostname.split(".") if label}
+    return bool(labels & STATIC_HOST_LABELS)
+
+
+def is_google_amp_url(url: Optional[str]) -> bool:
+    candidate = _trim_url(url)
+    if not candidate:
+        return False
+    try:
+        parsed = urlparse(candidate)
+    except Exception:
+        return False
+    hostname = (parsed.hostname or "").lower()
+    path = parsed.path.lower()
+    return hostname in {"google.com", "www.google.com"} and (path == "/amp" or path.startswith("/amp/"))
+
+
 def is_media_file_url(url: Optional[str]) -> bool:
     candidate = _trim_url(url)
     if not candidate:
@@ -67,14 +158,28 @@ def is_media_file_url(url: Optional[str]) -> bool:
         parsed = urlparse(candidate)
     except Exception:
         return False
-    return parsed.path.lower().endswith(IMAGE_EXTENSIONS)
+    return parsed.path.lower().endswith(BLOCKED_FILE_EXTENSIONS)
+
+
+def has_blocked_path(url: Optional[str]) -> bool:
+    candidate = _trim_url(url)
+    if not candidate:
+        return False
+    try:
+        path = urlparse(candidate).path.lower()
+    except Exception:
+        return False
+    return any(pattern in path for pattern in BLOCKED_PATH_PATTERNS)
 
 
 def is_blocked_final_url(url: Optional[str]) -> bool:
     return (
         is_google_news_discovery_url(url)
         or is_google_media_url(url)
+        or is_google_amp_url(url)
+        or is_tracking_or_static_host(url)
         or is_media_file_url(url)
+        or has_blocked_path(url)
     )
 
 
@@ -97,7 +202,10 @@ def is_safe_display_domain(domain: Optional[str]) -> bool:
         value not in GOOGLE_NEWS_HOSTS
         and value not in GENERIC_NEWS_DOMAINS
         and value not in GOOGLE_MEDIA_HOSTS
+        and value not in BLOCKED_FINAL_HOSTS
         and not any(value == suffix or value.endswith(f".{suffix}") for suffix in GOOGLE_MEDIA_HOST_SUFFIXES)
+        and not any(value == suffix or value.endswith(f".{suffix}") for suffix in BLOCKED_FINAL_HOST_SUFFIXES)
+        and not bool({label for label in value.split(".") if label} & STATIC_HOST_LABELS)
     )
 
 
