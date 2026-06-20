@@ -939,5 +939,12 @@ export const collectors = {
   },
 };
 
+export const integrations = {
+  capabilities: async () => {
+    const response = await api.get('/api/integrations/capabilities');
+    return response.data;
+  },
+};
+
 
 
