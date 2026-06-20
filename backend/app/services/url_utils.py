@@ -42,6 +42,16 @@ BLOCKED_FINAL_HOST_SUFFIXES = (
     "doubleclick.net",
     "gstatic.com",
 )
+GOOGLE_UTILITY_HOSTS = {
+    "myaccount.google.com",
+    "accounts.google.com",
+    "policies.google.com",
+    "privacy.google.com",
+    "pay.google.com",
+    "docs.google.com",
+    "drive.google.com",
+    "support.google.com",
+}
 STATIC_HOST_LABELS = {
     "ad",
     "ads",
@@ -164,6 +174,25 @@ def is_google_amp_url(url: Optional[str]) -> bool:
     return hostname in {"google.com", "www.google.com"} and (path == "/amp" or path.startswith("/amp/"))
 
 
+def is_google_utility_url(url: Optional[str]) -> bool:
+    candidate = _trim_url(url)
+    if not candidate:
+        return False
+    try:
+        parsed = urlparse(candidate)
+    except Exception:
+        return False
+    hostname = (parsed.hostname or "").lower()
+    path = parsed.path.lower()
+
+    if hostname in GOOGLE_UTILITY_HOSTS:
+        return True
+    if hostname in {"google.com", "www.google.com"}:
+        if path.startswith("/account") or path.startswith("/settings") or path.startswith("/help"):
+            return True
+    return False
+
+
 def is_media_file_url(url: Optional[str]) -> bool:
     candidate = _trim_url(url)
     if not candidate:
@@ -199,6 +228,7 @@ def is_blocked_final_url(url: Optional[str]) -> bool:
         is_google_news_discovery_url(url)
         or is_google_media_url(url)
         or is_google_amp_url(url)
+        or is_google_utility_url(url)
         or is_tracking_or_static_host(url)
         or is_media_file_url(url)
         or has_blocked_path(url)
@@ -227,6 +257,7 @@ def is_safe_display_domain(domain: Optional[str]) -> bool:
         and value not in GOOGLE_MEDIA_HOSTS
         and value not in BLOCKED_FINAL_HOSTS
         and value not in BLOCKED_NAMESPACE_HOSTS
+        and value not in GOOGLE_UTILITY_HOSTS
         and not any(value == suffix or value.endswith(f".{suffix}") for suffix in GOOGLE_MEDIA_HOST_SUFFIXES)
         and not any(value == suffix or value.endswith(f".{suffix}") for suffix in BLOCKED_FINAL_HOST_SUFFIXES)
         and not bool({label for label in value.split(".") if label} & STATIC_HOST_LABELS)
