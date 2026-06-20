@@ -43,6 +43,7 @@ BLOCKED_FINAL_HOST_SUFFIXES = (
     "googleadservices.com",
     "doubleclick.net",
     "gstatic.com",
+    "corp.google.com",
 )
 GOOGLE_UTILITY_HOSTS = {
     "myaccount.google.com",
@@ -95,6 +96,8 @@ BLOCKED_FILE_EXTENSIONS = (
     ".mp4",
     ".webm",
     ".pdf",
+    ".xml",
+    ".rss",
 )
 BLOCKED_PATH_PATTERNS = (
     "/analytics.js",
@@ -103,6 +106,7 @@ BLOCKED_PATH_PATTERNS = (
     "/ads",
     "/pagead/",
     "/recaptcha/",
+    "/rss",
 )
 
 
@@ -154,6 +158,8 @@ def is_tracking_or_static_host(url: Optional[str]) -> bool:
     hostname = _hostname(url)
     if not hostname:
         return False
+    if hostname.startswith("uberproxy-"):
+        return True
     if hostname in BLOCKED_FINAL_HOSTS:
         return True
     if any(hostname == suffix or hostname.endswith(f".{suffix}") for suffix in BLOCKED_FINAL_HOST_SUFFIXES):
