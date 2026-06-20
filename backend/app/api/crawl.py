@@ -435,6 +435,16 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
                 "error": None,
                 "skip_reason": None
             },
+            "rss": {
+                "status": "READY",
+                "called": False,
+                "raw_results_count": 0,
+                "mentions_created": 0,
+                "duplicates_skipped": 0,
+                "invalid_links_skipped": 0,
+                "error": None,
+                "skip_reason": None
+            },
             "adapters_ready": [],
             "serpapi_result_count": 0,
             "urls_crawled": 0,
@@ -583,15 +593,49 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
             summary["adapters_ready"].append("social")
             summary["social"]["called"] = True
             summary["social"]["status"] = "RUNNING"
+
+        if not source_types or "rss" in source_types:
+            summary["adapters_ready"].append("rss")
+            summary["rss"]["called"] = True
+            summary["rss"]["status"] = "RUNNING"
+
         commit_summary()
 
         # Launch all adapters in parallel
         all_raw_results = []
-        with ThreadPoolExecutor(max_workers=3) as executor:
+        with ThreadPoolExecutor(max_workers=4) as executor:
+            def run_rss_adapter():
+                if source_types and "rss" not in source_types:
+                    return []
+                try:
+                    from app.services.rss_collector import run_rss_collector
+                    from app.core.database import SessionLocal
+                    local_db = SessionLocal()
+                    try:
+                        res = run_rss_collector(
+                            local_db, 
+                            ad_hoc_keywords=keyword_texts, 
+                            ad_hoc_project_id=project_id
+                        )
+                        summary["rss"]["raw_results_count"] = res.get("items_seen", 0)
+                        summary["rss"]["mentions_created"] = res.get("mentions_created", 0)
+                        summary["rss"]["duplicates_skipped"] = res.get("duplicates_skipped", 0)
+                        summary["new_mentions_created"] += res.get("mentions_created", 0)
+                        summary["duplicates_skipped"] += res.get("duplicates_skipped", 0)
+                        return []
+                    finally:
+                        local_db.close()
+                except Exception as e:
+                    summary["errors"].append(f"RSS: {e}")
+                    summary["rss"]["error"] = str(e)
+                    summary["rss"]["status"] = "ERROR"
+                    return []
+
             futures = {
                 executor.submit(run_web_adapter): "web",
                 executor.submit(run_youtube_adapter): "youtube",
                 executor.submit(run_social_adapter): "social",
+                executor.submit(run_rss_adapter): "rss",
             }
             for future in as_completed(futures):
                 name = futures[future]

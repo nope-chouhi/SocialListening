@@ -525,17 +525,18 @@ function MentionsPageContent() {
 
   /* ─── DATA FETCHING ─────────────────────────────────────────────────── */
 
-  const fetchMentions = useCallback(async (forceRefresh = false) => {
+  const fetchMentions = useCallback(async (forceRefresh = false, forcePage1 = false) => {
     const fetchId = ++currentFetchIdRef.current;
     try {
       setLoading(true);
-      // Khi page = 1 (tá»©c lÃ  query/filter thay Ä‘á»•i), clear dá»¯ liá»‡u cÅ© Ä‘á»ƒ hiá»ƒn thá»‹ loading chÃ­nh xÃ¡c
-      if (page === 1) {
+      const currentPage = forcePage1 ? 1 : page;
+      // Khi page = 1 (tá»©c lÃ  query/filter thay Ä'á»•i), clear dá»¯ liá»‡u cÅ© Ä'á»ƒ hiá»ƒn thá»‹ loading chÃ­nh xÃ¡c
+      if (currentPage === 1) {
         setMentionsList([]);
       }
       
       const params: any = {
-        page,
+        page: currentPage,
         page_size: 20,
         sort_by: filters.sort_by,
       };
@@ -571,23 +572,7 @@ function MentionsPageContent() {
       const data = await mentionsApi.list(params);
       if (fetchId !== currentFetchIdRef.current) return;
       
-      // Deduplicate results based on URL and Title to avoid filling the page with spam
-      const seen = new Set();
-      const dedupedItems = data.items.filter((item: any) => {
-        const urlStr = typeof item.url === 'string' ? item.url : '';
-        const canonicalUrl = urlStr.split('?')[0].split('#')[0].replace(/\/$/, '').toLowerCase() || '';
-        const titleKey = (item.title || '').trim().toLowerCase();
-        // Fallback to title + source + date if URL is missing
-        const fallbackKey = `fallback:${titleKey}:${item.source_type}:${item.published_at || item.collected_at}`;
-        
-        const key = canonicalUrl ? `url:${canonicalUrl}` : (titleKey ? `title:${titleKey}` : fallbackKey);
-        
-        if (seen.has(key)) return false;
-        seen.add(key);
-        return true;
-      });
-      
-      setMentionsList(dedupedItems);
+      setMentionsList(data.items);
       setTotalMentions(data.total);
       setTotalPages(data.total_pages);
 
@@ -656,6 +641,11 @@ function MentionsPageContent() {
       setLoading(false);
     }
   }, [page, filters, initialJobId, searchTerm, activeProject, dateRange]);
+
+  const fetchMentionsRef = useRef(fetchMentions);
+  useEffect(() => {
+    fetchMentionsRef.current = fetchMentions;
+  }, [fetchMentions]);
 
   const fetchChartData = async () => {
     setChartLoading(true);
@@ -779,7 +769,8 @@ function MentionsPageContent() {
           
           if (status === 'COMPLETED' || status === 'PARTIAL_FAILED') {
             setSearchState('AUTO_SCAN_COMPLETED');
-            fetchMentions(true);
+            setPage(1);
+            fetchMentionsRef.current(true, true);
           } else if (status === 'COMPLETED_NO_RESULTS') {
             setSearchState('AUTO_SCAN_NO_RESULTS');
           } else {
@@ -1413,7 +1404,7 @@ function MentionsPageContent() {
                            <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-500 mt-1">
                               <span>{getMentionSourceLabel(mention)}</span>
                              <span>•</span>
-                             <span>Ảnh hưởng: {mention.influence_score ? `\${mention.influence_score}/10` : 'Chưa có dữ liệu'}</span>
+                             <span>Ảnh hưởng: {mention.influence_score ? `${mention.influence_score}/10` : 'Chưa có dữ liệu'}</span>
                              <span>•</span>
                              <span className={mention.risk_score && mention.risk_score >= 80 ? 'text-rose-600 font-bold' : ''}>Rủi ro: {mention.risk_score ?? mention.ai_analysis?.risk_score ?? 'Chưa phân tích'}</span>
                              <span>•</span>
