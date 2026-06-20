@@ -111,6 +111,14 @@ class Settings(BaseSettings):
     AUTO_DISCOVERY_ENABLED: bool = True
     YOUTUBE_API_KEY: str = ""
     FACEBOOK_ACCESS_TOKEN: str = ""
+
+    # Search Provider Chain (Serper → Tavily → RSS)
+    SERPER_API_KEY: str = ""        # Serper.dev — skip if empty
+    TAVILY_API_KEY: str = ""        # Tavily.com — skip if empty
+    SEARCH_PROVIDER_ORDER: str = "serper,tavily,rss"
+    SEARCH_PROVIDER_TIMEOUT_SECONDS: int = 8
+    SEARCH_PROVIDER_MAX_RESULTS: int = 20
+    SEARCH_PROVIDER_CACHE_TTL_SECONDS: int = 900
     
     # Screenshot
     SCREENSHOT_SERVICE_URL: str = "http://localhost:3001"

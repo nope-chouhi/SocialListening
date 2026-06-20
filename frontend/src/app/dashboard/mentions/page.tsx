@@ -770,11 +770,17 @@ function MentionsPageContent() {
           if (status === 'COMPLETED' || status === 'PARTIAL_FAILED') {
             setSearchState('AUTO_SCAN_COMPLETED');
             setPage(1);
-            fetchMentionsRef.current(true, true);
+            // Use .then() so we clear activeScanJobId AFTER the refetch completes,
+            // preventing any accidental double-scan trigger in between
+            Promise.resolve(fetchMentionsRef.current(true, true)).finally(() => {
+              setActiveScanJobId(null);
+            });
           } else if (status === 'COMPLETED_NO_RESULTS') {
             setSearchState('AUTO_SCAN_NO_RESULTS');
+            setActiveScanJobId(null);
           } else {
             setSearchState('AUTO_SCAN_FAILED');
+            setActiveScanJobId(null);
           }
         } else {
             setSearchState('AUTO_SCAN_RUNNING');

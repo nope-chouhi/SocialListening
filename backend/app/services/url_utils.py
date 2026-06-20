@@ -9,6 +9,20 @@ GOOGLE_NEWS_HOSTS = {"news.google.com", "www.news.google.com"}
 GOOGLE_MEDIA_HOST_SUFFIXES = ("googleusercontent.com",)
 GOOGLE_MEDIA_HOSTS = {"lh3.googleusercontent.com"}
 GENERIC_NEWS_DOMAINS = {"google_news.com"}
+# XML/SVG/Schema namespace hosts — never article URLs
+BLOCKED_NAMESPACE_HOSTS = {
+    "w3.org",
+    "www.w3.org",
+    "schema.org",
+    "www.schema.org",
+    "xmlns.com",
+    "www.xmlns.com",
+    "purl.org",
+    "www.purl.org",
+    "ogp.me",
+    "www.ogp.me",
+    "rdf.data-vocabulary.org",
+}
 BLOCKED_FINAL_HOSTS = {
     "google-analytics.com",
     "www.google-analytics.com",
@@ -172,6 +186,14 @@ def has_blocked_path(url: Optional[str]) -> bool:
     return any(pattern in path for pattern in BLOCKED_PATH_PATTERNS)
 
 
+def is_namespace_url(url: Optional[str]) -> bool:
+    """Block XML/SVG/schema namespace hosts that appear as attribute values, not article URLs."""
+    hostname = _hostname(url)
+    if not hostname:
+        return False
+    return hostname in BLOCKED_NAMESPACE_HOSTS
+
+
 def is_blocked_final_url(url: Optional[str]) -> bool:
     return (
         is_google_news_discovery_url(url)
@@ -180,6 +202,7 @@ def is_blocked_final_url(url: Optional[str]) -> bool:
         or is_tracking_or_static_host(url)
         or is_media_file_url(url)
         or has_blocked_path(url)
+        or is_namespace_url(url)
     )
 
 
@@ -203,6 +226,7 @@ def is_safe_display_domain(domain: Optional[str]) -> bool:
         and value not in GENERIC_NEWS_DOMAINS
         and value not in GOOGLE_MEDIA_HOSTS
         and value not in BLOCKED_FINAL_HOSTS
+        and value not in BLOCKED_NAMESPACE_HOSTS
         and not any(value == suffix or value.endswith(f".{suffix}") for suffix in GOOGLE_MEDIA_HOST_SUFFIXES)
         and not any(value == suffix or value.endswith(f".{suffix}") for suffix in BLOCKED_FINAL_HOST_SUFFIXES)
         and not bool({label for label in value.split(".") if label} & STATIC_HOST_LABELS)

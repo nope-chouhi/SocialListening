@@ -599,6 +599,9 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
             summary["rss"]["called"] = True
             summary["rss"]["status"] = "RUNNING"
 
+        # Mark Serper/Tavily chain as running
+        summary["adapters_ready"].append("search_chain")
+        summary["search_chain"] = {"status": "RUNNING", "called": True, "providers": {}}
         commit_summary()
 
         # Launch all adapters in parallel
@@ -613,8 +616,8 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
                     local_db = SessionLocal()
                     try:
                         res = run_rss_collector(
-                            local_db, 
-                            ad_hoc_keywords=keyword_texts, 
+                            local_db,
+                            ad_hoc_keywords=keyword_texts,
                             ad_hoc_project_id=project_id
                         )
                         summary["rss"]["raw_results_count"] = res.get("items_seen", 0)
@@ -631,43 +634,76 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
                     summary["rss"]["status"] = "ERROR"
                     return []
 
+            def run_search_chain_adapter():
+                """Run Serper -> Tavily -> RSS provider chain for new-style search results."""
+                try:
+                    from app.services.search_providers import run_provider_chain
+                    from app.core.database import SessionLocal
+                    chain_results, chain_summaries = run_provider_chain(
+                        keywords=keyword_texts,
+                        project_id=project_id,
+                        db_session_factory=SessionLocal,
+                        max_results=settings.SEARCH_PROVIDER_MAX_RESULTS,
+                        timeout_s=settings.SEARCH_PROVIDER_TIMEOUT_SECONDS,
+                    )
+                    summary["search_chain"]["providers"] = chain_summaries
+                    summary["search_chain"]["status"] = "COMPLETED"
+                    # Wrap results with adapter tag for downstream processing
+                    return [("search_chain", r) for r in chain_results]
+                except Exception as e:
+                    summary["errors"].append(f"SearchChain: {e}")
+                    summary["search_chain"]["error"] = str(e)
+                    summary["search_chain"]["status"] = "ERROR"
+                    return []
+
             futures = {
                 executor.submit(run_web_adapter): "web",
                 executor.submit(run_youtube_adapter): "youtube",
                 executor.submit(run_social_adapter): "social",
                 executor.submit(run_rss_adapter): "rss",
+                executor.submit(run_search_chain_adapter): "search_chain",
             }
             for future in as_completed(futures):
                 name = futures[future]
                 try:
                     results = future.result(timeout=110)
                     all_raw_results.extend(results)
-                    if not summary[name].get("error"):
+                    if name not in ("rss", "search_chain") and not summary[name].get("error"):
                         summary[name]["status"] = "COMPLETED"
                 except Exception as e:
                     summary["errors"].append(f"{name}: {e}")
-                    summary[name]["error"] = str(e)
-                    summary[name]["status"] = "ERROR"
+                    if name in summary:
+                        summary[name]["error"] = str(e)
+                        summary[name]["status"] = "ERROR"
+
 
         # ── WRITE ALL RESULTS TO DB (single-threaded, safe) ──────────────────
         for (adapter_name, r) in all_raw_results:
-            raw_url = r.get("canonical_url") or r.get("url")
-            url = clean_final_url(raw_url)
-            title = str(r.get("title") or "")
-            snippet = str(r.get("snippet") if adapter_name == "web" else r.get("content") or "")
+            # search_chain results are pre-validated; use url directly
+            if adapter_name == "search_chain":
+                url = r.get("url")  # already passed clean_final_url in provider
+                title = str(r.get("title") or "")
+                snippet = str(r.get("snippet") or "")
+            else:
+                raw_url = r.get("canonical_url") or r.get("url")
+                url = clean_final_url(raw_url)
+                title = str(r.get("title") or "")
+                snippet = str(r.get("snippet") if adapter_name == "web" else r.get("content") or "")
 
-            # Count raw
+            # Count raw (only for legacy adapters)
             if adapter_name == "web":
                 summary["serpapi_result_count"] += 1
                 summary["web"]["raw_results_count"] += 1
             elif adapter_name == "youtube":
                 summary["youtube"]["raw_results_count"] += 1
-            else:
+            elif adapter_name == "social":
                 summary["social"]["raw_results_count"] += 1
+            # search_chain counts tracked in chain_summaries
 
             if not url:
-                if raw_url or r.get("original_url"):
-                    summary[adapter_name]["invalid_links_skipped"] += 1
+                if adapter_name != "search_chain" and (r.get("url") or r.get("original_url")):
+                    if adapter_name in summary and isinstance(summary.get(adapter_name), dict):
+                        summary[adapter_name]["invalid_links_skipped"] = summary[adapter_name].get("invalid_links_skipped", 0) + 1
                     summary["invalid_links_skipped"] += 1
                 continue
 
@@ -714,6 +750,11 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
                 src_type, platform = "video", "youtube"
                 parsed_domain = "youtube.com"
                 author = (r.get("author") or "")[:500]
+                published_at = r.get("published_at")
+            elif adapter_name == "search_chain":
+                src_type = "news"
+                platform = r.get("provider", "web")
+                author = ""
                 published_at = r.get("published_at")
             else:
                 src_type = r.get("source_type", "social")
