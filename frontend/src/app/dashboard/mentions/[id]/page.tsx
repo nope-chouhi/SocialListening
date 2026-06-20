@@ -4,23 +4,9 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, AlertTriangle, FileText, ExternalLink, Activity } from 'lucide-react';
 import { mentions as mentionsApi, alerts as alertsApi, incidents as incidentsApi, reputation } from '@/lib/api';
+import { getSafeVisitUrl } from '@/lib/visit-url';
 import toast, { Toaster } from 'react-hot-toast';
 import ExecutiveBriefModal from '@/components/dashboard/ExecutiveBriefModal';
-
-function isBlockedVisitHost(hostname: string): boolean {
-  const host = hostname.toLowerCase();
-  return (
-    host === 'news.google.com' ||
-    host === 'www.news.google.com' ||
-    host === 'lh3.googleusercontent.com' ||
-    host === 'googleusercontent.com' ||
-    host.endsWith('.googleusercontent.com')
-  );
-}
-
-function isMediaFilePath(pathname: string): boolean {
-  return /\.(jpg|jpeg|png|gif|webp|bmp|svg|avif|ico)$/i.test(pathname);
-}
 
 function keywordToText(keyword: any): string | null {
   if (typeof keyword === 'string') return keyword.trim() || null;
@@ -130,16 +116,7 @@ export default function MentionDetailPage() {
   };
 
   const getSafeUrl = (url: string | null | undefined) => {
-    const trimmed = (url || '').trim();
-    if (!trimmed || trimmed.startsWith('/')) return '';
-    try {
-      const parsed = new URL(trimmed);
-      if (!['http:', 'https:'].includes(parsed.protocol)) return '';
-      if (isBlockedVisitHost(parsed.hostname) || isMediaFilePath(parsed.pathname)) return '';
-      return parsed.href;
-    } catch {
-      return '';
-    }
+    return getSafeVisitUrl(url);
   };
 
   if (loading) {

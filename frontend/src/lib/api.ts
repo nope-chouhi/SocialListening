@@ -56,10 +56,11 @@ api.interceptors.response.use(
     // Global 401 handler: clear token and redirect to login once.
     // For ALL 401 errors, swallow the rejection so downstream .catch() / toast.error
     // never fires — the user is about to be redirected anyway.
-    if (status === 401) {
+    if (status === 401 || status === 403) {
       if (!isRedirectingToLogin) {
         isRedirectingToLogin = true;
         localStorage.removeItem('access_token');
+        localStorage.removeItem('cached_user');
         // Use window.location for hard redirect — works from any context
         if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
           console.warn('[API] Token expired/invalid — redirecting to login');
@@ -76,7 +77,7 @@ api.interceptors.response.use(
 
 /** Check if an error is a 401 auth error — these are handled globally, so skip toasting. */
 export function isAuthError(error: any): boolean {
-  return error?.response?.status === 401;
+  return error?.response?.status === 401 || error?.response?.status === 403;
 }
 
 /** Extract readable error message from axios error, including HTTP status. */
@@ -176,6 +177,7 @@ export const auth = {
   },
   logout: () => {
     localStorage.removeItem('access_token');
+    localStorage.removeItem('cached_user');
   },
   getCurrentUser: async () => {
     const response = await api.get('/api/auth/me', {

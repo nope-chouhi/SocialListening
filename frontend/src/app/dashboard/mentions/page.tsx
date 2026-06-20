@@ -21,6 +21,7 @@ import { useDialog } from '@/components/ui/Dialog';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
 } from 'recharts';
+import { getSafeVisitUrl } from '@/lib/visit-url';
 
 /* ═══════════════════════════════════════════════════════════════════════════
    TYPE DEFINITIONS
@@ -211,67 +212,7 @@ function highlightText(text: string, query: string): React.ReactNode {
 }
 
 function getSafeUrl(url: string | null | undefined): string | null {
-  if (!url) return null;
-  const tUrl = url.trim();
-  if (tUrl === '') return null;
-  
-  const lowerUrl = tUrl.toLowerCase();
-  
-  // Block dangerous schemes
-  if (lowerUrl.startsWith('javascript:') || 
-      lowerUrl.startsWith('data:') || 
-      lowerUrl.startsWith('file:') || 
-      lowerUrl.startsWith('vbscript:')) {
-    return null;
-  }
-
-  try {
-    const parsed = new URL(tUrl);
-    if (isBlockedVisitHost(parsed.hostname) || isMediaFilePath(parsed.pathname)) {
-      return null;
-    }
-  } catch {}
-  
-  // Accept explicitly allowed schemes
-  if (lowerUrl.startsWith('http://') || lowerUrl.startsWith('https://')) {
-    return tUrl;
-  }
-  
-  // Try parsing as URL to catch weird cases like jAvascript:
-  try {
-    const parsed = new URL(tUrl);
-    if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
-      return parsed.href;
-    }
-    return null;
-  } catch (e) {
-    // If URL parse fails but it looks like a domain without scheme, add https://
-    if (/^[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+/.test(tUrl)) {
-      try {
-        const normalized = new URL(`https://${tUrl}`);
-        if (isBlockedVisitHost(normalized.hostname) || isMediaFilePath(normalized.pathname)) {
-          return null;
-        }
-        return normalized.href;
-      } catch {}
-    }
-  }
-  return null;
-}
-
-function isBlockedVisitHost(hostname: string): boolean {
-  const host = hostname.toLowerCase();
-  return (
-    host === 'news.google.com' ||
-    host === 'www.news.google.com' ||
-    host === 'lh3.googleusercontent.com' ||
-    host === 'googleusercontent.com' ||
-    host.endsWith('.googleusercontent.com')
-  );
-}
-
-function isMediaFilePath(pathname: string): boolean {
-  return /\.(jpg|jpeg|png|gif|webp|bmp|svg|avif|ico)$/i.test(pathname);
+  return getSafeVisitUrl(url) || null;
 }
 
 function keywordToText(keyword: any): string | null {
