@@ -1,6 +1,6 @@
 import axios, { AxiosError } from 'axios';
 
-const configuredApiUrl = (process.env.NEXT_PUBLIC_API_URL || '').trim();
+const configuredApiUrl = (process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || '').trim();
 const rawApiUrl = configuredApiUrl || (process.env.NODE_ENV === 'development' ? 'http://localhost:8000' : '');
 const BACKEND_URL = rawApiUrl.endsWith('/') ? rawApiUrl.slice(0, -1) : rawApiUrl;
 

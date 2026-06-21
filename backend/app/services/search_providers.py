@@ -384,6 +384,9 @@ def run_provider_chain(
                     s = summaries[prov]
                     s["candidate_urls_count"] = s.get("candidate_urls_count", 0) + 1
 
+                    if prov_summary.get("was_recovered_from_google_redirect"):
+                        s["recovered_publisher_url_count"] = s.get("recovered_publisher_url_count", 0) + 1
+
                     if prov_summary.get("blocked_reason"):
                         s["invalid_url_skipped"] = s.get("invalid_url_skipped", 0) + 1
                         br = prov_summary["blocked_reason"]
