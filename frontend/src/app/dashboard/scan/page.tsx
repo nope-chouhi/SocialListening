@@ -20,6 +20,13 @@ interface WorkerStatus {
   due_sources: number;
   running_jobs: number;
   last_error: string | null;
+  is_locked?: boolean;
+  scan_interval_minutes?: number;
+  last_started_at?: string | null;
+  last_finished_at?: string | null;
+  last_success_at?: string | null;
+  last_scan_count?: number;
+  skipped_due_to_lock_count?: number;
 }
 
 interface CrawlJob {
@@ -572,6 +579,18 @@ export default function ScanPage() {
             <span>QUEUE: <strong>{workerStatus.due_sources}</strong></span>
             <span className="opacity-30">|</span>
             <span>ACTIVE_JOBS: <strong>{workerStatus.running_jobs}</strong></span>
+            {workerStatus.last_scan_count !== undefined && workerStatus.last_scan_count > 0 && (
+              <>
+                <span className="opacity-30">|</span>
+                <span>LAST_SCAN: <strong>{workerStatus.last_scan_count} items</strong></span>
+              </>
+            )}
+            {workerStatus.last_success_at && (
+              <>
+                <span className="opacity-30">|</span>
+                <span>SUCCESS: <strong>{formatDate(workerStatus.last_success_at)}</strong></span>
+              </>
+            )}
             {workerStatus.last_worker_heartbeat && (
               <>
                 <span className="opacity-30">|</span>

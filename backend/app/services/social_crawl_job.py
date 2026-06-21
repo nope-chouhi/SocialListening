@@ -196,40 +196,56 @@ def run_social_crawl_sync():
     """Synchronous entry for APScheduler."""
     db = SessionLocal()
     try:
-        keywords = db.execute(
-            select(Keyword.keyword).where(Keyword.is_active == True)
-        ).scalars().all()
-        if not keywords:
-            logger.info("[SocialCrawl] No active keywords")
-            return
+        from app.services.scheduler_service import scheduler_lock
+        with scheduler_lock(db, 1002, "run_social_crawl_sync") as acquired:
+            if not acquired:
+                return
 
-        keyword_list = list({k.strip() for k in keywords if k and k.strip()})[:20]
-        platforms = DEFAULT_PLATFORMS.copy()
-        from app.core.config import settings
-        if settings.TWITTER_BEARER_TOKEN:
-            platforms.insert(0, "twitter")
+            keywords = db.execute(
+                select(Keyword.keyword).where(Keyword.is_active == True)
+            ).scalars().all()
+            if not keywords:
+                logger.info("[SocialCrawl] No active keywords")
+                return
 
-        logger.info(f"[SocialCrawl] Crawling {len(keyword_list)} keywords on {platforms}")
+            keyword_list = list({k.strip() for k in keywords if k and k.strip()})[:20]
+            platforms = DEFAULT_PLATFORMS.copy()
+            from app.core.config import settings
+            if settings.TWITTER_BEARER_TOKEN:
+                platforms.insert(0, "twitter")
 
-        raw = asyncio.run(social_crawler_service.crawl_keywords(keyword_list, platforms))
-        if not raw:
-            logger.warning("No active crawl provider configured or all providers failed/returned 0 results.")
-            return
+            logger.info(f"[SocialCrawl] Crawling {len(keyword_list)} keywords on {platforms}")
 
-        success_count, error_count, errors, created = _persist_mentions(db, raw)
-        logger.info(f"[SocialCrawl] {success_count} inserted, {error_count} failed from {len(raw)} fetched")
+            raw = asyncio.run(social_crawler_service.crawl_keywords(keyword_list, platforms))
+            if not raw:
+                logger.warning("No active crawl provider configured or all providers failed/returned 0 results.")
+                return
 
-        if created:
+            success_count, error_count, errors, created = _persist_mentions(db, raw)
+            logger.info(f"[SocialCrawl] {success_count} inserted, {error_count} failed from {len(raw)} fetched")
+
+            if created:
+                try:
+                    from app.services.realtime_manager import realtime_manager
+                    loop = asyncio.new_event_loop()
+                    for item in created:
+                        loop.run_until_complete(
+                            realtime_manager.broadcast("new-mention", item)
+                        )
+                    loop.close()
+                except Exception as e:
+                    logger.warning(f"[SocialCrawl] WebSocket broadcast failed: {e}")
+
+            # Update metrics
             try:
-                from app.services.realtime_manager import realtime_manager
-                loop = asyncio.new_event_loop()
-                for item in created:
-                    loop.run_until_complete(
-                        realtime_manager.broadcast("new-mention", item)
-                    )
-                loop.close()
-            except Exception as e:
-                logger.warning(f"[SocialCrawl] WebSocket broadcast failed: {e}")
+                from app.models.system_settings import WorkerStatus
+                status = db.query(WorkerStatus).first()
+                if status:
+                    status.last_success_at = datetime.now(timezone.utc)
+                    status.last_scan_count = (status.last_scan_count or 0) + success_count
+                    db.commit()
+            except:
+                db.rollback()
 
     except Exception as e:
         logger.error(f"[SocialCrawl] Failed: {e}")

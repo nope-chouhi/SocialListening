@@ -75,6 +75,20 @@ class WorkerStatus(Base):
     running_jobs = Column(Integer, default=0)
     last_error = Column(Text, nullable=True)
     
+    # Locking & Concurrency
+    is_locked = Column(Boolean, default=False, nullable=False)
+    locked_at = Column(DateTime(timezone=True), nullable=True)
+    
+    # Observability Metrics
+    scan_interval_minutes = Column(Integer, default=15, nullable=False)
+    last_started_at = Column(DateTime(timezone=True), nullable=True)
+    last_finished_at = Column(DateTime(timezone=True), nullable=True)
+    last_success_at = Column(DateTime(timezone=True), nullable=True)
+    last_error_at = Column(DateTime(timezone=True), nullable=True)
+    last_scan_count = Column(Integer, default=0, nullable=False)
+    next_run_at = Column(DateTime(timezone=True), nullable=True)
+    skipped_due_to_lock_count = Column(Integer, default=0, nullable=False)
+    
     # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
