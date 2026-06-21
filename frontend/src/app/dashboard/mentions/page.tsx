@@ -21,7 +21,7 @@ import { useDialog } from '@/components/ui/Dialog';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
 } from 'recharts';
-import { getSafeVisitUrl } from '@/lib/visit-url';
+import { getSafeVisitUrl, getVisitUrlStatus } from '@/lib/visit-url';
 
 /* ═══════════════════════════════════════════════════════════════════════════
    TYPE DEFINITIONS
@@ -39,6 +39,7 @@ interface MentionItem {
   canonical_url?: string | null;
   original_url?: string | null;
   visit_url_invalid_reason?: string | null;
+  source_integrity_level?: 'high' | 'medium' | 'low' | 'unavailable' | null;
   author: string | null;
   published_at: string | null;
   collected_at: string | null;
@@ -213,6 +214,16 @@ function highlightText(text: string, query: string): React.ReactNode {
 
 function getSafeUrl(url: string | null | undefined): string | null {
   return getSafeVisitUrl(url) || null;
+}
+
+function getSourceIntegrityLabel(level: string | null | undefined): { label: string; color: string; title: string } | null {
+  switch (level) {
+    case 'high': return null; // No badge for high confidence — expected baseline
+    case 'medium': return { label: '\u25cf', color: 'text-yellow-400', title: 'Nguồn: độ tin cậy trung bình' };
+    case 'low': return { label: '\u25cf', color: 'text-orange-500', title: 'Nguồn: độ tin cậy thấp — link có thể không chính xác' };
+    case 'unavailable': return { label: '\u25cf', color: 'text-gray-500', title: 'Nguồn: không xác minh được' };
+    default: return null;
+  }
 }
 
 function keywordToText(keyword: any): string | null {
@@ -1469,25 +1480,46 @@ function MentionsPageContent() {
                   </div>
                 </div>
 
-                {/* Actions Footer */}
+                 {/* Actions Footer */}
                 <div className="bg-gray-50 dark:bg-[#0a0f1c]/50 px-5 py-3 border-t border-gray-100 dark:border-white/5 flex flex-wrap items-center justify-between gap-3">
                    <div className="flex flex-wrap items-center gap-4">
                      {(() => {
-                        const safeUrl = getSafeUrl(mention.canonical_url || mention.url);
-                       if (!safeUrl) {
-                         return (
-                            <div className="flex items-center gap-1.5 text-xs font-bold text-gray-400 cursor-not-allowed group/tooltip relative" title={mention.visit_url_invalid_reason || 'Khong co link bai goc hop le'}>
+                        // Use backend-resolved URL when available; fall back to client-side check
+                        const integrityLevel = mention.source_integrity_level;
+                        const isLowIntegrity = integrityLevel === 'low' || integrityLevel === 'unavailable';
+                        const visitStatus = getVisitUrlStatus(mention.canonical_url || mention.url);
+                        const safeUrl = visitStatus.url;
+                        const integrityBadge = getSourceIntegrityLabel(integrityLevel);
+
+                        if (!safeUrl || mention.visit_url_invalid_reason || isLowIntegrity) {
+                          const tooltipText = mention.visit_url_invalid_reason
+                            ? mention.visit_url_invalid_reason
+                            : isLowIntegrity
+                            ? (integrityLevel === 'low' ? 'Link nguồn độ tin cậy thấp' : 'Không xác minh được nguồn bài')
+                            : 'Không có link bài gốc hợp lệ';
+                          return (
+                            <div className="flex items-center gap-1.5 text-xs font-bold text-gray-400 cursor-not-allowed group/tooltip relative" title={tooltipText}>
                              <Link2Off className="w-3.5 h-3.5" /> Visit
-                             <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover/tooltip:block px-2 py-1 bg-gray-800 text-white text-[10px] rounded whitespace-nowrap z-10">Không có link bài gốc</div>
+                             <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover/tooltip:block px-2 py-1 bg-gray-800 text-white text-[10px] rounded whitespace-nowrap z-10">{tooltipText}</div>
                            </div>
-                         );
-                       }
-                       return (
-                         <button onClick={() => handleVisit(mention)} className="flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-700 transition-colors">
-                           <ExternalLink className="w-3.5 h-3.5" /> Visit
-                         </button>
-                       );
-                     })()}
+                          );
+                        }
+                        return (
+                          <>
+                            <button onClick={() => handleVisit(mention)} className="flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-700 transition-colors">
+                              <ExternalLink className="w-3.5 h-3.5" /> Visit
+                            </button>
+                            {integrityBadge && (
+                              <span
+                                className={`text-[10px] ${integrityBadge.color} cursor-default`}
+                                title={integrityBadge.title}
+                              >
+                                {integrityBadge.label}
+                              </span>
+                            )}
+                          </>
+                        );
+                      })()}
 
                      {mention.is_visited && (
                        <div className="flex items-center gap-1.5 text-[11px] font-medium text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-500/20">
