@@ -109,6 +109,79 @@ BLOCKED_PATH_PATTERNS = (
     "/rss",
 )
 
+# Utility/account/help page path prefixes — not article content
+UTILITY_PATH_PREFIXES = (
+    "/account",
+    "/login",
+    "/signin",
+    "/sign-in",
+    "/logout",
+    "/sign-out",
+    "/register",
+    "/signup",
+    "/sign-up",
+    "/help",
+    "/docs",
+    "/documentation",
+    "/legal",
+    "/license",
+    "/policy",
+    "/privacy",
+    "/terms",
+    "/contact",
+    "/about",
+    "/search",
+    "/tag/",
+    "/tags/",
+    "/category/",
+    "/categories/",
+    "/author/",
+    "/authors/",
+    "/user/",
+    "/users/",
+    "/profile/",
+)
+
+# RSS / Atom feed path segments — not publisher article pages
+FEED_PATH_PATTERNS = (
+    "/feed",
+    "/feeds",
+    "/rss",
+    "/atom",
+    "/sitemap",
+)
+
+# Non-HTTP asset URI schemes to reject explicitly
+_NON_HTTP_ASSET_SCHEMES = frozenset({"sediment", "asset", "data", "blob", "file", "javascript"})
+
+# ---------------------------------------------------------------------------
+# In-memory provenance metrics (counters only, no persistence)
+# ---------------------------------------------------------------------------
+_provenance_metrics: dict = {
+    "source_resolution_success_rate_attempts": 0,
+    "source_resolution_success_rate_successes": 0,
+    "title_domain_consistency_rate_checks": 0,
+    "title_domain_consistency_rate_consistent": 0,
+    "invalid_visit_url_count": 0,
+    "blocked_utility_url_count": 0,
+    "blocked_feed_url_count": 0,
+    "blocked_asset_url_count": 0,
+    "low_confidence_mention_count": 0,
+    "preview_image_match_count": 0,
+    "preview_image_mismatch_count": 0,
+}
+
+
+def record_provenance_metric(key: str, delta: int = 1) -> None:
+    """Increment a named provenance metric counter (best-effort, no locking)."""
+    if key in _provenance_metrics:
+        _provenance_metrics[key] += delta
+
+
+def get_provenance_metrics() -> dict:
+    """Return a snapshot of current provenance metric counters."""
+    return dict(_provenance_metrics)
+
 
 def _trim_url(url: Optional[str]) -> str:
     return str(url or "").strip()
@@ -380,3 +453,91 @@ def extract_google_news_embedded_url(url: Optional[str]) -> Optional[str]:
         if final_url:
             return final_url
     return None
+
+
+# ---------------------------------------------------------------------------
+# Article eligibility helpers
+# ---------------------------------------------------------------------------
+
+def is_non_http_asset_scheme(url: Optional[str]) -> bool:
+    """Return True if the URL uses a non-HTTP asset/data scheme (sediment://, asset://, data:, etc.)."""
+    candidate = _trim_url(url)
+    if not candidate:
+        return False
+    try:
+        scheme = urlparse(candidate).scheme.lower()
+    except Exception:
+        return False
+    return scheme in _NON_HTTP_ASSET_SCHEMES
+
+
+def is_utility_page_url(url: Optional[str]) -> bool:
+    """Return True if the URL path begins with a known utility/account/help path prefix.
+
+    These pages are not publisher article content and should not be stored as mentions
+    or shown with an active Visit button.
+    """
+    candidate = _trim_url(url)
+    if not candidate:
+        return False
+    try:
+        path = urlparse(candidate).path.lower()
+    except Exception:
+        return False
+    if not path or path == "/":
+        return False
+    for prefix in UTILITY_PATH_PREFIXES:
+        if path == prefix.rstrip("/") or path.startswith(prefix):
+            return True
+    return False
+
+
+def is_rss_or_feed_url(url: Optional[str]) -> bool:
+    """Return True if the URL is a feed/RSS/Atom endpoint rather than an article page.
+
+    Checks both path patterns and file extensions (.xml, .rss already in
+    BLOCKED_FILE_EXTENSIONS, so is_media_file_url covers those).
+    """
+    candidate = _trim_url(url)
+    if not candidate:
+        return False
+    try:
+        path = urlparse(candidate).path.lower()
+    except Exception:
+        return False
+    for pattern in FEED_PATH_PATTERNS:
+        # Match /feed, /feeds, /feed.xml, /rss.xml, etc.
+        if path == pattern or path.startswith(pattern + "/") or path.startswith(pattern + "."):
+            return True
+    return False
+
+
+def is_article_eligible_url(url: Optional[str]) -> bool:
+    """Return True only if the URL passes all eligibility checks to be stored as a mention article.
+
+    An ineligible URL is one that is:
+    - A non-HTTP asset scheme (sediment://, data:, blob:, …)
+    - A blocked final URL (Google News discovery, media, tracking, namespace, …)
+    - A utility/account/help/policy page
+    - A feed/RSS/Atom endpoint
+    - A static asset or image file
+
+    This is the single entry-point to check before saving a mention URL.
+    """
+    candidate = _trim_url(url)
+    if not candidate:
+        return False
+    if is_non_http_asset_scheme(candidate):
+        record_provenance_metric("blocked_asset_url_count")
+        return False
+    if not is_http_url(candidate):
+        return False
+    if is_blocked_final_url(candidate):
+        return False
+    if is_utility_page_url(candidate):
+        record_provenance_metric("blocked_utility_url_count")
+        return False
+    if is_rss_or_feed_url(candidate):
+        record_provenance_metric("blocked_feed_url_count")
+        return False
+    return True

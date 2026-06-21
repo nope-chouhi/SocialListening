@@ -28,6 +28,8 @@ from app.services.url_utils import (
     is_tracking_or_static_host,
     has_blocked_path,
     is_safe_display_domain,
+    is_utility_page_url,
+    record_provenance_metric,
 )
 import os
 from math import ceil
@@ -62,6 +64,7 @@ def _mention_link_fields(mention: Mention):
             reason = prov.get("blocked_reason") or "source_rejected_by_quality_gate"
         elif prov.get("source_confidence", 1.0) < 0.4:
             reason = "low_source_confidence"
+            record_provenance_metric("low_confidence_mention_count")
 
     if not reason:
         candidates = []
@@ -82,8 +85,11 @@ def _mention_link_fields(mention: Mention):
 
                 blocked_reason = get_url_blocked_reason(final_cand)
                 if not blocked_reason:
-                    visit_url = final_cand
-                    break
+                    if not is_utility_page_url(final_cand):
+                        visit_url = final_cand
+                        break
+                    else:
+                        blocked_reason = "utility_page_url"
 
     if not visit_url and not reason:
         raw_url = mention.url or mention.canonical_url or mention.original_url
@@ -91,9 +97,11 @@ def _mention_link_fields(mention: Mention):
             recovered = recover_google_redirect_url(raw_url)
             eval_url = recovered if recovered else raw_url
             reason = get_url_blocked_reason(eval_url) or "invalid_visit_url"
+            record_provenance_metric("invalid_visit_url_count")
         else:
             reason = "No Visit URL available"
 
+    # Derive display domain strictly from final_canonical_url, never from raw URL
     display_domain = prov.get("final_domain") if prov.get("final_domain") else domain_from_url(visit_url)
     if not display_domain or not visit_url:
         display_domain = "Không xác định"
@@ -101,6 +109,24 @@ def _mention_link_fields(mention: Mention):
     metadata["visit_url_available"] = bool(visit_url)
     if reason:
         metadata["visit_url_invalid_reason"] = reason
+
+    # Compute source_integrity_level for frontend badge
+    source_confidence = prov.get("source_confidence", None)
+    if prov:
+        if prov.get("is_clickable") and source_confidence is not None and source_confidence >= 0.7:
+            metadata["source_integrity_level"] = "high"
+        elif prov.get("is_clickable") and source_confidence is not None and source_confidence >= 0.4:
+            metadata["source_integrity_level"] = "medium"
+        elif source_confidence is not None and source_confidence < 0.4:
+            metadata["source_integrity_level"] = "low"
+        else:
+            metadata["source_integrity_level"] = "unavailable"
+    else:
+        # No provenance: derive minimal level from URL validity
+        if visit_url and not reason:
+            metadata["source_integrity_level"] = "medium"
+        else:
+            metadata["source_integrity_level"] = "unavailable"
 
     return visit_url, display_domain, metadata, reason
 
@@ -792,6 +818,7 @@ def list_mentions(
                 "canonical_url": visit_url,
                 "original_url": m.original_url,
                 "visit_url_invalid_reason": visit_url_invalid_reason,
+                "source_integrity_level": metadata.get("source_integrity_level", "unavailable"),
                 "verification_status": m.verification_status,
                 "verification_error": m.verification_error,
                 "ai_provider": analysis.ai_provider if analysis else None,

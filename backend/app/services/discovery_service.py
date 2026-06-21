@@ -24,6 +24,9 @@ from app.models.keyword import Keyword, KeywordGroup
 
 logger = logging.getLogger(__name__)
 
+from app.services.url_utils import clean_final_url, domain_from_url, is_article_eligible_url
+from app.services.source_resolution_service import build_provenance_for_direct_crawl
+
 # ─── Helpers ───────────────────────────────────────────────────────────────────
 
 def _normalize_url(url: str) -> str:
@@ -623,6 +626,34 @@ def run_discovery_job(db: Session, job_id: int) -> DiscoveryJob:
 
             is_synthetic = "news.com" in domain
 
+            # Resolve final canonical URL from crawl result — prefer canonical over normalized_url
+            raw_provider_url = sr.get("url") or normalized_url
+            final_url = clean_final_url(
+                crawl_result.get("canonical_url")
+                or crawl_result.get("final_url")
+                or normalized_url
+            ) or normalized_url
+
+            # Verify the final URL is article-eligible
+            if not is_article_eligible_url(final_url):
+                logger.info("Skipping ineligible discovery URL: %s", final_url)
+                job.failed_items = (job.failed_items or 0) + 1
+                continue
+
+            # Derive domain from final canonical URL, not SerpAPI domain
+            final_domain = domain_from_url(final_url) or domain
+
+            # Build source provenance for this mention
+            source_provenance = build_provenance_for_direct_crawl(
+                final_url=final_url,
+                canonical_url=crawl_result.get("canonical_url"),
+                og_url=None,
+                redirect_resolved_url=crawl_result.get("final_url"),
+                is_article_like=len(crawl_result.get("body_text", "")) > 200,
+                schema_url=None,
+                preview_image_url=None,
+            )
+
             mention = Mention(
                 project_id=job.project_id,  # Set project_id from discovery job
                 job_id=job.id,
@@ -630,12 +661,14 @@ def run_discovery_job(db: Session, job_id: int) -> DiscoveryJob:
                 keyword_text=keywords[0] if keywords else None,
                 source_type=source_type,
                 platform=platform,
-                domain=domain,
+                domain=final_domain,
                 title=(crawl_result.get("title") or sr.get("title", ""))[:500] if (crawl_result.get("title") or sr.get("title")) else None,
                 content=mention_content[:10000],
                 snippet=match_result.get("match_context", "")[:1000] if match_result.get("match_context") else sr.get("snippet", "")[:1000],
                 content_hash=content_hash or _generate_content_hash(mention_content),
-                url=normalized_url,
+                url=final_url,
+                canonical_url=crawl_result.get("canonical_url") or final_url,
+                original_url=raw_provider_url if raw_provider_url != final_url else None,
                 author=crawl_result.get("author", ""),
                 published_at=crawl_result.get("published_at") or sr.get("published_at"),
                 collected_at=datetime.now(timezone.utc),
@@ -644,6 +677,7 @@ def run_discovery_job(db: Session, job_id: int) -> DiscoveryJob:
                 country=job.country,
                 meta_data={
                     "search_position": sr.get("position"),
+                    "source_provenance": source_provenance,
                 },
                 extraction_source="crawled_page" if crawl_result.get("success") else "search_result",
                 is_reviewed=False,

@@ -22,7 +22,9 @@ from app.services.url_utils import (
     domain_from_url,
     extract_google_news_embedded_url,
     is_google_news_discovery_url,
+    is_article_eligible_url,
 )
+from app.services.source_resolution_service import build_provenance_for_direct_crawl
 
 logger = logging.getLogger(__name__)
 
@@ -201,6 +203,7 @@ def crawl_rss_feed(url: str) -> Dict:
             if not link and not content:
                 continue  # Skip empty entries
 
+            raw_provider_url = link  # preserve original feed link for provenance
             discovery_url = link if is_google_news_discovery_url(link) else None
             final_url = clean_final_url(link) or extract_google_news_embedded_url(link)
             if discovery_url and not final_url:
@@ -212,12 +215,18 @@ def crawl_rss_feed(url: str) -> Dict:
                 logger.info("Skipping RSS entry with invalid URL: %s", link or url)
                 continue
 
+            # Article eligibility check — reject utility/feed/asset URLs
+            if not is_article_eligible_url(article_url):
+                logger.info("Skipping ineligible RSS article URL: %s", article_url)
+                continue
+
             articles.append({
                 'title': title[:500] if title else None,
                 'content': content,
                 'url': article_url,
                 'canonical_url': article_url,
                 'original_url': discovery_url,
+                'raw_provider_url': raw_provider_url,
                 'domain': domain_from_url(article_url),
                 'author': author[:500] if author else None,
                 'published_at': published_at
@@ -488,20 +497,36 @@ def crawl_source(db: Session, source_id: int, job_id: int = None) -> Dict:
             if not matched_keywords and keywords:
                 continue
 
+            # Build source provenance metadata
+            final_article_url = article.get('url', '')
+            source_provenance = build_provenance_for_direct_crawl(
+                final_url=final_article_url,
+                canonical_url=article.get('canonical_url') or final_article_url,
+                og_url=None,
+                redirect_resolved_url=final_article_url,
+                is_article_like=True,
+                schema_url=None,
+                preview_image_url=None,
+            )
+            meta_data = {
+                "source_provenance": source_provenance,
+            }
+
             # Create mention
             mention = Mention(
                 source_id=source_id,
                 title=article['title'],
                 content=article['content'],
                 content_hash=content_hash,
-                url=article['url'],
-                canonical_url=article.get('canonical_url') or article['url'],
-                original_url=article.get('original_url'),
-                domain=article.get('domain'),
+                url=final_article_url,
+                canonical_url=article.get('canonical_url') or final_article_url,
+                original_url=article.get('original_url') or article.get('raw_provider_url'),
+                domain=article.get('domain') or source_provenance.get('final_domain'),
                 author=article.get('author'),
                 published_at=article.get('published_at'),
                 collected_at=datetime.now(timezone.utc),
                 matched_keywords=matched_keywords if matched_keywords else None,
+                meta_data=meta_data,
                 is_reviewed=False
             )
             db.add(mention)
