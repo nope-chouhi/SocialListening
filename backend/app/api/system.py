@@ -116,5 +116,12 @@ def get_worker_status(
         "due_sources": due_sources,
         "running_jobs": status_record.running_jobs if status_record else 0,
         "last_error": safe_last_error,
-        "ai_system": ai_system_status
+        "ai_system": ai_system_status,
+        "is_locked": status_record.is_locked if status_record else False,
+        "scan_interval_minutes": status_record.scan_interval_minutes if status_record else 15,
+        "last_started_at": status_record.last_started_at.isoformat() if status_record and status_record.last_started_at else None,
+        "last_finished_at": status_record.last_finished_at.isoformat() if status_record and status_record.last_finished_at else None,
+        "last_success_at": status_record.last_success_at.isoformat() if status_record and status_record.last_success_at else None,
+        "last_scan_count": status_record.last_scan_count if status_record else 0,
+        "skipped_due_to_lock_count": status_record.skipped_due_to_lock_count if status_record else 0,
     }

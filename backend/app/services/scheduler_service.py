@@ -10,7 +10,8 @@ from typing import List, Optional
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from sqlalchemy.orm import Session
-from sqlalchemy import select, and_
+from sqlalchemy import select, and_, text
+from contextlib import contextmanager
 
 from app.core.database import SessionLocal
 from app.models.source import Source, CrawlFrequency
@@ -285,18 +286,108 @@ def execute_scheduled_scan(source_id: int):
         db.close()
 
 
+@contextmanager
+def scheduler_lock(db: Session, lock_id: int, lock_name: str):
+    """
+    Context manager for acquiring a Postgres advisory lock with SQLite fallback.
+    Yields True if lock acquired, False otherwise.
+    """
+    is_pg = db.bind.dialect.name == 'postgresql'
+    lock_acquired = False
+    
+    if is_pg:
+        try:
+            res = db.execute(text(f"SELECT pg_try_advisory_lock({lock_id})")).scalar()
+            lock_acquired = bool(res)
+        except Exception as e:
+            logger.error(f"Error acquiring PG lock {lock_id}: {e}")
+            lock_acquired = False
+    else:
+        try:
+            from app.models.system_settings import WorkerStatus
+            status = db.query(WorkerStatus).with_for_update().first()
+            if status:
+                now = datetime.now(timezone.utc)
+                if status.is_locked and status.locked_at and (now - status.locked_at.replace(tzinfo=timezone.utc)).total_seconds() < 1800:
+                    lock_acquired = False
+                else:
+                    status.is_locked = True
+                    status.locked_at = now
+                    db.commit()
+                    lock_acquired = True
+        except Exception as e:
+            db.rollback()
+            logger.error(f"Error acquiring SQLite lock: {e}")
+            lock_acquired = False
+            
+    if not lock_acquired:
+        try:
+            from app.models.system_settings import WorkerStatus
+            status = db.query(WorkerStatus).first()
+            if status:
+                status.skipped_due_to_lock_count = (status.skipped_due_to_lock_count or 0) + 1
+                db.commit()
+        except:
+            db.rollback()
+        logger.info(f"[Worker] Lock {lock_id} ({lock_name}) already held, skipping tick.")
+        yield False
+        return
+
+    try:
+        try:
+            from app.models.system_settings import WorkerStatus
+            status = db.query(WorkerStatus).first()
+            if status:
+                status.last_started_at = datetime.now(timezone.utc)
+                status.running_jobs = (status.running_jobs or 0) + 1
+                db.commit()
+        except:
+            db.rollback()
+            
+        yield True
+    finally:
+        if is_pg:
+            try:
+                db.execute(text(f"SELECT pg_advisory_unlock({lock_id})"))
+                db.commit()
+            except Exception as e:
+                logger.error(f"Error releasing PG lock {lock_id}: {e}")
+        else:
+            try:
+                from app.models.system_settings import WorkerStatus
+                status = db.query(WorkerStatus).first()
+                if status:
+                    status.is_locked = False
+                    status.locked_at = None
+                    db.commit()
+            except:
+                db.rollback()
+                
+        try:
+            from app.models.system_settings import WorkerStatus
+            status = db.query(WorkerStatus).first()
+            if status:
+                status.last_finished_at = datetime.now(timezone.utc)
+                status.running_jobs = max(0, (status.running_jobs or 1) - 1)
+                db.commit()
+        except:
+            db.rollback()
+
 def scan_all_due_sources():
     """
-    Main scheduler loop function.
+    Main scheduler loop function for RSS/Web sources.
     Finds all due sources and triggers scans.
-    Called every 10 minutes by the scheduler.
     """
     global _last_heartbeat, _last_error
 
     db = get_db()
     try:
-        _last_heartbeat = datetime.now(timezone.utc)
-        logger.info(f"[Worker] Checking due sources at {_last_heartbeat.isoformat()}")
+        with scheduler_lock(db, 1001, "scan_all_due_sources") as acquired:
+            if not acquired:
+                return
+
+            _last_heartbeat = datetime.now(timezone.utc)
+            logger.info(f"[Worker] Checking due sources at {_last_heartbeat.isoformat()}")
 
         # Update heartbeat in database for system status
         try:
@@ -332,6 +423,17 @@ def scan_all_due_sources():
 
         logger.info(f"[Worker] Triggered {scans_triggered} scans")
         _last_error = None
+        
+        # Update metrics
+        try:
+            from app.models.system_settings import WorkerStatus
+            status = db.query(WorkerStatus).first()
+            if status:
+                status.last_success_at = datetime.now(timezone.utc)
+                status.last_scan_count = scans_triggered
+                db.commit()
+        except:
+            db.rollback()
 
     except Exception as e:
         _last_error = str(e)
@@ -344,6 +446,82 @@ def scan_all_due_sources():
                 db.commit()
         except:
             pass
+    finally:
+        db.close()
+
+def run_scheduled_discovery_scans():
+    """
+    Scheduled job to automatically run Auto Discovery on active projects.
+    """
+    db = get_db()
+    try:
+        with scheduler_lock(db, 1003, "run_scheduled_discovery_scans") as acquired:
+            if not acquired:
+                return
+
+            from app.models.keyword import KeywordGroup, Keyword
+            from app.services.discovery_service import create_discovery_job, run_discovery_job
+            from app.models.system_settings import WorkerStatus
+            
+            # Find projects (KeywordGroups) that have active keywords
+            # and haven't had a discovery job in the last 24h.
+            active_groups = db.execute(
+                select(KeywordGroup).where(KeywordGroup.is_active == True)
+            ).scalars().all()
+            
+            now = datetime.now(timezone.utc)
+            triggered_count = 0
+            
+            for group in active_groups:
+                has_keywords = db.execute(select(Keyword).where(Keyword.group_id == group.id, Keyword.is_active == True)).first()
+                if not has_keywords:
+                    continue
+                    
+                # Check last discovery job
+                from app.models.discovery import DiscoveryJob
+                last_job = db.execute(
+                    select(DiscoveryJob)
+                    .where(DiscoveryJob.keyword_group_id == group.id)
+                    .order_by(DiscoveryJob.created_at.desc())
+                    .limit(1)
+                ).scalar_one_or_none()
+                
+                if last_job and last_job.created_at:
+                    last_job_time = last_job.created_at.replace(tzinfo=timezone.utc) if last_job.created_at.tzinfo is None else last_job.created_at
+                    if (now - last_job_time).total_seconds() < 86400: # 24 hours
+                        continue
+                        
+                logger.info(f"[AutoDiscovery] Triggering scheduled discovery for project: {group.name}")
+                try:
+                    # Create job mimicking manual creation
+                    req_dict = {
+                        "keyword_group_id": group.id,
+                        "project_id": group.project_id,
+                        "limit": 20,
+                        "date_range": "last_24_hours"
+                    }
+                    job = create_discovery_job(db, group.created_by_user_id, req_dict)
+                    db.commit()
+                    
+                    # Run job
+                    run_discovery_job(db, job.id)
+                    triggered_count += 1
+                except Exception as e:
+                    logger.error(f"[AutoDiscovery] Error for project {group.id}: {e}")
+                    db.rollback()
+                    
+            if triggered_count > 0:
+                try:
+                    status = db.query(WorkerStatus).first()
+                    if status:
+                        status.last_success_at = now
+                        status.last_scan_count = (status.last_scan_count or 0) + triggered_count
+                        db.commit()
+                except:
+                    db.rollback()
+                    
+    except Exception as e:
+        logger.error(f"[AutoDiscovery] ❌ Error in run_scheduled_discovery_scans: {e}")
     finally:
         db.close()
 
@@ -427,6 +605,18 @@ def start_scheduler(is_embedded: bool = False):
                 next_run_time=datetime.now(timezone.utc) + timedelta(seconds=60),
             )
             logger.info(f"Social crawl job scheduled every {social_interval} min")
+
+        # Add scheduled discovery job (every 6 hours)
+        if app_settings.AUTO_DISCOVERY_ENABLED:
+            scheduler.add_job(
+                run_scheduled_discovery_scans,
+                IntervalTrigger(hours=6),
+                id='scheduled_discovery',
+                name='Auto Discovery Crawl',
+                replace_existing=True,
+                next_run_time=datetime.now(timezone.utc) + timedelta(minutes=2)
+            )
+            logger.info("Auto Discovery scheduled job configured (runs every 6h).")
 
         scheduler.start()
         scheduler_started = True
