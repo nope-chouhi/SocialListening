@@ -114,10 +114,41 @@ def test_export_project_summary_xlsx_valid_workbook():
     ws = wb["Summary"]
     found_mentions_row = False
     for row in ws.iter_rows(values_only=True):
-        if row and row[0] == "Total Mentions":
+        if row and row[0] == "Tổng Mentions":
             assert row[1] == 0  # No fake data
             found_mentions_row = True
     assert found_mentions_row
+
+def test_summary_data_endpoint_empty():
+    response = client.get("/api/reports/summary-data")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["metrics"]["total_mentions"] == 0
+    assert data["metrics"]["total_alerts"] == 0
+    assert data["metrics"]["total_incidents"] == 0
+    assert data["metrics"]["sentiment"]["positive"] == 0
+    assert data["selected_mentions"] == []
+    assert data["top_sources"] == []
+
+def test_summary_data_scoping_normal_user():
+    app.dependency_overrides[get_current_active_user] = override_get_normal_user
+    
+    with patch("app.api.reports.apply_tenant_filter") as mock_tenant_filter:
+        # Return a real select statement so subquery() works
+        from sqlalchemy import select
+        from app.models.alert import Alert
+        mock_tenant_filter.return_value = select(Alert)
+        
+        # Test request
+        response = client.get("/api/reports/summary-data")
+        assert response.status_code == 200
+        
+        args, _ = mock_tenant_filter.call_args
+        passed_user = args[2]
+        assert passed_user.id == 2
+        assert passed_user.is_superuser is False
+        
+    app.dependency_overrides[get_current_active_user] = override_get_superuser
 
 def test_export_unsupported_formats():
     assert client.get("/api/reports/mentions/export?format=pdf").status_code == 400

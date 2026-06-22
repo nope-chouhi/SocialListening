@@ -14,6 +14,8 @@ from app.models.user import User
 from app.models.report import Report, ReportType, ReportStatus
 from app.models.mention import Mention, AIAnalysis
 from app.models.alert import Alert
+from app.models.incident import Incident
+from app.models.keyword import KeywordGroup
 from app.schemas.report import (
     ReportCreate, ReportResponse, ReportListResponse
 )
@@ -64,6 +66,108 @@ def get_reports_summary(
             {"name": "News", "count": int(total_mentions * 0.3)},
             {"name": "TikTok", "count": int(total_mentions * 0.2)}
         ]
+    }
+
+@router.get("/summary-data")
+def get_reports_summary_data(
+    project_id: Optional[int] = None,
+    date_from: Optional[datetime] = None,
+    date_to: Optional[datetime] = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Get comprehensive aggregated data for the PDF and Infographic Reports.
+    """
+    # Base queries
+    mentions_query = apply_tenant_filter(select(Mention), Mention, current_user)
+    alerts_query = apply_tenant_filter(select(Alert), Alert, current_user)
+    incidents_query = select(Incident)
+
+    if not current_user.is_superuser:
+        incidents_query = incidents_query.where(Incident.user_id == current_user.id)
+
+    project_name = "Toàn bộ hệ thống"
+    if project_id:
+        project = db.execute(apply_tenant_filter(select(KeywordGroup), KeywordGroup, current_user).where(KeywordGroup.id == project_id)).scalar_one_or_none()
+        if project:
+            project_name = project.name
+        mentions_query = mentions_query.where(Mention.project_id == project_id)
+        alerts_query = alerts_query.where(Alert.project_id == project_id)
+
+    if date_from:
+        mentions_query = mentions_query.where(Mention.published_at >= date_from)
+        alerts_query = alerts_query.where(Alert.created_at >= date_from)
+        incidents_query = incidents_query.where(Incident.created_at >= date_from)
+    if date_to:
+        mentions_query = mentions_query.where(Mention.published_at <= date_to)
+        alerts_query = alerts_query.where(Alert.created_at <= date_to)
+        incidents_query = incidents_query.where(Incident.created_at <= date_to)
+
+    # Execute mentions query
+    mentions = db.execute(mentions_query).scalars().all()
+    mention_ids = [m.id for m in mentions]
+
+    # Get Analyses for sentiment
+    analyses_list = db.execute(
+        select(AIAnalysis).where(AIAnalysis.mention_id.in_(mention_ids))
+    ).scalars().all() if mention_ids else []
+    
+    analyses = {a.mention_id: a for a in analyses_list}
+
+    # Aggregate Sentiment and Sources
+    sentiment_counts = {"positive": 0, "negative": 0, "neutral": 0}
+    source_distribution = {}
+
+    selected_mentions = []
+
+    for m in mentions:
+        # Sentiment
+        analysis = analyses.get(m.id)
+        if analysis:
+            sent_val = analysis.sentiment.value if hasattr(analysis.sentiment, 'value') else analysis.sentiment
+            if sent_val in sentiment_counts:
+                sentiment_counts[sent_val] += 1
+            elif sent_val == 'negative_medium':
+                sentiment_counts["negative"] += 1
+        
+        # Sources
+        st = m.source_type or "unknown"
+        source_distribution[st] = source_distribution.get(st, 0) + 1
+
+        # Selected Mentions (add_to_report)
+        if m.add_to_report:
+            selected_mentions.append({
+                "id": m.id,
+                "title": m.title,
+                "content": m.content,
+                "snippet": m.snippet,
+                "url": m.url,
+                "domain": m.domain,
+                "sentiment": analysis.sentiment if analysis else "neutral",
+                "published_at": m.published_at.isoformat() if m.published_at else None
+            })
+
+    sources_list = [{"name": k.capitalize(), "count": v} for k, v in source_distribution.items()]
+    sources_list.sort(key=lambda x: x["count"], reverse=True)
+
+    # Alerts and Incidents
+    total_alerts = db.execute(select(func.count()).select_from(alerts_query.subquery())).scalar() or 0
+    total_incidents = db.execute(select(func.count()).select_from(incidents_query.subquery())).scalar() or 0
+
+    return {
+        "project_name": project_name,
+        "date_from": date_from.isoformat() if date_from else None,
+        "date_to": date_to.isoformat() if date_to else None,
+        "generated_at": datetime.utcnow().isoformat(),
+        "metrics": {
+            "total_mentions": len(mentions),
+            "sentiment": sentiment_counts,
+            "total_alerts": total_alerts,
+            "total_incidents": total_incidents
+        },
+        "top_sources": sources_list,
+        "selected_mentions": selected_mentions
     }
 
 def _generate_report_inline(report: Report, db: Session, current_user: User = None):
