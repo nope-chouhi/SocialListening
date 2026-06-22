@@ -14,7 +14,7 @@ from app.models.source import Source, SourceGroup, SourceType
 from app.models.mention import Mention, AIAnalysis, SentimentScore
 
 # Alert models
-from app.models.alert import Alert, AlertSeverity, AlertStatus
+from app.models.alert import Alert, AlertSeverity, AlertStatus, NotificationChannel, NotificationDeliveryLog
 
 # Incident models
 from app.models.incident import (
@@ -72,7 +72,7 @@ __all__ = [
     "Keyword", "KeywordGroup", "KeywordType", "LogicOperator",
     "Source", "SourceGroup", "SourceType",
     "Mention", "AIAnalysis", "SentimentScore",
-    "Alert", "AlertSeverity", "AlertStatus",
+    "Alert", "AlertSeverity", "AlertStatus", "NotificationChannel", "NotificationDeliveryLog",
     "Incident", "IncidentStatus", "TakedownStatus", "TakedownPlatform",
     "IncidentLog", "EvidenceFile", "TakedownRequest", "ResponseTemplate",
     "CrawlJob", "ScanSchedule", "CrawlJobStatus",

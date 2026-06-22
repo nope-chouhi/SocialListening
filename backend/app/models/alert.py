@@ -65,3 +65,27 @@ class NotificationChannel(Base):
     # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+
+class NotificationDeliveryLog(Base):
+    __tablename__ = "notification_delivery_logs"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    project_id = Column(Integer, index=True, nullable=True)
+    alert_id = Column(Integer, index=True, nullable=True)
+    incident_id = Column(Integer, index=True, nullable=True)
+    mention_id = Column(Integer, index=True, nullable=True)
+    
+    event_type = Column(String(100), nullable=False) # e.g., 'alert_created', 'incident_assigned', 'mention_high_risk'
+    channel = Column(String(50), nullable=False)     # 'email', 'webhook'
+    destination = Column(String(500), nullable=False) # email address or webhook URL
+    status = Column(String(50), nullable=False)       # 'pending', 'sent', 'failed', 'skipped'
+    
+    attempt_count = Column(Integer, default=1)
+    last_error = Column(Text, nullable=True)
+    response_status_code = Column(Integer, nullable=True)
+    
+    # Timestamps
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+    sent_at = Column(DateTime(timezone=True), nullable=True)
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())

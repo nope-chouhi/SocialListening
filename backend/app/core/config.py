@@ -69,11 +69,15 @@ class Settings(BaseSettings):
     TELEGRAM_CHAT_ID: str = ""
     
     # Email
+    SMTP_ENABLED: bool = False
     SMTP_HOST: str = "smtp.gmail.com"
     SMTP_PORT: int = 587
     SMTP_USER: str = ""
     SMTP_PASSWORD: str = ""
     SMTP_FROM: str = ""
+    
+    # Webhook
+    WEBHOOK_NOTIFICATIONS_ENABLED: bool = False
     
     # SMS (Twilio)
     TWILIO_ACCOUNT_SID: str = ""
