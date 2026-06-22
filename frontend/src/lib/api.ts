@@ -572,6 +572,17 @@ export const reports = {
     const response = await api.get('/api/reports/summary');
     return response.data;
   },
+  summaryData: async (params?: any) => {
+    const response = await api.get('/api/reports/summary-data', { params });
+    return response.data;
+  },
+  exportProjectSummaryXlsx: async (params?: Record<string, unknown>) => {
+    const response = await api.get('/api/reports/project-summary/export', {
+      params: { ...params, format: 'xlsx' },
+      responseType: 'blob',
+    });
+    return response.data as Blob;
+  },
   list: async (params?: any) => {
     const response = await api.get('/api/reports', { params });
     return response.data;

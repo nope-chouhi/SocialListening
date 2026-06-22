@@ -11,6 +11,7 @@ from app.models.mention import Mention, AIAnalysis
 from app.models.alert import Alert
 from app.models.incident import Incident
 from app.models.source import Source
+from app.models.project import Project
 from app.core.tenant import apply_tenant_filter
 from app.models.user import User
 
@@ -182,32 +183,74 @@ class ExportService:
     def export_project_summary_xlsx(db: Session, current_user: User, filters: dict) -> bytes:
         wb = openpyxl.Workbook()
         
+        # Helper for auto-sizing columns
+        def adjust_column_widths(ws):
+            for col in ws.columns:
+                max_length = 0
+                column = col[0].column_letter # Get the column name
+                for cell in col:
+                    try:
+                        if len(str(cell.value)) > max_length:
+                            max_length = len(str(cell.value))
+                    except:
+                        pass
+                adjusted_width = (max_length + 2)
+                # Cap the maximum width to avoid excessively wide columns for long text like content
+                ws.column_dimensions[column].width = min(adjusted_width, 80)
+        
         # SUMMARY SHEET
         ws_summary = wb.active
         ws_summary.title = "Summary"
         
         # MENTIONS SHEET
         ws_mentions = wb.create_sheet("Mentions")
-        mentions_headers = ["ID", "Project ID", "Keyword", "Source", "Platform", "Title", "URL", "Published At"]
+        mentions_headers = ["ID", "Keyword", "Source", "Platform", "Title", "Sentiment", "URL", "Published At"]
         ws_mentions.append(mentions_headers)
         for cell in ws_mentions[1]:
             cell.font = Font(bold=True, color="FFFFFF")
             cell.fill = PatternFill(start_color="3b82f6", end_color="3b82f6", fill_type="solid")
+        ws_mentions.freeze_panes = "A2"
             
         mentions_query = apply_tenant_filter(select(Mention), Mention, current_user)
+        project_name = "Tất cả dự án"
         if filters.get("project_id"):
             mentions_query = mentions_query.where(Mention.project_id == filters["project_id"])
+            project = db.execute(apply_tenant_filter(select(Project), Project, current_user).where(Project.id == filters["project_id"])).scalar_one_or_none()
+            if project:
+                project_name = project.name
+        
         if filters.get("date_from"):
             mentions_query = mentions_query.where(Mention.published_at >= filters["date_from"])
         if filters.get("date_to"):
             mentions_query = mentions_query.where(Mention.published_at <= filters["date_to"])
             
         mentions = db.execute(mentions_query).scalars().all()
+        mention_ids = [m.id for m in mentions]
+        
+        analyses_list = db.execute(
+            select(AIAnalysis).where(AIAnalysis.mention_id.in_(mention_ids))
+        ).scalars().all() if mention_ids else []
+        analyses = {a.mention_id: a for a in analyses_list}
+        
+        sentiment_counts = {"positive": 0, "negative": 0, "neutral": 0}
+
         for m in mentions:
+            analysis = analyses.get(m.id)
+            sentiment_str = "neutral"
+            if analysis:
+                sent_val = analysis.sentiment.value if hasattr(analysis.sentiment, 'value') else analysis.sentiment
+                if sent_val in sentiment_counts:
+                    sentiment_counts[sent_val] += 1
+                elif sent_val == 'negative_medium':
+                    sentiment_counts["negative"] += 1
+                sentiment_str = str(sent_val)
+
             ws_mentions.append([
-                m.id, m.project_id, m.keyword_text, m.source_type, m.platform,
-                m.title, m.url, ExportService._safe_str(m.published_at)
+                m.id, m.keyword_text, m.source_type, m.platform,
+                m.title, sentiment_str, m.url, ExportService._safe_str(m.published_at)
             ])
+            
+        adjust_column_widths(ws_mentions)
             
         # ALERTS SHEET
         ws_alerts = wb.create_sheet("Alerts")
@@ -216,6 +259,7 @@ class ExportService:
         for cell in ws_alerts[1]:
             cell.font = Font(bold=True, color="FFFFFF")
             cell.fill = PatternFill(start_color="ef4444", end_color="ef4444", fill_type="solid")
+        ws_alerts.freeze_panes = "A2"
             
         alerts_query = apply_tenant_filter(select(Alert), Alert, current_user)
         if filters.get("project_id"):
@@ -232,6 +276,8 @@ class ExportService:
                 a.title, ExportService._safe_str(a.created_at)
             ])
             
+        adjust_column_widths(ws_alerts)
+            
         # INCIDENTS SHEET
         ws_incidents = wb.create_sheet("Incidents")
         incidents_headers = ["ID", "Title", "Status", "Owner ID", "Created At"]
@@ -239,6 +285,7 @@ class ExportService:
         for cell in ws_incidents[1]:
             cell.font = Font(bold=True, color="FFFFFF")
             cell.fill = PatternFill(start_color="f59e0b", end_color="f59e0b", fill_type="solid")
+        ws_incidents.freeze_panes = "A2"
             
         incidents_query = select(Incident)
         if not current_user.is_superuser:
@@ -254,19 +301,34 @@ class ExportService:
                 i.id, i.title, ExportService._safe_str(i.status), i.owner_id, ExportService._safe_str(i.created_at)
             ])
             
+        adjust_column_widths(ws_incidents)
+            
         # POPULATE SUMMARY SHEET
-        ws_summary.append(["Project Summary Report"])
-        ws_summary["A1"].font = Font(bold=True, size=16)
-        ws_summary.append(["Generated At:", ExportService._safe_str(datetime.now())])
+        ws_summary.append(["Báo Cáo Tổng Hợp (Project Summary Report)"])
+        ws_summary["A1"].font = Font(bold=True, size=16, color="4f46e5")
+        
         ws_summary.append([])
+        ws_summary.append(["Thông Tin Chung", ""])
+        ws_summary["A3"].font = Font(bold=True, size=12)
         
-        ws_summary.append(["Metric", "Count"])
-        ws_summary["A4"].font = Font(bold=True)
-        ws_summary["B4"].font = Font(bold=True)
+        ws_summary.append(["Dự án", project_name])
+        ws_summary.append(["Từ ngày", filters.get("date_from") or "Tất cả"])
+        ws_summary.append(["Đến ngày", filters.get("date_to") or "Tất cả"])
+        ws_summary.append(["Ngày xuất báo cáo", ExportService._safe_str(datetime.now())])
         
-        ws_summary.append(["Total Mentions", len(mentions)])
-        ws_summary.append(["Total Alerts", len(alerts)])
-        ws_summary.append(["Total Incidents", len(incidents)])
+        ws_summary.append([])
+        ws_summary.append(["Chỉ Số Tổng Quan", "Số Lượng"])
+        ws_summary["A9"].font = Font(bold=True, size=12)
+        ws_summary["B9"].font = Font(bold=True, size=12)
+        
+        ws_summary.append(["Tổng Mentions", len(mentions)])
+        ws_summary.append(["Tích cực (Positive)", sentiment_counts["positive"]])
+        ws_summary.append(["Tiêu cực (Negative)", sentiment_counts["negative"]])
+        ws_summary.append(["Trung lập (Neutral)", sentiment_counts["neutral"]])
+        ws_summary.append(["Tổng số Cảnh báo (Alerts)", len(alerts)])
+        ws_summary.append(["Tổng số Sự cố (Incidents)", len(incidents)])
+        
+        adjust_column_widths(ws_summary)
 
         # Save to memory
         output = io.BytesIO()
