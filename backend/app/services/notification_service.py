@@ -9,23 +9,69 @@ from email.mime.multipart import MIMEMultipart
 from typing import Dict, Optional
 from datetime import datetime
 from sqlalchemy.orm import Session
-from sqlalchemy import select
+from sqlalchemy import select, and_
 
 from app.models.system_settings import EmailSettings, SystemNotificationSettings
+from app.models.alert import NotificationDeliveryLog
+from app.core.config import Settings
 
 
 import os
+
+def has_been_notified(
+    db: Session, event_type: str, channel: str, destination: str,
+    alert_id: Optional[int] = None, incident_id: Optional[int] = None, mention_id: Optional[int] = None
+) -> bool:
+    query = select(NotificationDeliveryLog).where(
+        NotificationDeliveryLog.event_type == event_type,
+        NotificationDeliveryLog.channel == channel,
+        NotificationDeliveryLog.destination == destination,
+        NotificationDeliveryLog.status == 'sent'
+    )
+    if alert_id: query = query.where(NotificationDeliveryLog.alert_id == alert_id)
+    if incident_id: query = query.where(NotificationDeliveryLog.incident_id == incident_id)
+    if mention_id: query = query.where(NotificationDeliveryLog.mention_id == mention_id)
+    return db.execute(query).scalar_one_or_none() is not None
+
+def create_delivery_log(
+    db: Session, event_type: str, channel: str, destination: str,
+    alert_id: Optional[int] = None, incident_id: Optional[int] = None, mention_id: Optional[int] = None,
+    status: str = 'pending', error: Optional[str] = None
+) -> NotificationDeliveryLog:
+    log = NotificationDeliveryLog(
+        event_type=event_type, channel=channel, destination=destination, status=status,
+        alert_id=alert_id, incident_id=incident_id, mention_id=mention_id,
+        last_error=error, sent_at=datetime.utcnow() if status == 'sent' else None
+    )
+    db.add(log)
+    db.commit()
+    db.refresh(log)
+    return log
 
 def send_email_notification(
     db: Session,
     to_email: str,
     subject: str,
     body_html: str,
-    body_text: Optional[str] = None
+    body_text: Optional[str] = None,
+    event_type: Optional[str] = 'email_notification',
+    alert_id: Optional[int] = None,
+    incident_id: Optional[int] = None,
+    mention_id: Optional[int] = None
 ) -> Dict:
     """
-    Send email notification using SMTP
+    Send email notification using SMTP with delivery logging and idempotency
     """
+    settings_cfg = Settings()
+    if not settings_cfg.SMTP_ENABLED:
+        create_delivery_log(db, event_type, 'email', to_email, alert_id, incident_id, mention_id, 'skipped', 'SMTP_ENABLED is false')
+        return {"success": False, "message": "Email notifications are disabled (SMTP_ENABLED=false)"}
+        
+    if has_been_notified(db, event_type, 'email', to_email, alert_id, incident_id, mention_id):
+        return {"success": True, "message": "Already notified"}
+        
+    log = create_delivery_log(db, event_type, 'email', to_email, alert_id, incident_id, mention_id)
+
     env_smtp_host = os.getenv("SMTP_HOST", "").strip()
     env_smtp_port = os.getenv("SMTP_PORT", "").strip()
     env_smtp_user = os.getenv("SMTP_USER", "").strip()
@@ -58,13 +104,24 @@ def send_email_notification(
                 error_data = response.json()
                 error_msg = error_data.get("message", response.text)
                 print(f"[Email-Resend API Error] {error_msg}")
+                log.status = 'failed'
+                log.last_error = f"Resend API Error: {error_msg}"
+                log.response_status_code = response.status_code
+                db.commit()
                 return {"success": False, "message": f"Resend API Error: {error_msg}"}
                 
             print(f"[Email-Resend] ✅ Sent to {to_email}: {subject}")
+            log.status = 'sent'
+            log.sent_at = datetime.utcnow()
+            log.response_status_code = response.status_code
+            db.commit()
             return {"success": True, "message": "Email sent successfully via Resend API"}
             
         except Exception as e:
             print(f"[Email-Resend Exception] {e}")
+            log.status = 'failed'
+            log.last_error = f"Resend HTTP Error: {str(e)}"
+            db.commit()
             return {"success": False, "message": f"Resend HTTP Error: {str(e)}"}
     
     # Fallback to SMTP
@@ -77,6 +134,9 @@ def send_email_notification(
     db_configured = bool(settings and settings.is_configured and all([settings.smtp_host, settings.smtp_port, settings.smtp_username, settings.smtp_password]))
 
     if not use_env and not db_configured:
+        log.status = 'failed'
+        log.last_error = "Email notifications not configured or missing credentials"
+        db.commit()
         return {
             "success": False,
             "message": "Email notifications not configured or missing credentials"
@@ -142,6 +202,10 @@ def send_email_notification(
         
         print(f"[Email] ✅ Sent to {to_email}: {subject}")
         
+        log.status = 'sent'
+        log.sent_at = datetime.utcnow()
+        db.commit()
+        
         return {
             "success": True,
             "message": f"Email sent to {to_email}",
@@ -150,6 +214,9 @@ def send_email_notification(
         
     except Exception as e:
         print(f"[Email] ❌ Failed to send to {to_email}: {e}")
+        log.status = 'failed'
+        log.last_error = f"Failed to send email: {str(e)}"
+        db.commit()
         return {
             "success": False,
             "message": f"Failed to send email: {str(e)}"
@@ -159,10 +226,13 @@ def send_email_notification(
 def send_webhook_notification(
     db: Session,
     event_type: str,
-    data: Dict
+    data: Dict,
+    alert_id: Optional[int] = None,
+    incident_id: Optional[int] = None,
+    mention_id: Optional[int] = None
 ) -> Dict:
     """
-    Send webhook notification via HTTP POST
+    Send webhook notification via HTTP POST with delivery logging
     
     Args:
         db: Database session
@@ -172,22 +242,33 @@ def send_webhook_notification(
     Returns:
         dict with success status and message
     """
+    settings_cfg = Settings()
+    if not settings_cfg.WEBHOOK_NOTIFICATIONS_ENABLED:
+        create_delivery_log(db, event_type, 'webhook', 'disabled', alert_id, incident_id, mention_id, 'skipped', 'WEBHOOK_NOTIFICATIONS_ENABLED is false')
+        return {"success": False, "message": "Webhook notifications are disabled"}
     # Get notification settings
     settings = db.execute(
         select(SystemNotificationSettings).limit(1)
     ).scalar_one_or_none()
     
-    if not settings or not settings.webhook_enabled:
+    if not settings or not settings.system_alerts_enabled:
+        create_delivery_log(db, event_type, 'webhook', 'disabled', alert_id, incident_id, mention_id, 'skipped', 'Webhook notifications not configured or disabled')
         return {
             "success": False,
             "message": "Webhook notifications not configured or disabled"
         }
     
     if not settings.webhook_url:
+        create_delivery_log(db, event_type, 'webhook', 'disabled', alert_id, incident_id, mention_id, 'skipped', 'Webhook URL not configured')
         return {
             "success": False,
             "message": "Webhook URL not configured"
         }
+        
+    if has_been_notified(db, event_type, 'webhook', settings.webhook_url, alert_id, incident_id, mention_id):
+        return {"success": True, "message": "Already notified"}
+        
+    log = create_delivery_log(db, event_type, 'webhook', settings.webhook_url, alert_id, incident_id, mention_id)
     
     try:
         # Prepare payload
@@ -204,8 +285,9 @@ def send_webhook_notification(
         }
         
         # Add custom headers if configured
-        if settings.webhook_headers:
-            headers.update(settings.webhook_headers)
+        # Note: webhook_headers is not defined in SystemNotificationSettings
+        # if settings.webhook_headers:
+        #     headers.update(settings.webhook_headers)
         
         # Send POST request
         response = requests.post(
@@ -218,6 +300,10 @@ def send_webhook_notification(
         response.raise_for_status()
         
         print(f"[Webhook] ✅ Sent {event_type} to {settings.webhook_url}")
+        log.status = 'sent'
+        log.sent_at = datetime.utcnow()
+        log.response_status_code = response.status_code
+        db.commit()
         
         return {
             "success": True,
@@ -228,6 +314,11 @@ def send_webhook_notification(
         
     except Exception as e:
         print(f"[Webhook] ❌ Failed to send {event_type}: {e}")
+        log.status = 'failed'
+        log.last_error = f"Failed to send webhook: {str(e)}"
+        if isinstance(e, requests.exceptions.RequestException) and getattr(e, 'response', None):
+            log.response_status_code = e.response.status_code
+        db.commit()
         return {
             "success": False,
             "message": f"Failed to send webhook: {str(e)}"
@@ -302,7 +393,7 @@ def notify_high_risk_mention(db: Session, mention_id: int, analysis: Dict):
     if email_settings and email_settings.is_configured:
         # Send to configured recipient or default
         recipient = email_settings.from_email or "admin@sociallistening.com"
-        send_email_notification(db, recipient, subject, body_html, body_text)
+        send_email_notification(db, recipient, subject, body_html, body_text, event_type="mention_high_risk", mention_id=mention_id)
     
     # Webhook notification
     webhook_data = {
@@ -317,7 +408,7 @@ def notify_high_risk_mention(db: Session, mention_id: int, analysis: Dict):
         "mention_title": mention.title
     }
     
-    send_webhook_notification(db, "mention_high_risk", webhook_data)
+    send_webhook_notification(db, "mention_high_risk", webhook_data, mention_id=mention_id)
 
 
 def notify_alert_created(db: Session, alert_id: int):
@@ -362,7 +453,7 @@ def notify_alert_created(db: Session, alert_id: int):
     
     if email_settings and email_settings.is_configured:
         recipient = email_settings.from_email or "admin@sociallistening.com"
-        send_email_notification(db, recipient, subject, body_html)
+        send_email_notification(db, recipient, subject, body_html, event_type="alert_created", alert_id=alert_id, mention_id=alert.mention_id)
     
     # Webhook notification
     webhook_data = {
@@ -374,7 +465,7 @@ def notify_alert_created(db: Session, alert_id: int):
         "mention_id": alert.mention_id
     }
     
-    send_webhook_notification(db, "alert_created", webhook_data)
+    send_webhook_notification(db, "alert_created", webhook_data, alert_id=alert_id, mention_id=alert.mention_id)
 
 
 def notify_incident_assigned(db: Session, incident_id: int, assigned_to_id: int):
@@ -418,7 +509,7 @@ def notify_incident_assigned(db: Session, incident_id: int, assigned_to_id: int)
     """
     
     if user.email:
-        send_email_notification(db, user.email, subject, body_html)
+        send_email_notification(db, user.email, subject, body_html, event_type="incident_assigned", incident_id=incident_id)
     
     # Webhook notification
     webhook_data = {
@@ -429,4 +520,4 @@ def notify_incident_assigned(db: Session, incident_id: int, assigned_to_id: int)
         "assigned_to_id": assigned_to_id
     }
     
-    send_webhook_notification(db, "incident_assigned", webhook_data)
+    send_webhook_notification(db, "incident_assigned", webhook_data, incident_id=incident_id)
