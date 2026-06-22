@@ -146,7 +146,7 @@ export default function MetaIntegrationPage() {
 
   return (
     <div className="max-w-4xl mx-auto py-8 px-4">
-      <Link href="/dashboard/sources" className="inline-flex items-center text-sm font-medium text-gray-400 hover:text-white mb-6 transition-colors">
+      <Link href="/dashboard/sources" className="inline-flex items-center text-sm font-medium text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:text-white mb-6 transition-colors">
         <ArrowLeft className="w-4 h-4 mr-2" /> Quay lại Quản lý Nguồn
       </Link>
 
@@ -161,8 +161,8 @@ export default function MetaIntegrationPage() {
               <Instagram className="w-8 h-8 text-fuchsia-400" />
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2 tracking-tight">Kết nối Facebook & Instagram</h1>
-          <p className="text-gray-300 max-w-2xl leading-relaxed">
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2 tracking-tight">Kết nối Facebook & Instagram</h1>
+          <p className="text-slate-700 dark:text-gray-300 max-w-2xl leading-relaxed">
             Nope sử dụng Meta OAuth chính thức để kết nối Facebook Page và Instagram Business/Creator. 
             Hệ thống <strong>không yêu cầu mật khẩu</strong> và chỉ thu thập dữ liệu trong phạm vi quyền bạn cấp.
           </p>
@@ -193,12 +193,12 @@ export default function MetaIntegrationPage() {
               <div className="bg-[#050A15] border border-white/10 rounded-2xl p-6 shadow-inner">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
                   <div>
-                    <h2 className="text-lg font-semibold text-white mb-1">Trạng thái kết nối</h2>
+                    <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-1">Trạng thái kết nối</h2>
                     <div className="flex items-center gap-2">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded text-xs font-bold uppercase tracking-wider ${
                         metaStatus.status === 'active' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                         : metaStatus.status === 'limited' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                        : 'bg-gray-500/10 text-gray-400 border border-gray-500/20'
+                        : 'bg-gray-500/10 text-slate-500 dark:text-gray-400 border border-gray-500/20'
                       }`}>
                         {metaStatus.label}
                       </span>
@@ -236,7 +236,7 @@ export default function MetaIntegrationPage() {
                   </div>
                 </div>
                 
-                <p className="text-sm text-gray-400 mt-2 bg-white/5 p-3 rounded-xl border border-white/5">
+                <p className="text-sm text-slate-500 dark:text-gray-400 mt-2 bg-white/5 p-3 rounded-xl border border-white/5">
                   <Shield className="w-4 h-4 inline-block mr-1 text-gray-500" /> 
                   {metaStatus.message}
                 </p>
@@ -245,7 +245,7 @@ export default function MetaIntegrationPage() {
               {/* Permissions Section */}
               {(metaStatus.status === 'active' || metaStatus.status === 'limited') && (
                 <div className="bg-[#050A15] border border-white/10 rounded-2xl p-6 shadow-inner">
-                  <h2 className="text-lg font-semibold text-white mb-4">Quyền truy cập đã cấp (Scopes)</h2>
+                  <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Quyền truy cập đã cấp (Scopes)</h2>
                   
                   <div className="flex flex-wrap gap-2 mb-4">
                     {metaStatus.granted_scopes.map((scope, idx) => (
@@ -271,8 +271,8 @@ export default function MetaIntegrationPage() {
               {(metaStatus.status === 'active' || metaStatus.status === 'limited') && (
                 <div className="bg-[#050A15] border border-white/10 rounded-2xl p-6 shadow-inner">
                   <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-lg font-semibold text-white">Tài khoản & Trang (Pages)</h2>
-                    <span className="text-xs text-gray-400">Chọn nguồn để thu thập</span>
+                    <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Tài khoản & Trang (Pages)</h2>
+                    <span className="text-xs text-slate-500 dark:text-gray-400">Chọn nguồn để thu thập</span>
                   </div>
                   
                   {metaStatus.accounts.length === 0 ? (
@@ -301,7 +301,7 @@ export default function MetaIntegrationPage() {
                             )}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <h3 className="text-sm font-medium text-white truncate">{acc.name}</h3>
+                            <h3 className="text-sm font-medium text-slate-900 dark:text-white truncate">{acc.name}</h3>
                             <p className="text-xs text-gray-500 uppercase tracking-wider">{acc.account_type}</p>
                           </div>
                           <div>

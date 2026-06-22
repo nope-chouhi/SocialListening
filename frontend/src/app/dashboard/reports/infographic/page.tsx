@@ -8,11 +8,11 @@ export default function InfographicPage() {
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-wide flex items-center gap-2">
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-wide flex items-center gap-2">
           <ImageIcon className="w-6 h-6 text-pink-400" />
           Infographic Generator
         </h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+        <p className="text-sm text-slate-500 dark:text-gray-400 mt-1">
           Xuất báo cáo dạng ảnh/infographic.
         </p>
       </div>
@@ -21,8 +21,8 @@ export default function InfographicPage() {
         <div className="w-20 h-20 bg-pink-500/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-pink-500/20">
           <ImageIcon className="w-10 h-10 text-pink-400" />
         </div>
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-3">Coming Soon</h2>
-        <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto mb-8 text-sm leading-relaxed">
+        <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-3">Coming Soon</h2>
+        <p className="text-slate-500 dark:text-gray-400 max-w-md mx-auto mb-8 text-sm leading-relaxed">
           Tính năng Infographic Generator đang được phát triển. Bạn có thể sử dụng các tính năng xuất dữ liệu hiện có:
         </p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">

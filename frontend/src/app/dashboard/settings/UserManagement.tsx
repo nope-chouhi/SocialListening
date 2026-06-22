@@ -257,7 +257,7 @@ export default function UserManagement() {
             placeholder="Tìm kiếm theo email hoặc tên..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none text-white placeholder-gray-500 transition-shadow"
+            className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-[#1E293B] border border-slate-300 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none text-slate-900 dark:text-white placeholder-gray-500 transition-shadow"
           />
         </div>
 
@@ -265,7 +265,7 @@ export default function UserManagement() {
         <select
           value={filterActive === null ? '' : String(filterActive)}
           onChange={(e) => setFilterActive(e.target.value === '' ? null : e.target.value === 'true')}
-          className="px-4 py-2.5 bg-[#1E293B] border border-gray-700 text-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-shadow"
+          className="px-4 py-2.5 bg-white dark:bg-[#1E293B] border border-slate-300 dark:border-gray-700 text-slate-700 dark:text-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-shadow"
         >
           <option value="">Tất cả trạng thái</option>
           <option value="true">Đang hoạt động</option>
@@ -275,7 +275,7 @@ export default function UserManagement() {
         <select
           value={filterSuperuser === null ? '' : String(filterSuperuser)}
           onChange={(e) => setFilterSuperuser(e.target.value === '' ? null : e.target.value === 'true')}
-          className="px-4 py-2.5 bg-[#1E293B] border border-gray-700 text-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-shadow"
+          className="px-4 py-2.5 bg-white dark:bg-[#1E293B] border border-slate-300 dark:border-gray-700 text-slate-700 dark:text-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-shadow"
         >
           <option value="">Tất cả quyền</option>
           <option value="true">Quản trị viên</option>
@@ -293,35 +293,35 @@ export default function UserManagement() {
       </div>
 
       {/* Users table */}
-      <div className="bg-[#111827] rounded-xl border border-gray-800 overflow-hidden shadow-sm">
+      <div className="bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-gray-800 overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-[#1E293B] border-b border-gray-800">
+            <thead className="bg-white dark:bg-[#1E293B] border-b border-slate-200 dark:border-gray-800">
               <tr>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 dark:text-gray-400 uppercase tracking-wider">
                   Người dùng
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 dark:text-gray-400 uppercase tracking-wider">
                   Quyền
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 dark:text-gray-400 uppercase tracking-wider">
                   Trạng thái
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 dark:text-gray-400 uppercase tracking-wider">
                   Ngày tạo
                 </th>
-                <th className="px-6 py-4 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">
+                <th className="px-6 py-4 text-right text-xs font-medium text-slate-500 dark:text-gray-400 uppercase tracking-wider">
                   Hành động
                 </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-800">
               {users.map((user) => (
-                <tr key={user.id} className="hover:bg-[#1E293B]/50 transition-colors">
+                <tr key={user.id} className="hover:bg-white dark:bg-[#1E293B]/50 transition-colors">
                   <td className="px-6 py-4">
                     <div>
                       <div className="font-medium text-gray-200">{user.full_name || 'N/A'}</div>
-                      <div className="text-sm text-gray-400">{user.email}</div>
+                      <div className="text-sm text-slate-500 dark:text-gray-400">{user.email}</div>
                     </div>
                   </td>
                   <td className="px-6 py-4">
@@ -331,7 +331,7 @@ export default function UserManagement() {
                         Quản trị viên
                       </span>
                     ) : (
-                      <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-[#1E293B] text-gray-400 border border-gray-700">
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-white dark:bg-[#1E293B] text-slate-500 dark:text-gray-400 border border-slate-300 dark:border-gray-700">
                         <UserIcon className="w-3.5 h-3.5 mr-1" />
                         Người dùng
                       </span>
@@ -348,7 +348,7 @@ export default function UserManagement() {
                       </span>
                     )}
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-400">
+                  <td className="px-6 py-4 text-sm text-slate-500 dark:text-gray-400">
                     {new Date(user.created_at).toLocaleDateString('vi-VN')}
                   </td>
                   <td className="px-6 py-4 text-right space-x-2">
@@ -374,7 +374,7 @@ export default function UserManagement() {
                     </button>
                     <button
                       onClick={() => setConfirmToggle({ show: true, user })}
-                      className="inline-flex items-center p-2 text-gray-400 hover:bg-gray-800 rounded-lg transition-colors"
+                      className="inline-flex items-center p-2 text-slate-500 dark:text-gray-400 hover:bg-gray-800 rounded-lg transition-colors"
                       title={user.is_active ? 'Vô hiệu hóa' : 'Kích hoạt'}
                     >
                       <Power className="w-4 h-4" />
@@ -394,7 +394,7 @@ export default function UserManagement() {
         </div>
 
         {users.length === 0 && (
-          <div className="text-center py-12 text-gray-400">
+          <div className="text-center py-12 text-slate-500 dark:text-gray-400">
             Không tìm thấy người dùng nào
           </div>
         )}
@@ -468,7 +468,7 @@ function StatCard({ label, value, color }: { label: string; value: number; color
   const colorClasses = {
     blue: 'bg-blue-500/10 text-blue-400 border border-blue-500/20',
     green: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20',
-    gray: 'bg-[#1E293B] text-gray-400 border border-gray-700',
+    gray: 'bg-white dark:bg-[#1E293B] text-slate-500 dark:text-gray-400 border border-slate-300 dark:border-gray-700',
     purple: 'bg-purple-500/10 text-purple-400 border border-purple-500/20',
     indigo: 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20',
   };
@@ -519,17 +519,17 @@ function UserFormModal({
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="bg-[#111827] border border-gray-800 rounded-2xl shadow-2xl w-full max-w-md mx-4">
-        <div className="flex items-center justify-between p-6 border-b border-gray-800">
-          <h3 className="text-lg font-bold text-white tracking-wide">{title}</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-300 transition-colors">
+      <div className="bg-white dark:bg-[#111827] border border-slate-200 dark:border-gray-800 rounded-2xl shadow-2xl w-full max-w-md mx-4">
+        <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-gray-800">
+          <h3 className="text-lg font-bold text-slate-900 dark:text-white tracking-wide">{title}</h3>
+          <button onClick={onClose} className="text-slate-500 dark:text-gray-400 hover:text-slate-700 dark:text-gray-300 transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
               Email *
             </label>
             <input
@@ -537,13 +537,13 @@ function UserFormModal({
               required
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none text-white placeholder-gray-500"
+              className="w-full px-4 py-2.5 bg-white dark:bg-[#1E293B] border border-slate-300 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none text-slate-900 dark:text-white placeholder-gray-500"
             />
           </div>
 
           {!user && (
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
                 Mật khẩu *
               </label>
               <input
@@ -551,20 +551,20 @@ function UserFormModal({
                 required
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                className="w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none text-white placeholder-gray-500"
+                className="w-full px-4 py-2.5 bg-white dark:bg-[#1E293B] border border-slate-300 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none text-slate-900 dark:text-white placeholder-gray-500"
               />
             </div>
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
               Họ tên
             </label>
             <input
               type="text"
               value={formData.full_name}
               onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-              className="w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none text-white placeholder-gray-500"
+              className="w-full px-4 py-2.5 bg-white dark:bg-[#1E293B] border border-slate-300 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none text-slate-900 dark:text-white placeholder-gray-500"
             />
           </div>
 
@@ -574,9 +574,9 @@ function UserFormModal({
               id="is_superuser"
               checked={formData.is_superuser}
               onChange={(e) => setFormData({ ...formData, is_superuser: e.target.checked })}
-              className="w-4 h-4 text-indigo-600 bg-[#1E293B] border-gray-700 rounded focus:ring-indigo-500 focus:ring-offset-gray-900"
+              className="w-4 h-4 text-indigo-600 bg-white dark:bg-[#1E293B] border-slate-300 dark:border-gray-700 rounded focus:ring-indigo-500 focus:ring-offset-gray-900"
             />
-            <label htmlFor="is_superuser" className="text-sm font-medium text-gray-300">
+            <label htmlFor="is_superuser" className="text-sm font-medium text-slate-700 dark:text-gray-300">
               Quản trị viên (Superuser)
             </label>
           </div>
@@ -587,18 +587,18 @@ function UserFormModal({
               id="is_active"
               checked={formData.is_active}
               onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-              className="w-4 h-4 text-indigo-600 bg-[#1E293B] border-gray-700 rounded focus:ring-indigo-500 focus:ring-offset-gray-900"
+              className="w-4 h-4 text-indigo-600 bg-white dark:bg-[#1E293B] border-slate-300 dark:border-gray-700 rounded focus:ring-indigo-500 focus:ring-offset-gray-900"
             />
-            <label htmlFor="is_active" className="text-sm font-medium text-gray-300">
+            <label htmlFor="is_active" className="text-sm font-medium text-slate-700 dark:text-gray-300">
               Kích hoạt tài khoản
             </label>
           </div>
 
-          <div className="flex gap-3 pt-6 border-t border-gray-800">
+          <div className="flex gap-3 pt-6 border-t border-slate-200 dark:border-gray-800">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2.5 border border-gray-700 bg-[#1E293B] text-gray-300 rounded-xl hover:bg-gray-800 transition-colors font-medium"
+              className="flex-1 px-4 py-2.5 border border-slate-300 dark:border-gray-700 bg-white dark:bg-[#1E293B] text-slate-700 dark:text-gray-300 rounded-xl hover:bg-gray-800 transition-colors font-medium"
             >
               Hủy
             </button>
@@ -642,21 +642,21 @@ function ResetPasswordModal({
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="bg-[#111827] border border-gray-800 rounded-2xl shadow-2xl w-full max-w-md mx-4">
-        <div className="flex items-center justify-between p-6 border-b border-gray-800">
-          <h3 className="text-lg font-bold text-white tracking-wide">Đặt lại mật khẩu</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-300 transition-colors">
+      <div className="bg-white dark:bg-[#111827] border border-slate-200 dark:border-gray-800 rounded-2xl shadow-2xl w-full max-w-md mx-4">
+        <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-gray-800">
+          <h3 className="text-lg font-bold text-slate-900 dark:text-white tracking-wide">Đặt lại mật khẩu</h3>
+          <button onClick={onClose} className="text-slate-500 dark:text-gray-400 hover:text-slate-700 dark:text-gray-300 transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div className="text-sm text-gray-400 mb-6 bg-[#1E293B] p-4 rounded-xl border border-gray-700">
-            Đặt lại mật khẩu cho: <strong className="text-white block mt-1">{user.email}</strong>
+          <div className="text-sm text-slate-500 dark:text-gray-400 mb-6 bg-white dark:bg-[#1E293B] p-4 rounded-xl border border-slate-300 dark:border-gray-700">
+            Đặt lại mật khẩu cho: <strong className="text-slate-900 dark:text-white block mt-1">{user.email}</strong>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
               Mật khẩu mới *
             </label>
             <input
@@ -664,12 +664,12 @@ function ResetPasswordModal({
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none text-white placeholder-gray-500"
+              className="w-full px-4 py-2.5 bg-white dark:bg-[#1E293B] border border-slate-300 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none text-slate-900 dark:text-white placeholder-gray-500"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
               Xác nhận mật khẩu *
             </label>
             <input
@@ -677,15 +677,15 @@ function ResetPasswordModal({
               required
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none text-white placeholder-gray-500"
+              className="w-full px-4 py-2.5 bg-white dark:bg-[#1E293B] border border-slate-300 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none text-slate-900 dark:text-white placeholder-gray-500"
             />
           </div>
 
-          <div className="flex gap-3 pt-6 border-t border-gray-800">
+          <div className="flex gap-3 pt-6 border-t border-slate-200 dark:border-gray-800">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2.5 border border-gray-700 bg-[#1E293B] text-gray-300 rounded-xl hover:bg-gray-800 transition-colors font-medium"
+              className="flex-1 px-4 py-2.5 border border-slate-300 dark:border-gray-700 bg-white dark:bg-[#1E293B] text-slate-700 dark:text-gray-300 rounded-xl hover:bg-gray-800 transition-colors font-medium"
             >
               Hủy
             </button>

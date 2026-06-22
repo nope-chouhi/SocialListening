@@ -155,11 +155,11 @@ export default function IntegrationsPage() {
     <div className="space-y-6 max-w-[1200px] mx-auto">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-wide flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-wide flex items-center gap-2">
             <Link2 className="w-6 h-6 text-indigo-500" />
             Integrations
           </h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+          <p className="text-sm text-slate-500 dark:text-gray-400 mt-1">
             Trạng thái kết nối với từng nguồn dữ liệu và nền tảng mạng xã hội.
           </p>
         </div>
@@ -174,7 +174,7 @@ export default function IntegrationsPage() {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center h-32 text-gray-400">
+        <div className="flex items-center justify-center h-32 text-slate-500 dark:text-gray-400">
           <RefreshCcw className="w-5 h-5 animate-spin mr-2" /> Đang tải trạng thái...
         </div>
       ) : (
@@ -197,8 +197,8 @@ export default function IntegrationsPage() {
                       <intg.icon className={`w-6 h-6 ${intg.color}`} />
                     </div>
                     <div>
-                      <h2 className="font-bold text-gray-900 dark:text-white">{intg.label}</h2>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 max-w-sm">{intg.description}</p>
+                      <h2 className="font-bold text-slate-900 dark:text-white">{intg.label}</h2>
+                      <p className="text-xs text-slate-500 dark:text-gray-400 mt-0.5 max-w-sm">{intg.description}</p>
                     </div>
                   </div>
                   <span className={`shrink-0 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg border ${statusClass}`}>

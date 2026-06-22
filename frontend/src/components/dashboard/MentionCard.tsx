@@ -83,17 +83,17 @@ export default function MentionCard({ mention, onActionComplete, userRole }: Men
   };
 
   return (
-    <div className="bg-[#1E293B] rounded-xl shadow-sm border border-gray-800 p-4 hover:shadow-md hover:border-gray-700 transition-all">
+    <div className="bg-white dark:bg-[#1E293B] rounded-xl shadow-sm border border-slate-200 dark:border-gray-800 p-4 hover:shadow-md hover:border-slate-300 dark:border-gray-700 transition-all">
       <div className="flex items-start justify-between">
         <div className="flex items-center space-x-3">
-          <div className="p-2.5 bg-[#111827] border border-gray-700/50 rounded-xl shadow-sm">
+          <div className="p-2.5 bg-white dark:bg-[#111827] border border-gray-700/50 rounded-xl shadow-sm">
             <SourceIcon type={mention.source_type} className="w-5 h-5 text-indigo-400" />
           </div>
           <div>
-            <h3 className="font-semibold text-white tracking-wide line-clamp-1 pr-2">
+            <h3 className="font-semibold text-slate-900 dark:text-white tracking-wide line-clamp-1 pr-2">
               {mention.title || 'Không có tiêu đề'}
             </h3>
-            <div className="flex items-center text-xs text-gray-400 mt-1.5 space-x-2 font-medium">
+            <div className="flex items-center text-xs text-slate-500 dark:text-gray-400 mt-1.5 space-x-2 font-medium">
               <span className="text-indigo-400 font-semibold tracking-wide">{getSourceDisplay()}</span>
               <span className="text-gray-700">•</span>
               <span>{new Date(mention.collected_at || mention.published_at).toLocaleString('vi-VN')}</span>
@@ -121,14 +121,14 @@ export default function MentionCard({ mention, onActionComplete, userRole }: Men
       </div>
 
       <div className="mt-4">
-        <p className="text-sm text-gray-300 leading-relaxed line-clamp-2">
+        <p className="text-sm text-slate-700 dark:text-gray-300 leading-relaxed line-clamp-2">
           {mention.content}
         </p>
       </div>
 
       <div className="mt-4 flex flex-wrap gap-2">
         {keywordLabels.length > 0 && (
-          <span className="px-2.5 py-1 bg-[#111827] border border-gray-700 text-gray-400 text-[11px] tracking-wide font-medium rounded-md shadow-sm">
+          <span className="px-2.5 py-1 bg-white dark:bg-[#111827] border border-slate-300 dark:border-gray-700 text-slate-500 dark:text-gray-400 text-[11px] tracking-wide font-medium rounded-md shadow-sm">
             KW: {keywordLabels.join(', ')}
           </span>
         )}
@@ -173,7 +173,7 @@ export default function MentionCard({ mention, onActionComplete, userRole }: Men
                 href={bestUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center px-4 py-2 text-xs font-medium rounded-xl border transition-colors shadow-sm bg-[#111827] text-gray-300 border-gray-700 hover:bg-gray-800"
+                className="inline-flex items-center px-4 py-2 text-xs font-medium rounded-xl border transition-colors shadow-sm bg-white dark:bg-[#111827] text-slate-700 dark:text-gray-300 border-slate-300 dark:border-gray-700 hover:bg-gray-800"
                 title="Nguon bai viet"
               >
                 <ExternalLink className="w-3.5 h-3.5 mr-2" />

@@ -95,13 +95,13 @@ interface Filters {
 
 const SENTIMENT_OPTIONS = [
   { value: 'positive', label: 'Tích cực', dot: 'bg-emerald-500', bg: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' },
-  { value: 'neutral', label: 'Trung lập', dot: 'bg-gray-400', bg: 'bg-gray-500/10 border-gray-500/20 text-gray-400' },
+  { value: 'neutral', label: 'Trung lập', dot: 'bg-gray-400', bg: 'bg-gray-500/10 border-gray-500/20 text-slate-500 dark:text-gray-400' },
   { value: 'negative', label: 'Tiêu cực', dot: 'bg-rose-500', bg: 'bg-rose-500/10 border-rose-500/20 text-rose-400' },
 ];
 
 const SOURCE_TYPE_OPTIONS = [
   { value: 'web', label: 'Web', icon: Globe, color: 'text-blue-400', disabled: false },
-  { value: 'news', label: 'News', icon: FileText, color: 'text-gray-400', disabled: false },
+  { value: 'news', label: 'News', icon: FileText, color: 'text-slate-500 dark:text-gray-400', disabled: false },
   { value: 'blog', label: 'Blogs/Forums', icon: FileText, color: 'text-green-400', disabled: false },
   { value: 'video', label: 'YouTube', icon: Youtube, color: 'text-red-400', disabled: false },
   { value: 'rss', label: 'RSS', icon: Rss, color: 'text-orange-400', disabled: false },
@@ -997,7 +997,7 @@ function MentionsPageContent() {
         { label: 'Tổng mentions', value: sentimentSummary.total || 0, icon: BarChart3, color: 'text-indigo-400', bg: 'bg-indigo-500/10' },
         { label: 'Tích cực', value: sentimentSummary.positive || 0, icon: TrendingUp, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
         { label: 'Tiêu cực', value: sentimentSummary.negative || 0, icon: TrendingDown, color: 'text-rose-400', bg: 'bg-rose-500/10' },
-        { label: 'Trung lập', value: sentimentSummary.neutral || 0, icon: Minus, color: 'text-gray-400', bg: 'bg-gray-500/10' },
+        { label: 'Trung lập', value: sentimentSummary.neutral || 0, icon: Minus, color: 'text-slate-500 dark:text-gray-400', bg: 'bg-gray-500/10' },
       ]
     : [];
 
@@ -1017,7 +1017,7 @@ function MentionsPageContent() {
            <div className="flex flex-wrap items-center justify-between gap-4">
              <div className="flex items-center gap-3">
                <div className="relative" ref={sortRef}>
-                 <button onClick={() => setSortOpen(!sortOpen)} className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-gray-800 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-md transition-colors">
+                 <button onClick={() => setSortOpen(!sortOpen)} className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-gray-800 dark:bg-gray-800 text-slate-700 dark:text-gray-300 text-sm font-medium rounded-md transition-colors">
                    {SORT_OPTIONS.find((o) => o.value === filters.sort_by)?.label || 'By relevance'}
                    <ChevronDown className="w-4 h-4" />
                  </button>
@@ -1030,7 +1030,7 @@ function MentionsPageContent() {
                          className={`w-full text-left px-4 py-2 text-sm font-medium transition-colors ${
                            filters.sort_by === opt.value
                              ? 'bg-blue-50 text-blue-600'
-                             : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-[#0a0f1c] dark:bg-[#0a0f1c]'
+                             : 'text-gray-600 dark:text-slate-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-[#0a0f1c] dark:bg-[#0a0f1c]'
                          }`}
                        >
                          {opt.label}
@@ -1041,7 +1041,7 @@ function MentionsPageContent() {
                </div>
 
                {hasActiveFilters && (
-                 <button onClick={() => { setFilters({ ...filters, sentiment: null, source_type: null, min_risk_score: null, min_influence_score: null }); setPage(1); }} className="flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 dark:text-gray-100 font-medium transition-colors">
+                 <button onClick={() => { setFilters({ ...filters, sentiment: null, source_type: null, min_risk_score: null, min_influence_score: null }); setPage(1); }} className="flex items-center gap-1.5 text-sm text-gray-600 dark:text-slate-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 dark:text-gray-100 font-medium transition-colors">
                    <RefreshCw className="w-3.5 h-3.5" /> Clear filters
                  </button>
                )}
@@ -1052,10 +1052,10 @@ function MentionsPageContent() {
              </div>
 
              <div className="flex items-center gap-3">
-                <button onClick={() => { fetchMentions(); fetchChartData(); }} className="p-2 text-gray-400 hover:text-blue-600 transition-colors">
+                <button onClick={() => { fetchMentions(); fetchChartData(); }} className="p-2 text-slate-500 dark:text-gray-400 hover:text-blue-600 transition-colors">
                   <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
                 </button>
-                <button onClick={handleExportCsv} className="p-2 text-gray-400 hover:text-blue-600 transition-colors">
+                <button onClick={handleExportCsv} className="p-2 text-slate-500 dark:text-gray-400 hover:text-blue-600 transition-colors">
                   <Download className="w-4 h-4" />
                 </button>
                 <button
@@ -1071,10 +1071,10 @@ function MentionsPageContent() {
 
            {/* Scan / Search Status */}
            {(searchTerm || activeScanJobId || scanJobStatus) && (
-             <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-gray-100 dark:border-white/5 text-sm text-gray-600 dark:text-gray-400">
+             <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-gray-100 dark:border-white/5 text-sm text-gray-600 dark:text-slate-500 dark:text-gray-400">
                {searchTerm && (
                  <span className="font-medium">
-                   Tìm thấy <span className="font-bold text-gray-900 dark:text-white">{totalMentions}</span> kết quả cho <span className="text-blue-600 font-bold">'{searchTerm}'</span>
+                   Tìm thấy <span className="font-bold text-slate-900 dark:text-white">{totalMentions}</span> kết quả cho <span className="text-blue-600 font-bold">'{searchTerm}'</span>
                  </span>
                )}
 
@@ -1107,33 +1107,33 @@ function MentionsPageContent() {
             <div className="flex items-center">
               <button
                 onClick={() => setActiveChartTab('reach')}
-                className={`px-4 sm:px-6 py-3 border-b-2 text-sm font-bold ${activeChartTab === 'reach' ? 'border-blue-600 text-gray-900 dark:text-white' : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'}`}
+                className={`px-4 sm:px-6 py-3 border-b-2 text-sm font-bold ${activeChartTab === 'reach' ? 'border-blue-600 text-gray-900 dark:text-white' : 'border-transparent text-gray-600 dark:text-slate-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-slate-700 dark:text-gray-300'}`}
               >
                 Mentions & Reach
               </button>
               <button
                 onClick={() => setActiveChartTab('sentiment')}
-                className={`px-4 sm:px-6 py-3 border-b-2 text-sm font-bold ${activeChartTab === 'sentiment' ? 'border-blue-600 text-gray-900 dark:text-white' : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'}`}
+                className={`px-4 sm:px-6 py-3 border-b-2 text-sm font-bold ${activeChartTab === 'sentiment' ? 'border-blue-600 text-gray-900 dark:text-white' : 'border-transparent text-gray-600 dark:text-slate-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-slate-700 dark:text-gray-300'}`}
               >
                 Cảm xúc
               </button>
             </div>
-            <div className="text-[11px] font-medium text-gray-400 hidden xl:block mr-2 px-4 text-right">
+            <div className="text-[11px] font-medium text-slate-500 dark:text-gray-400 hidden xl:block mr-2 px-4 text-right">
                Xu hướng đề cập trong dự án (Không phụ thuộc bộ lọc hiện tại)
             </div>
             <div className="ml-auto pr-4 flex items-center gap-2">
                <div className="flex bg-gray-100 dark:bg-white/10 p-0.5 rounded-lg border border-gray-200 dark:border-white/10">
                  <button
                    onClick={() => setChartTimeRange('days')}
-                   className={`px-3 py-1 text-xs font-medium rounded shadow-sm ${chartTimeRange === 'days' ? 'bg-white dark:bg-[#050A15] text-gray-800 dark:text-gray-100' : 'text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'}`}
+                   className={`px-3 py-1 text-xs font-medium rounded shadow-sm ${chartTimeRange === 'days' ? 'bg-white dark:bg-[#050A15] text-gray-800 dark:text-gray-100' : 'text-gray-600 dark:text-slate-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-slate-700 dark:text-gray-300'}`}
                  >Days</button>
                  <button
                    onClick={() => setChartTimeRange('weeks')}
-                   className={`px-3 py-1 text-xs font-medium rounded shadow-sm ${chartTimeRange === 'weeks' ? 'bg-white dark:bg-[#050A15] text-gray-800 dark:text-gray-100' : 'text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'}`}
+                   className={`px-3 py-1 text-xs font-medium rounded shadow-sm ${chartTimeRange === 'weeks' ? 'bg-white dark:bg-[#050A15] text-gray-800 dark:text-gray-100' : 'text-gray-600 dark:text-slate-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-slate-700 dark:text-gray-300'}`}
                  >Weeks</button>
                  <button
                    onClick={() => setChartTimeRange('months')}
-                   className={`px-3 py-1 text-xs font-medium rounded shadow-sm ${chartTimeRange === 'months' ? 'bg-white dark:bg-[#050A15] text-gray-800 dark:text-gray-100' : 'text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'}`}
+                   className={`px-3 py-1 text-xs font-medium rounded shadow-sm ${chartTimeRange === 'months' ? 'bg-white dark:bg-[#050A15] text-gray-800 dark:text-gray-100' : 'text-gray-600 dark:text-slate-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-slate-700 dark:text-gray-300'}`}
                  >Months</button>
                </div>
             </div>
@@ -1210,12 +1210,12 @@ function MentionsPageContent() {
 
         {/* Pagination Bar Top */}
         <div className="flex items-center justify-between bg-white dark:bg-[#050A15] px-4 py-3 rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
-           <div className="text-sm font-medium text-gray-600 dark:text-gray-400">
+           <div className="text-sm font-medium text-gray-600 dark:text-slate-500 dark:text-gray-400">
              {loading && !mentionsList.length ? 'Đang tải...' : totalMentions >= 0 ? `${totalMentions.toLocaleString()} kết quả ${searchTerm ? `cho '${searchTerm}'` : ''}` : 'Đang tải...'}
            </div>
 
            {totalPages > 1 && (
-             <div className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400">
+             <div className="flex items-center gap-1 text-sm text-gray-600 dark:text-slate-500 dark:text-gray-400">
                {Array.from({ length: Math.min(5, totalPages) }).map((_, i) => (
                  <button key={i} onClick={() => setPage(i + 1)} className={`w-8 h-8 flex items-center justify-center rounded-md ${page === i + 1 ? 'text-blue-600 font-bold bg-blue-50' : 'hover:bg-gray-100 dark:hover:bg-gray-800 dark:bg-white/10'}`}>
                    {i + 1}
@@ -1254,12 +1254,12 @@ function MentionsPageContent() {
                 {searchState === 'TYPING' || searchState === 'SEARCHING_DB' ? (
                   <>
                     <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-4" />
-                    <p className="text-gray-600 dark:text-gray-400">{searchState === 'TYPING' ? 'Đang nhập từ khóa...' : `Đang tìm kiếm '${searchTerm}'...`}</p>
+                    <p className="text-gray-600 dark:text-slate-500 dark:text-gray-400">{searchState === 'TYPING' ? 'Đang nhập từ khóa...' : `Đang tìm kiếm '${searchTerm}'...`}</p>
                   </>
                 ) : (
                   <>
                     <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
-                      <Search className="w-8 h-8 text-gray-400" />
+                      <Search className="w-8 h-8 text-slate-500 dark:text-gray-400" />
                     </div>
                     {dateRange === '1d' ? (
                        <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Không có kết quả trong hôm nay.</h3>
@@ -1278,7 +1278,7 @@ function MentionsPageContent() {
                          )}
                        </div>
                     ) : (
-                       <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-sm">Có thể dữ liệu nằm ngoài phạm vi thời gian hoặc bộ lọc quá nghiêm ngặt.</p>
+                       <p className="text-gray-600 dark:text-slate-500 dark:text-gray-400 mb-6 max-w-sm">Có thể dữ liệu nằm ngoài phạm vi thời gian hoặc bộ lọc quá nghiêm ngặt.</p>
                     )}
 
                     {['AUTO_SCAN_STARTING', 'AUTO_SCAN_RUNNING'].includes(searchState) && (
@@ -1306,7 +1306,7 @@ function MentionsPageContent() {
                 </div>
               )}
               {searchState === 'TYPING' && !loading && mentionsList.length > 0 && (
-                <div className="sticky top-0 z-10 flex items-center justify-center py-2 text-gray-500 bg-gray-50/90 dark:bg-gray-800/40 backdrop-blur-sm border border-gray-100 dark:border-gray-700 text-sm font-medium gap-2 rounded-lg shadow-sm">
+                <div className="sticky top-0 z-10 flex items-center justify-center py-2 text-gray-500 bg-gray-50/90 dark:bg-gray-800/40 backdrop-blur-sm border border-gray-100 dark:border-slate-300 dark:border-gray-700 text-sm font-medium gap-2 rounded-lg shadow-sm">
                   <Loader2 className="w-4 h-4 animate-spin" /> Đang nhập từ khóa...
                 </div>
               )}
@@ -1375,7 +1375,7 @@ function MentionsPageContent() {
                       mention.source_type?.startsWith('facebook') ? 'bg-blue-100 text-blue-600' :
                       mention.source_type?.startsWith('youtube') || mention.source_type === 'video' ? 'bg-red-100 text-red-600' :
                       mention.source_type === 'tiktok' ? 'bg-black text-white' :
-                      'bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-gray-400'
+                      'bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-slate-500 dark:text-gray-400'
                     }`}>
                       <SourceIcon type={mention.source_type} className="w-6 h-6" />
                     </div>
@@ -1385,7 +1385,7 @@ function MentionsPageContent() {
                       <div className="flex items-start justify-between gap-4 mb-1">
                         <div>
                            <div className="flex items-center gap-2 mb-1">
-                             <h3 className="text-base font-bold text-gray-900 dark:text-white truncate" title={mention.title || mention.author || 'Unknown Author'}>
+                             <h3 className="text-base font-bold text-slate-900 dark:text-white truncate" title={mention.title || mention.author || 'Unknown Author'}>
                                {highlightText(mention.title || mention.author || 'Unknown Author', searchTerm)}
                              </h3>
                              {activeScanJobId && mention.job_id === activeScanJobId && (
@@ -1400,7 +1400,7 @@ function MentionsPageContent() {
                                     Matched in: {mention.matched_in.join(', ')}
                                   </div>
                                 ) : (
-                                  <div className="text-[11px] text-gray-500 dark:text-gray-400 font-medium flex gap-1.5 items-center bg-gray-50 dark:bg-white/5 px-2 py-0.5 rounded-full border border-gray-200 dark:border-white/10">
+                                  <div className="text-[11px] text-slate-500 dark:text-gray-400 font-medium flex gap-1.5 items-center bg-gray-50 dark:bg-white/5 px-2 py-0.5 rounded-full border border-gray-200 dark:border-white/10">
                                     <Search className="w-3 h-3" />
                                     Semantic / AI Match
                                   </div>
@@ -1409,14 +1409,14 @@ function MentionsPageContent() {
                                   <div className={`text-[11px] font-bold px-2 py-0.5 rounded-full uppercase ${
                                     mention.match_strength === 'exact' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' :
                                     mention.match_strength === 'strong' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
-                                    'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
+                                    'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-slate-500 dark:text-gray-400'
                                   }`}>
                                     {mention.match_strength} match
                                   </div>
                                 )}
                               </div>
                             )}
-                           <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400 mt-1">
+                           <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-slate-500 dark:text-gray-400 mt-1">
                               <span>{getMentionSourceLabel(mention)}</span>
                              <span>•</span>
                              <span>Ảnh hưởng: {mention.influence_score ? `${mention.influence_score}/10` : 'Chưa có dữ liệu'}</span>
@@ -1444,7 +1444,7 @@ function MentionsPageContent() {
                         <div className={`px-2 py-0.5 rounded-md text-xs font-bold flex items-center whitespace-nowrap ${
                            mention.sentiment === 'positive' ? 'bg-emerald-50 text-emerald-600' :
                            mention.sentiment === 'negative' ? 'bg-rose-50 text-rose-600' :
-                           'bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-gray-400'
+                           'bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-slate-500 dark:text-gray-400'
                         }`}>
                            <select
                              value={mention.sentiment === 'positive' ? 'positive' : mention.sentiment === 'negative' ? 'negative' : 'neutral'}
@@ -1460,7 +1460,7 @@ function MentionsPageContent() {
                       </div>
 
                       {/* Body */}
-                      <p className="text-sm text-gray-700 dark:text-gray-300 mt-3 line-clamp-3 leading-relaxed">
+                      <p className="text-sm text-slate-700 dark:text-gray-300 mt-3 line-clamp-3 leading-relaxed">
                         {highlightText(mention.snippet || mention.content?.substring(0, 300) || '', searchTerm)}
                       </p>
 
@@ -1476,7 +1476,7 @@ function MentionsPageContent() {
                           // Check if it's a video file (mp4, webm, etc)
                           if (mediaUrl.match(/\.(mp4|webm|ogg)$/i)) {
                             return (
-                              <div className="mt-3 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-black max-w-md">
+                              <div className="mt-3 rounded-lg overflow-hidden border border-gray-200 dark:border-slate-200 dark:border-gray-800 bg-gray-50 dark:bg-black max-w-md">
                                 <video controls className="w-full h-auto max-h-64 object-cover" poster={imageUrl}>
                                   <source src={mediaUrl} type="video/mp4" />
                                   Trình duyệt không hỗ trợ video.
@@ -1488,7 +1488,7 @@ function MentionsPageContent() {
                           // VnE GO mostly uses audio or video.
                           if (mediaUrl.match(/\.(mp3|wav|m4a)$/i)) {
                              return (
-                               <div className="mt-3 p-3 rounded-lg border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-white/5 max-w-md">
+                               <div className="mt-3 p-3 rounded-lg border border-gray-200 dark:border-slate-200 dark:border-gray-800 bg-gray-50 dark:bg-white/5 max-w-md">
                                  <audio controls className="w-full h-10">
                                    <source src={mediaUrl} type="audio/mpeg" />
                                  </audio>
@@ -1499,7 +1499,7 @@ function MentionsPageContent() {
 
                         if (imageUrl) {
                           return (
-                            <div className="mt-3 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-800 max-w-sm">
+                            <div className="mt-3 rounded-lg overflow-hidden border border-gray-200 dark:border-slate-200 dark:border-gray-800 max-w-sm">
                               <img src={imageUrl} alt="Media thumbnail" className="w-full h-auto max-h-48 object-cover" loading="lazy" />
                             </div>
                           );
@@ -1534,9 +1534,9 @@ function MentionsPageContent() {
                             ? (integrityLevel === 'low' ? 'Link nguồn độ tin cậy thấp' : 'Không xác minh được nguồn bài')
                             : 'Không có link bài gốc hợp lệ';
                           return (
-                            <div className="flex items-center gap-1.5 text-xs font-bold text-gray-400 cursor-not-allowed group/tooltip relative" title={tooltipText}>
+                            <div className="flex items-center gap-1.5 text-xs font-bold text-slate-500 dark:text-gray-400 cursor-not-allowed group/tooltip relative" title={tooltipText}>
                              <Link2Off className="w-3.5 h-3.5" /> Visit
-                             <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover/tooltip:block px-2 py-1 bg-gray-800 text-white text-[10px] rounded whitespace-nowrap z-10">{tooltipText}</div>
+                             <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover/tooltip:block px-2 py-1 bg-gray-800 text-slate-900 dark:text-white text-[10px] rounded whitespace-nowrap z-10">{tooltipText}</div>
                            </div>
                           );
                         }
@@ -1608,28 +1608,28 @@ function MentionsPageContent() {
                            handleAction(mention.id, 'tags', () => mentionsApi.updateTags(mention.id, newTags), 'Đã cập nhật tags');
                          }
                        }}
-                       className="flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 dark:text-gray-100"
+                       className="flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-slate-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 dark:text-gray-100"
                      >
                        <Tag className="w-3.5 h-3.5" /> Tags
                      </button>
-                     <button onClick={() => handleToggleAddToReport(mention.id, mention.add_to_report)} className={`flex items-center gap-1.5 text-xs font-medium ${mention.add_to_report ? 'text-indigo-600' : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 dark:text-gray-100'}`}>
+                     <button onClick={() => handleToggleAddToReport(mention.id, mention.add_to_report)} className={`flex items-center gap-1.5 text-xs font-medium ${mention.add_to_report ? 'text-indigo-600' : 'text-gray-600 dark:text-slate-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 dark:text-gray-100'}`}>
                        <FileText className="w-3.5 h-3.5" /> {mention.add_to_report ? 'Remove from PDF' : 'Add to PDF report'}
                      </button>
                      <button
                        disabled={!mention.author}
                        onClick={() => handleAction(mention.id, 'mute_author', () => mentionsApi.muteAuthor(mention.author!, activeProject!.id), `Đã ẩn tác giả ${mention.author}`)}
-                       className="flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 disabled:opacity-50"
+                       className="flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-slate-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 disabled:opacity-50"
                      >
                        <Eye className="w-3.5 h-3.5" /> Mute author
                      </button>
                      <button
                        disabled={!mention.domain}
                        onClick={() => handleAction(mention.id, 'mute_domain', () => mentionsApi.muteDomain(mention.domain!, activeProject!.id), `Đã ẩn nguồn ${mention.domain}`)}
-                       className="flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 disabled:opacity-50"
+                       className="flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-slate-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 disabled:opacity-50"
                      >
                        <Eye className="w-3.5 h-3.5" /> Mute site
                      </button>
-                     <button onClick={() => setDeleteConfirm({ isOpen: true, mentionId: mention.id, mentionTitle: mention.title || '' })} className="flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-red-600">
+                     <button onClick={() => setDeleteConfirm({ isOpen: true, mentionId: mention.id, mentionTitle: mention.title || '' })} className="flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-slate-500 dark:text-gray-400 hover:text-red-600">
                        <Trash2 className="w-3.5 h-3.5" /> Delete
                      </button>
                    </div>
@@ -1650,7 +1650,7 @@ function MentionsPageContent() {
         {/* Pagination Bar Bottom */}
         {totalPages > 1 && (
            <div className="flex items-center justify-end bg-white dark:bg-[#050A15] px-4 py-3 rounded-xl shadow-sm border border-gray-200 dark:border-white/10 mt-2 mb-8">
-             <div className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400">
+             <div className="flex items-center gap-1 text-sm text-gray-600 dark:text-slate-500 dark:text-gray-400">
                {Array.from({ length: Math.min(5, totalPages) }).map((_, i) => (
                  <button key={i} onClick={() => setPage(i + 1)} className={`w-8 h-8 flex items-center justify-center rounded-md ${page === i + 1 ? 'text-blue-600 font-bold bg-blue-50' : 'hover:bg-gray-100 dark:hover:bg-gray-800 dark:bg-white/10'}`}>
                    {i + 1}
@@ -1673,7 +1673,7 @@ function MentionsPageContent() {
         {/* Date Range — Segmented Pill Selector */}
         <div className="bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10 p-4">
            <div className="flex items-center gap-2 mb-3">
-             <Calendar className="w-4 h-4 text-gray-400" />
+             <Calendar className="w-4 h-4 text-slate-500 dark:text-gray-400" />
              <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100">Thời gian</h3>
            </div>
            <div className="flex flex-wrap gap-1.5">
@@ -1690,7 +1690,7 @@ function MentionsPageContent() {
                  className={`px-3 py-1.5 text-xs font-bold rounded-full transition-all duration-150 border whitespace-nowrap ${
                    dateRange === opt.value
                      ? 'bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-900/30 dark:border-blue-700 dark:text-blue-300 shadow-sm'
-                     : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50 dark:bg-transparent dark:border-white/10 dark:text-gray-400 dark:hover:bg-white/5'
+                     : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50 dark:bg-transparent dark:border-white/10 dark:text-slate-500 dark:text-gray-400 dark:hover:bg-white/5'
                  }`}
                >
                  {opt.label}
@@ -1736,31 +1736,31 @@ function MentionsPageContent() {
                    className={`flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 border ${
                      isSelected
                        ? 'bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-700/50 text-blue-700 dark:text-blue-300 shadow-sm'
-                       : count > 0 ? 'bg-white dark:bg-transparent border-gray-200 dark:border-white/10 text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:hover:border-white/20 hover:bg-gray-50 dark:hover:bg-white/5' : 'bg-gray-50 dark:bg-[#0a0f1c] border-transparent text-gray-400 dark:text-gray-600 hover:bg-gray-100 dark:hover:bg-white/5'
+                       : count > 0 ? 'bg-white dark:bg-transparent border-gray-200 dark:border-white/10 text-slate-700 dark:text-gray-300 hover:border-gray-300 dark:hover:border-white/20 hover:bg-gray-50 dark:hover:bg-white/5' : 'bg-gray-50 dark:bg-[#0a0f1c] border-transparent text-slate-500 dark:text-gray-400 dark:text-gray-600 hover:bg-gray-100 dark:hover:bg-white/5'
                    }`}
                  >
                    <div className="flex items-center gap-2">
-                     <src.icon className={`w-4 h-4 shrink-0 ${isSelected ? 'text-blue-600 dark:text-blue-400' : count > 0 ? src.color : 'text-gray-400 dark:text-gray-600'}`} />
+                     <src.icon className={`w-4 h-4 shrink-0 ${isSelected ? 'text-blue-600 dark:text-blue-400' : count > 0 ? src.color : 'text-slate-500 dark:text-gray-400 dark:text-gray-600'}`} />
                      <span className="truncate">{src.label}</span>
                    </div>
-                   <span className={`text-xs font-bold ${isSelected ? 'text-blue-600 dark:text-blue-400' : count > 0 ? 'text-gray-500 dark:text-gray-400' : 'text-gray-400 dark:text-gray-600'}`}>{count.toLocaleString('vi-VN')}</span>
+                   <span className={`text-xs font-bold ${isSelected ? 'text-blue-600 dark:text-blue-400' : count > 0 ? 'text-slate-500 dark:text-gray-400' : 'text-slate-500 dark:text-gray-400 dark:text-gray-600'}`}>{count.toLocaleString('vi-VN')}</span>
                  </button>
                );
              })}
            </div>
            {/* Unavailable / Connector Sources */}
            <div className="mt-4 pt-3 border-t border-gray-100 dark:border-white/5 flex flex-col gap-1.5">
-             <div className="text-[11px] text-gray-400 dark:text-gray-500 font-bold uppercase tracking-wider mb-1 px-1">Nguồn kết nối</div>
+             <div className="text-[11px] text-slate-500 dark:text-gray-400 dark:text-gray-500 font-bold uppercase tracking-wider mb-1 px-1">Nguồn kết nối</div>
              {SOURCE_TYPE_OPTIONS.filter(s => s.disabled).map((src) => (
                  <div
                    key={src.value}
-                   className="flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium border border-transparent bg-gray-50 dark:bg-[#0a0f1c] text-gray-400 dark:text-gray-500"
+                   className="flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium border border-transparent bg-gray-50 dark:bg-[#0a0f1c] text-slate-500 dark:text-gray-400 dark:text-gray-500"
                  >
                    <div className="flex items-center gap-2">
                      <src.icon className="w-4 h-4 shrink-0 opacity-50" />
                      <span className="truncate">{src.label}</span>
                    </div>
-                   <span className="text-[10px] font-bold text-gray-400 bg-gray-200 dark:bg-white/10 dark:text-gray-400 px-1.5 py-0.5 rounded uppercase tracking-wider">
+                   <span className="text-[10px] font-bold text-slate-500 dark:text-gray-400 bg-gray-200 dark:bg-white/10 dark:text-slate-500 dark:text-gray-400 px-1.5 py-0.5 rounded uppercase tracking-wider">
                      {src.msg}
                    </span>
                  </div>
@@ -1772,7 +1772,7 @@ function MentionsPageContent() {
         <div className="bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10 p-4">
            <div className="flex items-center justify-between mb-4">
              <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100 flex items-center gap-1.5">
-               Cảm xúc <Info className="w-3.5 h-3.5 text-gray-400" />
+               Cảm xúc <Info className="w-3.5 h-3.5 text-slate-500 dark:text-gray-400" />
              </h3>
            </div>
            <div className="flex flex-col gap-3">
@@ -1800,9 +1800,9 @@ function MentionsPageContent() {
                     setFilters({...filters, sentiment: next.length ? next.join(',') : null});
                     setPage(1);
                   }}
-                  className="rounded border-gray-300 text-gray-600 dark:text-gray-400 focus:ring-gray-500"
+                  className="rounded border-gray-300 text-gray-600 dark:text-slate-500 dark:text-gray-400 focus:ring-gray-500"
                />
-               <span className="text-xs font-medium text-gray-600 dark:text-gray-400">Neutral</span>
+               <span className="text-xs font-medium text-gray-600 dark:text-slate-500 dark:text-gray-400">Neutral</span>
              </label>
              <label className="flex items-center gap-2 cursor-pointer">
                <input
@@ -1825,7 +1825,7 @@ function MentionsPageContent() {
         <div className="bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10 p-4">
            <div className="flex items-center justify-between mb-4">
              <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100 flex items-center gap-1.5">
-               Điểm ảnh hưởng <Info className="w-3.5 h-3.5 text-gray-400" />
+               Điểm ảnh hưởng <Info className="w-3.5 h-3.5 text-slate-500 dark:text-gray-400" />
              </h3>
            </div>
            <div className="px-2">
@@ -1840,7 +1840,7 @@ function MentionsPageContent() {
                }}
                className="w-full h-1 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer accent-blue-600"
              />
-             <div className="flex justify-between text-[10px] text-gray-600 dark:text-gray-400 mt-2 font-medium">
+             <div className="flex justify-between text-[10px] text-gray-600 dark:text-slate-500 dark:text-gray-400 mt-2 font-medium">
                <span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span>
              </div>
            </div>
@@ -1853,14 +1853,14 @@ function MentionsPageContent() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <div className="bg-white dark:bg-[#050A15] border border-gray-200 dark:border-white/10 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
             <div className="p-6">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Xác nhận quét</h2>
-              <p className="text-gray-600 dark:text-gray-400 mb-6 leading-relaxed">
+              <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Xác nhận quét</h2>
+              <p className="text-gray-600 dark:text-slate-500 dark:text-gray-400 mb-6 leading-relaxed">
                 Từ khóa bạn đang tìm kiếm (<span className="font-bold text-blue-600">{scanConfirm.keyword}</span>) khác với tên project hiện tại (<span className="font-bold">{activeProject?.name}</span>). Bạn có chắc chắn muốn quét từ khóa này vào project hiện tại không?
               </p>
               <div className="flex gap-3 justify-end">
                 <button
                   onClick={() => setScanConfirm({ isOpen: false, keyword: '' })}
-                  className="px-5 py-2 rounded-xl text-sm font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
+                  className="px-5 py-2 rounded-xl text-sm font-bold text-gray-600 dark:text-slate-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
                 >
                   Hủy
                 </button>

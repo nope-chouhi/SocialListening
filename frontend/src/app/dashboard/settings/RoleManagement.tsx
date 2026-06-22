@@ -192,8 +192,8 @@ export default function RoleManagement() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-white tracking-wide">Quản lý vai trò</h2>
-          <p className="text-sm text-gray-400 mt-1">Định nghĩa vai trò và quyền hạn trong hệ thống</p>
+          <h2 className="text-xl font-bold text-slate-900 dark:text-white tracking-wide">Quản lý vai trò</h2>
+          <p className="text-sm text-slate-500 dark:text-gray-400 mt-1">Định nghĩa vai trò và quyền hạn trong hệ thống</p>
         </div>
         <button 
           onClick={handleCreate}
@@ -207,15 +207,15 @@ export default function RoleManagement() {
       {/* Roles Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {roles.map((role) => (
-          <div key={role.id} className={`bg-[#111827] border border-gray-800 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow ${!role.is_active ? 'opacity-50' : ''}`}>
+          <div key={role.id} className={`bg-white dark:bg-[#111827] border border-slate-200 dark:border-gray-800 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow ${!role.is_active ? 'opacity-50' : ''}`}>
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center space-x-4">
                 <div className={`p-3 rounded-xl border ${role.is_system ? 'bg-purple-500/10 border-purple-500/20' : 'bg-indigo-500/10 border-indigo-500/20'}`}>
                   <Shield className={`w-6 h-6 ${role.is_system ? 'text-purple-400' : 'text-indigo-400'}`} />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-white tracking-wide">{role.display_name}</h3>
-                  <p className="text-xs text-gray-400 font-mono mt-0.5">{role.name}</p>
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white tracking-wide">{role.display_name}</h3>
+                  <p className="text-xs text-slate-500 dark:text-gray-400 font-mono mt-0.5">{role.name}</p>
                   {role.is_system && (
                     <span className="inline-block mt-1.5 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-purple-500/10 text-purple-400 border border-purple-500/20 rounded-md">
                       Hệ thống
@@ -244,22 +244,22 @@ export default function RoleManagement() {
             </div>
 
             {role.description && (
-              <p className="text-sm text-gray-400 mb-4">{role.description}</p>
+              <p className="text-sm text-slate-500 dark:text-gray-400 mb-4">{role.description}</p>
             )}
 
             <div>
-              <p className="text-xs font-medium text-gray-300 mb-2.5">Quyền hạn ({role.permissions.length}):</p>
+              <p className="text-xs font-medium text-slate-700 dark:text-gray-300 mb-2.5">Quyền hạn ({role.permissions.length}):</p>
               <div className="flex flex-wrap gap-2">
                 {role.permissions.slice(0, 5).map((perm, idx) => (
                   <span
                     key={idx}
-                    className="px-2.5 py-1 text-xs bg-[#1E293B] text-gray-400 border border-gray-700 rounded-md"
+                    className="px-2.5 py-1 text-xs bg-white dark:bg-[#1E293B] text-slate-500 dark:text-gray-400 border border-slate-300 dark:border-gray-700 rounded-md"
                   >
                     {perm}
                   </span>
                 ))}
                 {role.permissions.length > 5 && (
-                  <span className="px-2.5 py-1 text-xs bg-gray-800 text-gray-400 border border-gray-700 rounded-md">
+                  <span className="px-2.5 py-1 text-xs bg-gray-800 text-slate-500 dark:text-gray-400 border border-slate-300 dark:border-gray-700 rounded-md">
                     +{role.permissions.length - 5} more
                   </span>
                 )}
@@ -272,12 +272,12 @@ export default function RoleManagement() {
       {/* Create/Edit Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
-          <div className="bg-[#111827] border border-gray-800 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-800 flex items-center justify-between">
-              <h3 className="text-lg font-bold text-white tracking-wide">
+          <div className="bg-white dark:bg-[#111827] border border-slate-200 dark:border-gray-800 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-slate-200 dark:border-gray-800 flex items-center justify-between">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white tracking-wide">
                 {editingRole ? `Chỉnh sửa vai trò: ${editingRole.display_name}` : 'Tạo vai trò mới'}
               </h3>
-              <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-300 transition-colors">
+              <button onClick={() => setShowModal(false)} className="text-slate-500 dark:text-gray-400 hover:text-slate-700 dark:text-gray-300 transition-colors">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -292,14 +292,14 @@ export default function RoleManagement() {
               {!editingRole?.is_system && (
                 <>
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                    <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
                       Mã vai trò <span className="text-rose-500">*</span>
                     </label>
                     <input
                       type="text"
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      className="w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none text-white placeholder-gray-500"
+                      className="w-full px-4 py-2.5 bg-white dark:bg-[#1E293B] border border-slate-300 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none text-slate-900 dark:text-white placeholder-gray-500"
                       placeholder="e.g., content_moderator"
                       required
                       disabled={!!editingRole}
@@ -307,25 +307,25 @@ export default function RoleManagement() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                    <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
                       Tên hiển thị <span className="text-rose-500">*</span>
                     </label>
                     <input
                       type="text"
                       value={formData.display_name}
                       onChange={(e) => setFormData({ ...formData, display_name: e.target.value })}
-                      className="w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none text-white placeholder-gray-500"
+                      className="w-full px-4 py-2.5 bg-white dark:bg-[#1E293B] border border-slate-300 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none text-slate-900 dark:text-white placeholder-gray-500"
                       placeholder="e.g., Người kiểm duyệt nội dung"
                       required
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Mô tả</label>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">Mô tả</label>
                     <textarea
                       value={formData.description}
                       onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                      className="w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none text-white placeholder-gray-500"
+                      className="w-full px-4 py-2.5 bg-white dark:bg-[#1E293B] border border-slate-300 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none text-slate-900 dark:text-white placeholder-gray-500"
                       rows={2}
                       placeholder="Mô tả vai trò này..."
                     />
@@ -334,10 +334,10 @@ export default function RoleManagement() {
               )}
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
                   Quyền hạn <span className="text-rose-500">*</span>
                 </label>
-                <div className="border border-gray-800 bg-[#1E293B] rounded-xl p-4 max-h-60 overflow-y-auto">
+                <div className="border border-slate-200 dark:border-gray-800 bg-white dark:bg-[#1E293B] rounded-xl p-4 max-h-60 overflow-y-auto">
                   <div className="grid grid-cols-2 gap-3">
                     {availablePermissions.map((permission) => (
                       <label key={permission} className="flex items-center space-x-3 cursor-pointer hover:bg-gray-800 p-2 rounded-lg transition-colors">
@@ -345,14 +345,14 @@ export default function RoleManagement() {
                           type="checkbox"
                           checked={formData.permissions.includes(permission)}
                           onChange={() => togglePermission(permission)}
-                          className="w-4 h-4 rounded bg-[#111827] border-gray-600 text-indigo-600 focus:ring-indigo-500 focus:ring-offset-gray-900"
+                          className="w-4 h-4 rounded bg-white dark:bg-[#111827] border-gray-600 text-indigo-600 focus:ring-indigo-500 focus:ring-offset-gray-900"
                         />
-                        <span className="text-sm font-medium text-gray-300">{permission}</span>
+                        <span className="text-sm font-medium text-slate-700 dark:text-gray-300">{permission}</span>
                       </label>
                     ))}
                   </div>
                 </div>
-                <p className="text-xs text-gray-400 mt-2 font-medium">
+                <p className="text-xs text-slate-500 dark:text-gray-400 mt-2 font-medium">
                   Đã chọn: <span className="text-indigo-400">{formData.permissions.length}</span> quyền
                 </p>
               </div>
@@ -363,18 +363,18 @@ export default function RoleManagement() {
                   id="is_active"
                   checked={formData.is_active}
                   onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-                  className="w-4 h-4 rounded bg-[#111827] border-gray-600 text-indigo-600 focus:ring-indigo-500 focus:ring-offset-gray-900"
+                  className="w-4 h-4 rounded bg-white dark:bg-[#111827] border-gray-600 text-indigo-600 focus:ring-indigo-500 focus:ring-offset-gray-900"
                 />
-                <label htmlFor="is_active" className="text-sm font-medium text-gray-300">
+                <label htmlFor="is_active" className="text-sm font-medium text-slate-700 dark:text-gray-300">
                   Vai trò đang hoạt động
                 </label>
               </div>
 
-              <div className="flex justify-end space-x-3 pt-6 border-t border-gray-800">
+              <div className="flex justify-end space-x-3 pt-6 border-t border-slate-200 dark:border-gray-800">
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="px-6 py-2.5 bg-[#1E293B] text-gray-300 border border-gray-700 rounded-xl hover:bg-gray-800 transition-colors font-medium"
+                  className="px-6 py-2.5 bg-white dark:bg-[#1E293B] text-slate-700 dark:text-gray-300 border border-slate-300 dark:border-gray-700 rounded-xl hover:bg-gray-800 transition-colors font-medium"
                 >
                   Hủy
                 </button>

@@ -43,7 +43,7 @@ export default function AiCrisisPanel({
 
   if (isLoading) {
     return (
-      <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6">
+      <div className="rounded-2xl border border-gray-200 dark:border-slate-300 dark:border-gray-700 bg-white dark:bg-gray-800 p-6">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-xl animate-pulse" />
           <div className="h-5 w-48 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
@@ -132,10 +132,10 @@ export default function AiCrisisPanel({
               <RiskIcon className={`w-6 h-6 ${config.iconColor}`} />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white">
                 🤖 Phân Tích AI — Cảnh Báo Khủng Hoảng
               </h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
+              <p className="text-xs text-slate-500 dark:text-gray-400">
                 Từ khóa: <span className="font-medium">{keyword}</span>
               </p>
             </div>
@@ -150,7 +150,7 @@ export default function AiCrisisPanel({
             >
               {config.badgeText}
             </span>
-            <span className="text-xs text-gray-500 dark:text-gray-400">
+            <span className="text-xs text-slate-500 dark:text-gray-400">
               {negativeMentionsCount}/{totalMentions} tiêu cực
             </span>
           </div>
@@ -166,7 +166,7 @@ export default function AiCrisisPanel({
         {/* Action Items */}
         {actionItems.length > 0 && (
           <div>
-            <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+            <h4 className="text-sm font-semibold text-slate-700 dark:text-gray-300 mb-3 flex items-center gap-2">
               <span>📋</span> Hành Động Đề Xuất
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -203,7 +203,7 @@ export default function AiCrisisPanel({
                   <h5 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-1">
                     {item.title}
                   </h5>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+                  <p className="text-xs text-slate-500 dark:text-gray-400 leading-relaxed">
                     {item.description}
                   </p>
                 </div>

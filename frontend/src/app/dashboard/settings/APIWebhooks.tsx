@@ -129,8 +129,8 @@ export default function APIWebhooks() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-white tracking-wide">API Keys & Webhooks</h2>
-          <p className="text-sm text-gray-400 mt-1">Quản lý API keys để truy cập programmatic</p>
+          <h2 className="text-xl font-bold text-slate-900 dark:text-white tracking-wide">API Keys & Webhooks</h2>
+          <p className="text-sm text-slate-500 dark:text-gray-400 mt-1">Quản lý API keys để truy cập programmatic</p>
         </div>
         <button 
           onClick={() => {
@@ -148,42 +148,42 @@ export default function APIWebhooks() {
       {/* API Keys List */}
       <div className="space-y-4">
         {apiKeys.length === 0 ? (
-          <div className="text-center py-12 bg-[#111827] border border-gray-800 rounded-xl shadow-sm">
+          <div className="text-center py-12 bg-white dark:bg-[#111827] border border-slate-200 dark:border-gray-800 rounded-xl shadow-sm">
             <Key className="w-12 h-12 mx-auto text-gray-500 mb-3" />
-            <p className="text-gray-300 font-medium tracking-wide">Chưa có API key nào</p>
-            <p className="text-sm text-gray-400 mt-1">Tạo API key để truy cập hệ thống qua API</p>
+            <p className="text-slate-700 dark:text-gray-300 font-medium tracking-wide">Chưa có API key nào</p>
+            <p className="text-sm text-slate-500 dark:text-gray-400 mt-1">Tạo API key để truy cập hệ thống qua API</p>
           </div>
         ) : (
           apiKeys.map((key) => (
-            <div key={key.id} className={`bg-[#111827] border border-gray-800 rounded-xl p-5 shadow-sm transition-opacity ${!key.is_active ? 'opacity-50' : ''}`}>
+            <div key={key.id} className={`bg-white dark:bg-[#111827] border border-slate-200 dark:border-gray-800 rounded-xl p-5 shadow-sm transition-opacity ${!key.is_active ? 'opacity-50' : ''}`}>
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center space-x-3 mb-3">
                     <div className="p-2 bg-indigo-500/10 border border-indigo-500/20 rounded-lg">
                       <Key className="w-4 h-4 text-indigo-400" />
                     </div>
-                    <h3 className="font-bold text-white tracking-wide">{key.name}</h3>
+                    <h3 className="font-bold text-slate-900 dark:text-white tracking-wide">{key.name}</h3>
                     {!key.is_active && (
-                      <span className="px-2.5 py-1 text-xs font-medium bg-gray-800 text-gray-400 border border-gray-700 rounded-md">
+                      <span className="px-2.5 py-1 text-xs font-medium bg-gray-800 text-slate-500 dark:text-gray-400 border border-slate-300 dark:border-gray-700 rounded-md">
                         Vô hiệu hóa
                       </span>
                     )}
                   </div>
                   
                   <div className="flex items-center space-x-3 mb-4">
-                    <code className="px-4 py-1.5 bg-[#1E293B] border border-gray-700 text-gray-300 rounded-lg text-sm font-mono tracking-wider">
+                    <code className="px-4 py-1.5 bg-white dark:bg-[#1E293B] border border-slate-300 dark:border-gray-700 text-slate-700 dark:text-gray-300 rounded-lg text-sm font-mono tracking-wider">
                       {key.prefix}••••••••
                     </code>
                     <button
                       onClick={() => copyToClipboard(key.prefix)}
-                      className="p-1.5 text-gray-400 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg transition-colors"
+                      className="p-1.5 text-slate-500 dark:text-gray-400 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg transition-colors"
                       title="Sao chép prefix"
                     >
                       <Copy className="w-4 h-4" />
                     </button>
                   </div>
 
-                  <div className="flex flex-wrap gap-5 text-xs text-gray-400 font-medium">
+                  <div className="flex flex-wrap gap-5 text-xs text-slate-500 dark:text-gray-400 font-medium">
                     <span className="flex items-center">
                       <Calendar className="w-3.5 h-3.5 mr-1.5 text-gray-500" />
                       Tạo: {formatDate(key.created_at)}
@@ -203,7 +203,7 @@ export default function APIWebhooks() {
                   </div>
 
                   <div className="mt-4 pt-4 border-t border-gray-800/50">
-                    <p className="text-xs font-medium text-gray-400 mb-2.5">Quyền hạn ({key.permissions.length}):</p>
+                    <p className="text-xs font-medium text-slate-500 dark:text-gray-400 mb-2.5">Quyền hạn ({key.permissions.length}):</p>
                     <div className="flex flex-wrap gap-2">
                       {key.permissions.slice(0, 5).map((perm, idx) => (
                         <span key={idx} className="px-2.5 py-1 text-[11px] font-medium bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-md uppercase tracking-wider">
@@ -211,7 +211,7 @@ export default function APIWebhooks() {
                         </span>
                       ))}
                       {key.permissions.length > 5 && (
-                        <span className="px-2.5 py-1 text-[11px] font-medium bg-[#1E293B] text-gray-400 border border-gray-700 rounded-md">
+                        <span className="px-2.5 py-1 text-[11px] font-medium bg-white dark:bg-[#1E293B] text-slate-500 dark:text-gray-400 border border-slate-300 dark:border-gray-700 rounded-md">
                           +{key.permissions.length - 5}
                         </span>
                       )}
@@ -244,9 +244,9 @@ export default function APIWebhooks() {
       {/* Create Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
-          <div className="bg-[#111827] border border-gray-800 rounded-2xl shadow-2xl max-w-lg w-full">
-            <div className="p-6 border-b border-gray-800">
-              <h3 className="text-lg font-bold text-white tracking-wide">
+          <div className="bg-white dark:bg-[#111827] border border-slate-200 dark:border-gray-800 rounded-2xl shadow-2xl max-w-lg w-full">
+            <div className="p-6 border-b border-slate-200 dark:border-gray-800">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white tracking-wide">
                 {createdKey ? 'API Key đã tạo' : 'Tạo API Key mới'}
               </h3>
             </div>
@@ -263,11 +263,11 @@ export default function APIWebhooks() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-3">
+                  <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-3">
                     API Key của bạn:
                   </label>
                   <div className="flex items-center space-x-3">
-                    <code className="flex-1 px-4 py-3 bg-[#1E293B] border border-indigo-500/30 text-indigo-300 rounded-xl text-sm font-mono break-all tracking-wider">
+                    <code className="flex-1 px-4 py-3 bg-white dark:bg-[#1E293B] border border-indigo-500/30 text-indigo-300 rounded-xl text-sm font-mono break-all tracking-wider">
                       {createdKey}
                     </code>
                     <button
@@ -295,24 +295,24 @@ export default function APIWebhooks() {
             ) : (
               <form onSubmit={handleCreate} className="p-6 space-y-5">
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
                     Tên API Key <span className="text-rose-500">*</span>
                   </label>
                   <input
                     type="text"
                     value={newKeyData.name}
                     onChange={(e) => setNewKeyData({ ...newKeyData, name: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none text-white placeholder-gray-500"
+                    className="w-full px-4 py-2.5 bg-white dark:bg-[#1E293B] border border-slate-300 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none text-slate-900 dark:text-white placeholder-gray-500"
                     placeholder="e.g., Production API Key"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
                     Quyền hạn
                   </label>
-                  <div className="border border-gray-800 bg-[#1E293B] rounded-xl p-4 max-h-48 overflow-y-auto">
+                  <div className="border border-slate-200 dark:border-gray-800 bg-white dark:bg-[#1E293B] rounded-xl p-4 max-h-48 overflow-y-auto">
                     <div className="grid grid-cols-2 gap-3">
                       {availablePermissions.map((perm) => (
                         <label key={perm} className="flex items-center space-x-3 cursor-pointer group p-1.5 hover:bg-gray-800 rounded-lg transition-colors">
@@ -326,9 +326,9 @@ export default function APIWebhooks() {
                                 setNewKeyData({ ...newKeyData, permissions: newKeyData.permissions.filter(p => p !== perm) });
                               }
                             }}
-                            className="w-4 h-4 rounded bg-[#111827] border-gray-600 text-indigo-600 focus:ring-indigo-500 focus:ring-offset-gray-900"
+                            className="w-4 h-4 rounded bg-white dark:bg-[#111827] border-gray-600 text-indigo-600 focus:ring-indigo-500 focus:ring-offset-gray-900"
                           />
-                          <span className="text-sm font-medium text-gray-300 group-hover:text-white transition-colors">{perm}</span>
+                          <span className="text-sm font-medium text-slate-700 dark:text-gray-300 group-hover:text-slate-900 dark:text-white transition-colors">{perm}</span>
                         </label>
                       ))}
                     </div>
@@ -336,22 +336,22 @@ export default function APIWebhooks() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
                     Ngày hết hạn (tùy chọn)
                   </label>
                   <input
                     type="datetime-local"
                     value={newKeyData.expires_at}
                     onChange={(e) => setNewKeyData({ ...newKeyData, expires_at: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none text-white [color-scheme:dark]"
+                    className="w-full px-4 py-2.5 bg-white dark:bg-[#1E293B] border border-slate-300 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none text-slate-900 dark:text-white [color-scheme:dark]"
                   />
                 </div>
 
-                <div className="flex justify-end space-x-3 pt-6 border-t border-gray-800">
+                <div className="flex justify-end space-x-3 pt-6 border-t border-slate-200 dark:border-gray-800">
                   <button
                     type="button"
                     onClick={() => setShowModal(false)}
-                    className="px-6 py-2.5 bg-[#1E293B] text-gray-300 border border-gray-700 rounded-xl hover:bg-gray-800 transition-colors font-medium"
+                    className="px-6 py-2.5 bg-white dark:bg-[#1E293B] text-slate-700 dark:text-gray-300 border border-slate-300 dark:border-gray-700 rounded-xl hover:bg-gray-800 transition-colors font-medium"
                   >
                     Hủy
                   </button>

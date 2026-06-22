@@ -138,11 +138,11 @@ export default function ProjectSettingsPage() {
   return (
     <div className="space-y-6 max-w-[1000px] mx-auto">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-wide flex items-center gap-2">
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-wide flex items-center gap-2">
           <Settings className="w-6 h-6 text-indigo-500" />
           Project Settings
         </h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+        <p className="text-sm text-slate-500 dark:text-gray-400 mt-1">
           Quản lý keyword groups, từ khóa theo dõi
           {activeProject ? ` cho project: ${activeProject.name}` : ''}.
         </p>
@@ -151,14 +151,14 @@ export default function ProjectSettingsPage() {
       {/* Keyword Groups */}
       <div className="bg-white dark:bg-[#050A15] rounded-2xl shadow border border-gray-200 dark:border-white/10 p-6">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
+          <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
             <Tag className="w-4 h-4 text-indigo-500" />
             Keyword Groups
           </h2>
           <button
             onClick={fetchGroups}
             disabled={loading}
-            className="text-gray-400 hover:text-indigo-500 transition-colors"
+            className="text-slate-500 dark:text-gray-400 hover:text-indigo-500 transition-colors"
             title="Làm mới"
           >
             <RefreshCcw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
@@ -173,7 +173,7 @@ export default function ProjectSettingsPage() {
             onChange={e => setNewGroupName(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handleAddGroup()}
             placeholder="Tên nhóm từ khóa mới..."
-            className="flex-1 bg-white dark:bg-[#0a0f1c] border border-gray-200 dark:border-white/10 rounded-lg px-4 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="flex-1 bg-white dark:bg-[#0a0f1c] border border-gray-200 dark:border-white/10 rounded-lg px-4 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
           <button
             onClick={handleAddGroup}
@@ -186,14 +186,14 @@ export default function ProjectSettingsPage() {
         </div>
 
         {loading ? (
-          <div className="text-center py-8 text-gray-400">
+          <div className="text-center py-8 text-slate-500 dark:text-gray-400">
             <RefreshCcw className="w-5 h-5 animate-spin mx-auto mb-2" />
             Đang tải...
           </div>
         ) : groups.length === 0 ? (
           <div className="text-center py-8">
-            <Tag className="w-10 h-10 text-gray-300 dark:text-gray-700 mx-auto mb-3" />
-            <p className="text-gray-500 dark:text-gray-400 text-sm">Chưa có keyword group. Tạo nhóm đầu tiên bên trên.</p>
+            <Tag className="w-10 h-10 text-slate-700 dark:text-gray-300 dark:text-gray-700 mx-auto mb-3" />
+            <p className="text-slate-500 dark:text-gray-400 text-sm">Chưa có keyword group. Tạo nhóm đầu tiên bên trên.</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -205,7 +205,7 @@ export default function ProjectSettingsPage() {
                 >
                   <div className="flex items-center gap-3">
                     <Tag className="w-4 h-4 text-indigo-500" />
-                    <span className="font-bold text-gray-900 dark:text-white">{group.name}</span>
+                    <span className="font-bold text-slate-900 dark:text-white">{group.name}</span>
                     <span className="text-xs text-gray-500 bg-gray-100 dark:bg-white/10 px-2 py-0.5 rounded-full">
                       {(group.keywords || []).length} từ khóa
                     </span>
@@ -213,12 +213,12 @@ export default function ProjectSettingsPage() {
                   <div className="flex items-center gap-3">
                     <button
                       onClick={(e) => { e.stopPropagation(); handleDeleteGroup(group.id, group.name); }}
-                      className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+                      className="p-1 text-slate-500 dark:text-gray-400 hover:text-red-500 transition-colors"
                       title="Xóa nhóm"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
-                    <span className="text-gray-400 text-xs">{expandedGroup === group.id ? '▲' : '▼'}</span>
+                    <span className="text-slate-500 dark:text-gray-400 text-xs">{expandedGroup === group.id ? '▲' : '▼'}</span>
                   </div>
                 </button>
 
@@ -232,7 +232,7 @@ export default function ProjectSettingsPage() {
                         onChange={e => setNewKeywords({ ...newKeywords, [group.id]: e.target.value })}
                         onKeyDown={e => e.key === 'Enter' && handleAddKeyword(group.id)}
                         placeholder="Nhập từ khóa, cách nhau bởi dấu phẩy..."
-                        className="flex-1 bg-gray-50 dark:bg-[#0a0f1c] border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        className="flex-1 bg-gray-50 dark:bg-[#0a0f1c] border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       />
                       <button
                         onClick={() => handleAddKeyword(group.id)}
@@ -245,7 +245,7 @@ export default function ProjectSettingsPage() {
 
                     {/* Keywords list */}
                     {(group.keywords || []).length === 0 ? (
-                      <p className="text-xs text-gray-400 text-center py-2">Nhóm chưa có từ khóa nào</p>
+                      <p className="text-xs text-slate-500 dark:text-gray-400 text-center py-2">Nhóm chưa có từ khóa nào</p>
                     ) : (
                       <div className="flex flex-wrap gap-2">
                         {(group.keywords || []).map((kw) => (
@@ -266,7 +266,7 @@ export default function ProjectSettingsPage() {
                             </span>
                             <button
                               onClick={() => handleDeleteKeyword(kw.id, kw.keyword)}
-                              className="ml-1 text-gray-400 hover:text-red-500 transition-colors"
+                              className="ml-1 text-slate-500 dark:text-gray-400 hover:text-red-500 transition-colors"
                             >
                               <Trash2 className="w-3 h-3" />
                             </button>

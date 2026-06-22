@@ -88,7 +88,7 @@ export default function ReputationPage() {
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="flex justify-between items-end">
         <div>
-          <h1 className="text-3xl font-bold font-display tracking-tight text-white mb-2 flex items-center gap-2">
+          <h1 className="text-3xl font-bold font-display tracking-tight text-slate-900 dark:text-white mb-2 flex items-center gap-2">
             <Scale className="w-8 h-8 text-indigo-400" />
             Xử lý danh tiếng
           </h1>
@@ -117,7 +117,7 @@ export default function ReputationPage() {
                 <stat.icon className="w-5 h-5 drop-shadow-[0_0_8px_currentColor]" />
               </div>
             </div>
-            <div className="text-3xl font-black text-white tracking-tight drop-shadow-md mb-1">{stat.value}</div>
+            <div className="text-3xl font-black text-slate-900 dark:text-white tracking-tight drop-shadow-md mb-1">{stat.value}</div>
             <div className="text-xs font-bold text-zinc-400 uppercase tracking-wider">{stat.label}</div>
           </div>
         ))}
@@ -186,7 +186,7 @@ export default function ReputationPage() {
                         </span>
                       </td>
                       <td className="py-3 px-4 text-right">
-                        <button className="p-1.5 text-zinc-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-lg transition-colors">
+                        <button className="p-1.5 text-zinc-400 hover:text-slate-900 dark:text-white bg-white/5 hover:bg-white/10 rounded-lg transition-colors">
                           <ArrowRight className="w-4 h-4" />
                         </button>
                       </td>
@@ -210,13 +210,13 @@ export default function ReputationPage() {
               <div className="p-6">
                 <div className="flex items-start justify-between mb-6">
                   <div>
-                    <h2 className="text-xl font-bold text-white mb-2">{selectedCase.title}</h2>
+                    <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">{selectedCase.title}</h2>
                     <div className="flex gap-2">
                       <span className="text-xs bg-indigo-500/20 text-indigo-300 px-2 py-1 rounded">{selectedCase.status}</span>
                       <span className="text-xs bg-red-500/20 text-red-300 px-2 py-1 rounded">{selectedCase.risk_level}</span>
                     </div>
                   </div>
-                  <button onClick={() => setSelectedCaseId(null)} className="p-2 bg-white/5 hover:bg-white/10 rounded-xl text-zinc-400 hover:text-white transition-colors">
+                  <button onClick={() => setSelectedCaseId(null)} className="p-2 bg-white/5 hover:bg-white/10 rounded-xl text-zinc-400 hover:text-slate-900 dark:text-white transition-colors">
                     <X className="w-5 h-5" />
                   </button>
                 </div>
@@ -272,7 +272,7 @@ export default function ReputationPage() {
 
                   {selectedCase.actions && selectedCase.actions.length > 0 && (
                     <div>
-                      <h3 className="text-sm font-bold text-white mb-3 uppercase tracking-widest border-b border-white/10 pb-2">Bản nháp & Hành động</h3>
+                      <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-3 uppercase tracking-widest border-b border-white/10 pb-2">Bản nháp & Hành động</h3>
                       <div className="space-y-4">
                         {selectedCase.actions.map((action: any) => {
                           const isZalo = action.type === 'executive_brief' || action.title?.toLowerCase().includes('lãnh đạo');
@@ -280,7 +280,7 @@ export default function ReputationPage() {
                           <div key={action.id} className={`bg-white/5 border ${isZalo ? 'border-blue-500/30 shadow-[0_0_15px_rgba(59,130,246,0.1)]' : 'border-white/10'} rounded-2xl p-5 relative`}>
                             {isZalo && <div className="absolute top-0 right-0 bg-blue-500 text-white text-[10px] font-black uppercase px-2 py-1 rounded-bl-lg rounded-tr-xl">Zalo UI Mockup</div>}
                             <div className="flex justify-between items-center mb-3 border-b border-white/5 pb-2">
-                              <span className="text-sm font-bold text-white flex items-center gap-2">
+                              <span className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
                                 {isZalo && <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-[10px]">Z</div>}
                                 {action.title}
                               </span>
@@ -384,7 +384,7 @@ export default function ReputationPage() {
 
                   {selectedCase.evidence && selectedCase.evidence.length > 0 && (
                     <div>
-                      <h3 className="text-sm font-bold text-white mb-3 uppercase tracking-widest border-b border-white/10 pb-2">Bằng chứng đã lưu (Blockchain Verified)</h3>
+                      <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-3 uppercase tracking-widest border-b border-white/10 pb-2">Bằng chứng đã lưu (Blockchain Verified)</h3>
                       <div className="space-y-3">
                         {selectedCase.evidence.map((ev: any) => (
                           <div key={ev.id} className="bg-gradient-to-r from-emerald-900/20 to-black/40 border border-emerald-500/30 p-4 rounded-2xl flex items-start gap-4 relative overflow-hidden group">

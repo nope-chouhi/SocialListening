@@ -23,7 +23,7 @@ export default function WebinarSuccessModal({ isOpen, onClose }: Props) {
           {/* Success Confetti Animation */}
           <div className="relative mb-6 mt-4">
             <div className="w-20 h-20 bg-emerald-400 rounded-full flex items-center justify-center relative z-10 shadow-lg shadow-emerald-400/30">
-              <Check className="w-10 h-10 text-white stroke-[3]" />
+              <Check className="w-10 h-10 text-slate-900 dark:text-white stroke-[3]" />
             </div>
             
             {/* Confetti particles */}

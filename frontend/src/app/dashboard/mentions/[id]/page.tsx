@@ -96,9 +96,9 @@ export default function MentionDetailPage() {
 
   const getSentimentColor = (sentiment: string) => {
     if (sentiment === 'positive') return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
-    if (sentiment === 'neutral') return 'bg-gray-800 text-gray-400 border-gray-700';
+    if (sentiment === 'neutral') return 'bg-gray-800 text-slate-500 dark:text-gray-400 border-slate-300 dark:border-gray-700';
     if (sentiment === 'negative') return 'bg-rose-500/10 text-rose-400 border-rose-500/20';
-    return 'bg-gray-800 text-gray-400 border-gray-700';
+    return 'bg-gray-800 text-slate-500 dark:text-gray-400 border-slate-300 dark:border-gray-700';
   };
 
   const getRiskColor = (score: number) => {
@@ -122,7 +122,7 @@ export default function MentionDetailPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-lg text-gray-400 font-medium tracking-wide">Đang tải...</div>
+        <div className="text-lg text-slate-500 dark:text-gray-400 font-medium tracking-wide">Đang tải...</div>
       </div>
     );
   }
@@ -130,7 +130,7 @@ export default function MentionDetailPage() {
   if (!mention) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-400 font-medium tracking-wide">Không tìm thấy mention</p>
+        <p className="text-slate-500 dark:text-gray-400 font-medium tracking-wide">Không tìm thấy mention</p>
       </div>
     );
   }
@@ -143,13 +143,13 @@ export default function MentionDetailPage() {
       <div className="flex items-center space-x-4 mb-6">
         <button
           onClick={() => router.back()}
-          className="p-2 text-gray-400 hover:text-white bg-[#111827] border border-gray-800 hover:bg-gray-800 rounded-xl transition-all shadow-sm"
+          className="p-2 text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:text-white bg-white dark:bg-[#111827] border border-slate-200 dark:border-gray-800 hover:bg-gray-800 rounded-xl transition-all shadow-sm"
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
         <div>
-          <h1 className="text-2xl font-bold text-white tracking-wide">Chi tiết Mention</h1>
-          <p className="text-sm text-gray-400 mt-1 font-mono">ID: {mention.id}</p>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-wide">Chi tiết Mention</h1>
+          <p className="text-sm text-slate-500 dark:text-gray-400 mt-1 font-mono">ID: {mention.id}</p>
         </div>
       </div>
 
@@ -160,15 +160,15 @@ export default function MentionDetailPage() {
           <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-6 sm:p-8 relative overflow-hidden">
             {mention.ai_analysis?.sentiment === 'negative' && <div className="absolute top-0 right-0 w-64 h-64 bg-rose-500/10 blur-3xl rounded-full" />}
             {mention.ai_analysis?.sentiment === 'positive' && <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 blur-3xl rounded-full" />}
-            <h2 className="text-xl font-bold text-white mb-6 leading-snug relative z-10">
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6 leading-snug relative z-10">
               {mention.title || 'No title'}
             </h2>
             <div className="prose prose-invert max-w-none">
-              <p className="text-gray-300 leading-relaxed whitespace-pre-wrap">
+              <p className="text-slate-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
                 {mention.content}
               </p>
             </div>
-            <div className="mt-8 pt-5 border-t border-gray-800">
+            <div className="mt-8 pt-5 border-t border-slate-200 dark:border-gray-800">
               {(() => {
                 const bestUrl = getSafeUrl(mention.canonical_url || mention.url || '');
                 if (!bestUrl) return null;
@@ -191,7 +191,7 @@ export default function MentionDetailPage() {
           {/* Matched Keywords */}
           {keywordTexts(mention.matched_keywords).length > 0 && (
             <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-6 sm:p-8">
-              <h3 className="text-lg font-bold text-white mb-5 flex items-center">Từ khóa khớp</h3>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-5 flex items-center">Từ khóa khớp</h3>
               <div className="flex flex-wrap gap-2.5">
                 {keywordTexts(mention.matched_keywords).map((kw: string, idx: number) => (
                   <span key={idx} className="px-3 py-1.5 bg-indigo-500/10 text-indigo-400 text-sm rounded-lg font-semibold tracking-wide border border-indigo-500/20 uppercase">
@@ -210,7 +210,7 @@ export default function MentionDetailPage() {
             <div className="bg-[#050A15]/90 backdrop-blur-3xl border border-white/10 rounded-2xl shadow-[0_0_50px_rgba(0,0,0,0.8)] p-6 relative overflow-hidden">
               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-indigo-500 to-transparent opacity-50" />
               <div className="flex justify-between items-center mb-6">
-                <h3 className="text-lg font-bold text-white">AI Analysis</h3>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">AI Analysis</h3>
                 {mention.ai_analysis.ai_provider === 'failed' && (
                   <span className="px-2.5 py-1 text-xs font-bold tracking-wider text-red-400 bg-red-500/10 rounded-md border border-red-500/20">
                     AI FAILED
@@ -237,15 +237,15 @@ export default function MentionDetailPage() {
               </div>
 
               <div className="space-y-4">
-                <div className="flex justify-between items-center border-b border-gray-800 pb-3">
-                  <span className="text-sm font-medium text-gray-400 uppercase tracking-wider text-[11px]">Sentiment</span>
+                <div className="flex justify-between items-center border-b border-slate-200 dark:border-gray-800 pb-3">
+                  <span className="text-sm font-medium text-slate-500 dark:text-gray-400 uppercase tracking-wider text-[11px]">Sentiment</span>
                   <span className={`px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md border ${getSentimentColor(mention.ai_analysis.sentiment)}`}>
                     {mention.ai_analysis.sentiment}
                   </span>
                 </div>
                 
-                <div className="flex justify-between items-center border-b border-gray-800 pb-3">
-                  <span className="text-sm font-medium text-gray-400 uppercase tracking-wider text-[11px]">Crisis Level</span>
+                <div className="flex justify-between items-center border-b border-slate-200 dark:border-gray-800 pb-3">
+                  <span className="text-sm font-medium text-slate-500 dark:text-gray-400 uppercase tracking-wider text-[11px]">Crisis Level</span>
                   <div className="flex items-center space-x-1.5">
                     {[1, 2, 3, 4, 5].map((level) => (
                       <div
@@ -257,23 +257,23 @@ export default function MentionDetailPage() {
                         }`}
                       />
                     ))}
-                    <span className="ml-2 text-[11px] font-bold tracking-wider text-white">
+                    <span className="ml-2 text-[11px] font-bold tracking-wider text-slate-900 dark:text-white">
                       {mention.ai_analysis.crisis_level}/5
                     </span>
                   </div>
                 </div>
 
-                <div className="flex justify-between items-center border-b border-gray-800 pb-3">
-                  <span className="text-sm font-medium text-gray-400 uppercase tracking-wider text-[11px]">Suggested Action</span>
-                  <span className="text-sm font-semibold text-white capitalize">
+                <div className="flex justify-between items-center border-b border-slate-200 dark:border-gray-800 pb-3">
+                  <span className="text-sm font-medium text-slate-500 dark:text-gray-400 uppercase tracking-wider text-[11px]">Suggested Action</span>
+                  <span className="text-sm font-semibold text-slate-900 dark:text-white capitalize">
                     {mention.ai_analysis.suggested_action?.replace('_', ' ')}
                   </span>
                 </div>
 
                 {mention.ai_analysis.responsible_department && (
-                  <div className="flex justify-between items-center border-b border-gray-800 pb-3">
-                    <span className="text-sm font-medium text-gray-400 uppercase tracking-wider text-[11px]">Department</span>
-                    <span className="text-sm font-semibold text-white capitalize">
+                  <div className="flex justify-between items-center border-b border-slate-200 dark:border-gray-800 pb-3">
+                    <span className="text-sm font-medium text-slate-500 dark:text-gray-400 uppercase tracking-wider text-[11px]">Department</span>
+                    <span className="text-sm font-semibold text-slate-900 dark:text-white capitalize">
                       {mention.ai_analysis.responsible_department?.replace('_', ' ')}
                     </span>
                   </div>
@@ -281,8 +281,8 @@ export default function MentionDetailPage() {
 
                 {mention.ai_analysis.confidence_score && (
                   <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium text-gray-400 uppercase tracking-wider text-[11px]">Confidence</span>
-                    <span className="text-sm font-bold text-white">
+                    <span className="text-sm font-medium text-slate-500 dark:text-gray-400 uppercase tracking-wider text-[11px]">Confidence</span>
+                    <span className="text-sm font-bold text-slate-900 dark:text-white">
                       {mention.ai_analysis.confidence_score}%
                     </span>
                   </div>
@@ -290,9 +290,9 @@ export default function MentionDetailPage() {
               </div>
 
               {mention.ai_analysis.summary_vi && (
-                <div className="mt-6 pt-5 border-t border-gray-800">
-                  <h4 className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3">Tóm tắt AI:</h4>
-                  <p className="text-sm text-gray-300 bg-[#0B1220] border border-gray-800 p-4 rounded-xl leading-relaxed">
+                <div className="mt-6 pt-5 border-t border-slate-200 dark:border-gray-800">
+                  <h4 className="text-[11px] font-bold text-slate-500 dark:text-gray-400 uppercase tracking-wider mb-3">Tóm tắt AI:</h4>
+                  <p className="text-sm text-slate-700 dark:text-gray-300 bg-slate-50 dark:bg-[#0B1220] border border-slate-200 dark:border-gray-800 p-4 rounded-xl leading-relaxed">
                     {mention.ai_analysis.summary_vi}
                   </p>
                 </div>
@@ -300,16 +300,16 @@ export default function MentionDetailPage() {
 
               {/* Risk-to-Action Engine Block */}
               {mention.ai_analysis.urgency && (
-                <div className="mt-6 pt-5 border-t border-gray-800">
-                  <h4 className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center">
+                <div className="mt-6 pt-5 border-t border-slate-200 dark:border-gray-800">
+                  <h4 className="text-[11px] font-bold text-slate-500 dark:text-gray-400 uppercase tracking-wider mb-3 flex items-center">
                     <Activity className="w-3.5 h-3.5 mr-1.5 text-indigo-400" />
                     Risk-to-Action Engine
                   </h4>
-                  <div className="bg-[#0B1220] border border-gray-800 p-4 rounded-xl space-y-4">
+                  <div className="bg-slate-50 dark:bg-[#0B1220] border border-slate-200 dark:border-gray-800 p-4 rounded-xl space-y-4">
                     {mention.ai_analysis.why_it_matters && (
                       <div>
                         <span className="text-[10px] font-bold text-gray-500 uppercase block mb-1">Mức độ ảnh hưởng</span>
-                        <p className="text-sm text-gray-300">{mention.ai_analysis.why_it_matters}</p>
+                        <p className="text-sm text-slate-700 dark:text-gray-300">{mention.ai_analysis.why_it_matters}</p>
                       </div>
                     )}
                     <div className="grid grid-cols-2 gap-3">
@@ -326,15 +326,15 @@ export default function MentionDetailPage() {
                       </div>
                       <div>
                         <span className="text-[10px] font-bold text-gray-500 uppercase block mb-1">Đề xuất xử lý</span>
-                        <span className="text-sm font-medium text-white">{mention.ai_analysis.response_type?.replace(/_/g, ' ')}</span>
+                        <span className="text-sm font-medium text-slate-900 dark:text-white">{mention.ai_analysis.response_type?.replace(/_/g, ' ')}</span>
                       </div>
                       <div>
                         <span className="text-[10px] font-bold text-gray-500 uppercase block mb-1">Người phụ trách (Gợi ý)</span>
-                        <span className="text-sm font-medium text-white">{mention.ai_analysis.recommended_owner}</span>
+                        <span className="text-sm font-medium text-slate-900 dark:text-white">{mention.ai_analysis.recommended_owner}</span>
                       </div>
                       <div>
                         <span className="text-[10px] font-bold text-gray-500 uppercase block mb-1">Thời hạn</span>
-                        <span className="text-sm font-medium text-white">{mention.ai_analysis.deadline_suggestion}</span>
+                        <span className="text-sm font-medium text-slate-900 dark:text-white">{mention.ai_analysis.deadline_suggestion}</span>
                       </div>
                     </div>
                     {mention.ai_analysis.escalation_needed && (
@@ -353,7 +353,7 @@ export default function MentionDetailPage() {
 
           {/* Actions */}
           <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-6">
-            <h3 className="text-lg font-bold text-white mb-5 uppercase tracking-widest text-[11px] border-b border-white/10 pb-2">Hành động xử lý</h3>
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-5 uppercase tracking-widest text-[11px] border-b border-white/10 pb-2">Hành động xử lý</h3>
             <div className="space-y-4">
               <button
                 onClick={handleCreateAlert}
@@ -388,31 +388,31 @@ export default function MentionDetailPage() {
 
           {/* Meta Information */}
           <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-6">
-            <h3 className="text-lg font-bold text-white mb-5 uppercase tracking-widest text-[11px] border-b border-white/10 pb-2">Thông tin hệ thống</h3>
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-5 uppercase tracking-widest text-[11px] border-b border-white/10 pb-2">Thông tin hệ thống</h3>
             <div className="space-y-4 text-sm">
               <div className="flex justify-between items-center">
-                <span className="text-gray-400 font-medium">Thu thập:</span>
-                <span className="text-white font-medium">
+                <span className="text-slate-500 dark:text-gray-400 font-medium">Thu thập:</span>
+                <span className="text-slate-900 dark:text-white font-medium">
                   {new Date(mention.collected_at).toLocaleString('vi-VN')}
                 </span>
               </div>
               {mention.published_at && (
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-400 font-medium">Xuất bản:</span>
-                  <span className="text-white font-medium">
+                  <span className="text-slate-500 dark:text-gray-400 font-medium">Xuất bản:</span>
+                  <span className="text-slate-900 dark:text-white font-medium">
                     {new Date(mention.published_at).toLocaleString('vi-VN')}
                   </span>
                 </div>
               )}
               {mention.author && (
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-400 font-medium">Tác giả:</span>
-                  <span className="text-white font-medium">{mention.author}</span>
+                  <span className="text-slate-500 dark:text-gray-400 font-medium">Tác giả:</span>
+                  <span className="text-slate-900 dark:text-white font-medium">{mention.author}</span>
                 </div>
               )}
               <div className="flex justify-between items-center">
-                <span className="text-gray-400 font-medium">Source ID:</span>
-                <span className="text-white font-mono">{mention.source_id}</span>
+                <span className="text-slate-500 dark:text-gray-400 font-medium">Source ID:</span>
+                <span className="text-slate-900 dark:text-white font-mono">{mention.source_id}</span>
               </div>
             </div>
           </div>

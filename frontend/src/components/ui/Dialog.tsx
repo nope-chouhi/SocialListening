@@ -115,17 +115,17 @@ function ConfirmDialog({
 
   return (
     <DialogOverlay onClose={onCancel}>
-      <div className="bg-[#111827] border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
+      <div className="bg-white dark:bg-[#111827] border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
         <div className="p-6">
           <div className="flex items-start gap-4">
             <div className={`flex-shrink-0 w-12 h-12 rounded-full ${cfg.iconBg} flex items-center justify-center`}>
               <span className={cfg.iconColor}>{opts.icon ?? cfg.defaultIcon}</span>
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="text-base font-semibold text-white mb-1">{opts.title}</h3>
-              <p className="text-sm text-gray-400 leading-relaxed">{opts.message}</p>
+              <h3 className="text-base font-semibold text-slate-900 dark:text-white mb-1">{opts.title}</h3>
+              <p className="text-sm text-slate-500 dark:text-gray-400 leading-relaxed">{opts.message}</p>
             </div>
-            <button onClick={onCancel} className="text-gray-600 hover:text-gray-400 transition-colors flex-shrink-0">
+            <button onClick={onCancel} className="text-gray-600 hover:text-slate-500 dark:text-gray-400 transition-colors flex-shrink-0">
               <X className="w-5 h-5" />
             </button>
           </div>
@@ -133,7 +133,7 @@ function ConfirmDialog({
         <div className="px-6 pb-6 flex justify-end gap-3">
           <button
             onClick={onCancel}
-            className="px-4 py-2 text-sm font-medium text-gray-400 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all"
+            className="px-4 py-2 text-sm font-medium text-slate-500 dark:text-gray-400 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all"
           >
             {opts.cancelText || 'Hủy'}
           </button>
@@ -166,17 +166,17 @@ function PromptDialog({
 
   return (
     <DialogOverlay onClose={onCancel}>
-      <div className="bg-[#111827] border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
+      <div className="bg-white dark:bg-[#111827] border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
         <div className="p-6">
           <div className="flex items-start gap-4 mb-5">
             <div className="flex-shrink-0 w-12 h-12 rounded-full bg-indigo-500/15 flex items-center justify-center">
               <span className="text-indigo-400">{opts.icon ?? <Tag className="w-6 h-6" />}</span>
             </div>
             <div className="flex-1">
-              <h3 className="text-base font-semibold text-white mb-1">{opts.title}</h3>
-              {opts.message && <p className="text-sm text-gray-400">{opts.message}</p>}
+              <h3 className="text-base font-semibold text-slate-900 dark:text-white mb-1">{opts.title}</h3>
+              {opts.message && <p className="text-sm text-slate-500 dark:text-gray-400">{opts.message}</p>}
             </div>
-            <button onClick={onCancel} className="text-gray-600 hover:text-gray-400 transition-colors flex-shrink-0">
+            <button onClick={onCancel} className="text-gray-600 hover:text-slate-500 dark:text-gray-400 transition-colors flex-shrink-0">
               <X className="w-5 h-5" />
             </button>
           </div>
@@ -187,14 +187,14 @@ function PromptDialog({
               value={value}
               onChange={e => setValue(e.target.value)}
               placeholder={opts.placeholder}
-              className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-all"
+              className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-slate-900 dark:text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-all"
             />
           </form>
         </div>
         <div className="px-6 pb-6 flex justify-end gap-3">
           <button
             onClick={onCancel}
-            className="px-4 py-2 text-sm font-medium text-gray-400 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all"
+            className="px-4 py-2 text-sm font-medium text-slate-500 dark:text-gray-400 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all"
           >
             {opts.cancelText || 'Hủy'}
           </button>
@@ -220,17 +220,17 @@ function AlertDialog({
 
   return (
     <DialogOverlay onClose={onClose}>
-      <div className="bg-[#111827] border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
+      <div className="bg-white dark:bg-[#111827] border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
         <div className="p-6">
           <div className="flex items-start gap-4">
             <div className={`flex-shrink-0 w-12 h-12 rounded-full ${cfg.iconBg} flex items-center justify-center`}>
               <span className={cfg.iconColor}>{opts.icon ?? cfg.defaultIcon}</span>
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="text-base font-semibold text-white mb-1">{opts.title}</h3>
-              <p className="text-sm text-gray-400 leading-relaxed">{opts.message}</p>
+              <h3 className="text-base font-semibold text-slate-900 dark:text-white mb-1">{opts.title}</h3>
+              <p className="text-sm text-slate-500 dark:text-gray-400 leading-relaxed">{opts.message}</p>
             </div>
-            <button onClick={onClose} className="text-gray-600 hover:text-gray-400 transition-colors flex-shrink-0">
+            <button onClick={onClose} className="text-gray-600 hover:text-slate-500 dark:text-gray-400 transition-colors flex-shrink-0">
               <X className="w-5 h-5" />
             </button>
           </div>

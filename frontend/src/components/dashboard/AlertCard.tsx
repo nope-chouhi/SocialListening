@@ -36,7 +36,7 @@ export default function AlertCard({ alert, onActionComplete, userRole }: AlertCa
     <div className={`rounded-xl shadow-sm border p-4 transition-all ${
       alert.severity === 'critical' ? 'bg-rose-500/5 border-rose-500/20' : 
       alert.severity === 'high' ? 'bg-amber-500/5 border-amber-500/20' : 
-      'bg-[#1E293B] border-gray-800'
+      'bg-white dark:bg-[#1E293B] border-slate-200 dark:border-gray-800'
     } ${isResolved ? 'opacity-75' : ''}`}>
       
       <div className="flex items-start space-x-3">
@@ -51,13 +51,13 @@ export default function AlertCard({ alert, onActionComplete, userRole }: AlertCa
         
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between">
-            <h3 className="font-semibold text-white tracking-wide truncate pr-2">
+            <h3 className="font-semibold text-slate-900 dark:text-white tracking-wide truncate pr-2">
               {alert.title}
             </h3>
             <SeverityBadge severity={alert.severity} />
           </div>
           
-          <p className="mt-1.5 text-sm text-gray-400 line-clamp-2">
+          <p className="mt-1.5 text-sm text-slate-500 dark:text-gray-400 line-clamp-2">
             {alert.message || alert.reason || 'Không có mô tả'}
           </p>
           

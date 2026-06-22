@@ -61,11 +61,11 @@ export default function ExcelReportPage() {
     <div className="space-y-6 max-w-5xl mx-auto">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-wide flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-wide flex items-center gap-2">
             <FileSpreadsheet className="w-6 h-6 text-emerald-400" />
             Excel / CSV Export
           </h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+          <p className="text-sm text-slate-500 dark:text-gray-400 mt-1">
             Xuất toàn bộ mentions ra CSV (Excel-compatible) với bộ lọc tuỳ chỉnh.
           </p>
         </div>
@@ -75,7 +75,7 @@ export default function ExcelReportPage() {
         {/* Filters */}
         <div className="md:col-span-1 space-y-6">
           <div className="bg-white dark:bg-[#050A15] rounded-2xl shadow border border-gray-200 dark:border-white/10 p-6">
-            <h3 className="text-base font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+            <h3 className="text-base font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
               <Filter className="w-4 h-4 text-emerald-400" />
               Bộ lọc xuất dữ liệu
             </h3>
@@ -86,7 +86,7 @@ export default function ExcelReportPage() {
                 <select
                   value={dateRange}
                   onChange={e => setDateRange(e.target.value)}
-                  className="w-full bg-gray-50 dark:bg-[#0a0f1c] border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full bg-gray-50 dark:bg-[#0a0f1c] border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 >
                   {DATE_RANGE_OPTIONS.map(opt => (
                     <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -99,7 +99,7 @@ export default function ExcelReportPage() {
                 <select
                   value={sentiment}
                   onChange={e => setSentiment(e.target.value)}
-                  className="w-full bg-gray-50 dark:bg-[#0a0f1c] border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full bg-gray-50 dark:bg-[#0a0f1c] border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 >
                   <option value="">Tất cả</option>
                   <option value="positive">Tích cực</option>
@@ -113,7 +113,7 @@ export default function ExcelReportPage() {
                 <select
                   value={sourceType}
                   onChange={e => setSourceType(e.target.value)}
-                  className="w-full bg-gray-50 dark:bg-[#0a0f1c] border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full bg-gray-50 dark:bg-[#0a0f1c] border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 >
                   <option value="">Tất cả nguồn</option>
                   <option value="web">Web</option>
@@ -125,7 +125,7 @@ export default function ExcelReportPage() {
               </div>
 
               <div className="pt-2">
-                <div className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                <div className="text-xs text-slate-500 dark:text-gray-400 mb-3">
                   Project: <span className="font-bold text-gray-700 dark:text-gray-200">{activeProject?.name || 'Chưa chọn'}</span>
                 </div>
                 <button
@@ -144,12 +144,12 @@ export default function ExcelReportPage() {
         {/* Info */}
         <div className="md:col-span-2">
           <div className="bg-white dark:bg-[#050A15] rounded-2xl shadow border border-gray-200 dark:border-white/10 p-6 h-full">
-            <h2 className="text-base font-bold text-gray-900 dark:text-white mb-4">Cấu trúc file CSV</h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+            <h2 className="text-base font-bold text-slate-900 dark:text-white mb-4">Cấu trúc file CSV</h2>
+            <p className="text-sm text-slate-500 dark:text-gray-400 mb-6">
               File CSV sẽ bao gồm các cột sau (tối đa 5000 dòng):
             </p>
             <div className="overflow-auto rounded-lg border border-gray-200 dark:border-white/10">
-              <table className="w-full text-xs text-gray-600 dark:text-gray-400">
+              <table className="w-full text-xs text-gray-600 dark:text-slate-500 dark:text-gray-400">
                 <thead className="bg-gray-50 dark:bg-[#0a0f1c]">
                   <tr>
                     {['id', 'author', 'platform', 'source_type', 'title', 'content', 'url', 'sentiment', 'reach', 'interactions', 'influence_score', 'published_at', 'collected_at', 'keyword'].map(col => (
@@ -159,7 +159,7 @@ export default function ExcelReportPage() {
                 </thead>
                 <tbody>
                   <tr className="border-t border-gray-100 dark:border-white/5">
-                    <td className="px-3 py-2 text-gray-400" colSpan={14}>
+                    <td className="px-3 py-2 text-slate-500 dark:text-gray-400" colSpan={14}>
                       Dữ liệu thực sẽ được tải từ database khi bấm xuất...
                     </td>
                   </tr>

@@ -157,14 +157,14 @@ export default function PersonalProfile() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h2 className="text-xl font-bold text-white tracking-wide">Hồ sơ cá nhân</h2>
-        <p className="text-sm text-gray-400 mt-1">Quản lý thông tin cá nhân của bạn</p>
+        <h2 className="text-xl font-bold text-slate-900 dark:text-white tracking-wide">Hồ sơ cá nhân</h2>
+        <p className="text-sm text-slate-500 dark:text-gray-400 mt-1">Quản lý thông tin cá nhân của bạn</p>
       </div>
 
       {/* Avatar */}
-      <div className="bg-[#111827] border border-gray-800 rounded-xl shadow-sm p-6">
+      <div className="bg-white dark:bg-[#111827] border border-slate-200 dark:border-gray-800 rounded-xl shadow-sm p-6">
         <div className="flex items-center space-x-6">
-          <div className="w-24 h-24 bg-[#1E293B] border border-gray-700 rounded-full flex items-center justify-center overflow-hidden shadow-inner">
+          <div className="w-24 h-24 bg-white dark:bg-[#1E293B] border border-slate-300 dark:border-gray-700 rounded-full flex items-center justify-center overflow-hidden shadow-inner">
             {avatarUrl ? (
               <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
             ) : (
@@ -193,61 +193,61 @@ export default function PersonalProfile() {
       </div>
 
       {/* Profile Form */}
-      <div className="bg-[#111827] border border-gray-800 rounded-xl shadow-sm p-6 space-y-4">
+      <div className="bg-white dark:bg-[#111827] border border-slate-200 dark:border-gray-800 rounded-xl shadow-sm p-6 space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
               Họ và tên *
             </label>
             <input
               type="text"
               value={profile.full_name}
               onChange={(e) => setProfile({ ...profile, full_name: e.target.value })}
-              className="w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500"
+              className="w-full px-4 py-2.5 bg-white dark:bg-[#1E293B] border border-slate-300 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-white placeholder-gray-500"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
               Email
             </label>
             <input
               type="email"
               value={profile.email}
               disabled
-              className="w-full px-4 py-2.5 bg-[#1E293B]/50 border border-gray-800 rounded-xl text-gray-500 cursor-not-allowed opacity-70"
+              className="w-full px-4 py-2.5 bg-white dark:bg-[#1E293B]/50 border border-slate-200 dark:border-gray-800 rounded-xl text-gray-500 cursor-not-allowed opacity-70"
             />
             <p className="text-xs text-gray-500 mt-1.5 font-medium">Email không thể thay đổi</p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
               Số điện thoại
             </label>
             <input
               type="tel"
               value={profile.phone}
               onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
-              className="w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500"
+              className="w-full px-4 py-2.5 bg-white dark:bg-[#1E293B] border border-slate-300 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-white placeholder-gray-500"
               placeholder="+84 xxx xxx xxx"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
               Phòng ban
             </label>
             <input
               type="text"
               value={profile.department}
               onChange={(e) => setProfile({ ...profile, department: e.target.value })}
-              className="w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500"
+              className="w-full px-4 py-2.5 bg-white dark:bg-[#1E293B] border border-slate-300 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-white placeholder-gray-500"
               placeholder="Ví dụ: Marketing"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
               Vai trò
             </label>
             <div className="flex items-center space-x-3 mt-1">
@@ -259,7 +259,7 @@ export default function PersonalProfile() {
           </div>
         </div>
 
-        <div className="flex justify-end pt-4 border-t border-gray-800">
+        <div className="flex justify-end pt-4 border-t border-slate-200 dark:border-gray-800">
           <button
             onClick={handleSave}
             disabled={saving}

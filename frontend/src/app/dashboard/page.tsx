@@ -135,13 +135,13 @@ export default function DashboardPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-wide">Dashboard</h1>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-wide">Dashboard</h1>
             <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 rounded-md">
               <Activity className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
               <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">AI Anomaly Monitor Active</span>
             </div>
           </div>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Tổng quan giám sát truyền thông, mentions và cảnh báo rủi ro.</p>
+          <p className="text-sm text-slate-500 dark:text-gray-400 mt-1">Tổng quan giám sát truyền thông, mentions và cảnh báo rủi ro.</p>
         </div>
         
         <div className="flex items-center space-x-3">
@@ -162,7 +162,7 @@ export default function DashboardPage() {
           </div>
           <button 
             onClick={handleRefresh}
-            className="p-2.5 text-gray-500 hover:text-gray-900 bg-white hover:bg-gray-50 border border-gray-200 dark:text-zinc-400 dark:hover:text-white dark:bg-black/40 dark:hover:bg-white/10 dark:border-white/10 rounded-lg shadow-sm transition-all duration-300 active:scale-95 backdrop-blur-md"
+            className="p-2.5 text-gray-500 hover:text-gray-900 bg-white hover:bg-gray-50 border border-gray-200 dark:text-zinc-400 dark:hover:text-slate-900 dark:text-white dark:bg-black/40 dark:hover:bg-white/10 dark:border-white/10 rounded-lg shadow-sm transition-all duration-300 active:scale-95 backdrop-blur-md"
             title="Làm mới"
           >
             <RefreshCcw className={`w-4 h-4 ${loadingCharts || loadingMetrics ? 'animate-spin text-indigo-600 dark:text-indigo-400' : ''}`} />
@@ -175,8 +175,8 @@ export default function DashboardPage() {
           <div className="w-20 h-20 bg-indigo-50 dark:bg-indigo-900/30 rounded-full flex items-center justify-center mb-6">
             <Activity className="w-10 h-10 text-indigo-600 dark:text-indigo-400" />
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">Chào mừng đến với Nope</h2>
-          <p className="text-gray-500 dark:text-gray-400 max-w-md mb-8">
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-3">Chào mừng đến với Nope</h2>
+          <p className="text-slate-500 dark:text-gray-400 max-w-md mb-8">
             {projects && projects.length > 0 
               ? "Vui lòng chọn một dự án từ menu bên trái để xem tổng quan giám sát."
               : "Bạn chưa có dự án nào. Vui lòng liên hệ Admin để được cấp quyền hoặc tạo dự án mới."}
@@ -193,7 +193,7 @@ export default function DashboardPage() {
         {/* Latest Mentions */}
         <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl shadow-sm dark:shadow-2xl border border-gray-200 dark:border-white/10 flex flex-col h-[600px] overflow-hidden group hover:border-gray-300 dark:hover:border-white/20 transition-all duration-500">
           <div className="p-4 border-b border-gray-100 dark:border-white/5 flex justify-between items-center bg-gray-50 dark:bg-black/20">
-            <h2 className="text-base font-bold text-gray-900 dark:text-white tracking-wide">Mentions Mới Nhất</h2>
+            <h2 className="text-base font-bold text-slate-900 dark:text-white tracking-wide">Mentions Mới Nhất</h2>
             <span className="text-[10px] font-black tracking-[0.1em] uppercase bg-indigo-50 border border-indigo-200 text-indigo-600 dark:bg-indigo-500/20 dark:border-indigo-500/30 dark:text-indigo-300 px-3 py-1.5 rounded-lg shadow-sm">Top 10</span>
           </div>
           <div className="p-4 overflow-y-auto flex-1 space-y-3 custom-scrollbar">
@@ -215,10 +215,10 @@ export default function DashboardPage() {
             ) : !metrics?.latest_mentions || metrics.latest_mentions.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-gray-500 dark:text-zinc-400 font-medium tracking-wide">
                 <div className="w-16 h-16 mb-4 rounded-2xl bg-gray-100 dark:bg-white/5 flex items-center justify-center border border-gray-200 dark:border-white/10 shadow-sm dark:shadow-lg dark:shadow-black/20">
-                  <FileText className="w-8 h-8 text-gray-400 dark:text-zinc-500" />
+                  <FileText className="w-8 h-8 text-slate-500 dark:text-gray-400 dark:text-zinc-500" />
                 </div>
                 <p className="text-sm text-gray-600 dark:text-zinc-300">Chưa có mention nào.</p>
-                <p className="text-xs mt-1.5 text-gray-400 dark:text-zinc-500">Hãy thêm nguồn và chạy quét đầu tiên.</p>
+                <p className="text-xs mt-1.5 text-slate-500 dark:text-gray-400 dark:text-zinc-500">Hãy thêm nguồn và chạy quét đầu tiên.</p>
               </div>
             ) : (
               metrics.latest_mentions.map((mention: any) => (
@@ -236,7 +236,7 @@ export default function DashboardPage() {
         {/* Latest Alerts */}
         <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl shadow-sm dark:shadow-2xl border border-gray-200 dark:border-white/10 flex flex-col h-[600px] overflow-hidden group hover:border-gray-300 dark:hover:border-white/20 transition-all duration-500">
           <div className="p-4 border-b border-gray-100 dark:border-white/5 flex justify-between items-center bg-gray-50 dark:bg-black/20">
-            <h2 className="text-base font-bold text-gray-900 dark:text-white tracking-wide">Cảnh Báo Cần Xử Lý</h2>
+            <h2 className="text-base font-bold text-slate-900 dark:text-white tracking-wide">Cảnh Báo Cần Xử Lý</h2>
             <span className="text-[10px] font-black tracking-[0.1em] uppercase bg-rose-50 border border-rose-200 text-rose-600 dark:bg-rose-500/20 dark:border-rose-500/30 dark:text-rose-300 px-3 py-1.5 rounded-lg shadow-sm animate-pulse">Top 10</span>
           </div>
           <div className="p-4 overflow-y-auto flex-1 space-y-3 custom-scrollbar">
@@ -258,7 +258,7 @@ export default function DashboardPage() {
             ) : !metrics?.latest_alerts || metrics.latest_alerts.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-gray-500 dark:text-zinc-400 font-medium tracking-wide">
                 <div className="w-16 h-16 mb-4 rounded-2xl bg-gray-100 dark:bg-white/5 flex items-center justify-center border border-gray-200 dark:border-white/10 shadow-sm dark:shadow-lg dark:shadow-black/20">
-                  <AlertTriangle className="w-8 h-8 text-gray-400 dark:text-zinc-500" />
+                  <AlertTriangle className="w-8 h-8 text-slate-500 dark:text-gray-400 dark:text-zinc-500" />
                 </div>
                 <p className="text-sm text-gray-600 dark:text-zinc-300">Không có cảnh báo mới nào.</p>
               </div>

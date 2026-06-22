@@ -18,7 +18,7 @@ export default function DashboardKpiCard({ title, value, icon: Icon, colorClass 
   const isIndigo = colorClass.includes('indigo');
 
   let accentGradient = 'from-gray-500/10 to-transparent';
-  let iconColor = 'text-gray-400';
+  let iconColor = 'text-slate-500 dark:text-gray-400';
   let iconBg = 'bg-gray-500/10 border-gray-500/20';
 
   if (isBlue) { accentGradient = 'from-blue-500/10 to-transparent'; iconColor = 'text-blue-400'; iconBg = 'bg-blue-500/10 border-blue-500/20'; }
@@ -35,7 +35,7 @@ export default function DashboardKpiCard({ title, value, icon: Icon, colorClass 
       
       <div className="relative z-10">
         <p className="text-xs font-bold text-gray-500 dark:text-zinc-400 tracking-wider uppercase mb-1">{title}</p>
-        <p className="text-3xl font-black text-gray-900 dark:text-white tracking-tight drop-shadow-sm dark:drop-shadow-md">{value}</p>
+        <p className="text-3xl font-black text-slate-900 dark:text-white tracking-tight drop-shadow-sm dark:drop-shadow-md">{value}</p>
       </div>
       
       <div className={`relative z-10 p-3.5 rounded-2xl border ${iconBg.replace('border-', 'border-gray-100 dark:border-')} shadow-sm dark:shadow-inner flex items-center justify-center transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3`}>

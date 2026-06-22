@@ -8,7 +8,7 @@ export function SeverityBadge({ severity }: { severity: string }) {
     low: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
   };
   
-  const bgClass = colors[severity?.toLowerCase()] || 'bg-[#1E293B] text-gray-400 border-gray-700';
+  const bgClass = colors[severity?.toLowerCase()] || 'bg-white dark:bg-[#1E293B] text-slate-500 dark:text-gray-400 border-slate-300 dark:border-gray-700';
   
   return (
     <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium border tracking-wide shadow-sm ${bgClass}`}>
@@ -20,11 +20,11 @@ export function SeverityBadge({ severity }: { severity: string }) {
 export function SentimentBadge({ sentiment }: { sentiment: string }) {
   const colors: Record<string, string> = {
     positive: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-    neutral: 'bg-[#1E293B] text-gray-400 border-gray-700',
+    neutral: 'bg-white dark:bg-[#1E293B] text-slate-500 dark:text-gray-400 border-slate-300 dark:border-gray-700',
     negative: 'bg-red-500/20 text-red-400 border-red-500/30',
   };
   
-  const bgClass = colors[sentiment?.toLowerCase()] || 'bg-[#1E293B] text-gray-400 border-gray-700';
+  const bgClass = colors[sentiment?.toLowerCase()] || 'bg-white dark:bg-[#1E293B] text-slate-500 dark:text-gray-400 border-slate-300 dark:border-gray-700';
   
   return (
     <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium border tracking-wide shadow-sm ${bgClass}`}>

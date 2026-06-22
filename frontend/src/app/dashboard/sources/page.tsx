@@ -356,7 +356,7 @@ export default function SourcesPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-lg text-gray-400 font-medium tracking-wide">Đang tải...</div>
+        <div className="text-lg text-slate-500 dark:text-gray-400 font-medium tracking-wide">Đang tải...</div>
       </div>
     );
   }
@@ -374,8 +374,8 @@ export default function SourcesPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2">
         <div>
-          <h1 className="text-2xl font-bold text-white tracking-wide">Quản lý nguồn</h1>
-          <p className="text-sm text-gray-400 mt-1">
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-wide">Quản lý nguồn</h1>
+          <p className="text-sm text-slate-500 dark:text-gray-400 mt-1">
             Quản lý các nguồn dữ liệu để thu thập thông tin
           </p>
         </div>
@@ -397,7 +397,7 @@ export default function SourcesPage() {
             <Globe className="w-5 h-5 text-blue-400" />
           </div>
           <div>
-            <h3 className="text-white font-medium">Khám phá sức mạnh của Meta</h3>
+            <h3 className="text-slate-900 dark:text-white font-medium">Khám phá sức mạnh của Meta</h3>
             <p className="text-sm text-blue-200 mt-0.5">Kết nối Facebook & Instagram để thu thập thêm đề cập từ các tài khoản được cấp quyền.</p>
           </div>
         </div>
@@ -434,7 +434,7 @@ export default function SourcesPage() {
       {/* Top Domains Section */}
       <div className="bg-white/5 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/10 p-6 mb-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-white tracking-wide flex items-center gap-2">
+          <h2 className="text-lg font-bold text-slate-900 dark:text-white tracking-wide flex items-center gap-2">
             <BarChart3 className="w-5 h-5 text-indigo-400" />
             Top Domains Đóng Góp Thảo Luận
           </h2>
@@ -458,10 +458,10 @@ export default function SourcesPage() {
                   {idx + 1}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-white truncate group-hover:text-indigo-300 transition-colors">
+                  <p className="text-sm font-medium text-slate-900 dark:text-white truncate group-hover:text-indigo-300 transition-colors">
                     {domain.domain || domain.name || 'Unknown'}
                   </p>
-                  <p className="text-xs text-gray-400">{domain.mention_count || 0} mentions</p>
+                  <p className="text-xs text-slate-500 dark:text-gray-400">{domain.mention_count || 0} mentions</p>
                 </div>
                 <TrendingUp className="w-4 h-4 text-emerald-400 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
               </Link>
@@ -484,7 +484,7 @@ export default function SourcesPage() {
             placeholder="Tìm kiếm nguồn..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-11 pr-4 py-3 bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500 shadow-xl transition-shadow"
+            className="w-full pl-11 pr-4 py-3 bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-white placeholder-gray-500 shadow-xl transition-shadow"
           />
         </div>
         <div className="flex items-center gap-3 bg-white/5 backdrop-blur-xl px-4 py-3 border border-white/10 rounded-xl w-full sm:w-auto shadow-xl">
@@ -495,7 +495,7 @@ export default function SourcesPage() {
             onChange={(e) => setShowTestSources(e.target.checked)}
             className="w-4 h-4 text-indigo-600 bg-gray-800 border-gray-600 rounded focus:ring-indigo-500 focus:ring-offset-gray-900"
           />
-          <label htmlFor="showTestSources" className="text-sm font-medium text-gray-300 cursor-pointer select-none">
+          <label htmlFor="showTestSources" className="text-sm font-medium text-slate-700 dark:text-gray-300 cursor-pointer select-none">
             Hiện nguồn test
           </label>
         </div>
@@ -504,7 +504,7 @@ export default function SourcesPage() {
       {/* Sources Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {filteredSources.length === 0 ? (
-          <div className="col-span-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-10 text-center text-gray-400 font-medium tracking-wide">
+          <div className="col-span-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-10 text-center text-slate-500 dark:text-gray-400 font-medium tracking-wide">
             <div className="w-16 h-16 rounded-xl bg-white/5 flex items-center justify-center mx-auto mb-4 border border-white/10 shadow-sm">
               <Globe className="w-8 h-8 text-gray-500" />
             </div>
@@ -525,18 +525,18 @@ export default function SourcesPage() {
                     </div>
                     <div>
                       <div className="flex items-center gap-2 flex-wrap mb-1">
-                        <h3 className="font-semibold text-white tracking-wide truncate max-w-[150px]" title={source.name}>{source.name}</h3>
+                        <h3 className="font-semibold text-slate-900 dark:text-white tracking-wide truncate max-w-[150px]" title={source.name}>{source.name}</h3>
                         {(() => {
                           if (isUnsupported) {
                             return (
-                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-gray-500/10 text-gray-400 border border-gray-500/20">
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-gray-500/10 text-slate-500 dark:text-gray-400 border border-gray-500/20">
                                 Chưa hỗ trợ
                               </span>
                             );
                           }
                           if (isTest) {
                             return (
-                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-gray-500/10 text-gray-400 border border-gray-500/20">
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-gray-500/10 text-slate-500 dark:text-gray-400 border border-gray-500/20">
                                 Nguồn test
                               </span>
                             );
@@ -573,7 +573,7 @@ export default function SourcesPage() {
                             );
                           } else {
                             return (
-                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-gray-500/10 text-gray-400 border border-gray-500/20">
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-gray-500/10 text-slate-500 dark:text-gray-400 border border-gray-500/20">
                                 Chưa crawl
                               </span>
                             );
@@ -620,7 +620,7 @@ export default function SourcesPage() {
                   className={`px-2.5 py-1 text-[10px] font-bold tracking-wider uppercase rounded-md transition-colors border ${
                     source.is_active
                       ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20'
-                      : 'bg-gray-800 text-gray-500 border-gray-700 hover:bg-gray-700'
+                      : 'bg-gray-800 text-gray-500 border-slate-300 dark:border-gray-700 hover:bg-gray-700'
                   }`}
                 >
                   {source.is_active ? 'ON' : 'OFF'}
@@ -628,12 +628,12 @@ export default function SourcesPage() {
               </div>
 
               <div className="space-y-3 mb-6 flex-1">
-                <p className="text-sm text-gray-400 truncate bg-[#050A15] p-3 rounded-xl border border-white/10 shadow-inner" title={source.url}>
+                <p className="text-sm text-slate-500 dark:text-gray-400 truncate bg-[#050A15] p-3 rounded-xl border border-white/10 shadow-inner" title={source.url}>
                   <span className="font-medium text-gray-500 mr-2 block text-xs uppercase tracking-wider mb-1">URL</span> {source.url}
                 </p>
                 
                 {/* Schedule Info */}
-                <div className="flex items-center space-x-3 text-sm text-gray-400 px-1">
+                <div className="flex items-center space-x-3 text-sm text-slate-500 dark:text-gray-400 px-1">
                   <Clock className="w-4 h-4 text-indigo-400 flex-shrink-0" />
                   <div className="flex-1 truncate" title={getScheduleDescription(source)}>
                     {getScheduleDescription(source)}
@@ -642,13 +642,13 @@ export default function SourcesPage() {
                 
                 {source.next_crawl_at && (
                   <p className="text-xs text-gray-500 px-1 truncate">
-                    <span className="font-medium mr-1 text-gray-400">Tiếp theo:</span>
+                    <span className="font-medium mr-1 text-slate-500 dark:text-gray-400">Tiếp theo:</span>
                     {new Date(source.next_crawl_at).toLocaleString('vi-VN')}
                   </p>
                 )}
                 
                 <p className="text-xs text-gray-500 px-1 truncate">
-                  <span className="font-medium mr-1 text-gray-400">Gần nhất:</span>
+                  <span className="font-medium mr-1 text-slate-500 dark:text-gray-400">Gần nhất:</span>
                   {source.last_crawled_at 
                     ? new Date(source.last_crawled_at).toLocaleString('vi-VN')
                     : 'Chưa crawl'
@@ -706,7 +706,7 @@ export default function SourcesPage() {
                   
                   if (isTest) {
                     return (
-                      <div className="text-xs text-gray-400 mt-3 p-2.5 bg-gray-500/5 border border-gray-500/20 rounded-lg" title={error}>
+                      <div className="text-xs text-slate-500 dark:text-gray-400 mt-3 p-2.5 bg-gray-500/5 border border-gray-500/20 rounded-lg" title={error}>
                         <span className="font-semibold text-gray-500 block mb-1 uppercase tracking-wider text-[10px]">Nguồn test — không tính vào vận hành</span>
                         <span className="opacity-90">{cleanMsg.substring(0, 100)}{cleanMsg.length > 100 ? '...' : ''}</span>
                       </div>
@@ -771,7 +771,7 @@ export default function SourcesPage() {
                 className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all border ${
                   dsFilter === f.key
                     ? `bg-${f.color}-500/15 text-${f.color}-400 border-${f.color}-500/25`
-                    : 'bg-white/5 text-gray-500 hover:text-gray-300 border-white/10 hover:border-white/20'
+                    : 'bg-white/5 text-gray-500 hover:text-slate-700 dark:text-gray-300 border-white/10 hover:border-white/20'
                 }`}
               >
                 {f.label}
@@ -786,7 +786,7 @@ export default function SourcesPage() {
           ) : discoveredSources.length === 0 ? (
             <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-10 text-center">
               <Radar className="w-10 h-10 text-gray-600 mx-auto mb-3" />
-              <p className="text-sm text-gray-400 font-medium">Chưa có nguồn nào được phát hiện tự động.</p>
+              <p className="text-sm text-slate-500 dark:text-gray-400 font-medium">Chưa có nguồn nào được phát hiện tự động.</p>
               <p className="text-xs text-gray-500 mt-1">Hãy vào Trung tâm quét → "Tự động tìm nguồn" để bắt đầu.</p>
             </div>
           ) : (
@@ -809,11 +809,11 @@ export default function SourcesPage() {
                     {discoveredSources.map((ds: any) => (
                       <tr key={ds.id} className="hover:bg-white/5 transition-colors">
                         <td className="px-4 py-3">
-                          <div className="font-medium text-white text-sm truncate max-w-[200px]" title={ds.source_name}>{ds.source_name || ds.domain}</div>
+                          <div className="font-medium text-slate-900 dark:text-white text-sm truncate max-w-[200px]" title={ds.source_name}>{ds.source_name || ds.domain}</div>
                           <div className="text-[11px] text-gray-500 truncate max-w-[200px]">{ds.domain}</div>
                         </td>
                         <td className="px-4 py-3 hidden md:table-cell">
-                          <span className="text-xs text-gray-400 capitalize">{ds.source_type || '—'}</span>
+                          <span className="text-xs text-slate-500 dark:text-gray-400 capitalize">{ds.source_type || '—'}</span>
                         </td>
                         <td className="px-4 py-3 hidden lg:table-cell">
                           {ds.rss_valid ? (
@@ -825,7 +825,7 @@ export default function SourcesPage() {
                           )}
                         </td>
                         <td className="px-4 py-3 hidden lg:table-cell">
-                          <span className="text-xs text-gray-300 font-medium">{ds.sample_mentions_count || 0}</span>
+                          <span className="text-xs text-slate-700 dark:text-gray-300 font-medium">{ds.sample_mentions_count || 0}</span>
                         </td>
                         <td className="px-4 py-3 hidden xl:table-cell">
                           <div className="flex flex-wrap gap-1 max-w-[160px]">
@@ -847,7 +847,7 @@ export default function SourcesPage() {
                                 style={{ width: `${Math.min(ds.relevance_score || 0, 100)}%` }}
                               />
                             </div>
-                            <span className="text-[10px] text-gray-400 font-medium w-7">{Math.round(ds.relevance_score || 0)}</span>
+                            <span className="text-[10px] text-slate-500 dark:text-gray-400 font-medium w-7">{Math.round(ds.relevance_score || 0)}</span>
                           </div>
                         </td>
                         <td className="px-4 py-3">
@@ -952,16 +952,16 @@ export default function SourcesPage() {
                           : <WifiOff className="w-5 h-5 text-gray-500" />}
                       </div>
                       <div>
-                        <h3 className="font-semibold text-white text-sm">{c.name}</h3>
+                        <h3 className="font-semibold text-slate-900 dark:text-white text-sm">{c.name}</h3>
                       </div>
                     </div>
                     <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider text-right max-w-[120px] ${
                       c.status === 'active' || c.status === 'limited' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                         : c.status === 'config_required' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                        : 'bg-gray-500/10 text-gray-400 border border-gray-500/20'
+                        : 'bg-gray-500/10 text-slate-500 dark:text-gray-400 border border-gray-500/20'
                     }`}>{c.status_label}</span>
                   </div>
-                  <p className="text-xs text-gray-400 leading-relaxed flex-1 mb-4">{c.description}</p>
+                  <p className="text-xs text-slate-500 dark:text-gray-400 leading-relaxed flex-1 mb-4">{c.description}</p>
                   
                   {c.limitations && (
                     <div className="mb-4 text-[11px] p-2 bg-indigo-500/10 border border-indigo-500/20 rounded-lg text-indigo-300">
@@ -994,19 +994,19 @@ export default function SourcesPage() {
           <div className="bg-[#050A15]/90 border border-white/10 rounded-2xl shadow-[0_0_50px_rgba(0,0,0,0.8)] w-full max-w-lg max-h-[90vh] overflow-y-auto custom-scrollbar relative">
             <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-indigo-500 to-transparent opacity-50" />
             <div className="p-6 border-b border-white/10 bg-white/5 sticky top-0 z-10 backdrop-blur-xl">
-              <h2 className="text-xl font-bold text-white">Thêm nguồn mới</h2>
+              <h2 className="text-xl font-bold text-slate-900 dark:text-white">Thêm nguồn mới</h2>
             </div>
             
             <div className="p-6 space-y-5">
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
                   Tên nguồn *
                 </label>
                 <input
                   type="text"
                   value={newSource.name}
                   onChange={(e) => setNewSource({ ...newSource, name: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500"
+                  className="w-full px-4 py-2.5 bg-white dark:bg-[#1E293B] border border-slate-300 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-white placeholder-gray-500"
                   placeholder="Ví dụ: VnExpress"
                   autoFocus
                 />
@@ -1014,14 +1014,14 @@ export default function SourcesPage() {
 
               {newSource.source_type !== 'rss' && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
                     URL *
                   </label>
                   <input
                     type="url"
                     value={newSource.url}
                     onChange={(e) => setNewSource({ ...newSource, url: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500"
+                    className="w-full px-4 py-2.5 bg-white dark:bg-[#1E293B] border border-slate-300 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-white placeholder-gray-500"
                     placeholder="https://example.com"
                   />
                 </div>
@@ -1029,27 +1029,27 @@ export default function SourcesPage() {
               
               {newSource.source_type === 'rss' && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
                     Website gốc (tuỳ chọn)
                   </label>
                   <input
                     type="url"
                     value={newSource.url}
                     onChange={(e) => setNewSource({ ...newSource, url: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500"
+                    className="w-full px-4 py-2.5 bg-white dark:bg-[#1E293B] border border-slate-300 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-white placeholder-gray-500"
                     placeholder="https://example.com"
                   />
                 </div>
               )}
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
                   Loại nguồn
                 </label>
                 <select
                   value={newSource.source_type}
                   onChange={(e) => setNewSource({ ...newSource, source_type: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white"
+                  className="w-full px-4 py-2.5 bg-white dark:bg-[#1E293B] border border-slate-300 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-white"
                 >
                   <option value="website">Website</option>
                   <option value="facebook_page">Facebook Page</option>
@@ -1081,26 +1081,26 @@ export default function SourcesPage() {
                     <strong className="text-amber-400">Facebook:</strong> Cần thông tin đăng nhập để truy cập nội dung
                   </p>
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-1.5">
+                    <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1.5">
                       Email/Username Facebook
                     </label>
                     <input
                       type="text"
                       placeholder="email@example.com"
-                      className="w-full px-3 py-2 bg-[#1E293B] border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 text-white placeholder-gray-500"
+                      className="w-full px-3 py-2 bg-white dark:bg-[#1E293B] border border-slate-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 text-slate-900 dark:text-white placeholder-gray-500"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-1.5">
+                    <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1.5">
                       Password
                     </label>
                     <input
                       type="password"
                       placeholder="••••••••"
-                      className="w-full px-3 py-2 bg-[#1E293B] border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 text-white placeholder-gray-500"
+                      className="w-full px-3 py-2 bg-white dark:bg-[#1E293B] border border-slate-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 text-slate-900 dark:text-white placeholder-gray-500"
                     />
                   </div>
-                  <p className="text-xs text-gray-400">
+                  <p className="text-xs text-slate-500 dark:text-gray-400">
                     ⚠️ Thông tin đăng nhập được mã hóa và chỉ dùng để crawl dữ liệu
                   </p>
                 </div>
@@ -1113,26 +1113,26 @@ export default function SourcesPage() {
                     <strong className="text-rose-400">YouTube:</strong> Chọn phương thức truy cập
                   </p>
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-1.5">
+                    <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1.5">
                       Phương thức
                     </label>
-                    <select className="w-full px-3 py-2 bg-[#1E293B] border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500 text-white">
+                    <select className="w-full px-3 py-2 bg-white dark:bg-[#1E293B] border border-slate-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500 text-slate-900 dark:text-white">
                       <option value="public">Public (không cần đăng nhập)</option>
                       <option value="api_key">YouTube API Key</option>
                       <option value="login">Đăng nhập Google</option>
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-1.5">
+                    <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1.5">
                       YouTube API Key (tùy chọn)
                     </label>
                     <input
                       type="text"
                       placeholder="AIzaSy..."
-                      className="w-full px-3 py-2 bg-[#1E293B] border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500 text-white placeholder-gray-500"
+                      className="w-full px-3 py-2 bg-white dark:bg-[#1E293B] border border-slate-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500 text-slate-900 dark:text-white placeholder-gray-500"
                     />
                   </div>
-                  <p className="text-xs text-gray-400">
+                  <p className="text-xs text-slate-500 dark:text-gray-400">
                     💡 API Key giúp tăng giới hạn request. Lấy tại: console.cloud.google.com
                   </p>
                 </div>
@@ -1145,7 +1145,7 @@ export default function SourcesPage() {
                     <strong className="text-orange-400">RSS Feed:</strong> Cấu hình RSS
                   </p>
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-1.5">
+                    <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1.5">
                       RSS Feed URL *
                     </label>
                     <input
@@ -1153,14 +1153,14 @@ export default function SourcesPage() {
                       value={newSource.rss_url || ''}
                       onChange={(e) => setNewSource({ ...newSource, rss_url: e.target.value })}
                       placeholder="https://example.com/feed.xml"
-                      className="w-full px-3 py-2 bg-[#1E293B] border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-white placeholder-gray-500"
+                      className="w-full px-3 py-2 bg-white dark:bg-[#1E293B] border border-slate-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-slate-900 dark:text-white placeholder-gray-500"
                     />
                     <p className="text-xs text-orange-300/80 mt-1.5">
                       RSS Feed URL phải là link XML/RSS thật, không phải trang chủ website.
                     </p>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-1.5">
+                    <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1.5">
                       Số lượng items tối đa mỗi lần crawl
                     </label>
                     <input
@@ -1168,7 +1168,7 @@ export default function SourcesPage() {
                       defaultValue={50}
                       min={1}
                       max={500}
-                      className="w-full px-3 py-2 bg-[#1E293B] border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-white"
+                      className="w-full px-3 py-2 bg-white dark:bg-[#1E293B] border border-slate-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-slate-900 dark:text-white"
                     />
                   </div>
                   <div className="flex items-center">
@@ -1177,7 +1177,7 @@ export default function SourcesPage() {
                       id="rss-full-content"
                       className="w-4 h-4 text-orange-600 bg-gray-800 border-gray-600 rounded focus:ring-orange-500 focus:ring-offset-gray-900"
                     />
-                    <label htmlFor="rss-full-content" className="ml-3 text-sm text-gray-300 cursor-pointer">
+                    <label htmlFor="rss-full-content" className="ml-3 text-sm text-slate-700 dark:text-gray-300 cursor-pointer">
                       Lấy full content (nếu RSS chỉ có summary)
                     </label>
                   </div>
@@ -1185,11 +1185,11 @@ export default function SourcesPage() {
               )}
 
               {/* Crawl Schedule */}
-              <div className="border-t border-gray-800 pt-5 mt-2">
-                <h3 className="text-base font-semibold text-white mb-4">Lịch Quét</h3>
+              <div className="border-t border-slate-200 dark:border-gray-800 pt-5 mt-2">
+                <h3 className="text-base font-semibold text-slate-900 dark:text-white mb-4">Lịch Quét</h3>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
                     Tần suất quét
                   </label>
                   <select
@@ -1198,7 +1198,7 @@ export default function SourcesPage() {
                       ...newSource, 
                       crawl_frequency: e.target.value as 'manual' | 'daily' | 'weekly' | 'monthly' | 'yearly'
                     })}
-                    className="w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white"
+                    className="w-full px-4 py-2.5 bg-white dark:bg-[#1E293B] border border-slate-300 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-white"
                   >
                     <option value="manual">Thủ công (Không tự động quét)</option>
                     <option value="daily">Hằng ngày</option>
@@ -1222,7 +1222,7 @@ export default function SourcesPage() {
             <div className="p-6 border-t border-white/10 bg-white/5 rounded-b-2xl flex justify-end space-x-3 sticky bottom-0 backdrop-blur-xl">
               <button
                 onClick={() => setShowAddModal(false)}
-                className="px-5 py-2.5 text-sm font-medium text-gray-300 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 hover:text-white transition-colors"
+                className="px-5 py-2.5 text-sm font-medium text-slate-700 dark:text-gray-300 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 hover:text-slate-900 dark:text-white transition-colors"
               >
                 Hủy
               </button>

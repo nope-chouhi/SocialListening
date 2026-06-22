@@ -53,7 +53,7 @@ export default function MonitorMetricCard({
 
       <div className="relative flex items-start justify-between">
         <div className="flex-1">
-          <p className="text-sm font-medium text-white/80 mb-1">{title}</p>
+          <p className="text-sm font-medium text-slate-900 dark:text-white/80 mb-1">{title}</p>
           <p
             className={`text-3xl font-bold ${textColor} tracking-tight ${
               pulse ? 'animate-pulse' : ''
@@ -62,7 +62,7 @@ export default function MonitorMetricCard({
             {typeof value === 'number' ? value.toLocaleString('vi-VN') : value}
           </p>
           {subtitle && (
-            <p className="text-xs text-white/60 mt-1">{subtitle}</p>
+            <p className="text-xs text-slate-900 dark:text-white/60 mt-1">{subtitle}</p>
           )}
         </div>
 
@@ -72,7 +72,7 @@ export default function MonitorMetricCard({
             group-hover:scale-110 transition-transform duration-300
           `}
         >
-          <Icon className="w-6 h-6 text-white" />
+          <Icon className="w-6 h-6 text-slate-900 dark:text-white" />
         </div>
       </div>
     </div>

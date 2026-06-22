@@ -39,7 +39,7 @@ export default function CompetitorsPage() {
   if (loading && !data) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-gray-400 font-medium tracking-wide flex items-center">
+        <div className="text-slate-500 dark:text-gray-400 font-medium tracking-wide flex items-center">
           <RefreshCcw className="w-5 h-5 mr-2 animate-spin text-indigo-400" />
           Đang phân tích dữ liệu đối thủ...
         </div>
@@ -53,8 +53,8 @@ export default function CompetitorsPage() {
         <div className="w-24 h-24 bg-gray-800/50 rounded-full flex items-center justify-center mb-6">
           <BarChartIcon className="w-12 h-12 text-gray-500" />
         </div>
-        <h2 className="text-2xl font-bold text-white tracking-wide mb-2">Chưa cấu hình Từ Khóa Đối Thủ</h2>
-        <p className="text-gray-400 max-w-md">
+        <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-wide mb-2">Chưa cấu hình Từ Khóa Đối Thủ</h2>
+        <p className="text-slate-500 dark:text-gray-400 max-w-md">
           Bạn cần thêm các từ khóa có loại là "Competitor" trong phần Quản lý Từ khóa để hệ thống có thể so sánh Share of Voice.
         </p>
       </div>
@@ -66,15 +66,15 @@ export default function CompetitorsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-white tracking-wide">Phân Tích Đối Thủ</h1>
-          <p className="text-sm text-gray-400 mt-1">So sánh thị phần thảo luận (Share of Voice) và cảm xúc.</p>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-wide">Phân Tích Đối Thủ</h1>
+          <p className="text-sm text-slate-500 dark:text-gray-400 mt-1">So sánh thị phần thảo luận (Share of Voice) và cảm xúc.</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Share of Voice Chart */}
-        <div className="bg-[#1E293B] border border-gray-800 rounded-2xl p-6 shadow-xl">
-          <h3 className="text-lg font-bold text-white mb-6 flex items-center">
+        <div className="bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-gray-800 rounded-2xl p-6 shadow-xl">
+          <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-6 flex items-center">
             <TrendingUp className="w-5 h-5 mr-2 text-indigo-400" />
             Share of Voice (Thị phần thảo luận)
           </h3>
@@ -108,8 +108,8 @@ export default function CompetitorsPage() {
         </div>
 
         {/* Sentiment Comparison */}
-        <div className="bg-[#1E293B] border border-gray-800 rounded-2xl p-6 shadow-xl">
-          <h3 className="text-lg font-bold text-white mb-6 flex items-center">
+        <div className="bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-gray-800 rounded-2xl p-6 shadow-xl">
+          <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-6 flex items-center">
             <BarChartIcon className="w-5 h-5 mr-2 text-emerald-400" />
             Cảm xúc (Sentiment)
           </h3>
@@ -138,14 +138,14 @@ export default function CompetitorsPage() {
       </div>
 
       {/* Raw Data Table */}
-      <div className="bg-[#1E293B] border border-gray-800 rounded-2xl overflow-hidden shadow-xl mt-8">
-        <div className="px-6 py-4 border-b border-gray-800">
-          <h3 className="text-lg font-bold text-white">Bảng dữ liệu chi tiết</h3>
+      <div className="bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-gray-800 rounded-2xl overflow-hidden shadow-xl mt-8">
+        <div className="px-6 py-4 border-b border-slate-200 dark:border-gray-800">
+          <h3 className="text-lg font-bold text-slate-900 dark:text-white">Bảng dữ liệu chi tiết</h3>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-[#0F172A]/50 text-xs uppercase tracking-wider text-gray-400 border-b border-gray-800">
+              <tr className="bg-slate-50 dark:bg-[#0F172A]/50 text-xs uppercase tracking-wider text-slate-500 dark:text-gray-400 border-b border-slate-200 dark:border-gray-800">
                 <th className="px-6 py-4 font-medium">Thương hiệu</th>
                 <th className="px-6 py-4 font-medium">Share of Voice</th>
                 <th className="px-6 py-4 font-medium">Tổng Lượng Mentions</th>
@@ -155,15 +155,15 @@ export default function CompetitorsPage() {
             </thead>
             <tbody className="divide-y divide-gray-800/50">
               {(data?.data || []).map((row: any, i: number) => (
-                <tr key={i} className="hover:bg-[#0F172A]/30 transition-colors">
+                <tr key={i} className="hover:bg-slate-50 dark:bg-[#0F172A]/30 transition-colors">
                   <td className="px-6 py-4">
                     <div className="flex items-center">
                       <div className={`w-2 h-2 rounded-full mr-3 ${row.is_brand ? 'bg-indigo-500' : 'bg-gray-500'}`}></div>
-                      <span className={`font-semibold ${row.is_brand ? 'text-indigo-400' : 'text-gray-300'}`}>{row.name}</span>
+                      <span className={`font-semibold ${row.is_brand ? 'text-indigo-400' : 'text-slate-700 dark:text-gray-300'}`}>{row.name}</span>
                     </div>
                   </td>
-                  <td className="px-6 py-4 font-bold text-white">{row.share_of_voice}%</td>
-                  <td className="px-6 py-4 text-gray-300">{row.volume.toLocaleString()}</td>
+                  <td className="px-6 py-4 font-bold text-slate-900 dark:text-white">{row.share_of_voice}%</td>
+                  <td className="px-6 py-4 text-slate-700 dark:text-gray-300">{row.volume.toLocaleString()}</td>
                   <td className="px-6 py-4 text-emerald-400 font-medium">{row.sentiment.positive.toLocaleString()}</td>
                   <td className="px-6 py-4 text-rose-400 font-medium">{row.sentiment.negative.toLocaleString()}</td>
                 </tr>
