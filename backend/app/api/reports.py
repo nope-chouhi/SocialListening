@@ -2,8 +2,11 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import select, func, and_
 from datetime import datetime
-from typing import List
+from typing import List, Optional
 from math import ceil
+from fastapi.responses import StreamingResponse, Response
+
+from app.services.export_service import ExportService
 
 from app.core.database import get_db
 from app.core.security import get_current_active_user
@@ -16,7 +19,6 @@ from app.schemas.report import (
 )
 from app.core.tenant import apply_tenant_filter
 
-router = APIRouter()
 router = APIRouter()
 
 @router.get("/summary")
@@ -297,3 +299,117 @@ def delete_report(
     db.commit()
 
 
+@router.get("/mentions/export")
+def export_mentions(
+    format: str = Query(..., description="Export format, only csv is supported here"),
+    project_id: Optional[int] = None,
+    date_from: Optional[datetime] = None,
+    date_to: Optional[datetime] = None,
+    sentiment: Optional[str] = None,
+    risk_level: Optional[str] = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Export mentions to CSV"""
+    if format.lower() != "csv":
+        raise HTTPException(status_code=400, detail="Unsupported format. Only csv is supported for mentions.")
+        
+    filters = {
+        "project_id": project_id,
+        "date_from": date_from,
+        "date_to": date_to,
+        "sentiment": sentiment,
+        "risk_level": risk_level
+    }
+    
+    generator = ExportService.export_mentions_csv(db, current_user, filters)
+    
+    response = StreamingResponse(generator, media_type="text/csv")
+    response.headers["Content-Disposition"] = "attachment; filename=mentions_export.csv"
+    return response
+
+
+@router.get("/alerts/export")
+def export_alerts(
+    format: str = Query(..., description="Export format, only csv is supported here"),
+    project_id: Optional[int] = None,
+    date_from: Optional[datetime] = None,
+    date_to: Optional[datetime] = None,
+    severity: Optional[str] = None,
+    status: Optional[str] = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Export alerts to CSV"""
+    if format.lower() != "csv":
+        raise HTTPException(status_code=400, detail="Unsupported format. Only csv is supported for alerts.")
+        
+    filters = {
+        "project_id": project_id,
+        "date_from": date_from,
+        "date_to": date_to,
+        "severity": severity,
+        "status": status
+    }
+    
+    generator = ExportService.export_alerts_csv(db, current_user, filters)
+    
+    response = StreamingResponse(generator, media_type="text/csv")
+    response.headers["Content-Disposition"] = "attachment; filename=alerts_export.csv"
+    return response
+
+
+@router.get("/incidents/export")
+def export_incidents(
+    format: str = Query(..., description="Export format, only csv is supported here"),
+    project_id: Optional[int] = None,
+    date_from: Optional[datetime] = None,
+    date_to: Optional[datetime] = None,
+    status: Optional[str] = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Export incidents to CSV"""
+    if format.lower() != "csv":
+        raise HTTPException(status_code=400, detail="Unsupported format. Only csv is supported for incidents.")
+        
+    filters = {
+        "project_id": project_id,
+        "date_from": date_from,
+        "date_to": date_to,
+        "status": status
+    }
+    
+    generator = ExportService.export_incidents_csv(db, current_user, filters)
+    
+    response = StreamingResponse(generator, media_type="text/csv")
+    response.headers["Content-Disposition"] = "attachment; filename=incidents_export.csv"
+    return response
+
+
+@router.get("/project-summary/export")
+def export_project_summary(
+    format: str = Query(..., description="Export format, only xlsx is supported here"),
+    project_id: Optional[int] = None,
+    date_from: Optional[datetime] = None,
+    date_to: Optional[datetime] = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Export project summary to XLSX"""
+    if format.lower() not in ["xlsx", "excel"]:
+        raise HTTPException(status_code=400, detail="Unsupported format. Only xlsx is supported for project summary.")
+        
+    filters = {
+        "project_id": project_id,
+        "date_from": date_from,
+        "date_to": date_to
+    }
+    
+    content = ExportService.export_project_summary_xlsx(db, current_user, filters)
+    
+    return Response(
+        content=content,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": "attachment; filename=project_summary.xlsx"}
+    )
