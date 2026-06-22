@@ -1041,7 +1041,7 @@ function MentionsPageContent() {
                </div>
 
                {hasActiveFilters && (
-                 <button onClick={() => { setFilters({ ...filters, sentiment: null, source_type: null, min_risk_score: null, min_influence_score: null }); setPage(1); }} className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 dark:text-gray-100 font-medium transition-colors">
+                 <button onClick={() => { setFilters({ ...filters, sentiment: null, source_type: null, min_risk_score: null, min_influence_score: null }); setPage(1); }} className="flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 dark:text-gray-100 font-medium transition-colors">
                    <RefreshCw className="w-3.5 h-3.5" /> Clear filters
                  </button>
                )}
@@ -1107,13 +1107,13 @@ function MentionsPageContent() {
             <div className="flex items-center">
               <button
                 onClick={() => setActiveChartTab('reach')}
-                className={`px-4 sm:px-6 py-3 border-b-2 text-sm font-bold ${activeChartTab === 'reach' ? 'border-blue-600 text-gray-900 dark:text-white' : 'border-transparent text-gray-500 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+                className={`px-4 sm:px-6 py-3 border-b-2 text-sm font-bold ${activeChartTab === 'reach' ? 'border-blue-600 text-gray-900 dark:text-white' : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'}`}
               >
                 Mentions & Reach
               </button>
               <button
                 onClick={() => setActiveChartTab('sentiment')}
-                className={`px-4 sm:px-6 py-3 border-b-2 text-sm font-bold ${activeChartTab === 'sentiment' ? 'border-blue-600 text-gray-900 dark:text-white' : 'border-transparent text-gray-500 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+                className={`px-4 sm:px-6 py-3 border-b-2 text-sm font-bold ${activeChartTab === 'sentiment' ? 'border-blue-600 text-gray-900 dark:text-white' : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'}`}
               >
                 Cảm xúc
               </button>
@@ -1125,15 +1125,15 @@ function MentionsPageContent() {
                <div className="flex bg-gray-100 dark:bg-white/10 p-0.5 rounded-lg border border-gray-200 dark:border-white/10">
                  <button
                    onClick={() => setChartTimeRange('days')}
-                   className={`px-3 py-1 text-xs font-medium rounded shadow-sm ${chartTimeRange === 'days' ? 'bg-white dark:bg-[#050A15] text-gray-800 dark:text-gray-100' : 'text-gray-500 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+                   className={`px-3 py-1 text-xs font-medium rounded shadow-sm ${chartTimeRange === 'days' ? 'bg-white dark:bg-[#050A15] text-gray-800 dark:text-gray-100' : 'text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'}`}
                  >Days</button>
                  <button
                    onClick={() => setChartTimeRange('weeks')}
-                   className={`px-3 py-1 text-xs font-medium rounded shadow-sm ${chartTimeRange === 'weeks' ? 'bg-white dark:bg-[#050A15] text-gray-800 dark:text-gray-100' : 'text-gray-500 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+                   className={`px-3 py-1 text-xs font-medium rounded shadow-sm ${chartTimeRange === 'weeks' ? 'bg-white dark:bg-[#050A15] text-gray-800 dark:text-gray-100' : 'text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'}`}
                  >Weeks</button>
                  <button
                    onClick={() => setChartTimeRange('months')}
-                   className={`px-3 py-1 text-xs font-medium rounded shadow-sm ${chartTimeRange === 'months' ? 'bg-white dark:bg-[#050A15] text-gray-800 dark:text-gray-100' : 'text-gray-500 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+                   className={`px-3 py-1 text-xs font-medium rounded shadow-sm ${chartTimeRange === 'months' ? 'bg-white dark:bg-[#050A15] text-gray-800 dark:text-gray-100' : 'text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'}`}
                  >Months</button>
                </div>
             </div>
@@ -1210,7 +1210,7 @@ function MentionsPageContent() {
 
         {/* Pagination Bar Top */}
         <div className="flex items-center justify-between bg-white dark:bg-[#050A15] px-4 py-3 rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
-           <div className="text-sm font-medium text-gray-500 dark:text-gray-500">
+           <div className="text-sm font-medium text-gray-600 dark:text-gray-400">
              {loading && !mentionsList.length ? 'Đang tải...' : totalMentions >= 0 ? `${totalMentions.toLocaleString()} kết quả ${searchTerm ? `cho '${searchTerm}'` : ''}` : 'Đang tải...'}
            </div>
 
@@ -1254,7 +1254,7 @@ function MentionsPageContent() {
                 {searchState === 'TYPING' || searchState === 'SEARCHING_DB' ? (
                   <>
                     <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-4" />
-                    <p className="text-gray-500 dark:text-gray-500">{searchState === 'TYPING' ? 'Đang nhập từ khóa...' : `Đang tìm kiếm '${searchTerm}'...`}</p>
+                    <p className="text-gray-600 dark:text-gray-400">{searchState === 'TYPING' ? 'Đang nhập từ khóa...' : `Đang tìm kiếm '${searchTerm}'...`}</p>
                   </>
                 ) : (
                   <>
@@ -1278,7 +1278,7 @@ function MentionsPageContent() {
                          )}
                        </div>
                     ) : (
-                       <p className="text-gray-500 dark:text-gray-500 mb-6 max-w-sm">Có thể dữ liệu nằm ngoài phạm vi thời gian hoặc bộ lọc quá nghiêm ngặt.</p>
+                       <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-sm">Có thể dữ liệu nằm ngoài phạm vi thời gian hoặc bộ lọc quá nghiêm ngặt.</p>
                     )}
 
                     {['AUTO_SCAN_STARTING', 'AUTO_SCAN_RUNNING'].includes(searchState) && (
@@ -1416,7 +1416,7 @@ function MentionsPageContent() {
                                 )}
                               </div>
                             )}
-                           <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-500 mt-1">
+                           <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400 mt-1">
                               <span>{getMentionSourceLabel(mention)}</span>
                              <span>•</span>
                              <span>Ảnh hưởng: {mention.influence_score ? `${mention.influence_score}/10` : 'Chưa có dữ liệu'}</span>
@@ -1608,28 +1608,28 @@ function MentionsPageContent() {
                            handleAction(mention.id, 'tags', () => mentionsApi.updateTags(mention.id, newTags), 'Đã cập nhật tags');
                          }
                        }}
-                       className="flex items-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 dark:text-gray-100"
+                       className="flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 dark:text-gray-100"
                      >
                        <Tag className="w-3.5 h-3.5" /> Tags
                      </button>
-                     <button onClick={() => handleToggleAddToReport(mention.id, mention.add_to_report)} className={`flex items-center gap-1.5 text-xs font-medium ${mention.add_to_report ? 'text-indigo-600' : 'text-gray-500 dark:text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 dark:text-gray-100'}`}>
+                     <button onClick={() => handleToggleAddToReport(mention.id, mention.add_to_report)} className={`flex items-center gap-1.5 text-xs font-medium ${mention.add_to_report ? 'text-indigo-600' : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 dark:text-gray-100'}`}>
                        <FileText className="w-3.5 h-3.5" /> {mention.add_to_report ? 'Remove from PDF' : 'Add to PDF report'}
                      </button>
                      <button
                        disabled={!mention.author}
                        onClick={() => handleAction(mention.id, 'mute_author', () => mentionsApi.muteAuthor(mention.author!, activeProject!.id), `Đã ẩn tác giả ${mention.author}`)}
-                       className="flex items-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 disabled:opacity-50"
+                       className="flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 disabled:opacity-50"
                      >
                        <Eye className="w-3.5 h-3.5" /> Mute author
                      </button>
                      <button
                        disabled={!mention.domain}
                        onClick={() => handleAction(mention.id, 'mute_domain', () => mentionsApi.muteDomain(mention.domain!, activeProject!.id), `Đã ẩn nguồn ${mention.domain}`)}
-                       className="flex items-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 disabled:opacity-50"
+                       className="flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 disabled:opacity-50"
                      >
                        <Eye className="w-3.5 h-3.5" /> Mute site
                      </button>
-                     <button onClick={() => setDeleteConfirm({ isOpen: true, mentionId: mention.id, mentionTitle: mention.title || '' })} className="flex items-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-500 hover:text-red-600">
+                     <button onClick={() => setDeleteConfirm({ isOpen: true, mentionId: mention.id, mentionTitle: mention.title || '' })} className="flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-red-600">
                        <Trash2 className="w-3.5 h-3.5" /> Delete
                      </button>
                    </div>
@@ -1800,7 +1800,7 @@ function MentionsPageContent() {
                     setFilters({...filters, sentiment: next.length ? next.join(',') : null});
                     setPage(1);
                   }}
-                  className="rounded border-gray-300 text-gray-500 dark:text-gray-500 focus:ring-gray-500"
+                  className="rounded border-gray-300 text-gray-600 dark:text-gray-400 focus:ring-gray-500"
                />
                <span className="text-xs font-medium text-gray-600 dark:text-gray-400">Neutral</span>
              </label>
@@ -1840,7 +1840,7 @@ function MentionsPageContent() {
                }}
                className="w-full h-1 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer accent-blue-600"
              />
-             <div className="flex justify-between text-[10px] text-gray-500 dark:text-gray-500 mt-2 font-medium">
+             <div className="flex justify-between text-[10px] text-gray-600 dark:text-gray-400 mt-2 font-medium">
                <span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span>
              </div>
            </div>

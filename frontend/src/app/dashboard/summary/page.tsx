@@ -75,7 +75,7 @@ export default function AnalysisPage() {
             <PieChart className="w-6 h-6 text-indigo-500" />
             Analysis Summary
           </h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+          <p className="text-sm text-gray-600 dark:text-gray-500 dark:text-gray-400 mt-1">
             Phân tích chuyên sâu về dữ liệu Social Listening
             {activeProject ? ` — ${activeProject.name}` : ''}.
           </p>
@@ -107,7 +107,7 @@ export default function AnalysisPage() {
               <div key={kpi.label} className={`${kpi.bg} rounded-xl p-4 border border-gray-200 dark:border-white/10`}>
                 <div className="flex items-center gap-2 mb-2">
                   <kpi.icon className={`w-4 h-4 ${kpi.color}`} />
-                  <span className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{kpi.label}</span>
+                  <span className="text-xs font-bold text-gray-600 dark:text-gray-500 dark:text-gray-400 uppercase tracking-wider">{kpi.label}</span>
                 </div>
                 <p className={`text-3xl font-black ${kpi.color}`}>{kpi.value.toLocaleString()}</p>
               </div>
@@ -138,17 +138,17 @@ export default function AnalysisPage() {
                   {aiText}
                 </div>
               ) : total === 0 ? (
-                <p className="text-gray-500 dark:text-gray-400 text-sm">Chưa có mentions để tóm tắt. Hãy chạy scan để thu thập dữ liệu trước.</p>
+                <p className="text-gray-600 dark:text-gray-500 dark:text-gray-400 text-sm">Chưa có mentions để tóm tắt. Hãy chạy scan để thu thập dữ liệu trước.</p>
               ) : (
-                <p className="text-gray-500 dark:text-gray-400 text-sm">Nhấn "Tạo AI Summary" để phân tích {total} mentions bằng AI.</p>
+                <p className="text-gray-600 dark:text-gray-500 dark:text-gray-400 text-sm">Nhấn "Tạo AI Summary" để phân tích {total} mentions bằng AI.</p>
               )}
             </div>
 
             {/* Sentiment Donut */}
-            <div className="bg-white dark:bg-[#050A15] rounded-2xl shadow border border-gray-200 dark:border-white/10 p-6">
+            <div className="bg-white dark:bg-[#050A15] rounded-2xl shadow-sm border border-gray-100 dark:border-white/10 p-6">
               <h2 className="text-base font-bold text-gray-900 dark:text-white mb-4">Sentiment Breakdown</h2>
               {total === 0 ? (
-                <p className="text-gray-400 text-sm text-center py-8">Chưa có dữ liệu</p>
+                <p className="text-gray-500 dark:text-gray-400 text-sm text-center py-8">Chưa có dữ liệu</p>
               ) : (
                 <>
                   <div className="relative h-40 flex items-center justify-center mb-4">
@@ -183,9 +183,9 @@ export default function AnalysisPage() {
                     ].map(s => (
                       <div key={s.label} className="flex items-center gap-2">
                         <div className={`w-2.5 h-2.5 rounded-full ${s.color}`} />
-                        <span className="text-gray-600 dark:text-gray-400 flex-1">{s.label}</span>
+                        <span className="text-gray-600 dark:text-gray-500 dark:text-gray-400 flex-1">{s.label}</span>
                         <span className="font-bold text-gray-900 dark:text-white">{s.count.toLocaleString()}</span>
-                        <span className="text-gray-400 w-10 text-right">{s.pct}%</span>
+                        <span className="text-gray-500 dark:text-gray-400 w-10 text-right">{s.pct}%</span>
                       </div>
                     ))}
                   </div>
@@ -196,13 +196,13 @@ export default function AnalysisPage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* 7-day Trend */}
-            <div className="bg-white dark:bg-[#050A15] rounded-2xl shadow border border-gray-200 dark:border-white/10 p-6">
+            <div className="bg-white dark:bg-[#050A15] rounded-2xl shadow-sm border border-gray-100 dark:border-white/10 p-6">
               <h2 className="text-base font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                 <TrendingUp className="w-4 h-4 text-indigo-500" />
                 Trend 7 ngày qua
               </h2>
               {byDay.length === 0 ? (
-                <p className="text-gray-400 text-sm text-center py-8">Chưa có dữ liệu</p>
+                <p className="text-gray-500 dark:text-gray-400 text-sm text-center py-8">Chưa có dữ liệu</p>
               ) : (
                 <div className="flex items-end gap-2 h-40">
                   {byDay.map((d, i) => (
@@ -212,7 +212,7 @@ export default function AnalysisPage() {
                         style={{ height: `${Math.round((d.count / maxDayCount) * 130)}px`, minHeight: '4px' }}
                         title={`${d.date}: ${d.count} mentions`}
                       />
-                      <span className="text-[9px] text-gray-400 truncate">{d.date.slice(5)}</span>
+                      <span className="text-[9px] text-gray-500 dark:text-gray-400 truncate">{d.date.slice(5)}</span>
                     </div>
                   ))}
                 </div>
@@ -220,13 +220,13 @@ export default function AnalysisPage() {
             </div>
 
             {/* Sources */}
-            <div className="bg-white dark:bg-[#050A15] rounded-2xl shadow border border-gray-200 dark:border-white/10 p-6">
+            <div className="bg-white dark:bg-[#050A15] rounded-2xl shadow-sm border border-gray-100 dark:border-white/10 p-6">
               <h2 className="text-base font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                 <Globe className="w-4 h-4 text-indigo-500" />
                 Phân bố nguồn
               </h2>
               {Object.keys(bySource).length === 0 ? (
-                <p className="text-gray-400 text-sm text-center py-8">Chưa có dữ liệu nguồn</p>
+                <p className="text-gray-500 dark:text-gray-400 text-sm text-center py-8">Chưa có dữ liệu nguồn</p>
               ) : (
                 <div className="space-y-3">
                   {Object.entries(bySource)

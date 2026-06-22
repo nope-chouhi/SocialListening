@@ -163,14 +163,24 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges, setIsWebi
     >
 
       {/* ── Header: Logo + Collapse Button ─────────────────────────────── */}
-      <div className={`flex items-center h-[64px] shrink-0 border-b border-white/[0.06] ${sidebarCollapsed ? 'flex-col justify-center gap-0 px-0' : 'justify-between px-4'}`}>
+      <div className={`flex items-center shrink-0 border-b border-white/[0.06] ${sidebarCollapsed ? 'flex-col justify-center py-4 gap-3' : 'h-[64px] justify-between px-4'}`}>
         {sidebarCollapsed ? (
-          /* Collapsed: just the N logo, collapse toggle below */
-          <div className="flex flex-col items-center gap-2 w-full">
+          /* Collapsed: Logo and Toggle button */
+          <>
             <div className="w-9 h-9 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-[0_0_15px_rgba(99,102,241,0.4)] border border-white/20">
               <span className="text-white font-black text-base leading-none">N</span>
             </div>
-          </div>
+            <button
+              onClick={toggleCollapse}
+              title="Mở rộng sidebar"
+              className="group relative w-8 h-8 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 flex items-center justify-center transition-colors"
+            >
+              <ChevronRight className="w-4 h-4" />
+              <span className="pointer-events-none absolute left-full ml-3 px-2.5 py-1.5 bg-[#0F172A] border border-white/10 text-white text-xs font-medium rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-all z-50 shadow-xl">
+                Expand
+              </span>
+            </button>
+          </>
         ) : (
           <>
             <div className="flex items-center gap-2.5">
@@ -236,7 +246,7 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges, setIsWebi
                 </span>
               </button>
               {projectDropdownOpen && (
-                <div className="absolute left-[76px] top-[120px] w-52 bg-[#1E293B] border border-white/10 rounded-xl shadow-2xl overflow-hidden py-1.5 z-50">
+                <div className="absolute left-[76px] top-[10px] w-52 bg-[#1E293B] border border-white/10 rounded-xl shadow-2xl overflow-hidden py-1.5 z-50">
                   {projects.map((p: any) => (
                     <button
                       key={p.id}
@@ -346,33 +356,12 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges, setIsWebi
         )}
       </nav>
 
-      {/* ── Footer: Collapse toggle (collapsed) ────────────────────────── */}
-      <div className={`shrink-0 border-t border-white/[0.06] ${sidebarCollapsed ? 'flex flex-col items-center py-3 gap-2' : 'flex items-center justify-between px-4 py-3'}`}>
-        {sidebarCollapsed ? (
-          <button
-            onClick={toggleCollapse}
-            title="Mở rộng sidebar"
-            className="group relative w-10 h-10 rounded-xl text-zinc-600 hover:text-white hover:bg-white/10 flex items-center justify-center transition-colors"
-          >
-            <ChevronRight className="w-4 h-4" />
-            <span className="pointer-events-none absolute left-full ml-3 px-2.5 py-1.5 bg-[#0F172A] border border-white/10 text-white text-xs font-medium rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-all z-50 shadow-xl">
-              Expand
-            </span>
-          </button>
-        ) : (
-          <>
-            <button onClick={handleLogout} className="flex items-center gap-2 text-xs text-zinc-500 hover:text-red-400 transition-colors font-medium">
-              <LogOut className="w-4 h-4" />
-              Log out
-            </button>
-            <button
-              onClick={() => setSidebarOpen(false)}
-              className="lg:hidden p-1.5 text-zinc-600 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </>
-        )}
+      {/* ── Footer ─────────────────────────────────────────────────────── */}
+      <div className={`shrink-0 border-t border-white/[0.06] flex items-center ${sidebarCollapsed ? 'justify-center py-3' : 'justify-between px-4 py-3'}`}>
+        <button onClick={handleLogout} className={`flex items-center gap-2 text-xs text-zinc-500 hover:text-red-400 transition-colors font-medium ${sidebarCollapsed ? 'justify-center w-10 h-10 rounded-xl hover:bg-white/5' : ''}`}>
+          <LogOut className="w-4 h-4" />
+          {!sidebarCollapsed && 'Log out'}
+        </button>
       </div>
     </div>
   );
