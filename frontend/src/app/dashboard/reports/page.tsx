@@ -87,7 +87,7 @@ export default function ReportsPage() {
   if (loading && !data) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-gray-400 font-medium tracking-wide flex items-center">
+        <div className="text-slate-500 dark:text-gray-400 font-medium tracking-wide flex items-center">
           <RefreshCcw className="w-5 h-5 mr-2 animate-spin text-indigo-400" />
           Đang tải báo cáo...
         </div>
@@ -100,13 +100,13 @@ export default function ReportsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-white tracking-wide">Báo Cáo (Reports)</h1>
-          <p className="text-sm text-gray-400 mt-1">Trình xuất báo cáo định kỳ và tùy chỉnh.</p>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-wide">Báo Cáo (Reports)</h1>
+          <p className="text-sm text-slate-500 dark:text-gray-400 mt-1">Trình xuất báo cáo định kỳ và tùy chỉnh.</p>
         </div>
         <div className="flex items-center space-x-3">
           <button 
             onClick={handleCopyLink}
-            className="flex items-center justify-center space-x-2 px-4 py-2.5 bg-[#1E293B] text-gray-300 hover:text-white border border-gray-700 hover:border-gray-500 rounded-xl transition-all font-medium"
+            className="flex items-center justify-center space-x-2 px-4 py-2.5 bg-white dark:bg-[#1E293B] text-slate-700 dark:text-gray-300 hover:text-slate-900 dark:text-white border border-slate-300 dark:border-gray-700 hover:border-gray-500 rounded-xl transition-all font-medium"
           >
             {copied ? <CheckCircle className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
             <span>QuickShare Link</span>
@@ -119,12 +119,12 @@ export default function ReportsPage() {
               <Download className="w-4 h-4" />
               <span>{exporting ? 'Đang xuất...' : 'Xuất Báo Cáo'}</span>
             </button>
-            <div className="absolute right-0 mt-2 w-48 bg-[#1E293B] border border-gray-700 rounded-xl shadow-xl py-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
-              <button onClick={() => handleExport('PDF')} className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-800 transition-colors">PDF Report</button>
+            <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-[#1E293B] border border-slate-300 dark:border-gray-700 rounded-xl shadow-xl py-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+              <button onClick={() => handleExport('PDF')} className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-gray-300 hover:text-slate-900 dark:text-white hover:bg-gray-800 transition-colors">PDF Report</button>
               <button disabled className="w-full text-left px-4 py-2 text-sm text-gray-500 cursor-not-allowed flex items-center gap-2">
-                PowerPoint (PPTX) <span className="text-[9px] bg-gray-600 text-gray-400 px-1.5 py-0.5 rounded uppercase">Coming soon</span>
+                PowerPoint (PPTX) <span className="text-[9px] bg-gray-600 text-slate-500 dark:text-gray-400 px-1.5 py-0.5 rounded uppercase">Coming soon</span>
               </button>
-              <button onClick={() => window.location.href = '/dashboard/reports/excel'} className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-800 transition-colors">Excel / CSV Export</button>
+              <button onClick={() => window.location.href = '/dashboard/reports/excel'} className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-gray-300 hover:text-slate-900 dark:text-white hover:bg-gray-800 transition-colors">Excel / CSV Export</button>
             </div>
           </div>
         </div>
@@ -141,14 +141,14 @@ export default function ReportsPage() {
             <div>
               <div className="flex items-center gap-3 mb-2">
                 <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-[0_0_15px_rgba(99,102,241,0.5)]">
-                  <span className="text-white font-black text-xl">N</span>
+                  <span className="text-slate-900 dark:text-white font-black text-xl">N</span>
                 </div>
                 <h2 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-zinc-400 tracking-tight">EXECUTIVE REPORT</h2>
               </div>
               <p className="text-zinc-400 mt-2 font-medium tracking-wide">Báo cáo Trí tuệ Danh tiếng & Phân tích Dữ liệu</p>
             </div>
             <div className="text-right">
-              <div className="text-sm font-black text-white uppercase tracking-[0.2em]">Nope Intelligence</div>
+              <div className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-[0.2em]">Nope Intelligence</div>
               <div className="text-xs text-indigo-400 mt-1 font-mono bg-indigo-500/10 inline-block px-3 py-1 rounded-md border border-indigo-500/20">
                 DATE: {new Date(data?.generated_at || Date.now()).toLocaleDateString('vi-VN')}
               </div>
@@ -159,7 +159,7 @@ export default function ReportsPage() {
             <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-white/10 shadow-inner relative overflow-hidden group">
               <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
               <div className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-2 relative z-10">Tổng Mentions</div>
-              <div className="text-5xl font-black text-white tracking-tight relative z-10">{data?.metrics?.total_mentions?.toLocaleString() || 0}</div>
+              <div className="text-5xl font-black text-slate-900 dark:text-white tracking-tight relative z-10">{data?.metrics?.total_mentions?.toLocaleString() || 0}</div>
               <div className="text-[10px] font-bold text-indigo-400 mt-3 uppercase tracking-widest flex items-center gap-2 relative z-10">
                 <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
                 AI Phân tích toàn diện
@@ -182,8 +182,8 @@ export default function ReportsPage() {
 
           <div className="mb-12">
             <div className="flex items-center justify-between mb-4 border-b border-white/10 pb-2">
-              <h3 className="text-sm font-bold text-white uppercase tracking-widest">Mentions Được Chọn Cho Báo Cáo</h3>
-              <span className="text-xs text-gray-400">{data?.selected_mentions?.length || 0} mentions</span>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-widest">Mentions Được Chọn Cho Báo Cáo</h3>
+              <span className="text-xs text-slate-500 dark:text-gray-400">{data?.selected_mentions?.length || 0} mentions</span>
             </div>
             <div className="space-y-3">
               {data?.selected_mentions && data.selected_mentions.length > 0 ? (
@@ -192,7 +192,7 @@ export default function ReportsPage() {
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <h4 className="font-bold text-white text-sm line-clamp-1">{m.title || 'Không có tiêu đề'}</h4>
+                          <h4 className="font-bold text-slate-900 dark:text-white text-sm line-clamp-1">{m.title || 'Không có tiêu đề'}</h4>
                           {m.url && (
                             <a
                               href={m.url}
@@ -204,14 +204,14 @@ export default function ReportsPage() {
                             </a>
                           )}
                         </div>
-                        <p className="text-xs text-gray-400 mb-2">{m.domain || m.source_name || 'unknown'}</p>
-                        <p className="text-xs text-gray-300 line-clamp-2">{m.snippet || m.content?.substring(0, 200) || ''}</p>
+                        <p className="text-xs text-slate-500 dark:text-gray-400 mb-2">{m.domain || m.source_name || 'unknown'}</p>
+                        <p className="text-xs text-slate-700 dark:text-gray-300 line-clamp-2">{m.snippet || m.content?.substring(0, 200) || ''}</p>
                       </div>
                       <div className="flex flex-col items-end gap-2 flex-shrink-0">
                         <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold rounded-md border ${
                           m.sentiment === 'positive' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
                           m.sentiment?.includes('negative') ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' :
-                          'bg-gray-500/10 text-gray-400 border-gray-500/20'
+                          'bg-gray-500/10 text-slate-500 dark:text-gray-400 border-gray-500/20'
                         }`}>
                           {m.sentiment || 'unknown'}
                         </span>
@@ -234,7 +234,7 @@ export default function ReportsPage() {
               ) : (
                 <div className="p-8 bg-white/5 border border-white/5 rounded-xl text-center">
                   <FileText className="w-12 h-12 text-gray-600 mx-auto mb-4" />
-                  <p className="text-sm text-gray-400 mb-4">Chưa có mentions nào được chọn cho báo cáo.</p>
+                  <p className="text-sm text-slate-500 dark:text-gray-400 mb-4">Chưa có mentions nào được chọn cho báo cáo.</p>
                   <Link
                     href="/dashboard/mentions"
                     className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-colors"
@@ -265,9 +265,9 @@ export default function ReportsPage() {
             <div className="text-[10px] font-bold text-zinc-600 uppercase tracking-[0.2em] mb-2">Generated by</div>
             <div className="flex items-center gap-2 opacity-50 grayscale">
               <div className="w-5 h-5 bg-gradient-to-br from-indigo-500 to-purple-600 rounded flex items-center justify-center">
-                <span className="text-white font-black text-[10px]">N</span>
+                <span className="text-slate-900 dark:text-white font-black text-[10px]">N</span>
               </div>
-              <span className="text-sm font-black text-white tracking-widest">NOPE INTELLIGENCE</span>
+              <span className="text-sm font-black text-slate-900 dark:text-white tracking-widest">NOPE INTELLIGENCE</span>
             </div>
           </div>
         </div>

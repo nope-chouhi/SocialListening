@@ -34,7 +34,7 @@ const PLATFORM_CONFIG: Record<string, { bg: string; text: string; emoji: string 
   },
   News: {
     bg: 'bg-gray-500/10 border-gray-500/20',
-    text: 'text-gray-600 dark:text-gray-400',
+    text: 'text-gray-600 dark:text-slate-500 dark:text-gray-400',
     emoji: '📰',
   },
 };

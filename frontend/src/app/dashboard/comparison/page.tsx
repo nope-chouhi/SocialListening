@@ -45,7 +45,7 @@ export default function ComparisonPage() {
     const max = Math.max(valA, valB, 1);
     return (
       <div className="mb-4">
-        <p className="text-xs font-bold text-gray-600 dark:text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">{label}</p>
+        <p className="text-xs font-bold text-gray-600 dark:text-slate-500 dark:text-gray-400 uppercase tracking-wider mb-2">{label}</p>
         <div className="flex items-center gap-3">
           <span className="text-xs w-20 text-right font-bold text-indigo-600 dark:text-indigo-400">{valA.toLocaleString()}</span>
           <div className="flex-1 flex items-center gap-1">
@@ -66,17 +66,17 @@ export default function ComparisonPage() {
     <div className="space-y-6 max-w-[1400px] mx-auto">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-wide flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-wide flex items-center gap-2">
             <Scale className="w-6 h-6 text-emerald-500" />
             Comparison
           </h1>
-          <p className="text-sm text-gray-600 dark:text-gray-500 dark:text-gray-400 mt-1">So sánh mentions, sentiment giữa các projects.</p>
+          <p className="text-sm text-gray-600 dark:text-slate-500 dark:text-gray-400 mt-1">So sánh mentions, sentiment giữa các projects.</p>
         </div>
       </div>
 
       {/* Project selector */}
       <div className="bg-white dark:bg-[#050A15] rounded-2xl shadow-sm border border-gray-100 dark:border-white/10 p-6">
-        <h2 className="text-base font-bold text-gray-900 dark:text-white mb-4">Chọn 2 Projects để So sánh</h2>
+        <h2 className="text-base font-bold text-slate-900 dark:text-white mb-4">Chọn 2 Projects để So sánh</h2>
         {projects.length < 2 ? (
           <div className="bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 text-amber-800 dark:text-amber-300 px-4 py-3 rounded-lg text-sm">
             Tính năng này yêu cầu ít nhất 2 dự án. Hiện tại bạn mới có {projects.length} dự án.
@@ -84,12 +84,12 @@ export default function ComparisonPage() {
         ) : (
           <div className="flex flex-col sm:flex-row gap-4 items-end">
           <div className="flex-1 space-y-2">
-            <label className="text-sm font-medium text-gray-600 dark:text-gray-500 dark:text-gray-400">Project A</label>
+            <label className="text-sm font-medium text-gray-600 dark:text-slate-500 dark:text-gray-400">Project A</label>
             <div className="relative">
               <select
                 value={projectA || ''}
                 onChange={e => setProjectA(Number(e.target.value) || null)}
-                className="w-full appearance-none bg-gray-50 dark:bg-[#0a0f1c] border border-gray-200 dark:border-white/10 rounded-lg pl-4 pr-10 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full appearance-none bg-gray-50 dark:bg-[#0a0f1c] border border-gray-200 dark:border-white/10 rounded-lg pl-4 pr-10 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
               >
                 <option value="">-- Chọn Project A --</option>
                 {projects.map(p => (
@@ -97,19 +97,19 @@ export default function ComparisonPage() {
                 ))}
               </select>
               <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
-                <svg className="w-4 h-4 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 text-slate-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               </div>
             </div>
           </div>
           <div className="flex-1 space-y-2">
-            <label className="text-sm font-medium text-gray-600 dark:text-gray-500 dark:text-gray-400">Project B</label>
+            <label className="text-sm font-medium text-gray-600 dark:text-slate-500 dark:text-gray-400">Project B</label>
             <div className="relative">
               <select
                 value={projectB || ''}
                 onChange={e => setProjectB(Number(e.target.value) || null)}
-                className="w-full appearance-none bg-gray-50 dark:bg-[#0a0f1c] border border-gray-200 dark:border-white/10 rounded-lg pl-4 pr-10 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full appearance-none bg-gray-50 dark:bg-[#0a0f1c] border border-gray-200 dark:border-white/10 rounded-lg pl-4 pr-10 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
               >
                 <option value="">-- Chọn Project B --</option>
                 {projects.map(p => (
@@ -117,7 +117,7 @@ export default function ComparisonPage() {
                 ))}
               </select>
               <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
-                <svg className="w-4 h-4 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 text-slate-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               </div>
@@ -162,11 +162,11 @@ export default function ComparisonPage() {
                 <div className="flex justify-between items-end">
                   <div>
                     <p className="text-2xl font-black text-indigo-600 dark:text-indigo-400">{a.toLocaleString()}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">{nameA}</p>
+                    <p className="text-xs text-slate-500 dark:text-gray-400">{nameA}</p>
                   </div>
                   <div className="text-right">
                     <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400">{b.toLocaleString()}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">{nameB}</p>
+                    <p className="text-xs text-slate-500 dark:text-gray-400">{nameB}</p>
                   </div>
                 </div>
                 <div className="mt-3">
@@ -178,12 +178,12 @@ export default function ComparisonPage() {
 
           {/* Day-by-day Trend */}
           <div className="bg-white dark:bg-[#050A15] rounded-2xl shadow-sm border border-gray-100 dark:border-white/10 p-6">
-            <h2 className="text-base font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+            <h2 className="text-base font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
               <TrendingUp className="w-4 h-4 text-indigo-500" />
               Trend theo ngày
             </h2>
             {(dataA.by_day || []).length === 0 ? (
-              <p className="text-gray-500 dark:text-gray-400 text-sm">Không đủ dữ liệu để so sánh. Hãy chạy scan hoặc background collection.</p>
+              <p className="text-slate-500 dark:text-gray-400 text-sm">Không đủ dữ liệu để so sánh. Hãy chạy scan hoặc background collection.</p>
             ) : (
               <div className="space-y-3">
                 {(dataA.by_day || []).map((d: any, i: number) => {
@@ -204,22 +204,22 @@ export default function ComparisonPage() {
               const total = Object.values(data).reduce((s: number, v: any) => s + v, 0) as number;
               return (
                 <div key={name} className="bg-white dark:bg-[#050A15] rounded-2xl shadow-sm border border-gray-100 dark:border-white/10 p-6">
-                  <h3 className="font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                  <h3 className="font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
                     <PieChart className="w-4 h-4" /> {name} — Nguồn
                   </h3>
                   {entries.length === 0 ? (
-                    <p className="text-gray-500 dark:text-gray-400 text-sm">Chưa có dữ liệu</p>
+                    <p className="text-slate-500 dark:text-gray-400 text-sm">Chưa có dữ liệu</p>
                   ) : (
                     <div className="space-y-2">
                       {entries.map(([src, cnt]) => {
                         const pct = total > 0 ? Math.round(((cnt as number) / total) * 100) : 0;
                         return (
                           <div key={src} className="flex items-center gap-2 text-sm">
-                            <span className="w-16 text-gray-600 dark:text-gray-500 dark:text-gray-400 capitalize">{src}</span>
+                            <span className="w-16 text-gray-600 dark:text-slate-500 dark:text-gray-400 capitalize">{src}</span>
                             <div className="flex-1 bg-gray-100 dark:bg-gray-800 rounded-full h-2">
                               <div className={`${color} h-full rounded-full`} style={{ width: `${pct}%` }} />
                             </div>
-                            <span className="w-10 text-right font-bold text-gray-900 dark:text-white">{pct}%</span>
+                            <span className="w-10 text-right font-bold text-slate-900 dark:text-white">{pct}%</span>
                           </div>
                         );
                       })}
@@ -232,8 +232,8 @@ export default function ComparisonPage() {
         </>
       ) : !loading && (
         <div className="bg-white dark:bg-[#050A15] rounded-2xl shadow-sm border border-gray-100 dark:border-white/10 p-12 text-center">
-          <Scale className="w-12 h-12 text-gray-500 dark:text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-600 dark:text-gray-500 dark:text-gray-400 text-sm">
+          <Scale className="w-12 h-12 text-slate-500 dark:text-gray-400 mx-auto mb-4" />
+          <p className="text-gray-600 dark:text-slate-500 dark:text-gray-400 text-sm">
             Chọn 2 projects và nhấn "So sánh" để xem kết quả.
           </p>
         </div>

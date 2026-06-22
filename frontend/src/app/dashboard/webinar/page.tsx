@@ -47,7 +47,7 @@ export default function WebinarPage() {
           Free Online Masterclass
         </span>
 
-        <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight mb-6 relative z-10 max-w-3xl leading-tight">
+        <h1 className="text-4xl md:text-5xl font-black text-slate-900 dark:text-white tracking-tight mb-6 relative z-10 max-w-3xl leading-tight">
           Get a Social Listening Certificate with <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300">Nope</span>
         </h1>
 
@@ -63,7 +63,7 @@ export default function WebinarPage() {
             <CheckCircle2 className="w-5 h-5" />
             Đăng ký giữ chỗ ngay
           </button>
-          <Link href="/dashboard" className="px-8 py-4 bg-white/5 hover:bg-white/10 text-white rounded-xl font-bold transition-all border border-white/10 flex items-center justify-center">
+          <Link href="/dashboard" className="px-8 py-4 bg-white/5 hover:bg-white/10 text-slate-900 dark:text-white rounded-xl font-bold transition-all border border-white/10 flex items-center justify-center">
             Trở về Dashboard
           </Link>
         </div>
@@ -73,19 +73,19 @@ export default function WebinarPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-6 flex flex-col items-center text-center">
           <Calendar className="w-8 h-8 text-cyan-400 mb-4" />
-          <h3 className="font-bold text-white mb-2">Lịch trình</h3>
+          <h3 className="font-bold text-slate-900 dark:text-white mb-2">Lịch trình</h3>
           <p className="text-sm text-zinc-400">Thứ Tư, 03 Tháng 6, 2026<br/>20:00 - 22:00 (GMT+7)</p>
         </div>
 
         <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-6 flex flex-col items-center text-center">
           <PlayCircle className="w-8 h-8 text-rose-400 mb-4" />
-          <h3 className="font-bold text-white mb-2">Hình thức</h3>
+          <h3 className="font-bold text-slate-900 dark:text-white mb-2">Hình thức</h3>
           <p className="text-sm text-zinc-400">Trực tuyến qua Zoom<br/>(Link sẽ được gửi qua Email)</p>
         </div>
 
         <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-6 flex flex-col items-center text-center">
           <Users className="w-8 h-8 text-emerald-400 mb-4" />
-          <h3 className="font-bold text-white mb-2">Đối tượng</h3>
+          <h3 className="font-bold text-slate-900 dark:text-white mb-2">Đối tượng</h3>
           <p className="text-sm text-zinc-400">Marketing Manager, PR Executive, Brand Manager</p>
         </div>
       </div>

@@ -52,7 +52,7 @@ function StatCard({
           <Icon className="w-4 h-4" />
         </div>
       </div>
-      <p className="text-2xl font-bold text-white tabular-nums">{value}</p>
+      <p className="text-2xl font-bold text-slate-900 dark:text-white tabular-nums">{value}</p>
     </motion.div>
   );
 }
@@ -101,7 +101,7 @@ export default function RealtimeStatsSection({ projectId }: { projectId?: number
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Radio className="w-4 h-4 text-emerald-400 animate-pulse" />
-          <h2 className="text-lg font-bold text-white">Real-time Monitor</h2>
+          <h2 className="text-lg font-bold text-slate-900 dark:text-white">Real-time Monitor</h2>
           <span className="text-[10px] uppercase tracking-wider text-zinc-500 bg-white/5 px-2 py-0.5 rounded">
             refresh 5s
           </span>
@@ -138,11 +138,11 @@ export default function RealtimeStatsSection({ projectId }: { projectId?: number
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <div className="xl:col-span-2 glass-card rounded-xl p-5">
-          <h3 className="text-sm font-semibold text-white mb-3">Mention volume (5 phút)</h3>
+          <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-3">Mention volume (5 phút)</h3>
           <RealtimeVolumeChart data={metrics?.volume ?? []} isLoading={loading} />
         </div>
         <div className="glass-card rounded-xl p-5">
-          <h3 className="text-sm font-semibold text-white mb-3">Sentiment breakdown</h3>
+          <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-3">Sentiment breakdown</h3>
           <SentimentDonutChart data={sentimentChartData} isLoading={loading} />
           {breakdown && (
             <div className="mt-3 grid grid-cols-3 gap-2 text-center text-xs">
@@ -164,7 +164,7 @@ export default function RealtimeStatsSection({ projectId }: { projectId?: number
       </div>
 
       <div className="glass-card rounded-xl p-5">
-        <h3 className="text-sm font-semibold text-white mb-3">Reach &amp; interactions</h3>
+        <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-3">Reach &amp; interactions</h3>
         <ReachInteractionsChart data={metrics?.volume ?? []} isLoading={loading} />
       </div>
     </section>

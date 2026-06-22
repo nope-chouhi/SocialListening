@@ -23,7 +23,7 @@ export default function LoadingSpinner({
           
           {/* Core branding element */}
           <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-[0_0_20px_rgba(99,102,241,0.6)] border border-white/20 animate-pulse">
-            <span className="text-white font-black text-xl leading-none">N</span>
+            <span className="text-slate-900 dark:text-white font-black text-xl leading-none">N</span>
           </div>
         </div>
 
@@ -34,11 +34,11 @@ export default function LoadingSpinner({
           </h2>
           
           {submessage ? (
-            <p className="text-sm text-gray-600 dark:text-gray-400 max-w-sm mx-auto leading-relaxed">
+            <p className="text-sm text-gray-600 dark:text-slate-500 dark:text-gray-400 max-w-sm mx-auto leading-relaxed">
               {submessage}
             </p>
           ) : (
-            <p className="text-sm text-gray-600 dark:text-gray-400 max-w-sm mx-auto leading-relaxed">
+            <p className="text-sm text-gray-600 dark:text-slate-500 dark:text-gray-400 max-w-sm mx-auto leading-relaxed">
               Đang tải dữ liệu và chuẩn bị không gian làm việc của bạn...
             </p>
           )}

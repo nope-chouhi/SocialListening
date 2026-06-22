@@ -67,7 +67,7 @@ function WorkerStatusBadge() {
   
   if (!isEnabled) {
     return (
-      <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 bg-gray-100 dark:bg-gray-800 text-gray-500 text-[10px] font-bold rounded-full border border-gray-200 dark:border-gray-700" title="Worker is disabled">
+      <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 bg-gray-100 dark:bg-gray-800 text-gray-500 text-[10px] font-bold rounded-full border border-gray-200 dark:border-slate-300 dark:border-gray-700" title="Worker is disabled">
         <div className="w-2 h-2 rounded-full bg-gray-400"></div>
         WORKER OFF
       </div>
@@ -133,7 +133,7 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges, setIsWebi
       className={`group relative flex items-center rounded-xl transition-all duration-200 ${
         isActive
           ? 'bg-white/10 text-white'
-          : 'text-gray-400 hover:text-white hover:bg-white/5'
+          : 'text-slate-500 dark:text-gray-400 hover:text-white hover:bg-white/5'
       } ${sidebarCollapsed
           ? 'justify-center w-10 h-10 mx-auto'
           : 'px-3 py-2.5 gap-3'
@@ -144,11 +144,11 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges, setIsWebi
       {isActive && (
         <span className={`absolute ${sidebarCollapsed ? 'left-0 top-1/2 -translate-y-1/2 w-1 h-5 rounded-r-full' : 'left-0 top-1/2 -translate-y-1/2 w-1 h-5 rounded-r-full'} bg-indigo-400`} />
       )}
-      <item.icon className={`shrink-0 transition-colors ${sidebarCollapsed ? 'w-[18px] h-[18px]' : 'w-[17px] h-[17px]'} ${isActive ? 'text-indigo-300' : 'text-gray-500 group-hover:text-gray-300'}`} />
+      <item.icon className={`shrink-0 transition-colors ${sidebarCollapsed ? 'w-[18px] h-[18px]' : 'w-[17px] h-[17px]'} ${isActive ? 'text-indigo-300' : 'text-gray-500 group-hover:text-slate-700 dark:text-gray-300'}`} />
       {!sidebarCollapsed && <span className="truncate text-sm font-medium">{item.name}</span>}
       {/* Tooltip in collapsed mode */}
       {sidebarCollapsed && (
-        <span className="pointer-events-none absolute left-full ml-3 px-2.5 py-1.5 bg-[#0F172A] border border-white/10 text-white text-xs font-medium rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-all duration-150 z-50 shadow-xl">
+        <span className="pointer-events-none absolute left-full ml-3 px-2.5 py-1.5 bg-slate-50 dark:bg-[#0F172A] border border-white/10 text-slate-900 dark:text-white text-xs font-medium rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-all duration-150 z-50 shadow-xl">
           {item.name}
         </span>
       )}
@@ -168,15 +168,15 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges, setIsWebi
           /* Collapsed: Logo and Toggle button */
           <>
             <div className="w-9 h-9 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-[0_0_15px_rgba(99,102,241,0.4)] border border-white/20">
-              <span className="text-white font-black text-base leading-none">N</span>
+              <span className="text-slate-900 dark:text-white font-black text-base leading-none">N</span>
             </div>
             <button
               onClick={toggleCollapse}
               title="Mở rộng sidebar"
-              className="group relative w-8 h-8 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 flex items-center justify-center transition-colors"
+              className="group relative w-8 h-8 rounded-lg text-zinc-400 hover:text-slate-900 dark:text-white hover:bg-white/10 flex items-center justify-center transition-colors"
             >
               <ChevronRight className="w-4 h-4" />
-              <span className="pointer-events-none absolute left-full ml-3 px-2.5 py-1.5 bg-[#0F172A] border border-white/10 text-white text-xs font-medium rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-all z-50 shadow-xl">
+              <span className="pointer-events-none absolute left-full ml-3 px-2.5 py-1.5 bg-slate-50 dark:bg-[#0F172A] border border-white/10 text-slate-900 dark:text-white text-xs font-medium rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-all z-50 shadow-xl">
                 Expand
               </span>
             </button>
@@ -185,7 +185,7 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges, setIsWebi
           <>
             <div className="flex items-center gap-2.5">
               <div className="w-9 h-9 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-[0_0_15px_rgba(99,102,241,0.4)] border border-white/20 shrink-0">
-                <span className="text-white font-black text-base leading-none">N</span>
+                <span className="text-slate-900 dark:text-white font-black text-base leading-none">N</span>
               </div>
               <h1 className="text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-zinc-400 tracking-tight">Nope</h1>
             </div>
@@ -193,7 +193,7 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges, setIsWebi
               {/* Close on mobile */}
               <button
                 onClick={() => setSidebarOpen(false)}
-                className="lg:hidden p-1.5 text-zinc-500 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                className="lg:hidden p-1.5 text-zinc-500 hover:text-slate-900 dark:text-white hover:bg-white/10 rounded-lg transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -201,7 +201,7 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges, setIsWebi
               <button
                 onClick={toggleCollapse}
                 title="Thu gọn sidebar"
-                className="hidden lg:flex items-center justify-center w-7 h-7 rounded-lg text-zinc-500 hover:text-white hover:bg-white/10 transition-colors"
+                className="hidden lg:flex items-center justify-center w-7 h-7 rounded-lg text-zinc-500 hover:text-slate-900 dark:text-white hover:bg-white/10 transition-colors"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
@@ -235,23 +235,23 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges, setIsWebi
                 title={activeProject?.name || 'Select Project'}
                 className="group relative w-10 h-10 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center border border-white/[0.06] transition-all"
               >
-                <span className="text-white font-bold text-xs">
+                <span className="text-slate-900 dark:text-white font-bold text-xs">
                   {activeProject?.name?.charAt(0).toUpperCase() || '?'}
                 </span>
                 {/* Active dot */}
                 <span className="absolute bottom-1 right-1 w-2 h-2 rounded-full bg-emerald-400 border-2 border-[#0D1117]" />
                 {/* Tooltip */}
-                <span className="pointer-events-none absolute left-full ml-3 px-2.5 py-1.5 bg-[#0F172A] border border-white/10 text-white text-xs font-medium rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-all duration-150 z-50 shadow-xl">
+                <span className="pointer-events-none absolute left-full ml-3 px-2.5 py-1.5 bg-slate-50 dark:bg-[#0F172A] border border-white/10 text-slate-900 dark:text-white text-xs font-medium rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-all duration-150 z-50 shadow-xl">
                   {activeProject?.name || 'Select Project'}
                 </span>
               </button>
               {projectDropdownOpen && (
-                <div className="absolute left-[76px] top-[10px] w-52 bg-[#1E293B] border border-white/10 rounded-xl shadow-2xl overflow-hidden py-1.5 z-50">
+                <div className="absolute left-[76px] top-[10px] w-52 bg-white dark:bg-[#1E293B] border border-white/10 rounded-xl shadow-2xl overflow-hidden py-1.5 z-50">
                   {projects.map((p: any) => (
                     <button
                       key={p.id}
                       onClick={() => { setActiveProject(p); setProjectDropdownOpen(false); router.push('/dashboard/mentions'); }}
-                      className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${activeProject?.id === p.id ? 'bg-white/10 text-emerald-400 font-semibold' : 'text-gray-300 hover:bg-white/5'}`}
+                      className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${activeProject?.id === p.id ? 'bg-white/10 text-emerald-400 font-semibold' : 'text-slate-700 dark:text-gray-300 hover:bg-white/5'}`}
                     >
                       {p.name}
                     </button>
@@ -267,11 +267,11 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges, setIsWebi
                 className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-white/5 transition-colors group"
               >
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center text-white font-bold text-xs shrink-0">
+                  <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center text-slate-900 dark:text-white font-bold text-xs shrink-0">
                     {activeProject?.name?.charAt(0).toUpperCase() || '?'}
                   </div>
                   <div className="min-w-0 text-left">
-                    <p className="text-sm font-semibold text-white truncate leading-none">
+                    <p className="text-sm font-semibold text-slate-900 dark:text-white truncate leading-none">
                       {projectsLoading ? 'Loading...' : activeProject?.name || 'Select Project'}
                     </p>
                     <p className="text-[11px] text-zinc-500 mt-0.5 truncate flex items-center gap-1">
@@ -281,18 +281,18 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges, setIsWebi
                   </div>
                 </div>
                 <div className="flex items-center gap-2 text-zinc-500 shrink-0">
-                  <Settings className="w-3.5 h-3.5 hover:text-white transition-colors" onClick={(e) => { e.stopPropagation(); router.push('/dashboard/project-settings'); }} />
+                  <Settings className="w-3.5 h-3.5 hover:text-slate-900 dark:text-white transition-colors" onClick={(e) => { e.stopPropagation(); router.push('/dashboard/project-settings'); }} />
                   <ChevronDown className={`w-3.5 h-3.5 transition-transform ${projectDropdownOpen ? 'rotate-180' : ''}`} />
                 </div>
               </button>
               {projectDropdownOpen && (
-                <div className="absolute top-full left-0 right-0 mt-1.5 bg-[#1E293B] border border-white/10 rounded-xl shadow-2xl overflow-hidden py-1.5 z-50">
+                <div className="absolute top-full left-0 right-0 mt-1.5 bg-white dark:bg-[#1E293B] border border-white/10 rounded-xl shadow-2xl overflow-hidden py-1.5 z-50">
                   <div className="max-h-48 overflow-y-auto">
                     {projects.map((p: any) => (
                       <button
                         key={p.id}
                         onClick={() => { setActiveProject(p); setProjectDropdownOpen(false); router.push('/dashboard/mentions'); }}
-                        className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${activeProject?.id === p.id ? 'bg-white/10 text-emerald-400 font-semibold' : 'text-gray-300 hover:bg-white/5'}`}
+                        className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${activeProject?.id === p.id ? 'bg-white/10 text-emerald-400 font-semibold' : 'text-slate-700 dark:text-gray-300 hover:bg-white/5'}`}
                       >
                         {p.name}
                       </button>
@@ -375,7 +375,7 @@ function SearchBar() {
   return (
     <div className="flex-1 max-w-xl relative group">
       <div className="flex items-center relative">
-        <Search className="w-4 h-4 text-gray-400 absolute left-3" />
+        <Search className="w-4 h-4 text-slate-500 dark:text-gray-400 absolute left-3" />
         <input 
           name="q"
           type="text"
@@ -463,7 +463,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
         position="top-right" 
         toastOptions={{ 
           duration: 4000,
-          className: 'dark:!bg-[#1E293B] dark:!text-white dark:!border-gray-700 dark:border shadow-lg'
+          className: 'dark:!bg-white dark:bg-[#1E293B] dark:!text-white dark:!border-slate-300 dark:border-gray-700 dark:border shadow-lg'
         }} 
       />
       <div className={`transition-all duration-300 flex flex-col min-h-screen ${mounted ? (sidebarCollapsed ? 'lg:pl-[68px]' : 'lg:pl-64') : 'lg:pl-64'}`}>
@@ -483,25 +483,25 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
               UPGRADE
             </button>
             <div className="h-6 w-px bg-gray-200 mx-2 hidden sm:block"></div>
-            <button onClick={() => toast.success('Vui lòng gửi email hỗ trợ đến support@nope.com')} title="Help Center" className="text-gray-400 hover:text-gray-600">
+            <button onClick={() => toast.success('Vui lòng gửi email hỗ trợ đến support@nope.com')} title="Help Center" className="text-slate-500 dark:text-gray-400 hover:text-gray-600">
               <HelpCircle className="w-5 h-5" />
             </button>
-            <button disabled title="Quick Actions (Coming soon)" className="text-gray-400 opacity-50 cursor-not-allowed hidden sm:block">
+            <button disabled title="Quick Actions (Coming soon)" className="text-slate-500 dark:text-gray-400 opacity-50 cursor-not-allowed hidden sm:block">
               <Zap className="w-5 h-5" />
             </button>
             <ThemeToggle />
             
             <div className="relative group">
-              <div suppressHydrationWarning className="w-8 h-8 rounded-full bg-slate-800 text-white flex items-center justify-center text-xs font-bold ml-2 cursor-pointer shadow-sm hover:ring-2 hover:ring-indigo-500 transition-all">
+              <div suppressHydrationWarning className="w-8 h-8 rounded-full bg-slate-800 text-slate-900 dark:text-white flex items-center justify-center text-xs font-bold ml-2 cursor-pointer shadow-sm hover:ring-2 hover:ring-indigo-500 transition-all">
                 {authLoading ? '...' : (user?.full_name || user?.email || 'K')[0].toUpperCase()}
               </div>
-              <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-[#1E293B] rounded-lg shadow-xl border border-gray-100 dark:border-gray-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
-                <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
-                  <p suppressHydrationWarning className="text-sm font-semibold text-gray-900 dark:text-white truncate">{user?.full_name || 'User'}</p>
-                  <p suppressHydrationWarning className="text-xs text-gray-500 dark:text-gray-400 truncate">{user?.email}</p>
+              <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-[#1E293B] rounded-lg shadow-xl border border-gray-100 dark:border-slate-300 dark:border-gray-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+                <div className="px-4 py-3 border-b border-gray-100 dark:border-slate-300 dark:border-gray-700">
+                  <p suppressHydrationWarning className="text-sm font-semibold text-slate-900 dark:text-white truncate">{user?.full_name || 'User'}</p>
+                  <p suppressHydrationWarning className="text-xs text-slate-500 dark:text-gray-400 truncate">{user?.email}</p>
                 </div>
                 <div className="py-1">
-                  <Link href="/dashboard/settings" className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">
+                  <Link href="/dashboard/settings" className="block px-4 py-2 text-sm text-slate-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">
                     System Settings
                   </Link>
                   <button onClick={() => { auth.logout(); router.push('/login'); }} className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50 dark:hover:bg-gray-800 font-medium">
@@ -518,10 +518,10 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
           </div>
           {/* Footer — legal/copyright, NOT in sidebar */}
           <footer className="mt-10 pt-4 border-t border-gray-200 dark:border-white/10">
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-400 dark:text-gray-500">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 dark:text-gray-400 dark:text-gray-500">
               <div className="flex items-center gap-4">
-                <Link href="#" className="hover:text-gray-700 dark:hover:text-gray-300 transition-colors">Legal Information</Link>
-                <Link href="#" className="hover:text-gray-700 dark:hover:text-gray-300 transition-colors">Customize cookie</Link>
+                <Link href="#" className="hover:text-gray-700 dark:hover:text-slate-700 dark:text-gray-300 transition-colors">Legal Information</Link>
+                <Link href="#" className="hover:text-gray-700 dark:hover:text-slate-700 dark:text-gray-300 transition-colors">Customize cookie</Link>
               </div>
               <p className="text-center sm:text-right">Copyrights © 2026 Nope, Inc. All rights reserved.</p>
             </div>

@@ -47,7 +47,7 @@ export default function MonitorSentimentChart({
 
   if (!data || (data.positive_count + data.negative_count + data.neutral_count) === 0) {
     return (
-      <div className="h-72 flex flex-col items-center justify-center text-gray-400">
+      <div className="h-72 flex flex-col items-center justify-center text-slate-500 dark:text-gray-400">
         <svg className="w-12 h-12 mb-3 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
@@ -69,9 +69,9 @@ export default function MonitorSentimentChart({
     if (active && payload && payload.length) {
       const entry = payload[0].payload;
       return (
-        <div className="bg-gray-900 text-white px-4 py-2.5 rounded-xl shadow-xl border border-gray-700/50 text-sm">
+        <div className="bg-gray-900 text-slate-900 dark:text-white px-4 py-2.5 rounded-xl shadow-xl border border-gray-700/50 text-sm">
           <p className="font-semibold">{entry.name}</p>
-          <p className="text-gray-300">
+          <p className="text-slate-700 dark:text-gray-300">
             {entry.value} đề cập ({entry.pct}%)
           </p>
         </div>
@@ -156,7 +156,7 @@ export default function MonitorSentimentChart({
             iconType="circle"
             iconSize={10}
             formatter={(value: string) => (
-              <span className="text-sm text-gray-600 dark:text-gray-400">{value}</span>
+              <span className="text-sm text-gray-600 dark:text-slate-500 dark:text-gray-400">{value}</span>
             )}
           />
         </PieChart>

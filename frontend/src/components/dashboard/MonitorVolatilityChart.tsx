@@ -44,7 +44,7 @@ export default function MonitorVolatilityChart({
 
   if (!data || data.length === 0) {
     return (
-      <div className="h-72 flex flex-col items-center justify-center text-gray-400">
+      <div className="h-72 flex flex-col items-center justify-center text-slate-500 dark:text-gray-400">
         <svg className="w-12 h-12 mb-3 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
         </svg>
@@ -63,8 +63,8 @@ export default function MonitorVolatilityChart({
       }
 
       return (
-        <div className="bg-gray-900 text-white px-4 py-3 rounded-xl shadow-xl border border-gray-700/50 text-sm min-w-[160px]">
-          <p className="font-semibold mb-2 text-gray-300">📅 {dateStr}</p>
+        <div className="bg-gray-900 text-slate-900 dark:text-white px-4 py-3 rounded-xl shadow-xl border border-gray-700/50 text-sm min-w-[160px]">
+          <p className="font-semibold mb-2 text-slate-700 dark:text-gray-300">📅 {dateStr}</p>
           {payload.map((entry: any, index: number) => (
             <div key={index} className="flex justify-between items-center gap-4 py-0.5">
               <div className="flex items-center gap-2">
@@ -72,7 +72,7 @@ export default function MonitorVolatilityChart({
                   className="w-2.5 h-2.5 rounded-full"
                   style={{ backgroundColor: entry.color }}
                 />
-                <span className="text-gray-300">{entry.name}</span>
+                <span className="text-slate-700 dark:text-gray-300">{entry.name}</span>
               </div>
               <span className="font-medium">{entry.value}</span>
             </div>
@@ -129,7 +129,7 @@ export default function MonitorVolatilityChart({
             iconType="circle"
             iconSize={8}
             formatter={(value: string) => (
-              <span className="text-sm text-gray-600 dark:text-gray-400">{value}</span>
+              <span className="text-sm text-gray-600 dark:text-slate-500 dark:text-gray-400">{value}</span>
             )}
           />
 

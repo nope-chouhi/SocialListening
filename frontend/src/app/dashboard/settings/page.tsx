@@ -145,10 +145,10 @@ export default function SettingsPage() {
               <Settings className="w-8 h-8 text-indigo-400" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-white tracking-wide">
+              <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-wide">
                 {isAdmin ? 'Cài đặt' : 'Cài đặt cá nhân'}
               </h1>
-              <p className="mt-2 text-gray-400">
+              <p className="mt-2 text-slate-500 dark:text-gray-400">
                 {isAdmin 
                   ? 'Quản lý cấu hình cá nhân, người dùng và hệ thống'
                   : 'Quản lý thông tin cá nhân, bảo mật và tùy chọn hiển thị'
@@ -173,8 +173,8 @@ export default function SettingsPage() {
                   onClick={() => setActiveTab(tab.id)}
                   className={`group relative flex items-center px-6 py-4 text-sm font-medium border-b-2 whitespace-nowrap transition-all duration-200 ${
                     isActive
-                      ? 'border-indigo-500 text-indigo-400 bg-[#1E293B]/30'
-                      : 'border-transparent text-gray-400 hover:text-gray-300 hover:bg-[#1E293B]/20'
+                      ? 'border-indigo-500 text-indigo-400 bg-white dark:bg-[#1E293B]/30'
+                      : 'border-transparent text-slate-500 dark:text-gray-400 hover:text-slate-700 dark:text-gray-300 hover:bg-white dark:bg-[#1E293B]/20'
                   }`}
                 >
                   <Icon className={`w-5 h-5 mr-2 transition-transform duration-200 ${isActive ? 'scale-110' : 'group-hover:scale-105'}`} />
@@ -189,7 +189,7 @@ export default function SettingsPage() {
             {/* Admin Settings Group - Only for admin */}
             {isAdmin && (
               <>
-                <div className="border-l border-gray-800 mx-2 my-3" />
+                <div className="border-l border-slate-200 dark:border-gray-800 mx-2 my-3" />
                 {adminTabs.map((tab) => {
                   const Icon = tab.icon;
                   const isActive = activeTab === tab.id;
@@ -199,8 +199,8 @@ export default function SettingsPage() {
                       onClick={() => setActiveTab(tab.id)}
                       className={`group relative flex items-center px-6 py-4 text-sm font-medium border-b-2 whitespace-nowrap transition-all duration-200 ${
                         isActive
-                          ? 'border-purple-500 text-purple-400 bg-[#1E293B]/30'
-                          : 'border-transparent text-gray-400 hover:text-gray-300 hover:bg-[#1E293B]/20'
+                          ? 'border-purple-500 text-purple-400 bg-white dark:bg-[#1E293B]/30'
+                          : 'border-transparent text-slate-500 dark:text-gray-400 hover:text-slate-700 dark:text-gray-300 hover:bg-white dark:bg-[#1E293B]/20'
                       }`}
                     >
                       <Icon className={`w-5 h-5 mr-2 transition-transform duration-200 ${isActive ? 'scale-110' : 'group-hover:scale-105'}`} />
@@ -227,12 +227,12 @@ export default function SettingsPage() {
 
 function ComingSoon({ title }: { title: string }) {
   return (
-    <div className="text-center py-12 bg-[#1E293B] border border-gray-800 rounded-xl">
-      <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-800 border border-gray-700 mb-4">
-        <FileText className="w-8 h-8 text-gray-400" />
+    <div className="text-center py-12 bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-gray-800 rounded-xl">
+      <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-800 border border-slate-300 dark:border-gray-700 mb-4">
+        <FileText className="w-8 h-8 text-slate-500 dark:text-gray-400" />
       </div>
-      <h3 className="text-lg font-medium text-white mb-2">{title}</h3>
-      <p className="text-gray-400">Tính năng này đang được phát triển</p>
+      <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-2">{title}</h3>
+      <p className="text-slate-500 dark:text-gray-400">Tính năng này đang được phát triển</p>
     </div>
   );
 }

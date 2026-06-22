@@ -150,16 +150,16 @@ export default function NotificationSettings() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h2 className="text-xl font-bold text-white tracking-wide">Thông báo hệ thống</h2>
-        <p className="text-sm text-gray-400 mt-1">Cấu hình kênh thông báo và báo cáo tự động</p>
+        <h2 className="text-xl font-bold text-slate-900 dark:text-white tracking-wide">Thông báo hệ thống</h2>
+        <p className="text-sm text-slate-500 dark:text-gray-400 mt-1">Cấu hình kênh thông báo và báo cáo tự động</p>
       </div>
 
       {/* System Alerts */}
-      <div className="bg-[#111827] border border-gray-800 rounded-xl shadow-sm p-6 space-y-6">
-        <div className="flex items-center justify-between pb-4 border-b border-gray-800">
+      <div className="bg-white dark:bg-[#111827] border border-slate-200 dark:border-gray-800 rounded-xl shadow-sm p-6 space-y-6">
+        <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-gray-800">
           <div>
-            <h3 className="text-lg font-bold text-white tracking-wide">Cảnh báo hệ thống</h3>
-            <p className="text-sm text-gray-400 mt-1">Bật/tắt thông báo cảnh báo tự động</p>
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white tracking-wide">Cảnh báo hệ thống</h3>
+            <p className="text-sm text-slate-500 dark:text-gray-400 mt-1">Bật/tắt thông báo cảnh báo tự động</p>
           </div>
           <label className="relative inline-flex items-center cursor-pointer">
             <input
@@ -174,7 +174,7 @@ export default function NotificationSettings() {
 
         {/* Alert Channels */}
         <div>
-          <label className="block text-sm font-medium text-gray-300 mb-4">Kênh thông báo</label>
+          <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-4">Kênh thông báo</label>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {['email', 'telegram', 'slack', 'discord'].map((channel) => (
               <label key={channel} className="flex items-center cursor-pointer group">
@@ -182,9 +182,9 @@ export default function NotificationSettings() {
                   type="checkbox"
                   checked={settings.alertChannels.includes(channel)}
                   onChange={() => toggleChannel(channel)}
-                  className="w-4 h-4 rounded bg-[#111827] border-gray-600 text-indigo-600 focus:ring-indigo-500 focus:ring-offset-gray-900 transition-colors"
+                  className="w-4 h-4 rounded bg-white dark:bg-[#111827] border-gray-600 text-indigo-600 focus:ring-indigo-500 focus:ring-offset-gray-900 transition-colors"
                 />
-                <span className="ml-3 text-sm font-medium text-gray-300 capitalize group-hover:text-white transition-colors">{channel}</span>
+                <span className="ml-3 text-sm font-medium text-slate-700 dark:text-gray-300 capitalize group-hover:text-slate-900 dark:text-white transition-colors">{channel}</span>
               </label>
             ))}
           </div>
@@ -192,8 +192,8 @@ export default function NotificationSettings() {
       </div>
 
       {/* Webhook URLs */}
-      <div className="bg-[#111827] border border-gray-800 rounded-xl shadow-sm p-6 space-y-6">
-        <h3 className="text-lg font-bold text-white tracking-wide flex items-center">
+      <div className="bg-white dark:bg-[#111827] border border-slate-200 dark:border-gray-800 rounded-xl shadow-sm p-6 space-y-6">
+        <h3 className="text-lg font-bold text-slate-900 dark:text-white tracking-wide flex items-center">
           <Bell className="w-5 h-5 mr-2 text-indigo-400" />
           Webhook URLs
         </h3>
@@ -201,7 +201,7 @@ export default function NotificationSettings() {
         <div className="space-y-6">
           {/* Generic Webhook */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
               Generic Webhook URL
             </label>
             <div className="flex space-x-3">
@@ -209,7 +209,7 @@ export default function NotificationSettings() {
                 type="url"
                 value={settings.webhookUrl}
                 onChange={(e) => setSettings({ ...settings, webhookUrl: e.target.value })}
-                className="flex-1 px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500 transition-shadow"
+                className="flex-1 px-4 py-2.5 bg-white dark:bg-[#1E293B] border border-slate-300 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-white placeholder-gray-500 transition-shadow"
                 placeholder="https://your-webhook-url.com"
               />
               <button
@@ -225,7 +225,7 @@ export default function NotificationSettings() {
 
           {/* Telegram */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
               Telegram Webhook
             </label>
             <div className="flex space-x-3">
@@ -233,7 +233,7 @@ export default function NotificationSettings() {
                 type="url"
                 value={settings.telegramWebhook}
                 onChange={(e) => setSettings({ ...settings, telegramWebhook: e.target.value })}
-                className="flex-1 px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500 transition-shadow"
+                className="flex-1 px-4 py-2.5 bg-white dark:bg-[#1E293B] border border-slate-300 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-white placeholder-gray-500 transition-shadow"
                 placeholder="https://api.telegram.org/bot..."
               />
               <button
@@ -249,7 +249,7 @@ export default function NotificationSettings() {
 
           {/* Slack */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
               Slack Webhook
             </label>
             <div className="flex space-x-3">
@@ -257,7 +257,7 @@ export default function NotificationSettings() {
                 type="url"
                 value={settings.slackWebhook}
                 onChange={(e) => setSettings({ ...settings, slackWebhook: e.target.value })}
-                className="flex-1 px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500 transition-shadow"
+                className="flex-1 px-4 py-2.5 bg-white dark:bg-[#1E293B] border border-slate-300 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-white placeholder-gray-500 transition-shadow"
                 placeholder="https://hooks.slack.com/services/..."
               />
               <button
@@ -273,7 +273,7 @@ export default function NotificationSettings() {
 
           {/* Discord */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
               Discord Webhook
             </label>
             <div className="flex space-x-3">
@@ -281,7 +281,7 @@ export default function NotificationSettings() {
                 type="url"
                 value={settings.discordWebhook}
                 onChange={(e) => setSettings({ ...settings, discordWebhook: e.target.value })}
-                className="flex-1 px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500 transition-shadow"
+                className="flex-1 px-4 py-2.5 bg-white dark:bg-[#1E293B] border border-slate-300 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-white placeholder-gray-500 transition-shadow"
                 placeholder="https://discord.com/api/webhooks/..."
               />
               <button
@@ -298,14 +298,14 @@ export default function NotificationSettings() {
       </div>
 
       {/* Report Scheduling */}
-      <div className="bg-[#111827] border border-gray-800 rounded-xl shadow-sm p-6 space-y-4">
-        <h3 className="text-lg font-bold text-white tracking-wide mb-2">Báo cáo tự động</h3>
+      <div className="bg-white dark:bg-[#111827] border border-slate-200 dark:border-gray-800 rounded-xl shadow-sm p-6 space-y-4">
+        <h3 className="text-lg font-bold text-slate-900 dark:text-white tracking-wide mb-2">Báo cáo tự động</h3>
 
         {/* Daily Report */}
-        <div className="flex items-center justify-between py-4 border-b border-gray-800">
+        <div className="flex items-center justify-between py-4 border-b border-slate-200 dark:border-gray-800">
           <div className="flex-1 pr-4">
             <p className="text-sm font-medium text-gray-200">Báo cáo hàng ngày</p>
-            <p className="text-xs text-gray-400 mt-1">Gửi báo cáo tổng hợp mỗi ngày</p>
+            <p className="text-xs text-slate-500 dark:text-gray-400 mt-1">Gửi báo cáo tổng hợp mỗi ngày</p>
           </div>
           <div className="flex items-center space-x-4">
             <input
@@ -313,7 +313,7 @@ export default function NotificationSettings() {
               value={settings.dailyReportTime}
               onChange={(e) => setSettings({ ...settings, dailyReportTime: e.target.value })}
               disabled={!settings.dailyReportEnabled}
-              className="px-3 py-2 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-3 py-2 bg-white dark:bg-[#1E293B] border border-slate-300 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
             />
             <label className="relative inline-flex items-center cursor-pointer">
               <input
@@ -331,14 +331,14 @@ export default function NotificationSettings() {
         <div className="flex items-center justify-between py-4">
           <div className="flex-1 pr-4">
             <p className="text-sm font-medium text-gray-200">Báo cáo hàng tuần</p>
-            <p className="text-xs text-gray-400 mt-1">Gửi báo cáo tổng hợp mỗi tuần</p>
+            <p className="text-xs text-slate-500 dark:text-gray-400 mt-1">Gửi báo cáo tổng hợp mỗi tuần</p>
           </div>
           <div className="flex items-center space-x-4">
             <select
               value={settings.weeklyReportDay}
               onChange={(e) => setSettings({ ...settings, weeklyReportDay: parseInt(e.target.value) })}
               disabled={!settings.weeklyReportEnabled}
-              className="px-3 py-2 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-3 py-2 bg-white dark:bg-[#1E293B] border border-slate-300 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <option value="0">Thứ 2</option>
               <option value="1">Thứ 3</option>
@@ -353,7 +353,7 @@ export default function NotificationSettings() {
               value={settings.weeklyReportTime}
               onChange={(e) => setSettings({ ...settings, weeklyReportTime: e.target.value })}
               disabled={!settings.weeklyReportEnabled}
-              className="px-3 py-2 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-3 py-2 bg-white dark:bg-[#1E293B] border border-slate-300 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
             />
             <label className="relative inline-flex items-center cursor-pointer">
               <input

@@ -24,7 +24,7 @@ const SENTIMENT_CONFIG: Record<string, { bg: string; text: string; label: string
   },
   neutral: {
     bg: 'bg-gray-500/10 border-gray-500/20',
-    text: 'text-gray-600 dark:text-gray-400',
+    text: 'text-gray-600 dark:text-slate-500 dark:text-gray-400',
     label: 'Trung lập',
     dot: 'bg-gray-400',
   },
@@ -39,7 +39,7 @@ const SENTIMENT_CONFIG: Record<string, { bg: string; text: string; label: string
 export default function SentimentTag({ sentiment, size = 'sm' }: SentimentTagProps) {
   if (!sentiment) {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] bg-gray-100 dark:bg-gray-800 text-gray-400 rounded-full border border-gray-200 dark:border-gray-700">
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] bg-gray-100 dark:bg-gray-800 text-slate-500 dark:text-gray-400 rounded-full border border-gray-200 dark:border-slate-300 dark:border-gray-700">
         <span className="w-1.5 h-1.5 rounded-full bg-gray-300" />
         Chưa phân tích
       </span>

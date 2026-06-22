@@ -53,7 +53,7 @@ export default function ScheduleSelector({ frequency, value, onChange }: Schedul
       {/* Daily: Select hours */}
       {frequency === 'daily' && (
         <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
+          <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
             Chọn giờ quét (có thể chọn nhiều)
           </label>
           <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
@@ -65,7 +65,7 @@ export default function ScheduleSelector({ frequency, value, onChange }: Schedul
                 className={`px-3 py-2 text-sm rounded-xl border transition-colors ${
                   selectedHours.includes(hour)
                     ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm shadow-indigo-500/20'
-                    : 'bg-[#1E293B] text-gray-300 border-gray-700 hover:border-indigo-500/50 hover:bg-[#1E293B]/80'
+                    : 'bg-white dark:bg-[#1E293B] text-slate-700 dark:text-gray-300 border-slate-300 dark:border-gray-700 hover:border-indigo-500/50 hover:bg-white dark:bg-[#1E293B]/80'
                 }`}
               >
                 {hour.toString().padStart(2, '0')}:00
@@ -82,7 +82,7 @@ export default function ScheduleSelector({ frequency, value, onChange }: Schedul
       {frequency === 'weekly' && (
         <>
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
               Chọn thứ trong tuần (có thể chọn nhiều)
             </label>
             <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
@@ -102,7 +102,7 @@ export default function ScheduleSelector({ frequency, value, onChange }: Schedul
                   className={`px-3 py-2 text-sm font-medium rounded-xl border transition-colors ${
                     selectedDaysOfWeek.includes(day.value)
                       ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm shadow-indigo-500/20'
-                      : 'bg-[#1E293B] text-gray-300 border-gray-700 hover:border-indigo-500/50 hover:bg-[#1E293B]/80'
+                      : 'bg-white dark:bg-[#1E293B] text-slate-700 dark:text-gray-300 border-slate-300 dark:border-gray-700 hover:border-indigo-500/50 hover:bg-white dark:bg-[#1E293B]/80'
                   }`}
                 >
                   {day.label}
@@ -115,14 +115,14 @@ export default function ScheduleSelector({ frequency, value, onChange }: Schedul
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
               Giờ quét
             </label>
             <input
               type="time"
               value={time}
               onChange={(e) => setTime(e.target.value)}
-              className="w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white"
+              className="w-full px-4 py-2.5 bg-white dark:bg-[#1E293B] border border-slate-300 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-white"
             />
           </div>
         </>
@@ -132,7 +132,7 @@ export default function ScheduleSelector({ frequency, value, onChange }: Schedul
       {frequency === 'monthly' && (
         <>
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
               Chọn ngày trong tháng (có thể chọn nhiều)
             </label>
             <div className="grid grid-cols-5 sm:grid-cols-7 gap-2">
@@ -144,7 +144,7 @@ export default function ScheduleSelector({ frequency, value, onChange }: Schedul
                   className={`px-3 py-2 text-sm rounded-xl border transition-colors ${
                     selectedDaysOfMonth.includes(day)
                       ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm shadow-indigo-500/20'
-                      : 'bg-[#1E293B] text-gray-300 border-gray-700 hover:border-indigo-500/50 hover:bg-[#1E293B]/80'
+                      : 'bg-white dark:bg-[#1E293B] text-slate-700 dark:text-gray-300 border-slate-300 dark:border-gray-700 hover:border-indigo-500/50 hover:bg-white dark:bg-[#1E293B]/80'
                   }`}
                 >
                   {day}
@@ -157,14 +157,14 @@ export default function ScheduleSelector({ frequency, value, onChange }: Schedul
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
               Giờ quét
             </label>
             <input
               type="time"
               value={time}
               onChange={(e) => setTime(e.target.value)}
-              className="w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white"
+              className="w-full px-4 py-2.5 bg-white dark:bg-[#1E293B] border border-slate-300 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-white"
             />
           </div>
         </>
@@ -174,7 +174,7 @@ export default function ScheduleSelector({ frequency, value, onChange }: Schedul
       {frequency === 'yearly' && (
         <>
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
               Chọn tháng (có thể chọn nhiều)
             </label>
             <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
@@ -186,7 +186,7 @@ export default function ScheduleSelector({ frequency, value, onChange }: Schedul
                   className={`px-3 py-2 text-sm rounded-xl border transition-colors ${
                     selectedMonths.includes(month)
                       ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm shadow-indigo-500/20'
-                      : 'bg-[#1E293B] text-gray-300 border-gray-700 hover:border-indigo-500/50 hover:bg-[#1E293B]/80'
+                      : 'bg-white dark:bg-[#1E293B] text-slate-700 dark:text-gray-300 border-slate-300 dark:border-gray-700 hover:border-indigo-500/50 hover:bg-white dark:bg-[#1E293B]/80'
                   }`}
                 >
                   T{month}
@@ -199,7 +199,7 @@ export default function ScheduleSelector({ frequency, value, onChange }: Schedul
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
               Chọn ngày trong tháng (có thể chọn nhiều)
             </label>
             <div className="grid grid-cols-5 sm:grid-cols-7 gap-2">
@@ -211,7 +211,7 @@ export default function ScheduleSelector({ frequency, value, onChange }: Schedul
                   className={`px-3 py-2 text-sm rounded-xl border transition-colors ${
                     selectedDaysOfMonth.includes(day)
                       ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm shadow-indigo-500/20'
-                      : 'bg-[#1E293B] text-gray-300 border-gray-700 hover:border-indigo-500/50 hover:bg-[#1E293B]/80'
+                      : 'bg-white dark:bg-[#1E293B] text-slate-700 dark:text-gray-300 border-slate-300 dark:border-gray-700 hover:border-indigo-500/50 hover:bg-white dark:bg-[#1E293B]/80'
                   }`}
                 >
                   {day}
@@ -224,14 +224,14 @@ export default function ScheduleSelector({ frequency, value, onChange }: Schedul
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
               Giờ quét
             </label>
             <input
               type="time"
               value={time}
               onChange={(e) => setTime(e.target.value)}
-              className="w-full px-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white"
+              className="w-full px-4 py-2.5 bg-white dark:bg-[#1E293B] border border-slate-300 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-white"
             />
           </div>
         </>

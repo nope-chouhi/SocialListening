@@ -10,7 +10,7 @@ export default function OrganizationPage() {
 
   return (
     <div className="p-8">
-      <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Organization Settings</h1>
+      <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-6">Organization Settings</h1>
       
       {currentOrganization ? (
         <div className="bg-white dark:bg-[#111827] shadow rounded-lg p-6 mb-8">
