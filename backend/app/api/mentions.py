@@ -31,6 +31,11 @@ from app.services.url_utils import (
     is_utility_page_url,
     record_provenance_metric,
 )
+from app.utils.source_type import (
+    normalize_source_type_for_mention,
+    normalize_source_type_for_source_model,
+    is_web_type,
+)
 import os
 from math import ceil
 
@@ -428,9 +433,28 @@ def list_mentions(
             query = query.join(Source, Source.id == Mention.source_id)
             if source_type:
                 st_list = [s.strip() for s in source_type.split(",")]
-                query = query.where(Source.source_type.in_(st_list))
+                # Normalize frontend aliases to valid SourceType enum values
+                enum_values: list[str] = []
+                for st in st_list:
+                    try:
+                        mapped = normalize_source_type_for_source_model(st)
+                        if mapped:
+                            enum_values.extend(mapped)
+                    except ValueError:
+                        pass  # Skip unknown types rather than crash
+                if enum_values:
+                    query = query.where(Source.source_type.in_(enum_values))
             elif source_types:
-                query = query.where(Source.source_type.in_(source_types))
+                enum_values = []
+                for st in source_types:
+                    try:
+                        mapped = normalize_source_type_for_source_model(st)
+                        if mapped:
+                            enum_values.extend(mapped)
+                    except ValueError:
+                        pass
+                if enum_values:
+                    query = query.where(Source.source_type.in_(enum_values))
             if domain:
                 query = query.where(Source.url.ilike(f"%{domain}%"))
 

@@ -200,9 +200,10 @@ export const dashboard = {
     const response = await api.get('/api/dashboard/summary', { params });
     return response.data;
   },
-  trends: async (range: string = '7d', projectId?: number) => {
+  trends: async (range: string = '7d', projectId?: number, granularity?: string) => {
     const params: any = { range };
     if (projectId) params.project_id = projectId;
+    if (granularity) params.granularity = granularity;
     const response = await api.get('/api/dashboard/trends', { params });
     return response.data;
   },

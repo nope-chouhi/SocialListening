@@ -659,17 +659,29 @@ function MentionsPageContent() {
   const fetchChartData = async () => {
     setChartLoading(true);
     try {
+      // Map chartTimeRange to API range and granularity
       let range = '30d';
-      if (dateRange === '1d') range = 'today';
-      else if (dateRange === '7d') range = '7d';
+      let granularity = 'daily';
+      if (chartTimeRange === 'days') {
+        range = '7d';
+        granularity = 'daily';
+      } else if (chartTimeRange === 'weeks') {
+        range = '30d';
+        granularity = 'weekly';
+      } else if (chartTimeRange === 'months') {
+        range = '180d';
+        granularity = 'monthly';
+      } else {
+        // fallback from dateRange
+        if (dateRange === '1d') range = 'today';
+        else if (dateRange === '7d') range = '7d';
+      }
 
-      const res = await dashboard.trends(range, activeProject?.id);
+      const res = await dashboard.trends(range, activeProject?.id, granularity);
       if (res && res.items) {
         const mappedData = res.items.map((item: any) => {
-          const dateObj = new Date(item.date);
-          const formattedDate = dateObj.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
           return {
-            date: formattedDate,
+            date: item.date,
             mentions: item.total_mentions,
             reach: item.total_mentions * 10 // Placeholder for reach
           };
@@ -727,7 +739,7 @@ function MentionsPageContent() {
 
   useEffect(() => {
     fetchChartData();
-  }, [activeProject?.id]);
+  }, [activeProject?.id, chartTimeRange]);
 
   useEffect(() => {
     // Reset state on project change to prevent stale data
@@ -1127,31 +1139,55 @@ function MentionsPageContent() {
             </div>
           </div>
 
-          <div className="p-4 h-64">
+          <div className="px-5 pt-2 pb-5">
             {chartLoading ? (
-              <div className="w-full h-full flex items-center justify-center">
+              <div className="w-full h-56 flex items-center justify-center">
                 <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
               </div>
             ) : chartData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                  <XAxis dataKey="date" tick={{ fill: '#6B7280', fontSize: 10 }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fill: '#6B7280', fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(val) => val >= 1000 ? `${(val / 1000).toFixed(1)}k` : val} />
-                  <Tooltip contentStyle={{ backgroundColor: '#fff', border: '1px solid #E5E7EB', borderRadius: '8px', fontSize: '12px', color: '#111827' }} />
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart data={chartData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }} barCategoryGap="30%">
+                  <CartesianGrid strokeDasharray="2 4" vertical={false} stroke="rgba(255,255,255,0.06)" />
+                  <XAxis
+                    dataKey="date"
+                    tick={{ fill: '#9CA3AF', fontSize: 11, fontWeight: 500 }}
+                    axisLine={false}
+                    tickLine={false}
+                    tickMargin={8}
+                  />
+                  <YAxis
+                    tick={{ fill: '#9CA3AF', fontSize: 11 }}
+                    axisLine={false}
+                    tickLine={false}
+                    tickFormatter={(val) => val >= 1000 ? `${(val / 1000).toFixed(1)}k` : val}
+                    width={36}
+                  />
+                  <Tooltip
+                    cursor={{ fill: 'rgba(99,102,241,0.08)' }}
+                    contentStyle={{
+                      backgroundColor: '#0d1426',
+                      border: '1px solid rgba(255,255,255,0.12)',
+                      borderRadius: '10px',
+                      fontSize: '12px',
+                      color: '#F9FAFB',
+                      padding: '8px 14px',
+                      boxShadow: '0 4px 24px rgba(0,0,0,0.4)'
+                    }}
+                    labelStyle={{ color: '#6B7280', fontWeight: 600, marginBottom: 4 }}
+                  />
                   {activeChartTab === 'reach' ? (
-                    <Bar dataKey="mentions" fill="#3B82F6" radius={[4, 4, 0, 0]} maxBarSize={40} />
+                    <Bar dataKey="mentions" name="Mentions" fill="#4F46E5" radius={[5, 5, 0, 0]} maxBarSize={36} />
                   ) : (
                     <>
-                      <Bar dataKey="positive" stackId="a" fill="#10B981" maxBarSize={40} />
-                      <Bar dataKey="neutral" stackId="a" fill="#9CA3AF" maxBarSize={40} />
-                      <Bar dataKey="negative" stackId="a" fill="#F43F5E" radius={[4, 4, 0, 0]} maxBarSize={40} />
+                      <Bar dataKey="positive" name="Tích cực" stackId="a" fill="#10B981" maxBarSize={36} />
+                      <Bar dataKey="neutral" name="Trung lập" stackId="a" fill="#6B7280" maxBarSize={36} />
+                      <Bar dataKey="negative" name="Tiêu cực" stackId="a" fill="#EF4444" radius={[5, 5, 0, 0]} maxBarSize={36} />
                     </>
                   )}
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-sm text-gray-400">
+              <div className="w-full h-56 flex items-center justify-center text-sm text-gray-500">
                 Không có dữ liệu biểu đồ
               </div>
             )}

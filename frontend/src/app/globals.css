@@ -217,17 +217,41 @@ html.light body {
 }
 
 /* ─── Select / Dropdown caret fix ───────────────────────────────────────── */
-/* Native select: ensure enough padding-right so caret never overlaps text */
+/* Remove native browser arrow to replace with a custom high-contrast one */
 select {
-  padding-right: 2.25rem !important; /* 36px: gives caret room */
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  padding-right: 2.5rem !important;
   background-repeat: no-repeat;
-  background-position: right 0.6rem center;
-  background-size: 1rem;
+  background-position: right 0.75rem center;
+  background-size: 0.9rem;
+  /* Light mode: dark chevron with good contrast */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%234B5563' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-/* In dark mode, native select caret is almost invisible — use a light icon */
+select:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.35);
+}
+
+select:hover {
+  border-color: rgba(99, 102, 241, 0.5) !important;
+}
+
+/* In dark mode, native select caret: bright visible icon */
 .dark select {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2394a3b8' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+}
+
+.dark select:hover {
+  border-color: rgba(139, 92, 246, 0.5) !important;
+}
+
+.dark select:focus {
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.35) !important;
 }
 
 /* ─── Disabled checkbox cursor fix ──────────────────────────────────────── */

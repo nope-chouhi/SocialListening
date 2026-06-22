@@ -337,7 +337,8 @@ def get_latest_alerts(
 
 @router.get("/trends")
 def get_dashboard_trends(
-    time_range: str = Query("7d", alias="range", pattern="^(today|7d|30d)$"),
+    time_range: str = Query("7d", alias="range", pattern="^(today|7d|30d|90d|180d)$"),
+    granularity: str = Query("daily", pattern="^(daily|weekly|monthly)$"),
     project_id: Optional[int] = Query(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
@@ -354,21 +355,75 @@ def get_dashboard_trends(
         elif time_range == "7d":
             start_date = now - timedelta(days=7)
             days = 7
+        elif time_range == "90d":
+            start_date = now - timedelta(days=90)
+            days = 90
+        elif time_range == "180d":
+            start_date = now - timedelta(days=180)
+            days = 180
         else:
             start_date = now - timedelta(days=30)
             days = 30
         
+        # Build period buckets based on granularity
         items_dict = {}
-        for i in range(days):
-            day_start = start_date + timedelta(days=i)
-            date_str = day_start.strftime("%Y-%m-%d")
-            items_dict[date_str] = {
-                "date": date_str,
-                "total_mentions": 0,
-                "negative_mentions": 0,
-                "alerts": 0,
-                "incidents": 0
-            }
+
+        if granularity == "weekly":
+            # Build week buckets (Sunday as anchor)
+            from datetime import date
+            week_start = start_date
+            while week_start <= now:
+                week_end = week_start + timedelta(days=7)
+                bucket_key = week_start.strftime("%Y-W%U")
+                items_dict[bucket_key] = {
+                    "date": week_start.strftime("%d/%m"),
+                    "date_key": bucket_key,
+                    "total_mentions": 0,
+                    "negative_mentions": 0,
+                    "alerts": 0,
+                    "incidents": 0
+                }
+                week_start = week_end
+        elif granularity == "monthly":
+            # Build month buckets
+            cursor = start_date.replace(day=1)
+            while cursor <= now:
+                bucket_key = cursor.strftime("%Y-%m")
+                items_dict[bucket_key] = {
+                    "date": cursor.strftime("%b %Y"),
+                    "date_key": bucket_key,
+                    "total_mentions": 0,
+                    "negative_mentions": 0,
+                    "alerts": 0,
+                    "incidents": 0
+                }
+                # Next month
+                if cursor.month == 12:
+                    cursor = cursor.replace(year=cursor.year + 1, month=1, day=1)
+                else:
+                    cursor = cursor.replace(month=cursor.month + 1, day=1)
+        else:
+            # daily
+            for i in range(days):
+                day_start = start_date + timedelta(days=i)
+                date_str = day_start.strftime("%Y-%m-%d")
+                items_dict[date_str] = {
+                    "date": date_str,
+                    "date_key": date_str,
+                    "total_mentions": 0,
+                    "negative_mentions": 0,
+                    "alerts": 0,
+                    "incidents": 0
+                }
+
+        def get_bucket_key(dt: datetime) -> Optional[str]:
+            """Return the bucket key for a given datetime, based on granularity."""
+            if granularity == "weekly":
+                return dt.strftime("%Y-W%U")
+            elif granularity == "monthly":
+                return dt.strftime("%Y-%m")
+            else:
+                return dt.strftime("%Y-%m-%d")
 
         # 1. Total mentions by date
         try:
@@ -381,9 +436,13 @@ def get_dashboard_trends(
             query = query.group_by(date_col)
             
             for row in db.execute(query):
-                d_str = row.d.strftime("%Y-%m-%d") if hasattr(row.d, 'strftime') else str(row.d)
-                if d_str in items_dict:
-                    items_dict[d_str]["total_mentions"] = row[1]
+                dt = row.d
+                if hasattr(dt, 'strftime'):
+                    key = get_bucket_key(datetime.combine(dt, datetime.min.time()))
+                else:
+                    key = get_bucket_key(datetime.strptime(str(dt), "%Y-%m-%d"))
+                if key in items_dict:
+                    items_dict[key]["total_mentions"] += row[1]
         except Exception as e:
             db.rollback()
             logger.error(f"Error mentions trend: {e}")
@@ -405,9 +464,13 @@ def get_dashboard_trends(
             ).group_by(date_col)
             
             for row in db.execute(query):
-                d_str = row.d.strftime("%Y-%m-%d") if hasattr(row.d, 'strftime') else str(row.d)
-                if d_str in items_dict:
-                    items_dict[d_str]["negative_mentions"] = row[1]
+                dt = row.d
+                if hasattr(dt, 'strftime'):
+                    key = get_bucket_key(datetime.combine(dt, datetime.min.time()))
+                else:
+                    key = get_bucket_key(datetime.strptime(str(dt), "%Y-%m-%d"))
+                if key in items_dict:
+                    items_dict[key]["negative_mentions"] += row[1]
         except Exception as e:
             db.rollback()
             logger.error(f"Error negative mentions trend: {e}")
@@ -420,9 +483,13 @@ def get_dashboard_trends(
             query = query.where(Alert.created_at >= start_date).group_by(date_col)
             
             for row in db.execute(query):
-                d_str = row.d.strftime("%Y-%m-%d") if hasattr(row.d, 'strftime') else str(row.d)
-                if d_str in items_dict:
-                    items_dict[d_str]["alerts"] = row[1]
+                dt = row.d
+                if hasattr(dt, 'strftime'):
+                    key = get_bucket_key(datetime.combine(dt, datetime.min.time()))
+                else:
+                    key = get_bucket_key(datetime.strptime(str(dt), "%Y-%m-%d"))
+                if key in items_dict:
+                    items_dict[key]["alerts"] += row[1]
         except Exception as e:
             db.rollback()
             logger.error(f"Error alerts trend: {e}")
@@ -435,18 +502,26 @@ def get_dashboard_trends(
             query = query.where(Incident.created_at >= start_date).group_by(date_col)
             
             for row in db.execute(query):
-                d_str = row.d.strftime("%Y-%m-%d") if hasattr(row.d, 'strftime') else str(row.d)
-                if d_str in items_dict:
-                    items_dict[d_str]["incidents"] = row[1]
+                dt = row.d
+                if hasattr(dt, 'strftime'):
+                    key = get_bucket_key(datetime.combine(dt, datetime.min.time()))
+                else:
+                    key = get_bucket_key(datetime.strptime(str(dt), "%Y-%m-%d"))
+                if key in items_dict:
+                    items_dict[key]["incidents"] += row[1]
         except Exception as e:
             db.rollback()
             logger.error(f"Error incidents trend: {e}")
 
         items = list(items_dict.values())
-        items.sort(key=lambda x: x["date"])
+        items.sort(key=lambda x: x["date_key"])
+        # Remove internal date_key from output
+        for item in items:
+            item.pop("date_key", None)
             
         return {
             "range": time_range,
+            "granularity": granularity,
             "items": items
         }
     except Exception as e:
