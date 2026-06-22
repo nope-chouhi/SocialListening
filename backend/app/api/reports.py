@@ -15,7 +15,7 @@ from app.models.report import Report, ReportType, ReportStatus
 from app.models.mention import Mention, AIAnalysis
 from app.models.alert import Alert
 from app.models.incident import Incident
-from app.models.project import Project
+from app.models.keyword import KeywordGroup
 from app.schemas.report import (
     ReportCreate, ReportResponse, ReportListResponse
 )
@@ -89,7 +89,7 @@ def get_reports_summary_data(
 
     project_name = "Toàn bộ hệ thống"
     if project_id:
-        project = db.execute(apply_tenant_filter(select(Project), Project, current_user).where(Project.id == project_id)).scalar_one_or_none()
+        project = db.execute(apply_tenant_filter(select(KeywordGroup), KeywordGroup, current_user).where(KeywordGroup.id == project_id)).scalar_one_or_none()
         if project:
             project_name = project.name
         mentions_query = mentions_query.where(Mention.project_id == project_id)

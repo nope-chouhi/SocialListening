@@ -11,7 +11,7 @@ from app.models.mention import Mention, AIAnalysis
 from app.models.alert import Alert
 from app.models.incident import Incident
 from app.models.source import Source
-from app.models.project import Project
+from app.models.keyword import KeywordGroup
 from app.core.tenant import apply_tenant_filter
 from app.models.user import User
 
@@ -215,7 +215,7 @@ class ExportService:
         project_name = "Tất cả dự án"
         if filters.get("project_id"):
             mentions_query = mentions_query.where(Mention.project_id == filters["project_id"])
-            project = db.execute(apply_tenant_filter(select(Project), Project, current_user).where(Project.id == filters["project_id"])).scalar_one_or_none()
+            project = db.execute(apply_tenant_filter(select(KeywordGroup), KeywordGroup, current_user).where(KeywordGroup.id == filters["project_id"])).scalar_one_or_none()
             if project:
                 project_name = project.name
         
