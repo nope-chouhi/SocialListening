@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
-from sqlalchemy import select, func, text, and_, or_, desc, asc, case
+from sqlalchemy import select, func, text, and_, or_, desc, asc, case, false
 from typing import List, Optional
 from pydantic import BaseModel
 from datetime import datetime, timezone, timedelta
@@ -34,6 +34,7 @@ from app.services.url_utils import (
 from app.utils.source_type import (
     normalize_source_type_for_mention,
     normalize_source_type_for_source_model,
+    validate_source_type_alias,
     is_web_type,
 )
 import os
@@ -421,6 +422,29 @@ def list_mentions(
         from sqlalchemy import or_
         from app.models.source import Source
 
+        # ── Early validation of source_type aliases (Bug C hardening) ──────
+        # Validate ALL source_type params before touching the DB.
+        # Invalid alias → HTTP 400. Never silently broaden results.
+        def _validate_aliases(raw: Optional[str], lst: Optional[List[str]]) -> None:
+            aliases: List[str] = []
+            if raw:
+                aliases = [s.strip() for s in raw.split(",") if s.strip()]
+            elif lst:
+                aliases = list(lst)
+            invalid_msgs = []
+            for alias in aliases:
+                try:
+                    validate_source_type_alias(alias)
+                except ValueError as e:
+                    invalid_msgs.append(str(e))
+            if invalid_msgs:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Invalid source_type value(s): {'; '.join(invalid_msgs)}"
+                )
+        _validate_aliases(source_type, source_types)
+        # ─────────────────────────────────────────────────────────────────────
+
         query = apply_tenant_filter(select(Mention), Mention, current_user)
         has_ai_filter = min_risk_score is not None
         need_source_join = bool(source_type or source_types or domain)
@@ -432,29 +456,45 @@ def list_mentions(
         if need_source_join:
             query = query.join(Source, Source.id == Mention.source_id)
             if source_type:
-                st_list = [s.strip() for s in source_type.split(",")]
-                # Normalize frontend aliases to valid SourceType enum values
-                enum_values: list[str] = []
+                st_list = [s.strip() for s in source_type.split(",") if s.strip()]
+                # Validate BEFORE querying — invalid alias → HTTP 400
+                invalid = []
                 for st in st_list:
                     try:
-                        mapped = normalize_source_type_for_source_model(st)
-                        if mapped:
-                            enum_values.extend(mapped)
-                    except ValueError:
-                        pass  # Skip unknown types rather than crash
+                        validate_source_type_alias(st)
+                    except ValueError as e:
+                        invalid.append(str(e))
+                if invalid:
+                    raise HTTPException(status_code=400, detail=f"Invalid source_type: {'; '.join(invalid)}")
+                # All aliases are valid — normalize to enum values
+                enum_values: list[str] = []
+                for st in st_list:
+                    mapped = normalize_source_type_for_source_model(st)
+                    if mapped:
+                        enum_values.extend(mapped)
                 if enum_values:
                     query = query.where(Source.source_type.in_(enum_values))
+                # If enum_values is empty (e.g. twitter filter), no Source records can match
+                elif st_list:  # valid alias but no Source enum equivalent → no results
+                    query = query.where(false())
             elif source_types:
-                enum_values = []
+                invalid = []
                 for st in source_types:
                     try:
-                        mapped = normalize_source_type_for_source_model(st)
-                        if mapped:
-                            enum_values.extend(mapped)
-                    except ValueError:
-                        pass
+                        validate_source_type_alias(st)
+                    except ValueError as e:
+                        invalid.append(str(e))
+                if invalid:
+                    raise HTTPException(status_code=400, detail=f"Invalid source_type: {'; '.join(invalid)}")
+                enum_values = []
+                for st in source_types:
+                    mapped = normalize_source_type_for_source_model(st)
+                    if mapped:
+                        enum_values.extend(mapped)
                 if enum_values:
                     query = query.where(Source.source_type.in_(enum_values))
+                elif source_types:
+                    query = query.where(sqlalchemy.false())
             if domain:
                 query = query.where(Source.url.ilike(f"%{domain}%"))
 
@@ -489,48 +529,40 @@ def list_mentions(
 
         # In case source_type is directly on mention (new model)
         if source_type and not need_source_join:
-            st_list = [s.strip() for s in source_type.split(",")]
-            mapped_types = set()
-            for st in st_list:
-                if st == 'web': mapped_types.update(['web', 'website', 'web_search', 'article', 'unknown'])
-                elif st == 'video': mapped_types.update(['video', 'videos', 'youtube', 'yt'])
-                elif st == 'blog': mapped_types.update(['blog', 'forum', 'blogs_forums', 'blogs/forums'])
-                elif st == 'rss': mapped_types.update(['rss', 'feed', 'rss_feed'])
-                elif st == 'news': mapped_types.update(['news', 'newspaper', 'article_news'])
-                else: mapped_types.add(st)
-            condition = Mention.source_type.in_(list(mapped_types))
-            if 'web' in st_list:
-                valid_url_cond = and_(
-                    Mention.url.isnot(None),
-                    Mention.url.notilike('%googleusercontent.com%'),
-                    Mention.url.notilike('%corp.google.com%'),
-                    Mention.url.notilike('%uberproxy%'),
-                    Mention.url.notilike('%/rss%'),
-                    Mention.url.notilike('%.xml')
-                )
-                condition = or_(condition, and_(Mention.source_type.is_(None), valid_url_cond))
-            query = query.where(condition)
+            # Aliases already validated above — safe to normalize
+            mapped_types = set(normalize_source_type_for_mention(source_type) or [])
+            if mapped_types:
+                condition = Mention.source_type.in_(list(mapped_types))
+                if is_web_type(source_type.split(",")[0].strip()):
+                    valid_url_cond = and_(
+                        Mention.url.isnot(None),
+                        Mention.url.notilike('%googleusercontent.com%'),
+                        Mention.url.notilike('%corp.google.com%'),
+                        Mention.url.notilike('%uberproxy%'),
+                        Mention.url.notilike('%/rss%'),
+                        Mention.url.notilike('%.xml')
+                    )
+                    condition = or_(condition, and_(Mention.source_type.is_(None), valid_url_cond))
+                query = query.where(condition)
         elif source_types and not need_source_join:
             mapped_types = set()
             for st in source_types:
-                if st == 'web': mapped_types.update(['web', 'website', 'web_search', 'article', 'unknown'])
-                elif st == 'video': mapped_types.update(['video', 'videos', 'youtube', 'yt'])
-                elif st == 'blog': mapped_types.update(['blog', 'forum', 'blogs_forums', 'blogs/forums'])
-                elif st == 'rss': mapped_types.update(['rss', 'feed', 'rss_feed'])
-                elif st == 'news': mapped_types.update(['news', 'newspaper', 'article_news'])
-                else: mapped_types.add(st)
-            condition = Mention.source_type.in_(list(mapped_types))
-            if 'web' in source_types:
-                valid_url_cond = and_(
-                    Mention.url.isnot(None),
-                    Mention.url.notilike('%googleusercontent.com%'),
-                    Mention.url.notilike('%corp.google.com%'),
-                    Mention.url.notilike('%uberproxy%'),
-                    Mention.url.notilike('%/rss%'),
-                    Mention.url.notilike('%.xml')
-                )
-                condition = or_(condition, and_(Mention.source_type.is_(None), valid_url_cond))
-            query = query.where(condition)
+                mapped = normalize_source_type_for_mention(st)
+                if mapped:
+                    mapped_types.update(mapped)
+            if mapped_types:
+                condition = Mention.source_type.in_(list(mapped_types))
+                if any(is_web_type(st) for st in source_types):
+                    valid_url_cond = and_(
+                        Mention.url.isnot(None),
+                        Mention.url.notilike('%googleusercontent.com%'),
+                        Mention.url.notilike('%corp.google.com%'),
+                        Mention.url.notilike('%uberproxy%'),
+                        Mention.url.notilike('%/rss%'),
+                        Mention.url.notilike('%.xml')
+                    )
+                    condition = or_(condition, and_(Mention.source_type.is_(None), valid_url_cond))
+                query = query.where(condition)
         if domain and not need_source_join:
             query = query.where(Mention.domain.ilike(f"%{domain}%"))
         if sentiment:
