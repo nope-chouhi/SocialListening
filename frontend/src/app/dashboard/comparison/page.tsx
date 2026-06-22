@@ -45,7 +45,7 @@ export default function ComparisonPage() {
     const max = Math.max(valA, valB, 1);
     return (
       <div className="mb-4">
-        <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">{label}</p>
+        <p className="text-xs font-bold text-gray-600 dark:text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">{label}</p>
         <div className="flex items-center gap-3">
           <span className="text-xs w-20 text-right font-bold text-indigo-600 dark:text-indigo-400">{valA.toLocaleString()}</span>
           <div className="flex-1 flex items-center gap-1">
@@ -70,12 +70,12 @@ export default function ComparisonPage() {
             <Scale className="w-6 h-6 text-emerald-500" />
             Comparison
           </h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">So sánh mentions, sentiment giữa các projects.</p>
+          <p className="text-sm text-gray-600 dark:text-gray-500 dark:text-gray-400 mt-1">So sánh mentions, sentiment giữa các projects.</p>
         </div>
       </div>
 
       {/* Project selector */}
-      <div className="bg-white dark:bg-[#050A15] rounded-2xl shadow border border-gray-200 dark:border-white/10 p-6">
+      <div className="bg-white dark:bg-[#050A15] rounded-2xl shadow-sm border border-gray-100 dark:border-white/10 p-6">
         <h2 className="text-base font-bold text-gray-900 dark:text-white mb-4">Chọn 2 Projects để So sánh</h2>
         {projects.length < 2 ? (
           <div className="bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 text-amber-800 dark:text-amber-300 px-4 py-3 rounded-lg text-sm">
@@ -84,7 +84,7 @@ export default function ComparisonPage() {
         ) : (
           <div className="flex flex-col sm:flex-row gap-4 items-end">
           <div className="flex-1 space-y-2">
-            <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Project A</label>
+            <label className="text-sm font-medium text-gray-600 dark:text-gray-500 dark:text-gray-400">Project A</label>
             <div className="relative">
               <select
                 value={projectA || ''}
@@ -97,14 +97,14 @@ export default function ComparisonPage() {
                 ))}
               </select>
               <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
-                <svg className="w-4 h-4 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               </div>
             </div>
           </div>
           <div className="flex-1 space-y-2">
-            <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Project B</label>
+            <label className="text-sm font-medium text-gray-600 dark:text-gray-500 dark:text-gray-400">Project B</label>
             <div className="relative">
               <select
                 value={projectB || ''}
@@ -117,7 +117,7 @@ export default function ComparisonPage() {
                 ))}
               </select>
               <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
-                <svg className="w-4 h-4 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               </div>
@@ -157,16 +157,16 @@ export default function ComparisonPage() {
               { label: 'Mentions Tích cực', a: dataA.positive || 0, b: dataB.positive || 0 },
               { label: 'Mentions Tiêu cực', a: dataA.negative || 0, b: dataB.negative || 0 },
             ].map(({ label, a, b }) => (
-              <div key={label} className="bg-white dark:bg-[#050A15] rounded-xl shadow border border-gray-200 dark:border-white/10 p-4">
+              <div key={label} className="bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-100 dark:border-white/10 p-4">
                 <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">{label}</p>
                 <div className="flex justify-between items-end">
                   <div>
                     <p className="text-2xl font-black text-indigo-600 dark:text-indigo-400">{a.toLocaleString()}</p>
-                    <p className="text-xs text-gray-400">{nameA}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{nameA}</p>
                   </div>
                   <div className="text-right">
                     <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400">{b.toLocaleString()}</p>
-                    <p className="text-xs text-gray-400">{nameB}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{nameB}</p>
                   </div>
                 </div>
                 <div className="mt-3">
@@ -177,13 +177,13 @@ export default function ComparisonPage() {
           </div>
 
           {/* Day-by-day Trend */}
-          <div className="bg-white dark:bg-[#050A15] rounded-2xl shadow border border-gray-200 dark:border-white/10 p-6">
+          <div className="bg-white dark:bg-[#050A15] rounded-2xl shadow-sm border border-gray-100 dark:border-white/10 p-6">
             <h2 className="text-base font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
               <TrendingUp className="w-4 h-4 text-indigo-500" />
               Trend theo ngày
             </h2>
             {(dataA.by_day || []).length === 0 ? (
-              <p className="text-gray-400 text-sm">Không đủ dữ liệu để so sánh. Hãy chạy scan hoặc background collection.</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">Không đủ dữ liệu để so sánh. Hãy chạy scan hoặc background collection.</p>
             ) : (
               <div className="space-y-3">
                 {(dataA.by_day || []).map((d: any, i: number) => {
@@ -203,19 +203,19 @@ export default function ComparisonPage() {
               const entries = Object.entries(data).sort(([, a], [, b]) => (b as number) - (a as number));
               const total = Object.values(data).reduce((s: number, v: any) => s + v, 0) as number;
               return (
-                <div key={name} className="bg-white dark:bg-[#050A15] rounded-2xl shadow border border-gray-200 dark:border-white/10 p-6">
+                <div key={name} className="bg-white dark:bg-[#050A15] rounded-2xl shadow-sm border border-gray-100 dark:border-white/10 p-6">
                   <h3 className="font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                     <PieChart className="w-4 h-4" /> {name} — Nguồn
                   </h3>
                   {entries.length === 0 ? (
-                    <p className="text-gray-400 text-sm">Chưa có dữ liệu</p>
+                    <p className="text-gray-500 dark:text-gray-400 text-sm">Chưa có dữ liệu</p>
                   ) : (
                     <div className="space-y-2">
                       {entries.map(([src, cnt]) => {
                         const pct = total > 0 ? Math.round(((cnt as number) / total) * 100) : 0;
                         return (
                           <div key={src} className="flex items-center gap-2 text-sm">
-                            <span className="w-16 text-gray-600 dark:text-gray-400 capitalize">{src}</span>
+                            <span className="w-16 text-gray-600 dark:text-gray-500 dark:text-gray-400 capitalize">{src}</span>
                             <div className="flex-1 bg-gray-100 dark:bg-gray-800 rounded-full h-2">
                               <div className={`${color} h-full rounded-full`} style={{ width: `${pct}%` }} />
                             </div>
@@ -231,9 +231,9 @@ export default function ComparisonPage() {
           </div>
         </>
       ) : !loading && (
-        <div className="bg-white dark:bg-[#050A15] rounded-2xl shadow border border-gray-200 dark:border-white/10 p-12 text-center">
-          <Scale className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-500 dark:text-gray-400 text-sm">
+        <div className="bg-white dark:bg-[#050A15] rounded-2xl shadow-sm border border-gray-100 dark:border-white/10 p-12 text-center">
+          <Scale className="w-12 h-12 text-gray-500 dark:text-gray-400 mx-auto mb-4" />
+          <p className="text-gray-600 dark:text-gray-500 dark:text-gray-400 text-sm">
             Chọn 2 projects và nhấn "So sánh" để xem kết quả.
           </p>
         </div>
