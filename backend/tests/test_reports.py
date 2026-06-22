@@ -35,6 +35,7 @@ def override_get_db():
     mock_db = MagicMock()
     # Mocking execution to return empty results for our basic tests
     mock_db.execute.return_value.scalars.return_value.all.return_value = []
+    mock_db.execute.return_value.scalar.return_value = 0
     yield mock_db
 
 app.dependency_overrides[get_current_active_user] = override_get_superuser
@@ -129,6 +130,8 @@ def test_summary_data_endpoint_empty():
     assert data["metrics"]["sentiment"]["positive"] == 0
     assert data["selected_mentions"] == []
     assert data["top_sources"] == []
+    assert data["trend"] == []
+    assert data["top_influencers"] == []
 
 def test_summary_data_scoping_normal_user():
     app.dependency_overrides[get_current_active_user] = override_get_normal_user

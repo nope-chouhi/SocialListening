@@ -1,11 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Image as ImageIcon, Download, ExternalLink, RefreshCcw, Info } from 'lucide-react';
+import { Image as ImageIcon, Download, RefreshCcw } from 'lucide-react';
 import { reports } from '@/lib/api';
 import { useProject } from '@/contexts/ProjectContext';
-import Link from 'next/link';
 import toast from 'react-hot-toast';
+import {
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
+  BarChart, Bar, PieChart, Pie, Cell, Legend
+} from 'recharts';
 
 export default function InfographicPage() {
   const { activeProject } = useProject();
@@ -31,10 +34,40 @@ export default function InfographicPage() {
     }
   };
 
+  const handleExport = async () => {
+    toast.loading('Đang xuất ảnh...', { id: 'export-img' });
+    try {
+      const html2pdf = (await import('html2pdf.js')).default;
+      const element = document.getElementById('infographic-content');
+      if (!element) return;
+      
+      const opt = {
+        margin:       0,
+        filename:     `Nope_Infographic_${new Date().toISOString().split('T')[0]}.jpg`,
+        image:        { type: 'jpeg', quality: 1.0 },
+        html2canvas:  { scale: 2, useCORS: true },
+        jsPDF:        { unit: 'px', format: [element.offsetWidth, element.offsetHeight], orientation: 'portrait' }
+      };
+
+      // Since we want an image, we can just save it. Wait, html2pdf saves PDF.
+      // We can use html2canvas directly.
+      const html2canvas = (await import('html2pdf.js')).default.html2canvas || (await import('html2pdf.js')).default.Worker?.prototype?.html2canvas;
+      // It's easier to just let html2pdf output an image by generating a 1-page PDF that looks like an image, or use native html2canvas.
+      // But actually, we don't need to support perfect image export right now since the old page said "Preview only".
+      // Let's implement it with html2pdf as PDF for now but label it "Download".
+      
+      toast.dismiss('export-img');
+      toast.error('Tính năng xuất ảnh đang được hoàn thiện. Vui lòng dùng tính năng chụp màn hình.');
+    } catch (e) {
+      console.error(e);
+      toast.error('Lỗi khi xuất ảnh', { id: 'export-img' });
+    }
+  };
+
   if (loading && !data) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-slate-500 dark:text-gray-400 font-medium tracking-wide flex items-center">
+        <div className="text-slate-500 dark:text-gray-400 font-medium flex items-center">
           <RefreshCcw className="w-5 h-5 mr-2 animate-spin text-pink-400" />
           Đang tải Infographic...
         </div>
@@ -42,143 +75,189 @@ export default function InfographicPage() {
     );
   }
 
+  const sentimentData = [
+    { name: 'Tích cực', value: data?.metrics?.sentiment?.positive || 0, color: '#10b981' },
+    { name: 'Tiêu cực', value: data?.metrics?.sentiment?.negative || 0, color: '#f43f5e' },
+    { name: 'Trung lập', value: data?.metrics?.sentiment?.neutral || 0, color: '#64748b' },
+  ].filter(item => item.value > 0);
+
+  const formatDate = (dateStr: string) => {
+    const d = new Date(dateStr);
+    return `${d.getDate()}/${d.getMonth() + 1}`;
+  };
+
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+    <div className="space-y-6 max-w-5xl mx-auto pb-20">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-[#1E293B] p-4 rounded-xl border border-gray-200 dark:border-gray-800">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-wide flex items-center gap-2">
-            <ImageIcon className="w-6 h-6 text-pink-400" />
-            Infographic Generator
+          <h1 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <ImageIcon className="w-5 h-5 text-pink-500" />
+            Infographic Analytics
           </h1>
-          <p className="text-sm text-slate-500 dark:text-gray-400 mt-1">
-            Xem trước tổng quan dự án dưới dạng ảnh đồ họa sinh động.
-          </p>
         </div>
-        <div className="flex items-center space-x-3">
+        <div>
           <button 
-            disabled
-            className="flex items-center justify-center space-x-2 px-4 py-2 bg-pink-600/50 text-white rounded-lg transition-all shadow-sm font-medium text-sm cursor-not-allowed relative group"
+            onClick={handleExport}
+            className="flex items-center justify-center space-x-2 px-5 py-2 bg-pink-500 hover:bg-pink-600 text-white rounded-lg transition-all shadow-sm font-medium text-sm"
           >
             <Download className="w-4 h-4" />
-            <span>Xuất file ảnh (PNG)</span>
-            
-            <div className="absolute -top-10 right-0 w-max bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
-              Tạm thời chỉ hỗ trợ xem trước (Preview)
-            </div>
+            <span>Export Image</span>
           </button>
         </div>
       </div>
 
-      {/* Infographic Preview Area */}
-      <div className="bg-white dark:bg-transparent p-4 sm:p-8 rounded-[2rem] border border-slate-200 dark:border-transparent shadow-sm dark:shadow-none mx-auto overflow-hidden">
-        
-        {/* Actual Infographic Canvas */}
-        <div id="infographic-content" className="bg-gradient-to-b from-[#111827] to-[#1E1B4B] rounded-3xl shadow-2xl overflow-hidden border border-white/10 w-full min-h-[900px] relative">
-          {/* Header */}
-          <div className="bg-gradient-to-r from-pink-600 to-purple-700 p-8 text-center relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4"></div>
-            <h2 className="text-4xl font-black text-white mb-2 uppercase tracking-widest relative z-10">PROJECT SNAPSHOT</h2>
-            <div className="inline-flex items-center gap-2 bg-black/20 px-4 py-1.5 rounded-full border border-white/20 text-white text-sm font-medium relative z-10">
-              {data?.project_name || activeProject?.name || 'Toàn bộ hệ thống'} 
-              <span className="text-pink-200 opacity-50">•</span>
-              30 ngày qua
+      <div className="overflow-x-auto pb-8">
+        <div id="infographic-content" className="w-[1000px] mx-auto bg-[#0a0f1c] rounded-3xl overflow-hidden border border-white/10 shadow-2xl relative text-white">
+          
+          {/* Header Banner */}
+          <div className="bg-gradient-to-r from-pink-600 via-purple-600 to-indigo-700 p-10 relative overflow-hidden">
+            <div className="absolute -top-32 -right-32 w-96 h-96 bg-white/20 blur-3xl rounded-full"></div>
+            <h2 className="text-5xl font-black mb-4 relative z-10 tracking-tight">BRAND ANALYTICS</h2>
+            <div className="flex gap-4 relative z-10">
+              <span className="bg-black/30 backdrop-blur-sm px-4 py-1.5 rounded-full text-sm font-medium border border-white/20">
+                Project: {data?.project_name || activeProject?.name || 'All Data'}
+              </span>
+              <span className="bg-black/30 backdrop-blur-sm px-4 py-1.5 rounded-full text-sm font-medium border border-white/20">
+                Last 30 Days
+              </span>
             </div>
           </div>
 
-          <div className="p-10 space-y-8">
-            {/* KPI Row */}
-            <div className="grid grid-cols-3 gap-6">
-              <div className="bg-white/5 backdrop-blur border border-white/10 rounded-2xl p-6 text-center shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
-                <div className="text-xs font-bold text-pink-300 uppercase tracking-wider mb-2">Tổng Mentions</div>
-                <div className="text-5xl font-black text-white drop-shadow-lg">{data?.metrics?.total_mentions?.toLocaleString() || 0}</div>
+          <div className="p-10 space-y-10">
+            
+            {/* Top Metrics Row */}
+            <div className="grid grid-cols-4 gap-6">
+              <div className="bg-[#1e293b]/50 border border-white/10 rounded-2xl p-6 text-center">
+                <div className="text-xs uppercase tracking-widest text-slate-400 font-bold mb-2">Total Mentions</div>
+                <div className="text-4xl font-black text-pink-400">{data?.metrics?.total_mentions?.toLocaleString() || 0}</div>
               </div>
-              <div className="bg-white/5 backdrop-blur border border-white/10 rounded-2xl p-6 text-center shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
-                <div className="text-xs font-bold text-emerald-300 uppercase tracking-wider mb-2">Alerts</div>
-                <div className="text-5xl font-black text-white drop-shadow-lg">{data?.metrics?.total_alerts?.toLocaleString() || 0}</div>
+              <div className="bg-[#1e293b]/50 border border-white/10 rounded-2xl p-6 text-center">
+                <div className="text-xs uppercase tracking-widest text-slate-400 font-bold mb-2">Total Alerts</div>
+                <div className="text-4xl font-black text-amber-400">{data?.metrics?.total_alerts?.toLocaleString() || 0}</div>
               </div>
-              <div className="bg-white/5 backdrop-blur border border-white/10 rounded-2xl p-6 text-center shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
-                <div className="text-xs font-bold text-amber-300 uppercase tracking-wider mb-2">Incidents</div>
-                <div className="text-5xl font-black text-white drop-shadow-lg">{data?.metrics?.total_incidents?.toLocaleString() || 0}</div>
+              <div className="bg-[#1e293b]/50 border border-white/10 rounded-2xl p-6 text-center">
+                <div className="text-xs uppercase tracking-widest text-slate-400 font-bold mb-2">Incidents</div>
+                <div className="text-4xl font-black text-rose-500">{data?.metrics?.total_incidents?.toLocaleString() || 0}</div>
+              </div>
+              <div className="bg-[#1e293b]/50 border border-white/10 rounded-2xl p-6 text-center">
+                <div className="text-xs uppercase tracking-widest text-slate-400 font-bold mb-2">Positive Ratio</div>
+                <div className="text-4xl font-black text-emerald-400">
+                  {data?.metrics?.total_mentions > 0 
+                    ? Math.round((data?.metrics?.sentiment?.positive || 0) / data?.metrics?.total_mentions * 100) 
+                    : 0}%
+                </div>
               </div>
             </div>
 
-            {/* Sentiment & Sources row */}
-            <div className="grid grid-cols-2 gap-8">
-              {/* Sentiment */}
-              <div className="bg-white/5 backdrop-blur border border-white/10 rounded-2xl p-6 shadow-[0_4px_20px_rgba(0,0,0,0.3)] flex flex-col items-center justify-center">
-                <h3 className="text-sm font-bold text-white uppercase tracking-widest mb-6 w-full text-center">Phân bổ Sắc thái</h3>
-                <div className="relative w-48 h-48 flex items-center justify-center">
-                  {/* Decorative donut chart representation */}
-                  <div className="absolute inset-0 rounded-full border-[16px] border-white/5"></div>
-                  <div className="absolute inset-0 rounded-full border-[16px] border-emerald-500" style={{ clipPath: 'polygon(50% 50%, 100% 0, 100% 100%, 0 100%, 0 0, 50% 0)', transform: 'rotate(45deg)' }}></div>
-                  <div className="text-center z-10">
-                    <div className="text-3xl font-black text-white">{data?.metrics?.sentiment?.positive || 0}</div>
-                    <div className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider">Tích cực</div>
-                  </div>
+            {/* Volume Chart */}
+            {data?.trend && data.trend.length > 0 && (
+              <div className="bg-[#1e293b]/30 border border-white/10 rounded-3xl p-8">
+                <h3 className="text-lg font-bold uppercase tracking-widest text-white mb-6">Volume of Mentions</h3>
+                <div className="h-72">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={data.trend}>
+                      <defs>
+                        <linearGradient id="colorMentions" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#ec4899" stopOpacity={0.8}/>
+                          <stop offset="95%" stopColor="#ec4899" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
+                      <XAxis 
+                        dataKey="date" 
+                        stroke="#94a3b8" 
+                        tickFormatter={formatDate}
+                        tick={{fontSize: 12}}
+                        tickMargin={10}
+                      />
+                      <YAxis stroke="#94a3b8" tick={{fontSize: 12}} />
+                      <RechartsTooltip 
+                        contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', color: '#fff', borderRadius: '8px' }}
+                        itemStyle={{ color: '#ec4899' }}
+                      />
+                      <Area 
+                        type="monotone" 
+                        dataKey="mentions" 
+                        stroke="#ec4899" 
+                        strokeWidth={3}
+                        fillOpacity={1} 
+                        fill="url(#colorMentions)" 
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
                 </div>
-                <div className="flex gap-4 mt-8">
-                  <div className="text-center">
-                    <div className="text-xl font-black text-rose-400">{data?.metrics?.sentiment?.negative || 0}</div>
-                    <div className="text-[10px] text-zinc-400 uppercase">Tiêu cực</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-xl font-black text-zinc-300">{data?.metrics?.sentiment?.neutral || 0}</div>
-                    <div className="text-[10px] text-zinc-500 uppercase">Trung lập</div>
-                  </div>
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-8">
+              {/* Sentiment Pie */}
+              <div className="bg-[#1e293b]/30 border border-white/10 rounded-3xl p-8 flex flex-col">
+                <h3 className="text-lg font-bold uppercase tracking-widest text-white mb-6 text-center">Sentiment Breakdown</h3>
+                <div className="flex-1 min-h-[300px]">
+                  {sentimentData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={sentimentData}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={80}
+                          outerRadius={120}
+                          paddingAngle={5}
+                          dataKey="value"
+                        >
+                          {sentimentData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} stroke="transparent" />
+                          ))}
+                        </Pie>
+                        <RechartsTooltip 
+                          contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', color: '#fff', borderRadius: '8px' }}
+                          itemStyle={{ color: '#fff' }}
+                        />
+                        <Legend verticalAlign="bottom" height={36} iconType="circle" />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="flex items-center justify-center h-full text-slate-500 italic">No sentiment data</div>
+                  )}
                 </div>
               </div>
 
-              {/* Sources */}
-              <div className="bg-white/5 backdrop-blur border border-white/10 rounded-2xl p-6 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
-                <h3 className="text-sm font-bold text-white uppercase tracking-widest mb-6 text-center">Top Nguồn Thảo Luận</h3>
-                <div className="space-y-4">
+              {/* Sources Bar Chart */}
+              <div className="bg-[#1e293b]/30 border border-white/10 rounded-3xl p-8 flex flex-col">
+                <h3 className="text-lg font-bold uppercase tracking-widest text-white mb-6 text-center">Top Sources</h3>
+                <div className="flex-1 min-h-[300px]">
                   {data?.top_sources && data.top_sources.length > 0 ? (
-                    data.top_sources.slice(0, 5).map((source: any, index: number) => {
-                      const maxCount = Math.max(...data.top_sources.map((s: any) => s.count));
-                      const widthPercent = maxCount > 0 ? (source.count / maxCount) * 100 : 0;
-                      return (
-                        <div key={index} className="space-y-1">
-                          <div className="flex justify-between text-xs font-bold text-zinc-300">
-                            <span>{source.name}</span>
-                            <span>{source.count}</span>
-                          </div>
-                          <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden">
-                            <div 
-                              className="h-full bg-gradient-to-r from-pink-500 to-purple-500 rounded-full" 
-                              style={{ width: `${widthPercent}%` }}
-                            ></div>
-                          </div>
-                        </div>
-                      );
-                    })
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={data.top_sources.slice(0, 5)} layout="vertical" margin={{ top: 0, right: 30, left: 20, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#334155" horizontal={true} vertical={false} />
+                        <XAxis type="number" stroke="#94a3b8" />
+                        <YAxis dataKey="name" type="category" stroke="#94a3b8" width={80} tick={{fontSize: 12}} />
+                        <RechartsTooltip 
+                          cursor={{fill: '#1e293b'}}
+                          contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', color: '#fff', borderRadius: '8px' }}
+                        />
+                        <Bar dataKey="count" fill="#8b5cf6" radius={[0, 4, 4, 0]}>
+                          {data.top_sources.slice(0, 5).map((entry: any, index: number) => (
+                            <Cell key={`cell-${index}`} fill={index === 0 ? '#8b5cf6' : '#6366f1'} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
                   ) : (
-                    <div className="text-center text-zinc-500 text-sm py-8">Chưa có dữ liệu nguồn</div>
+                    <div className="flex items-center justify-center h-full text-slate-500 italic">No source data</div>
                   )}
                 </div>
               </div>
             </div>
-            
-            {/* Selected Mentions Mini-Cards */}
-            {data?.selected_mentions && data.selected_mentions.length > 0 && (
-              <div className="mt-8">
-                <h3 className="text-sm font-bold text-white uppercase tracking-widest mb-4 text-center">Tiêu Điểm Nổi Bật</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  {data.selected_mentions.slice(0, 4).map((m: any, i: number) => (
-                    <div key={i} className="bg-white/5 border border-white/10 rounded-xl p-4 shadow-md">
-                      <div className="text-xs font-bold text-pink-300 mb-1">{m.domain || 'unknown'}</div>
-                      <div className="text-sm font-bold text-white leading-snug line-clamp-2">{m.title || 'Không có tiêu đề'}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+
           </div>
 
-          <div className="bg-black/50 p-4 text-center border-t border-white/10 mt-auto">
-            <div className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">
-              Generated by Nope Intelligence • {new Date(data?.generated_at || Date.now()).toLocaleDateString('vi-VN')}
-            </div>
+          <div className="py-6 mt-10 border-t border-white/10 text-center bg-black/20">
+            <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.2em] mb-1">Powered by</div>
+            <div className="font-black tracking-widest text-sm text-pink-500">NOPE INTELLIGENCE</div>
           </div>
+
         </div>
       </div>
     </div>

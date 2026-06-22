@@ -115,25 +115,42 @@ def get_reports_summary_data(
     
     analyses = {a.mention_id: a for a in analyses_list}
 
-    # Aggregate Sentiment and Sources
+    # Aggregate Sentiment, Sources, Trends, Influencers
     sentiment_counts = {"positive": 0, "negative": 0, "neutral": 0}
     source_distribution = {}
+    influencer_counts = {}
+    trend_dict = {}
 
     selected_mentions = []
 
     for m in mentions:
         # Sentiment
         analysis = analyses.get(m.id)
+        sent_val = "neutral"
         if analysis:
             sent_val = analysis.sentiment.value if hasattr(analysis.sentiment, 'value') else analysis.sentiment
-            if sent_val in sentiment_counts:
-                sentiment_counts[sent_val] += 1
-            elif sent_val == 'negative_medium':
-                sentiment_counts["negative"] += 1
+            if sent_val == 'negative_medium':
+                sent_val = 'negative'
+        
+        if sent_val in sentiment_counts:
+            sentiment_counts[sent_val] += 1
         
         # Sources
         st = m.source_type or "unknown"
         source_distribution[st] = source_distribution.get(st, 0) + 1
+
+        # Influencers
+        author = m.author or "Unknown"
+        if author != "Unknown":
+            influencer_counts[author] = influencer_counts.get(author, 0) + 1
+
+        # Trend by date
+        date_str = m.published_at.date().isoformat() if m.published_at else datetime.utcnow().date().isoformat()
+        if date_str not in trend_dict:
+            trend_dict[date_str] = {"date": date_str, "mentions": 0, "positive": 0, "negative": 0, "neutral": 0}
+        trend_dict[date_str]["mentions"] += 1
+        if sent_val in trend_dict[date_str]:
+            trend_dict[date_str][sent_val] += 1
 
         # Selected Mentions (add_to_report)
         if m.add_to_report:
@@ -144,12 +161,18 @@ def get_reports_summary_data(
                 "snippet": m.snippet,
                 "url": m.url,
                 "domain": m.domain,
-                "sentiment": analysis.sentiment if analysis else "neutral",
+                "sentiment": sent_val,
                 "published_at": m.published_at.isoformat() if m.published_at else None
             })
 
     sources_list = [{"name": k.capitalize(), "count": v} for k, v in source_distribution.items()]
     sources_list.sort(key=lambda x: x["count"], reverse=True)
+
+    influencers_list = [{"name": k, "count": v} for k, v in influencer_counts.items()]
+    influencers_list.sort(key=lambda x: x["count"], reverse=True)
+
+    trend_list = list(trend_dict.values())
+    trend_list.sort(key=lambda x: x["date"])
 
     # Alerts and Incidents
     total_alerts = db.execute(select(func.count()).select_from(alerts_query.subquery())).scalar() or 0
@@ -166,7 +189,9 @@ def get_reports_summary_data(
             "total_alerts": total_alerts,
             "total_incidents": total_incidents
         },
+        "trend": trend_list,
         "top_sources": sources_list,
+        "top_influencers": influencers_list[:10],
         "selected_mentions": selected_mentions
     }
 
