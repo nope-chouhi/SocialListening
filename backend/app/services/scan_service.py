@@ -1,120 +1,25 @@
-from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
+import time
+import hashlib
+import unicodedata
+import logging
+from typing import List, Tuple
+from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 from sqlalchemy import select, func, or_, and_
-from typing import List, Optional
-from datetime import datetime, timezone
-import hashlib
-import requests
-from bs4 import BeautifulSoup
-import feedparser
-from pydantic import BaseModel
+from sqlalchemy.orm.attributes import flag_modified
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from app.core.database import get_db, SessionLocal
-from app.core.tenant import apply_tenant_filter
-from app.core.security import get_current_active_user
-from app.models.user import User
-from app.models.source import Source, SourceType
-from app.models.keyword import Keyword, KeywordGroup
-from app.models.mention import Mention, AIAnalysis, SentimentScore
-from app.models.alert import Alert, AlertSeverity, AlertStatus
+from app.core.database import SessionLocal
 from app.models.crawl import CrawlJob, CrawlJobStatus
-from app.services.ai_service import analyze_mention
-from app.schemas.crawl import (
-    CrawlJobCreate, CrawlJobResponse, CrawlJobListResponse,
-    ScanScheduleCreate, ScanScheduleUpdate, ScanScheduleResponse, ScanCapabilitiesResponse
-)
+from app.models.mention import Mention
+from app.core.config import settings
+from app.services.url_utils import clean_final_url, domain_from_url
 
-router = APIRouter()
+logger = logging.getLogger(__name__)
 
-class ManualScanRequest(BaseModel):
-    query: Optional[str] = None
-    source_types: Optional[List[str]] = []
-    date_range: Optional[str] = None
-    expand_keywords: Optional[bool] = False
-
-    keyword_group_ids: Optional[List[int]] = []
-    keywords: Optional[List[str]] = []
-    source_ids: Optional[List[int]] = []
-    url: Optional[str] = None
-    mode: Optional[str] = "HYBRID"
-    project_id: Optional[int] = None
-    max_results: Optional[int] = 50
-    auto_triggered: Optional[bool] = False
-    reason: Optional[str] = None
-    current_result_count: Optional[int] = None
-
-def _run_discovery_bg(job_id: int):
-    db = SessionLocal()
-    try:
-        from app.services.discovery_service import run_discovery_job
-        run_discovery_job(db, job_id)
-    except Exception as e:
-        print(f"Discovery background task failed: {e}")
-    finally:
-        db.close()
-
-@router.get("/capabilities", response_model=ScanCapabilitiesResponse)
-def get_capabilities():
-    from app.core.config import settings
-    has_serpapi = bool(settings.SERPAPI_API_KEY)
-
-    return {
-        "web_search": {
-            "enabled": True,
-            "provider": "serpapi",
-            "configured": has_serpapi,
-            "status": "READY" if has_serpapi else "CONFIG_REQUIRED",
-            "message": None if has_serpapi else "Chưa cấu hình Web Search provider"
-        },
-        "auto_discovery": {
-            "enabled": True,
-            "configured": has_serpapi,
-            "status": "READY" if has_serpapi else "CONFIG_REQUIRED",
-            "message": None if has_serpapi else "Chưa cấu hình SerpAPI"
-        }
-    }
-
-class DebugDiscoveryRequest(BaseModel):
-    keyword: str
-
-@router.post("/debug-auto-discovery")
-def debug_auto_discovery(
-    body: DebugDiscoveryRequest,
-    current_user: User = Depends(get_current_active_user)
-):
-    from app.core.config import settings
-    has_serpapi = bool(settings.SERPAPI_API_KEY)
-    if not has_serpapi:
-        return {"success": False, "error": "Chưa cấu hình SERPAPI_API_KEY"}
-
-    try:
-        from app.services.serpapi_provider import search
-        results = search(
-            keywords=[body.keyword],
-            language="",
-            country="",
-            limit=5,
-            date_range="last_30_days",
-        )
-        return {
-            "success": True,
-            "auth_ok": True,
-            "serpapi_configured": True,
-            "result_count": len(results),
-            "top_results": [
-                {"title": r.get("title"), "domain": r.get("domain")}
-                for r in results[:3]
-            ]
-        }
-    except Exception as e:
-        return {"success": False, "error": str(e)}
-
-
-import time
 _EXPANDED_KEYWORDS_CACHE = {}
 
-
-def _expand_scan_keyword(q: str):
+def expand_scan_keyword(q: str):
     q_lower = q.lower().strip()
     expansions = [q_lower] if q_lower else []
     provider = "fallback"
@@ -163,127 +68,9 @@ def _expand_scan_keyword(q: str):
 
     return list(dict.fromkeys(expansions)), provider
 
-@router.post("/manual-scan")
-def manual_scan(
-    body: ManualScanRequest,
-    background_tasks: BackgroundTasks,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
-):
-    """
-    Manual scan: Live pipeline for API adapters.
-    """
-    keyword_texts = []
-
-    from app.services.scan_service import expand_scan_keyword
-
-    provider_used = "deferred" if body.expand_keywords else "none"
-    if body.query:
-        query_kw = body.query.strip().lower()
-        if query_kw:
-            keyword_texts.append(query_kw)
-
-    if body.keywords:
-        for kw in body.keywords:
-            kw_lower = kw.lower().strip()
-            if kw_lower and kw_lower not in keyword_texts:
-                keyword_texts.append(kw_lower)
-
-    if not keyword_texts:
-        raise HTTPException(status_code=400, detail="Vui lòng cung cấp ít nhất một từ khóa (qua query hoặc keywords)")
-
-    mode = getattr(body, "mode", "HYBRID") or "HYBRID"
-    project_id = body.project_id
-    query_key = (body.query or "").strip().lower() or "|".join(sorted(keyword_texts))
-
-    import os
-    env_max = os.getenv("CRAWL_MAX_RESULTS_PER_SOURCE")
-    try:
-        default_max = int(env_max) if env_max else 50
-    except ValueError:
-        default_max = 50
-
-    # Cap max_results at 100 to avoid overload
-    req_max = body.max_results or default_max
-    max_results = min(req_max, 100)
-
-    from datetime import timedelta
-    # Check pending/running in last 15 min
-    recent_limit_active = datetime.now(timezone.utc) - timedelta(minutes=15)
-    # Check completed in last 5 min
-    recent_limit_completed = datetime.now(timezone.utc) - timedelta(minutes=5)
-
-    existing_jobs = db.execute(
-        select(CrawlJob).where(
-            or_(
-                and_(CrawlJob.status.in_([CrawlJobStatus.PENDING, CrawlJobStatus.RUNNING]), CrawlJob.created_at > recent_limit_active),
-                and_(CrawlJob.status == CrawlJobStatus.COMPLETED, CrawlJob.completed_at > recent_limit_completed)
-            )
-        )
-    ).scalars().all()
-
-    for ej in existing_jobs:
-        meta = ej.meta_data or {}
-        # Only check jobs for the same project
-        if meta.get("project_id") != project_id:
-            continue
-
-        ej_query_key = (meta.get("query_key") or meta.get("query") or "").strip().lower()
-        ej_source_types = set(meta.get("source_types", []))
-
-        if meta.get("mode", ej.job_type) == mode and ej_query_key == query_key and set(body.source_types or []) == ej_source_types:
-            # If auto-triggered, we don't return an existing completed job to frontend if it's already done (or we could return it as completed so UI doesn't spin)
-            # Actually, if it's completed, we shouldn't trigger a new one, but returning COMPLETED is fine.
-            return {
-                "job_id": ej.id,
-                "status": ej.status.value if hasattr(ej.status, 'value') else ej.status,
-                "mode": mode,
-                "project_id": project_id,
-                "keywords": meta.get("keywords", []),
-                "message": "Returned existing recent job to prevent duplicate crawl"
-            }
-
-    job = CrawlJob(
-        job_type='manual',
-        status=CrawlJobStatus.PENDING,
-        user_id=current_user.id,
-        total_sources=0,
-        processed_sources=0,
-        mentions_found=0,
-        started_at=datetime.now(timezone.utc),
-        meta_data={
-            "query": body.query,
-            "query_key": query_key,
-            "project_id": project_id,
-            "mode": mode,
-            "keywords": keyword_texts,
-            "provider": provider_used,
-            "user_id": current_user.id,
-            "source_ids": body.source_ids or [],
-            "source_types": body.source_types or [],
-            "expand_keywords": body.expand_keywords,
-            "auto_triggered": body.auto_triggered,
-            "reason": body.reason,
-            "current_result_count": body.current_result_count
-        }
-    )
-    db.add(job)
-    db.commit()
-    db.refresh(job)
-
-    from app.services.scan_service import execute_scan
-    background_tasks.add_task(execute_scan, job.id, project_id, keyword_texts, mode, max_results, body.source_types or [])
-
-    return {
-        "job_id": job.id,
-        "status": "QUEUED",
-        "mode": mode,
-        "project_id": project_id,
-        "keywords": keyword_texts
-    }
 
 
-def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str], mode: str, max_results: int, source_types: List[str] = None):
+def execute_scan(job_id: int, project_id: int, keyword_texts: List[str], mode: str, max_results: int, source_types: List[str] = None):
     from app.core.database import SessionLocal
     from app.models.crawl import CrawlJob, CrawlJobStatus
     from app.models.mention import Mention
@@ -320,7 +107,7 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
         original_query = current_meta.get("query")
         provider_used = current_meta.get("provider", "none")
         if current_meta.get("expand_keywords") and original_query:
-            expanded_keywords, provider_used = _expand_scan_keyword(original_query)
+            expanded_keywords, provider_used = expand_scan_keyword(original_query)
             for expanded_kw in expanded_keywords:
                 if expanded_kw and expanded_kw not in keyword_texts:
                     keyword_texts.append(expanded_kw)
@@ -828,9 +615,17 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
         flag_modified(job, "meta_data")
         db.commit()
 
+        # Comprehensive logging
+        job_type = job.job_type.upper() if getattr(job, "job_type", None) else "SCAN"
+        duration = (job.completed_at - job.started_at.replace(tzinfo=timezone.utc)).total_seconds() if job.started_at else 0
+        total_collected = sum(meta_data_final.get("adapter_mentions", {}).values())
+        
         logger.info(
-            "MANUAL_SCAN_COMPLETE: job_id=%s status=%s total_created_mentions=%d total_errors=%d",
-            job_id, job.status.name, meta_data_final["created_mentions_count"], len(summary["errors"])
+            f"[{job_type}_COMPLETE] job_id={job_id} project_id={project_id} "
+            f"duration={duration:.1f}s keywords={len(keyword_texts)} "
+            f"collected={total_collected} new_inserted={meta_data_final['created_mentions_count']} "
+            f"duplicates_skipped={total_collected - meta_data_final['created_mentions_count']} "
+            f"errors={len(summary['errors'])} alerts_created=N/A status={job.status.name}"
         )
 
     except Exception as e:
@@ -852,358 +647,3 @@ def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str],
                 pass
     finally:
         db.close()
-
-
-
-def crawl_source(source: Source, keyword_texts: List[str], keywords: List[Keyword], db: Session) -> List[dict]:
-    """Crawl a source and extract mentions matching keywords"""
-    mentions = []
-
-    try:
-        # Check if already marked invalid_rss_feed
-        if source.last_error and source.last_error.startswith("invalid_rss_feed"):
-            raise ValueError(source.last_error)
-
-        is_rss = source.source_type == 'rss'
-
-        # Try RSS first
-        if is_rss:
-            from app.services.crawl_service import validate_rss_feed
-            is_rss_valid, error_code, error_msg = validate_rss_feed(source.url)
-            if not is_rss_valid:
-                source.last_error = f"{error_code}: {error_msg}"
-                source.error_count = (source.error_count or 0) + 1
-                db.commit()
-                raise ValueError(f"{error_code}: {error_msg}")
-
-            feed = feedparser.parse(source.url)
-            if feed.bozo and not feed.entries:
-                error_msg = str(feed.bozo_exception) if hasattr(feed, 'bozo_exception') else "XML không hợp lệ"
-                raise ValueError(f"rss_fetch_failed: Lấy dữ liệu RSS feed thất bại: {error_msg}")
-
-            for entry in feed.entries[:20]:  # Limit to 20 entries
-                title = entry.get('title', '')
-                content = entry.get('summary', '') or entry.get('description', '')
-                full_text = f"{title} {content}".lower()
-                import unicodedata
-                full_text_norm = unicodedata.normalize('NFC', full_text)
-
-                # Check if any keyword matches
-                matched = []
-                for i, kw_text in enumerate(keyword_texts):
-                    kw_norm = unicodedata.normalize('NFC', kw_text.lower())
-                    if kw_norm in full_text_norm:
-                        matched.append({
-                            'keyword_id': keywords[i].id,
-                            'keyword': keywords[i].keyword
-                        })
-
-                if matched:
-                    mentions.append({
-                        'title': title,
-                        'content': content[:5000],  # Limit content length
-                        'url': entry.get('link', source.url),
-                        'author': entry.get('author'),
-                        'published_at': datetime(*entry.published_parsed[:6]) if hasattr(entry, 'published_parsed') and entry.published_parsed else None,
-                        'matched_keywords': matched
-                    })
-
-        # Try regular web scraping
-        else:
-            headers = {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-            }
-            try:
-                response = requests.get(source.url, headers=headers, timeout=30)
-                response.raise_for_status()
-            except requests.exceptions.Timeout:
-                raise ValueError("timeout: Kết nối hết hạn (timeout). Vui lòng thử lại sau.")
-            except Exception as e:
-                raise ValueError(f"website_fetch_failed: Lấy dữ liệu trang web thất bại: {str(e)}")
-
-            soup = BeautifulSoup(response.content, 'html.parser')
-
-            # Remove script and style elements
-            for script in soup(["script", "style"]):
-                script.decompose()
-
-            # Get text
-            text = soup.get_text()
-            lines = (line.strip() for line in text.splitlines())
-            chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
-            text = ' '.join(chunk for chunk in chunks if chunk)
-
-            text_lower = text.lower()
-
-            # Check if any keyword matches
-            matched = []
-            for i, kw_text in enumerate(keyword_texts):
-                if kw_text in text_lower:
-                    matched.append({
-                        'keyword_id': keywords[i].id,
-                        'keyword': keywords[i].keyword
-                    })
-
-            if matched:
-                # Try to extract title
-                title = soup.find('title')
-                title_text = title.string if title else source.name
-
-                mentions.append({
-                    'title': title_text,
-                    'content': text[:5000],  # Limit content length
-                    'url': source.url,
-                    'author': None,
-                    'published_at': datetime.now(timezone.utc),
-                    'matched_keywords': matched
-                })
-
-    except Exception as e:
-        print(f"Error crawling {source.url}: {str(e)}")
-        raise
-
-    return mentions
-
-
-@router.get("/scan-history")
-def get_scan_history(
-    page: int = 1,
-    page_size: int = 20,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
-):
-    """Get scan history (recent mentions)"""
-    from math import ceil
-
-    total = db.execute(apply_tenant_filter(select(func.count(Mention.id)), Mention, current_user)).scalar() or 0
-
-    offset = (page - 1) * page_size
-    mentions = db.execute(
-        apply_tenant_filter(select(Mention), Mention, current_user)
-        .order_by(Mention.collected_at.desc())
-        .offset(offset)
-        .limit(page_size)
-    ).scalars().all()
-
-    return {
-        "items": [
-            {
-                "id": m.id,
-                "title": m.title,
-                "url": m.url,
-                "source_id": m.source_id,
-                "collected_at": m.collected_at.isoformat() if m.collected_at else None,
-                "matched_keywords": m.matched_keywords
-            }
-            for m in mentions
-        ],
-        "total": total,
-        "page": page,
-        "page_size": page_size,
-        "total_pages": ceil(total / page_size) if total > 0 else 1
-    }
-
-
-@router.get("/scheduler/status")
-def get_scheduler_status_endpoint(
-    current_user: User = Depends(get_current_active_user)
-):
-    """Get background scheduler status"""
-    from app.services.scheduler_service import get_scheduler_status
-    return get_scheduler_status()
-
-
-@router.get("/worker-status")
-def get_worker_status(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
-):
-    """Get comprehensive worker status for the frontend"""
-    from app.services.scheduler_service import get_worker_status
-    return get_worker_status(db)
-
-
-@router.get("/jobs")
-def get_crawl_jobs(
-    page: int = 1,
-    page_size: int = 20,
-    status: Optional[str] = None,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
-):
-    """Get crawl job history"""
-    from math import ceil
-
-    query = select(CrawlJob)
-
-    if status:
-        query = query.where(CrawlJob.status == status)
-
-    total = db.execute(select(func.count()).select_from(query.subquery())).scalar() or 0
-
-    offset = (page - 1) * page_size
-    jobs = db.execute(
-        query.order_by(CrawlJob.created_at.desc())
-        .offset(offset)
-        .limit(page_size)
-    ).scalars().all()
-
-    return {
-        "items": [
-            {
-                "id": j.id,
-                "job_type": j.job_type,
-                "source_ids": j.source_ids,
-                "keyword_group_ids": j.keyword_group_ids,
-                "status": j.status.value if hasattr(j.status, 'value') else j.status,
-                "total_sources": j.total_sources or 0,
-                "processed_sources": j.processed_sources or 0,
-                "mentions_found": j.mentions_found or 0,
-                "error_message": j.error_message,
-                "project_id": (j.meta_data or {}).get("project_id"),
-                "retry_count": j.retry_count or 0,
-                "created_at": j.created_at.isoformat() if j.created_at else None,
-                "started_at": j.started_at.isoformat() if j.started_at else None,
-                "completed_at": j.completed_at.isoformat() if j.completed_at else None,
-                "metadata": j.meta_data or {}
-            }
-            for j in jobs
-        ],
-        "total": total,
-        "page": page,
-        "page_size": page_size,
-        "total_pages": ceil(total / page_size) if total > 0 else 1
-    }
-
-
-
-@router.get("/jobs/{job_id}")
-def get_crawl_job(
-    job_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
-):
-    job = db.execute(select(CrawlJob).where(CrawlJob.id == job_id)).scalar_one_or_none()
-    if not job:
-        raise HTTPException(status_code=404, detail="Job not found")
-
-    meta = job.meta_data or {}
-
-    return {
-        "job_id": job.id,
-        "status": job.status.value if hasattr(job.status, 'value') else job.status,
-        "project_id": meta.get("project_id"),
-        "keywords": meta.get("keywords", []),
-        "error_code": meta.get("error_code"),
-        "error_message": job.error_message or meta.get("error_message"),
-        "summary": meta.get("summary", {}),
-        "meta_data": meta
-    }
-
-@router.post("/jobs/{job_id}/retry")
-def retry_crawl_job(
-    job_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
-):
-    """Retry a failed crawl job"""
-    job = db.execute(
-        select(CrawlJob).where(CrawlJob.id == job_id)
-    ).scalar_one_or_none()
-
-    if not job:
-        raise HTTPException(status_code=404, detail="Job not found")
-
-    if job.status not in (CrawlJobStatus.FAILED, CrawlJobStatus.CANCELLED):
-        raise HTTPException(status_code=400, detail="Chỉ có thể retry job đã thất bại hoặc bị hủy")
-
-    # Create a new job based on the old one
-    new_job = CrawlJob(
-        source_ids=job.source_ids,
-        keyword_group_ids=job.keyword_group_ids,
-        job_type='retry',
-        status=CrawlJobStatus.PENDING,
-        total_sources=job.total_sources,
-        processed_sources=0,
-        mentions_found=0,
-        retry_count=(job.retry_count or 0) + 1,
-    )
-    db.add(new_job)
-    db.commit()
-    db.refresh(new_job)
-
-    # Run the scan for each source
-    if new_job.source_ids:
-        new_job.status = CrawlJobStatus.RUNNING
-        new_job.started_at = datetime.now(timezone.utc)
-        db.commit()
-
-        from app.services.crawl_service import crawl_source as service_crawl_source
-        total_new = 0
-        errors = []
-
-        for source_id in new_job.source_ids:
-            try:
-                result = service_crawl_source(db, source_id, job_id=new_job.id)
-                total_new += result.get('mentions_new', 0)
-                new_job.processed_sources = (new_job.processed_sources or 0) + 1
-            except Exception as e:
-                errors.append(f"Source {source_id}: {str(e)}")
-                new_job.processed_sources = (new_job.processed_sources or 0) + 1
-
-        new_job.mentions_found = total_new
-        new_job.completed_at = datetime.now(timezone.utc)
-        if errors:
-            new_job.status = CrawlJobStatus.FAILED
-            new_job.error_message = "; ".join(errors)[:2000]
-        else:
-            new_job.status = CrawlJobStatus.COMPLETED
-        db.commit()
-
-    return {
-        "success": True,
-        "new_job_id": new_job.id,
-        "status": new_job.status.value if hasattr(new_job.status, 'value') else new_job.status,
-        "mentions_found": new_job.mentions_found or 0
-    }
-
-
-@router.post("/test-feed")
-def test_rss_feed(
-    url: str,
-    current_user: User = Depends(get_current_active_user)
-):
-    """Test an RSS feed URL without saving anything"""
-    from app.services.crawl_service import test_rss_feed as test_feed
-    return test_feed(url)
-
-
-@router.post("/debug/test-crawl")
-async def test_crawl(
-    keyword: str,
-    platform: str = "web",
-    limit: int = 5,
-    db: Session = Depends(get_db)
-):
-    import logging
-    logger = logging.getLogger(__name__)
-    try:
-        from app.services.social_crawler_service import social_crawler_service
-        from app.services.social_crawl_job import _persist_mentions
-
-        raw = await social_crawler_service.crawl_keywords([keyword], [platform])
-        # Note: crawl_keywords in social_crawler_service.py doesn't seem to take `limit`, so I omitted it
-
-        logger.info(f"[DEBUG] Raw results from crawler: {len(raw)}")
-
-        success_count, error_count, errors, created = _persist_mentions(db, raw)
-
-        return {
-            "raw_count": len(raw),
-            "inserted": success_count,
-            "failed": error_count,
-            "errors": errors[:10]
-        }
-    except Exception as e:
-        logger.error(f"[DEBUG] test-crawl failed: {e}")
-        return { "error": str(e) }
