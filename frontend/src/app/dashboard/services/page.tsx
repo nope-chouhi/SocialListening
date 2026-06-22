@@ -256,7 +256,7 @@ export default function ServicesPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-7xl mx-auto">
       <Toaster position="top-right" />
       
       {/* Header */}
@@ -268,11 +268,11 @@ export default function ServicesPage() {
       </div>
 
       {/* Compliance Notice */}
-      <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-xl p-4">
+      <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl p-4">
         <div className="flex items-start space-x-3">
-          <AlertTriangle className="w-5 h-5 text-indigo-400 mt-0.5 shrink-0" />
-          <div className="text-sm text-indigo-200">
-            <strong className="text-indigo-300">Lưu ý tuân thủ:</strong> Tất cả quy trình dịch vụ trong hệ thống được thiết kế cho việc bảo vệ danh tiếng hợp pháp, 
+          <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+          <div className="text-sm text-amber-900 dark:text-amber-200">
+            <strong className="text-amber-900 dark:text-amber-400">Lưu ý tuân thủ:</strong> Tất cả quy trình dịch vụ trong hệ thống được thiết kế cho việc bảo vệ danh tiếng hợp pháp, 
             thu thập bằng chứng, soạn thảo phản hồi chính thức, báo cáo chính sách nền tảng và chuẩn bị yêu cầu gỡ bỏ/sửa chữa hợp pháp. 
             Hệ thống không hỗ trợ hack, DDoS, spam report, truy cập trái phép, chiếm đoạt tài khoản, scraping riêng tư hoặc thao túng nền tảng.
           </div>
@@ -290,10 +290,10 @@ export default function ServicesPage() {
             <button
               key={key}
               onClick={() => setActiveTab(key as any)}
-              className={`flex items-center space-x-2 py-3 px-1 border-b-2 font-medium text-sm transition-all whitespace-nowrap ${
+              className={`flex items-center space-x-2 py-3 px-2 border-b-2 font-medium text-sm transition-all whitespace-nowrap ${
                 activeTab === key
-                  ? 'border-indigo-500 text-indigo-400'
-                  : 'border-transparent text-gray-500 hover:text-slate-700 dark:text-gray-300 hover:border-slate-300 dark:border-gray-700'
+                  ? 'border-indigo-600 text-indigo-600 dark:border-indigo-500 dark:text-indigo-400'
+                  : 'border-transparent text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 hover:border-slate-300 dark:hover:border-slate-700'
               }`}
             >
               <Icon className="w-4 h-4" />
@@ -308,74 +308,74 @@ export default function ServicesPage() {
         <div className="space-y-6">
           {/* Dashboard Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div className="bg-white dark:bg-[#111827] border border-slate-200 dark:border-gray-800 rounded-xl shadow-sm p-6 hover:border-slate-300 dark:border-gray-700 transition-colors">
+            <div className="bg-white dark:bg-[#111827] border border-slate-200 dark:border-gray-800 rounded-xl shadow-sm hover:shadow-md p-6 hover:border-slate-300 dark:hover:border-slate-700 transition-all">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-slate-500 dark:text-gray-400">Dịch vụ hoạt động</p>
-                  <p className="text-3xl font-bold text-slate-900 dark:text-white mt-2">{dashboardSummary.total_active_services}</p>
+                  <p className="text-sm font-semibold text-slate-600 dark:text-slate-400">Dịch vụ hoạt động</p>
+                  <p className="text-3xl font-black text-slate-900 dark:text-white mt-2">{dashboardSummary.total_active_services}</p>
                 </div>
-                <div className="bg-indigo-500/10 border border-indigo-500/20 p-3 rounded-xl">
-                  <FileText className="w-6 h-6 text-indigo-400" />
+                <div className="bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 p-3 rounded-xl">
+                  <FileText className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
                 </div>
               </div>
             </div>
 
-            <div className="bg-white dark:bg-[#111827] border border-slate-200 dark:border-gray-800 rounded-xl shadow-sm p-6 hover:border-slate-300 dark:border-gray-700 transition-colors">
+            <div className="bg-white dark:bg-[#111827] border border-slate-200 dark:border-gray-800 rounded-xl shadow-sm hover:shadow-md p-6 hover:border-slate-300 dark:hover:border-slate-700 transition-all">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-slate-500 dark:text-gray-400">Yêu cầu đang mở</p>
-                  <p className="text-3xl font-bold text-slate-900 dark:text-white mt-2">{dashboardSummary.open_service_requests}</p>
+                  <p className="text-sm font-semibold text-slate-600 dark:text-slate-400">Yêu cầu đang mở</p>
+                  <p className="text-3xl font-black text-slate-900 dark:text-white mt-2">{dashboardSummary.open_service_requests}</p>
                 </div>
-                <div className="bg-amber-500/10 border border-amber-500/20 p-3 rounded-xl">
-                  <Clock className="w-6 h-6 text-amber-400" />
+                <div className="bg-amber-50 dark:bg-amber-500/10 border border-amber-100 dark:border-amber-500/20 p-3 rounded-xl">
+                  <Clock className="w-6 h-6 text-amber-600 dark:text-amber-400" />
                 </div>
               </div>
             </div>
 
-            <div className="bg-white dark:bg-[#111827] border border-slate-200 dark:border-gray-800 rounded-xl shadow-sm p-6 hover:border-slate-300 dark:border-gray-700 transition-colors">
+            <div className="bg-white dark:bg-[#111827] border border-slate-200 dark:border-gray-800 rounded-xl shadow-sm hover:shadow-md p-6 hover:border-slate-300 dark:hover:border-slate-700 transition-all">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-slate-500 dark:text-gray-400">Chờ phê duyệt</p>
-                  <p className="text-3xl font-bold text-slate-900 dark:text-white mt-2">{dashboardSummary.pending_approvals}</p>
+                  <p className="text-sm font-semibold text-slate-600 dark:text-slate-400">Chờ phê duyệt</p>
+                  <p className="text-3xl font-black text-slate-900 dark:text-white mt-2">{dashboardSummary.pending_approvals}</p>
                 </div>
-                <div className="bg-orange-500/10 border border-orange-500/20 p-3 rounded-xl">
-                  <AlertTriangle className="w-6 h-6 text-orange-400" />
+                <div className="bg-orange-50 dark:bg-orange-500/10 border border-orange-100 dark:border-orange-500/20 p-3 rounded-xl">
+                  <AlertTriangle className="w-6 h-6 text-orange-600 dark:text-orange-400" />
                 </div>
               </div>
             </div>
 
-            <div className="bg-white dark:bg-[#111827] border border-slate-200 dark:border-gray-800 rounded-xl shadow-sm p-6 hover:border-slate-300 dark:border-gray-700 transition-colors">
+            <div className="bg-white dark:bg-[#111827] border border-slate-200 dark:border-gray-800 rounded-xl shadow-sm hover:shadow-md p-6 hover:border-slate-300 dark:hover:border-slate-700 transition-all">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-slate-500 dark:text-gray-400">Đã hoàn thành</p>
-                  <p className="text-3xl font-bold text-slate-900 dark:text-white mt-2">{dashboardSummary.completed_requests}</p>
+                  <p className="text-sm font-semibold text-slate-600 dark:text-slate-400">Đã hoàn thành</p>
+                  <p className="text-3xl font-black text-slate-900 dark:text-white mt-2">{dashboardSummary.completed_requests}</p>
                 </div>
-                <div className="bg-emerald-500/10 border border-emerald-500/20 p-3 rounded-xl">
-                  <CheckCircle className="w-6 h-6 text-emerald-400" />
+                <div className="bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20 p-3 rounded-xl">
+                  <CheckCircle className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
                 </div>
               </div>
             </div>
 
-            <div className="bg-white dark:bg-[#111827] border border-slate-200 dark:border-gray-800 rounded-xl shadow-sm p-6 hover:border-slate-300 dark:border-gray-700 transition-colors">
+            <div className="bg-white dark:bg-[#111827] border border-slate-200 dark:border-gray-800 rounded-xl shadow-sm hover:shadow-md p-6 hover:border-slate-300 dark:hover:border-slate-700 transition-all">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-slate-500 dark:text-gray-400">Rủi ro cao</p>
-                  <p className="text-3xl font-bold text-slate-900 dark:text-white mt-2">{dashboardSummary.high_risk_requests}</p>
+                  <p className="text-sm font-semibold text-slate-600 dark:text-slate-400">Rủi ro cao</p>
+                  <p className="text-3xl font-black text-slate-900 dark:text-white mt-2">{dashboardSummary.high_risk_requests}</p>
                 </div>
-                <div className="bg-rose-500/10 border border-rose-500/20 p-3 rounded-xl">
-                  <XCircle className="w-6 h-6 text-rose-400" />
+                <div className="bg-rose-50 dark:bg-rose-500/10 border border-rose-100 dark:border-rose-500/20 p-3 rounded-xl">
+                  <XCircle className="w-6 h-6 text-rose-600 dark:text-rose-400" />
                 </div>
               </div>
             </div>
 
-            <div className="bg-white dark:bg-[#111827] border border-slate-200 dark:border-gray-800 rounded-xl shadow-sm p-6 hover:border-slate-300 dark:border-gray-700 transition-colors">
+            <div className="bg-white dark:bg-[#111827] border border-slate-200 dark:border-gray-800 rounded-xl shadow-sm hover:shadow-md p-6 hover:border-slate-300 dark:hover:border-slate-700 transition-all">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-slate-500 dark:text-gray-400">Chi phí tháng này</p>
-                  <p className="text-2xl font-bold text-slate-900 dark:text-white mt-2">{formatPrice(dashboardSummary.monthly_estimated_cost)}</p>
+                  <p className="text-sm font-semibold text-slate-600 dark:text-slate-400">Chi phí tháng này</p>
+                  <p className="text-2xl font-black text-slate-900 dark:text-white mt-2">{formatPrice(dashboardSummary.monthly_estimated_cost)}</p>
                 </div>
-                <div className="bg-purple-500/10 border border-purple-500/20 p-3 rounded-xl">
-                  <DollarSign className="w-6 h-6 text-purple-400" />
+                <div className="bg-purple-50 dark:bg-purple-500/10 border border-purple-100 dark:border-purple-500/20 p-3 rounded-xl">
+                  <DollarSign className="w-6 h-6 text-purple-600 dark:text-purple-400" />
                 </div>
               </div>
             </div>
