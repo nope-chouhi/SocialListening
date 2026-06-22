@@ -73,3 +73,5 @@ logs/
 # Temporary test files
 test_*.py
 quick_*.py
+
+*.tsbuildinfo
