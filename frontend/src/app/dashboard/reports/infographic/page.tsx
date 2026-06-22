@@ -108,7 +108,7 @@ export default function InfographicPage() {
               <div className="bg-white/5 backdrop-blur border border-white/10 rounded-2xl p-6 shadow-[0_4px_20px_rgba(0,0,0,0.3)] flex flex-col items-center justify-center">
                 <h3 className="text-sm font-bold text-white uppercase tracking-widest mb-6 w-full text-center">Phân bổ Sắc thái</h3>
                 <div className="relative w-48 h-48 flex items-center justify-center">
-                  {/* Fake donut chart representation */}
+                  {/* Decorative donut chart representation */}
                   <div className="absolute inset-0 rounded-full border-[16px] border-white/5"></div>
                   <div className="absolute inset-0 rounded-full border-[16px] border-emerald-500" style={{ clipPath: 'polygon(50% 50%, 100% 0, 100% 100%, 0 100%, 0 0, 50% 0)', transform: 'rotate(45deg)' }}></div>
                   <div className="text-center z-10">

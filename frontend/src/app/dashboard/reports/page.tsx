@@ -73,7 +73,7 @@ export default function ReportsPage() {
   const handleExport = async (format: string) => {
     if (format === 'PDF') {
       setExporting(true);
-      toast.loading('Đang xuất PDF...', { id: 'export-pdf' });
+      toast.loading('Đang chuẩn bị PDF trên trình duyệt...', { id: 'export-pdf' });
       try {
         const html2pdf = (await import('html2pdf.js')).default;
         const element = document.getElementById('report-content');
@@ -93,7 +93,7 @@ export default function ReportsPage() {
         };
 
         await html2pdf().set(opt).from(element).save();
-        toast.success('Xuất PDF thành công!', { id: 'export-pdf' });
+        toast.success('Đã lưu PDF thành công!', { id: 'export-pdf' });
       } catch (e) {
         console.error('Lỗi khi xuất PDF', e);
         toast.error('Lỗi khi xuất PDF', { id: 'export-pdf' });
@@ -139,7 +139,7 @@ export default function ReportsPage() {
               className="flex items-center justify-center space-x-2 px-4 py-2 bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg transition-all shadow-sm shadow-indigo-500/20 font-medium text-sm disabled:opacity-50"
             >
               <Download className="w-4 h-4" />
-              <span>{exporting ? 'Đang xuất...' : 'Xuất PDF Report'}</span>
+              <span>{exporting ? 'Đang xử lý...' : 'Lưu dưới dạng PDF (Trình duyệt)'}</span>
             </button>
             <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-[#1E293B] border border-slate-300 dark:border-gray-700 rounded-xl shadow-xl py-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
               <button disabled className="w-full text-left px-4 py-2 text-sm text-gray-500 cursor-not-allowed flex items-center gap-2">
