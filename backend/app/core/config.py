@@ -97,6 +97,15 @@ class Settings(BaseSettings):
     SOCIAL_CRAWL_INTERVAL_MINUTES: int = 5
     SCAN_INTERVAL_MINUTES: int = 15
 
+    # Auto Discovery Settings
+    AUTO_DISCOVERY_ENABLED: bool = True
+    AUTO_DISCOVERY_INTERVAL_MINUTES: int = 15
+    AUTO_DISCOVERY_MAX_RESULTS_PER_RUN: int = 20
+    
+    # Automated Keyword Scanning Settings
+    AUTO_SCAN_ENABLED: bool = False
+    AUTO_SCAN_INTERVAL_MINUTES: int = 15
+
     # DistilBERT sentiment microservice (Flask on port 5001)
     SENTIMENT_SERVICE_URL: str = "http://localhost:5001"
     

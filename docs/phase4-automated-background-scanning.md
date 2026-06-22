@@ -21,3 +21,11 @@ To prevent identical background tasks from overlapping, we implemented a robust 
 ## Deployment Notes
 - A new Alembic migration (`a34bcad08e54_enhance_worker_status.py`) is included to apply the new observability columns to the `worker_status` table. 
 - Deployment environments must run `alembic upgrade head` manually or ensure their deployment scripts handle the migration execution. Do not assume the production pipeline will run it naturally unless explicitly configured.
+
+## 4. Automated Keyword Scanning
+Phase 4 automated scanning is implemented and locally verified.
+- **Config**: Controlled via `AUTO_SCAN_ENABLED` and `AUTO_SCAN_INTERVAL_MINUTES` in `config.py`.
+- **Default Behavior**: Automated scanning is disabled by default (`AUTO_SCAN_ENABLED=False`) to prevent unintended execution during local development and preview deployments. To enable, set `AUTO_SCAN_ENABLED=true` in your `.env` file.
+- **Architecture**: The keyword scanner logic operates as a scheduled job injected directly into the unified `scheduler_service.py` using `APScheduler`. It iterates over active keywords grouped by project, avoiding conflicts with overlapping schedules by checking `CrawlJob` states in the database.
+- **Shared Pipeline**: Automated scans and Manual scans share the exact same core execution logic (`scan_service.execute_scan`), ensuring perfectly consistent API adapters, AI analysis rules, and content hash deduplication logic (`seen_hashes`).
+- **Known Limitation**: `APScheduler` is an in-memory background worker. If the web server crashes or restarts, the interval resets. This is suitable for monolithic background tasks but is not a fully production-ready distributed queue (like Celery/Redis).

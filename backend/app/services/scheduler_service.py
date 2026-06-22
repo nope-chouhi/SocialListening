@@ -618,6 +618,20 @@ def start_scheduler(is_embedded: bool = False):
             )
             logger.info("Auto Discovery scheduled job configured (runs every 6h).")
 
+        # Add Phase 4 Automated Scanning Scheduler
+        if getattr(app_settings, "AUTO_SCAN_ENABLED", False):
+            from app.jobs.scan_jobs import run_automated_scans
+            auto_scan_interval = getattr(app_settings, "AUTO_SCAN_INTERVAL_MINUTES", 15)
+            scheduler.add_job(
+                run_automated_scans,
+                IntervalTrigger(minutes=auto_scan_interval),
+                id='automated_scan_job',
+                name='Periodic background keyword scanning',
+                replace_existing=True,
+                next_run_time=datetime.now(timezone.utc) + timedelta(seconds=45)
+            )
+            logger.info(f"Phase 4 Automated keyword scanning scheduled every {auto_scan_interval} min")
+
         scheduler.start()
         scheduler_started = True
 
