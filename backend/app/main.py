@@ -27,30 +27,39 @@ async def lifespan(app: FastAPI):
     """Startup: create tables + seed data + start scheduler."""
     logger.info("Starting Social Listening Platform...")
 
-    # Run database migrations automatically
+    # Run database migrations automatically if configured
     try:
         import os
-        import alembic.config
-        import alembic.command
-        logger.info("Running automatic database migrations...")
+        run_migrations = os.getenv("RUN_MIGRATIONS_ON_STARTUP", "true").lower() == "true"
         
-        # __file__ is backend/app/main.py
-        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        alembic_ini_path = os.path.join(base_dir, "alembic.ini")
-        
-        # We must change dir so alembic script_location resolves correctly
-        original_cwd = os.getcwd()
-        os.chdir(base_dir)
-        
-        alembic_cfg = alembic.config.Config("alembic.ini")
-        from app.core.config import settings
-        if settings.DATABASE_URL:
-            alembic_cfg.set_main_option("sqlalchemy.url", settings.DATABASE_URL.replace("%", "%%"))
-        alembic.command.upgrade(alembic_cfg, "head")
-        logger.info("Database migrations applied successfully.")
-        
-        # Restore cwd just in case
-        os.chdir(original_cwd)
+        # If running on Render, default to false to avoid port binding timeout
+        if "RENDER" in os.environ and "RUN_MIGRATIONS_ON_STARTUP" not in os.environ:
+            run_migrations = False
+            
+        if run_migrations:
+            import alembic.config
+            import alembic.command
+            logger.info("Running automatic database migrations...")
+            
+            # __file__ is backend/app/main.py
+            base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            alembic_ini_path = os.path.join(base_dir, "alembic.ini")
+            
+            # We must change dir so alembic script_location resolves correctly
+            original_cwd = os.getcwd()
+            os.chdir(base_dir)
+            
+            alembic_cfg = alembic.config.Config("alembic.ini")
+            from app.core.config import settings
+            if settings.DATABASE_URL:
+                alembic_cfg.set_main_option("sqlalchemy.url", settings.DATABASE_URL.replace("%", "%%"))
+            alembic.command.upgrade(alembic_cfg, "head")
+            logger.info("Database migrations applied successfully.")
+            
+            # Restore cwd just in case
+            os.chdir(original_cwd)
+        else:
+            logger.info("Skipping automatic database migrations (RUN_MIGRATIONS_ON_STARTUP is false)")
     except Exception as e:
         logger.warning(f"create_all skipped (tables may already exist via alembic): {e}")
 
