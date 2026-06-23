@@ -10,6 +10,7 @@ import {
 import { crawl, keywords as keywordsApi, sources as sourcesApi, discovery as discoveryApi, getErrorMessage, API_BASE_URL } from '@/lib/api';
 import toast, { Toaster } from 'react-hot-toast';
 import Link from 'next/link';
+import ScanSchedulesPanel from '@/components/ScanSchedulesPanel';
 
 interface WorkerStatus {
   scheduler_enabled: boolean;
@@ -1080,6 +1081,11 @@ export default function ScanPage() {
           )}
         </div>
       )}
+
+      {/* ═══════════════════════════════════════════════════════════════════
+          5.5. SCAN SCHEDULES PANEL
+         ═══════════════════════════════════════════════════════════════════ */}
+      <ScanSchedulesPanel keywordGroups={keywordGroups} />
 
       {/* ═══════════════════════════════════════════════════════════════════
           6. CRAWL JOBS HISTORY — Collapsible

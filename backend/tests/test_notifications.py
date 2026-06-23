@@ -123,3 +123,67 @@ def test_duplicate_notification_prevention(monkeypatch):
     
     # Ensure add was NOT called
     mock_db.add.assert_not_called()
+
+@patch("app.services.notification_service.send_email_notification")
+def test_retry_delivery_success(mock_send_email):
+    from app.services.notification_service import retry_delivery
+    mock_db = MagicMock()
+    
+    log = NotificationDeliveryLog(
+        id=99,
+        status='failed',
+        channel='email',
+        payload='{"subject": "Retry Subj", "body_html": "HTML", "body_text": "TEXT"}',
+        attempt_count=1,
+        event_type='retry_event',
+        destination='test@example.com'
+    )
+    
+    # First mock the log fetch
+    # Second mock the newly created log fetch after delete/resend
+    new_log = NotificationDeliveryLog(
+        id=100,
+        status='sent',
+        channel='email',
+        attempt_count=1
+    )
+    
+    mock_db.execute.return_value.scalar_one_or_none.side_effect = [log, new_log]
+    
+    mock_send_email.return_value = {"success": True}
+    
+    result = retry_delivery(mock_db, 99)
+    
+    assert result["success"] is True
+    assert new_log.attempt_count == 2
+    mock_send_email.assert_called_once_with(
+        mock_db, 'test@example.com', 'Retry Subj', 'HTML', 'TEXT', 'retry_event', None, None, None
+    )
+    mock_db.delete.assert_called_once_with(log)
+
+@patch("app.services.notification_service.send_email_notification")
+def test_retry_delivery_failure(mock_send_email):
+    from app.services.notification_service import retry_delivery
+    mock_db = MagicMock()
+    
+    log = NotificationDeliveryLog(
+        id=99,
+        status='failed',
+        channel='email',
+        payload='{"subject": "Retry Subj", "body_html": "HTML", "body_text": "TEXT"}',
+        attempt_count=1,
+        event_type='retry_event',
+        destination='test@example.com'
+    )
+    
+    mock_db.execute.return_value.scalar_one_or_none.side_effect = [log]
+    
+    mock_send_email.side_effect = Exception("SMTP Error")
+    
+    result = retry_delivery(mock_db, 99)
+    
+    assert result["success"] is False
+    assert "SMTP Error" in result["message"]
+    assert log.status == 'failed'
+    assert log.attempt_count == 2
+

@@ -371,6 +371,31 @@ export const crawl = {
     const response = await api.post('/api/crawl/test-feed', null, { params: { url } });
     return response.data;
   },
+  // --- Schedules ---
+  getSchedules: async (page: number = 1, page_size: number = 20) => {
+    const response = await api.get('/api/crawl/schedules', { params: { page, page_size } });
+    return response.data;
+  },
+  createSchedule: async (data: any) => {
+    const response = await api.post('/api/crawl/schedules', data);
+    return response.data;
+  },
+  updateSchedule: async (id: number, data: any) => {
+    const response = await api.put(`/api/crawl/schedules/${id}`, data);
+    return response.data;
+  },
+  deleteSchedule: async (id: number) => {
+    const response = await api.delete(`/api/crawl/schedules/${id}`);
+    return response.data;
+  },
+  triggerSchedule: async (id: number) => {
+    const response = await api.post(`/api/crawl/schedules/${id}/run`);
+    return response.data;
+  },
+  getScheduleHistory: async (id: number, page: number = 1, page_size: number = 20) => {
+    const response = await api.get(`/api/crawl/schedules/${id}/history`, { params: { page, page_size } });
+    return response.data;
+  },
 };
 
 // ─── Mentions ─────────────────────────────────────────────────────────────────

@@ -36,12 +36,12 @@ def has_been_notified(
 def create_delivery_log(
     db: Session, event_type: str, channel: str, destination: str,
     alert_id: Optional[int] = None, incident_id: Optional[int] = None, mention_id: Optional[int] = None,
-    status: str = 'pending', error: Optional[str] = None
+    status: str = 'pending', error: Optional[str] = None, payload: Optional[str] = None
 ) -> NotificationDeliveryLog:
     log = NotificationDeliveryLog(
         event_type=event_type, channel=channel, destination=destination, status=status,
         alert_id=alert_id, incident_id=incident_id, mention_id=mention_id,
-        last_error=error, sent_at=datetime.utcnow() if status == 'sent' else None
+        last_error=error, payload=payload, sent_at=datetime.utcnow() if status == 'sent' else None
     )
     db.add(log)
     db.commit()
@@ -70,7 +70,11 @@ def send_email_notification(
     if has_been_notified(db, event_type, 'email', to_email, alert_id, incident_id, mention_id):
         return {"success": True, "message": "Already notified"}
         
-    log = create_delivery_log(db, event_type, 'email', to_email, alert_id, incident_id, mention_id)
+    import json
+    payload_dict = {"subject": subject, "body_html": body_html, "body_text": body_text}
+    payload_str = json.dumps(payload_dict, ensure_ascii=False)
+        
+    log = create_delivery_log(db, event_type, 'email', to_email, alert_id, incident_id, mention_id, payload=payload_str)
 
     env_smtp_host = os.getenv("SMTP_HOST", "").strip()
     env_smtp_port = os.getenv("SMTP_PORT", "").strip()
@@ -277,6 +281,10 @@ def send_webhook_notification(
             "timestamp": datetime.utcnow().isoformat(),
             "data": data
         }
+        
+        import json
+        payload_str = json.dumps(payload, ensure_ascii=False)
+        log.payload = payload_str
         
         # Prepare headers
         headers = {
@@ -521,3 +529,116 @@ def notify_incident_assigned(db: Session, incident_id: int, assigned_to_id: int)
     }
     
     send_webhook_notification(db, "incident_assigned", webhook_data, incident_id=incident_id)
+
+
+def retry_delivery(db: Session, log_id: int) -> Dict:
+    """
+    Retry a failed notification delivery.
+    """
+    import json
+    log = db.execute(
+        select(NotificationDeliveryLog).where(NotificationDeliveryLog.id == log_id)
+    ).scalar_one_or_none()
+    
+    if not log:
+        return {"success": False, "message": "Delivery log not found"}
+        
+    if log.status == 'sent':
+        return {"success": False, "message": "Already sent"}
+        
+    log.status = 'retrying'
+    db.commit()
+    
+    try:
+        if log.channel == 'email':
+            if not log.payload:
+                raise ValueError("No payload stored for email retry")
+                
+            payload_data = json.loads(log.payload)
+            # Send using inner functionality, bypassing has_been_notified
+            subject = payload_data.get("subject", "Retry Email")
+            body_html = payload_data.get("body_html", "")
+            body_text = payload_data.get("body_text", "")
+            
+            # Since send_email_notification creates a new log and checks duplicates, 
+            # we need to temporarily update our current log status so it doesn't look like a duplicate if we just call the function.
+            # However, calling send_email_notification will create a NEW log.
+            # To avoid creating a new log, we should implement the send directly or 
+            # just delete this log and call the original function.
+            # Best approach: We extract the actual sending logic from send_email_notification or we just call it and delete this log.
+            # Actually, to maintain the ID, let's just do a clean wrapper.
+            
+            # For simplicity, we will call the original function which creates a new log, 
+            # and we mark this log as 'retrying' permanently, or we delete this log.
+            # The cleanest way is to use the existing function but delete the old log first.
+            old_attempt_count = log.attempt_count
+            db.delete(log)
+            db.commit()
+            
+            res = send_email_notification(
+                db, 
+                log.destination, 
+                subject, 
+                body_html, 
+                body_text, 
+                log.event_type, 
+                log.alert_id, 
+                log.incident_id, 
+                log.mention_id
+            )
+            
+            # find the newly created log and update its attempt count
+            new_log = db.execute(
+                select(NotificationDeliveryLog).where(
+                    NotificationDeliveryLog.event_type == log.event_type,
+                    NotificationDeliveryLog.destination == log.destination,
+                    NotificationDeliveryLog.status.in_(['sent', 'failed'])
+                ).order_by(NotificationDeliveryLog.id.desc()).limit(1)
+            ).scalar_one_or_none()
+            if new_log:
+                new_log.attempt_count = old_attempt_count + 1
+                db.commit()
+                
+            return res
+            
+        elif log.channel == 'webhook':
+            if not log.payload:
+                raise ValueError("No payload stored for webhook retry")
+                
+            payload_data = json.loads(log.payload)
+            
+            old_attempt_count = log.attempt_count
+            db.delete(log)
+            db.commit()
+            
+            res = send_webhook_notification(
+                db,
+                log.event_type,
+                payload_data.get("data", {}),
+                log.alert_id,
+                log.incident_id,
+                log.mention_id
+            )
+            
+            new_log = db.execute(
+                select(NotificationDeliveryLog).where(
+                    NotificationDeliveryLog.event_type == log.event_type,
+                    NotificationDeliveryLog.destination == log.destination,
+                    NotificationDeliveryLog.status.in_(['sent', 'failed'])
+                ).order_by(NotificationDeliveryLog.id.desc()).limit(1)
+            ).scalar_one_or_none()
+            if new_log:
+                new_log.attempt_count = old_attempt_count + 1
+                db.commit()
+                
+            return res
+            
+        else:
+            return {"success": False, "message": f"Unknown channel {log.channel}"}
+            
+    except Exception as e:
+        log.status = 'failed'
+        log.last_error = f"Retry Error: {str(e)}"
+        log.attempt_count += 1
+        db.commit()
+        return {"success": False, "message": f"Retry error: {str(e)}"}

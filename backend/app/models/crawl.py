@@ -21,6 +21,7 @@ class CrawlJob(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, index=True, nullable=True)
+    scan_schedule_id = Column(Integer, nullable=True, index=True)
     
     # Job details
     job_type = Column(String(50), nullable=False)  # manual, scheduled
@@ -72,3 +73,18 @@ class ScanSchedule(Base):
     # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+
+class ScanLog(Base):
+    __tablename__ = "scan_logs"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    scan_schedule_id = Column(Integer, index=True, nullable=True)
+    job_id = Column(Integer, index=True, nullable=True)
+    
+    level = Column(String(20), default="INFO") # INFO, ERROR, WARNING
+    message = Column(Text, nullable=False)
+    meta_data = Column(JSON, nullable=True)
+    
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+

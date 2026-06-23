@@ -1,16 +1,19 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from typing import Optional, List
 from sqlalchemy.orm import Session
-from sqlalchemy import select
+from sqlalchemy import select, func
 
 from app.core.database import get_db
 from app.core.security import get_current_superuser
 from app.models.user import User
 from app.models.system_settings import OrganizationSettings, EmailSettings, SystemNotificationSettings
+from app.models.alert import NotificationDeliveryLog
 from app.schemas.system_settings import (
     OrganizationSettingsResponse, OrganizationSettingsUpdate,
     EmailSettingsResponse, EmailSettingsUpdate,
     SystemNotificationSettingsResponse, SystemNotificationSettingsUpdate
 )
+from app.schemas.alert import NotificationDeliveryLogResponse, NotificationDeliveryLogListResponse
 
 router = APIRouter()
 
@@ -292,3 +295,72 @@ def test_notification_settings(
             status_code=400,
             detail=f"Channel '{channel}' not supported. Use 'webhook'"
         )
+
+# ─── Delivery Logs ──────────────────────────────────────────────────────────
+
+@router.get("/notifications/deliveries", response_model=NotificationDeliveryLogListResponse)
+def list_notification_deliveries(
+    page: int = 1,
+    page_size: int = 20,
+    status: Optional[str] = None,
+    channel: Optional[str] = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_superuser)
+):
+    """List notification deliveries - Admin only"""
+    query = select(NotificationDeliveryLog)
+    
+    if status:
+        query = query.where(NotificationDeliveryLog.status == status)
+    if channel:
+        query = query.where(NotificationDeliveryLog.channel == channel)
+        
+    query = query.order_by(NotificationDeliveryLog.created_at.desc())
+    
+    total = db.execute(select(func.count()).select_from(query.subquery())).scalar_one()
+    
+    items = db.execute(query.offset((page - 1) * page_size).limit(page_size)).scalars().all()
+    
+    total_pages = (total + page_size - 1) // page_size
+    
+    return {
+        "items": items,
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "total_pages": total_pages
+    }
+
+
+@router.get("/notifications/deliveries/{log_id}", response_model=NotificationDeliveryLogResponse)
+def get_notification_delivery(
+    log_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_superuser)
+):
+    """Get a specific notification delivery log - Admin only"""
+    log = db.execute(
+        select(NotificationDeliveryLog).where(NotificationDeliveryLog.id == log_id)
+    ).scalar_one_or_none()
+    
+    if not log:
+        raise HTTPException(status_code=404, detail="Delivery log not found")
+        
+    return log
+
+
+@router.post("/notifications/deliveries/{log_id}/retry")
+def retry_notification_delivery(
+    log_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_superuser)
+):
+    """Retry a failed notification delivery - Admin only"""
+    from app.services.notification_service import retry_delivery
+    
+    result = retry_delivery(db, log_id)
+    if not result.get("success"):
+        raise HTTPException(status_code=400, detail=result.get("message", "Retry failed"))
+        
+    return {"success": True, "message": "Notification queued for retry or sent successfully"}
+

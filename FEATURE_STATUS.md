@@ -53,7 +53,7 @@
 | **Quản lý quyền** | ❌ DISABLED_PENDING | Role management | API exists: `/api/admin/roles` |
 | **Thông tin tổ chức** | ✅ DONE | Company info, timezone, language | `GET/PUT /api/admin/settings/organization` |
 | **Cấu hình Email** | ✅ DONE | SMTP config, test email | `GET/PUT /api/admin/settings/email` |
-| **Thông báo hệ thống** | ✅ DONE | Webhooks, test webhook | `GET/PUT /api/admin/settings/notifications` |
+| **Thông báo hệ thống** | ✅ DONE | Webhooks, test webhook, **delivery logs, retries** | `GET/PUT /api/admin/settings/notifications` |
 | **API & Webhooks** | ❌ DISABLED_PENDING | API key management | API exists: `/api/api-keys` |
 | **Giao diện hệ thống** | ❌ DISABLED_PENDING | Branding customization | API exists: `/api/branding` |
 | **Audit Logs** | ❌ DISABLED_PENDING | Activity logs | API exists: `/api/admin/audit` |

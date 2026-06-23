@@ -1207,3 +1207,183 @@ async def test_crawl(
     except Exception as e:
         logger.error(f"[DEBUG] test-crawl failed: {e}")
         return { "error": str(e) }
+
+
+# --- SCAN SCHEDULES ---
+
+from app.models.crawl import ScanSchedule
+
+@router.post("/schedules", response_model=ScanScheduleResponse)
+def create_scan_schedule(
+    schedule: ScanScheduleCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Create a new automated scan schedule"""
+    # Simple validation for cron expression
+    import croniter
+    if not croniter.croniter.is_valid(schedule.cron_expression):
+        raise HTTPException(status_code=400, detail="Cron expression không hợp lệ")
+
+    db_schedule = ScanSchedule(
+        user_id=current_user.id,
+        name=schedule.name,
+        description=schedule.description,
+        cron_expression=schedule.cron_expression,
+        timezone=schedule.timezone,
+        source_group_ids=schedule.source_group_ids,
+        keyword_group_ids=schedule.keyword_group_ids,
+        is_active=schedule.is_active
+    )
+    db.add(db_schedule)
+    db.commit()
+    db.refresh(db_schedule)
+    
+    # Trigger APScheduler sync
+    try:
+        from app.services.scheduler_service import sync_scan_schedules
+        sync_scan_schedules()
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).warning(f"Could not sync scheduler immediately: {e}")
+        
+    return db_schedule
+
+@router.get("/schedules")
+def list_scan_schedules(
+    page: int = 1,
+    page_size: int = 20,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Get list of automated scan schedules"""
+    from math import ceil
+    query = select(ScanSchedule)
+    
+    total = db.execute(select(func.count()).select_from(query.subquery())).scalar() or 0
+    offset = (page - 1) * page_size
+    schedules = db.execute(
+        query.order_by(ScanSchedule.created_at.desc())
+        .offset(offset)
+        .limit(page_size)
+    ).scalars().all()
+    
+    return {
+        "items": schedules,
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "total_pages": ceil(total / page_size) if total > 0 else 1
+    }
+
+@router.put("/schedules/{schedule_id}", response_model=ScanScheduleResponse)
+def update_scan_schedule(
+    schedule_id: int,
+    schedule_update: ScanScheduleUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Update a scan schedule"""
+    db_schedule = db.execute(select(ScanSchedule).where(ScanSchedule.id == schedule_id)).scalar_one_or_none()
+    if not db_schedule:
+        raise HTTPException(status_code=404, detail="Schedule not found")
+
+    update_data = schedule_update.dict(exclude_unset=True)
+    
+    if "cron_expression" in update_data:
+        import croniter
+        if not croniter.croniter.is_valid(update_data["cron_expression"]):
+            raise HTTPException(status_code=400, detail="Cron expression không hợp lệ")
+
+    for key, value in update_data.items():
+        setattr(db_schedule, key, value)
+        
+    db.commit()
+    db.refresh(db_schedule)
+    
+    try:
+        from app.services.scheduler_service import sync_scan_schedules
+        sync_scan_schedules()
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).warning(f"Could not sync scheduler immediately: {e}")
+        
+    return db_schedule
+
+@router.delete("/schedules/{schedule_id}")
+def delete_scan_schedule(
+    schedule_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Delete a scan schedule"""
+    db_schedule = db.execute(select(ScanSchedule).where(ScanSchedule.id == schedule_id)).scalar_one_or_none()
+    if not db_schedule:
+        raise HTTPException(status_code=404, detail="Schedule not found")
+
+    db.delete(db_schedule)
+    db.commit()
+    
+    try:
+        from app.services.scheduler_service import sync_scan_schedules
+        sync_scan_schedules()
+    except Exception as e:
+        pass
+        
+    return {"success": True}
+
+@router.post("/schedules/{schedule_id}/run")
+def trigger_scan_schedule(
+    schedule_id: int,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Manually trigger a scheduled scan right now"""
+    db_schedule = db.execute(select(ScanSchedule).where(ScanSchedule.id == schedule_id)).scalar_one_or_none()
+    if not db_schedule:
+        raise HTTPException(status_code=404, detail="Schedule not found")
+        
+    from app.services.scheduler_service import execute_scan_schedule_job
+    background_tasks.add_task(execute_scan_schedule_job, schedule_id)
+    return {"success": True, "message": "Scheduled scan triggered manually in background"}
+
+@router.get("/schedules/{schedule_id}/history")
+def get_schedule_history(
+    schedule_id: int,
+    page: int = 1,
+    page_size: int = 20,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Get run history for a specific schedule"""
+    from math import ceil
+    query = select(CrawlJob).where(CrawlJob.scan_schedule_id == schedule_id)
+    
+    total = db.execute(select(func.count()).select_from(query.subquery())).scalar() or 0
+    offset = (page - 1) * page_size
+    jobs = db.execute(
+        query.order_by(CrawlJob.created_at.desc())
+        .offset(offset)
+        .limit(page_size)
+    ).scalars().all()
+    
+    return {
+        "items": [
+            {
+                "id": j.id,
+                "job_type": j.job_type,
+                "status": j.status.value if hasattr(j.status, 'value') else j.status,
+                "mentions_found": j.mentions_found or 0,
+                "error_message": j.error_message,
+                "started_at": j.started_at.isoformat() if j.started_at else None,
+                "completed_at": j.completed_at.isoformat() if j.completed_at else None,
+                "metadata": j.meta_data or {}
+            }
+            for j in jobs
+        ],
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "total_pages": ceil(total / page_size) if total > 0 else 1
+    }
