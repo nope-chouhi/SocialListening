@@ -4,6 +4,7 @@ from unittest.mock import patch, MagicMock
 from datetime import datetime
 import io
 import openpyxl
+from typing import Optional
 
 from app.main import app
 from app.core.security import get_current_active_user

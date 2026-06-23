@@ -14,12 +14,13 @@ import RoleManagement from './RoleManagement';
 import OrganizationSettings from './OrganizationSettings';
 import EmailSettings from './EmailSettings';
 import NotificationSettings from './NotificationSettings';
+import NotificationDeliveries from './NotificationDeliveries';
 import APIWebhooks from './APIWebhooks';
 import BrandingSettings from './BrandingSettings';
 import AuditLogs from './AuditLogs';
 
 type TabId = 'profile' | 'security' | 'personal-notifications' | 
-             'users' | 'permissions' | 'organization' | 'email' | 'system-notifications' | 'api' | 'branding' | 'logs';
+             'users' | 'permissions' | 'organization' | 'email' | 'system-notifications' | 'delivery-logs' | 'api' | 'branding' | 'logs';
 
 interface Tab {
   id: TabId;
@@ -59,7 +60,7 @@ export default function SettingsPage() {
 
   // Block access to admin tabs for normal users
   useEffect(() => {
-    const adminTabs: TabId[] = ['users', 'permissions', 'organization', 'email', 'system-notifications', 'api', 'branding', 'logs'];
+    const adminTabs: TabId[] = ['users', 'permissions', 'organization', 'email', 'system-notifications', 'delivery-logs', 'api', 'branding', 'logs'];
     if (!loading && !isAdmin && adminTabs.includes(activeTab)) {
       setActiveTab('profile');
     }
@@ -83,6 +84,7 @@ export default function SettingsPage() {
     { id: 'organization', name: 'Thông tin tổ chức', icon: Building, description: 'Cấu hình công ty', adminOnly: true },
     { id: 'email', name: 'Cấu hình Email', icon: Mail, description: 'SMTP và templates', adminOnly: true },
     { id: 'system-notifications', name: 'Thông báo hệ thống', icon: Bell, description: 'Cài đặt thông báo', adminOnly: true },
+    { id: 'delivery-logs', name: 'Lịch sử gửi', icon: Mail, description: 'Lịch sử thông báo', adminOnly: true },
     { id: 'api', name: 'API & Webhooks', icon: Globe, description: 'API keys và webhooks', adminOnly: true },
     { id: 'branding', name: 'Giao diện hệ thống', icon: Palette, description: 'Logo và màu sắc', adminOnly: true },
     { id: 'logs', name: 'Audit Logs', icon: FileText, description: 'Lịch sử hoạt động', adminOnly: true },
@@ -93,7 +95,7 @@ export default function SettingsPage() {
 
   const renderTabContent = () => {
     // Block admin tabs for normal users
-    const adminTabs: TabId[] = ['users', 'permissions', 'organization', 'email', 'system-notifications', 'api', 'branding', 'logs'];
+    const adminTabs: TabId[] = ['users', 'permissions', 'organization', 'email', 'system-notifications', 'delivery-logs', 'api', 'branding', 'logs'];
     if (!isAdmin && adminTabs.includes(activeTab)) {
       return (
         <div className="bg-rose-500/10 border border-rose-500/20 rounded-xl p-8 text-center">
@@ -124,6 +126,8 @@ export default function SettingsPage() {
         return <EmailSettings />;
       case 'system-notifications':
         return <NotificationSettings />;
+      case 'delivery-logs':
+        return <NotificationDeliveries />;
       case 'api':
         return <APIWebhooks />;
       case 'branding':

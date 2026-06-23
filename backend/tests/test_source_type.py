@@ -16,6 +16,8 @@ Unit tests:
 - normalize_source_type_for_source_model() maps correctly
 """
 import pytest
+from sqlalchemy import Enum
+from typing import Optional
 from unittest.mock import MagicMock, patch
 from fastapi.testclient import TestClient
 

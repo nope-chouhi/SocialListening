@@ -84,8 +84,10 @@ class NotificationDeliveryLog(Base):
     attempt_count = Column(Integer, default=1)
     last_error = Column(Text, nullable=True)
     response_status_code = Column(Integer, nullable=True)
+    payload = Column(Text, nullable=True) # JSON representation of the payload or body
     
     # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
     sent_at = Column(DateTime(timezone=True), nullable=True)
+    next_retry_at = Column(DateTime(timezone=True), nullable=True, index=True)
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())

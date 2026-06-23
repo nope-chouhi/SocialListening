@@ -1,6 +1,7 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from datetime import datetime
 from typing import Optional, List, Dict, Any
+from croniter import croniter
 from app.models.crawl import CrawlJobStatus
 
 
@@ -59,6 +60,11 @@ class ScanScheduleBase(BaseModel):
     keyword_group_ids: Optional[List[int]] = None
     is_active: bool = True
 
+    @field_validator("cron_expression")
+    def validate_cron_expression(cls, v):
+        if not croniter.is_valid(v):
+            raise ValueError(f"Invalid cron expression: {v}")
+        return v
 
 class ScanScheduleCreate(ScanScheduleBase):
     pass
@@ -72,6 +78,12 @@ class ScanScheduleUpdate(BaseModel):
     source_group_ids: Optional[List[int]] = None
     keyword_group_ids: Optional[List[int]] = None
     is_active: Optional[bool] = None
+
+    @field_validator("cron_expression")
+    def validate_cron_expression(cls, v):
+        if v is not None and not croniter.is_valid(v):
+            raise ValueError(f"Invalid cron expression: {v}")
+        return v
 
 
 class ScanScheduleResponse(ScanScheduleBase):

@@ -69,6 +69,8 @@ Located in `scripts/` folder:
   - Service management
   - Service request workflow
   - Dashboard metrics
+- **Phase 4**: Automated background scanning
+- **Phase 5**: Real Notifications (SMTP/Webhook) & Delivery Logs + Retries
 
 ### ⏳ In Progress
 - Backend API fixes
@@ -81,4 +83,4 @@ Check documentation in `docs/` folder for detailed guides.
 
 ---
 
-**Last Updated:** 2026-05-10
+**Last Updated:** 2026-06-23

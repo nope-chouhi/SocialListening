@@ -1,4 +1,4 @@
-﻿from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field
 from datetime import datetime
 from typing import Optional, List
 from app.models.alert import AlertSeverity, AlertStatus
@@ -89,4 +89,40 @@ class NotificationChannelResponse(NotificationChannelBase):
     
     class Config:
         orm_mode = True
+
+
+# Notification Delivery Log Schemas
+class NotificationDeliveryLogResponse(BaseModel):
+    id: int
+    project_id: Optional[int]
+    alert_id: Optional[int]
+    incident_id: Optional[int]
+    mention_id: Optional[int]
+    
+    event_type: str
+    channel: str
+    destination: str
+    status: str
+    
+    attempt_count: int
+    last_error: Optional[str]
+    response_status_code: Optional[int]
+    payload: Optional[str]
+    
+    created_at: datetime
+    sent_at: Optional[datetime]
+    next_retry_at: Optional[datetime]
+    updated_at: Optional[datetime]
+
+    class Config:
+        orm_mode = True
+
+
+class NotificationDeliveryLogListResponse(BaseModel):
+    items: List[NotificationDeliveryLogResponse]
+    total: int
+    page: int
+    page_size: int
+    total_pages: int
+
 

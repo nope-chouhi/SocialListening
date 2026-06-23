@@ -9,6 +9,7 @@ from datetime import datetime, timedelta, timezone
 from typing import List, Optional
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
+from apscheduler.triggers.cron import CronTrigger
 from sqlalchemy.orm import Session
 from sqlalchemy import select, and_, text
 from contextlib import contextmanager
@@ -635,6 +636,12 @@ def start_scheduler(is_embedded: bool = False):
         scheduler.start()
         scheduler_started = True
 
+        # Sync existing ScanSchedules from DB
+        try:
+            sync_scan_schedules()
+        except Exception as e:
+            logger.error(f"Error syncing scan schedules on startup: {e}")
+
         mode_str = "embedded" if is_embedded else "standalone"
         logger.info(f"✅ Background scheduler ({mode_str}) started (interval: {interval_minutes} min)")
         return True
@@ -745,3 +752,152 @@ def get_worker_status(db: Session) -> dict:
             "last_scan_at": None,
             "next_scan_at": None
         }
+
+
+# --- PHASE 4: AUTOMATED SCAN SCHEDULES ---
+
+def execute_scan_schedule_job(schedule_id: int):
+    """Execute a scan schedule job, logs to ScanLog and creates a CrawlJob."""
+    db = get_db()
+    try:
+        from app.models.crawl import ScanSchedule, CrawlJob, CrawlJobStatus, ScanLog
+        
+        schedule = db.execute(select(ScanSchedule).where(ScanSchedule.id == schedule_id)).scalar_one_or_none()
+        if not schedule or not schedule.is_active:
+            logger.info(f"ScanSchedule {schedule_id} not found or inactive, skipping.")
+            return
+            
+        logger.info(f"Starting ScanSchedule {schedule_id}: {schedule.name}")
+        
+        # Create a ScanLog entry
+        log_entry = ScanLog(
+            scan_schedule_id=schedule.id,
+            level="INFO",
+            message=f"Starting scheduled scan: {schedule.name}"
+        )
+        db.add(log_entry)
+        db.commit()
+        
+        # Create a CrawlJob associated with this schedule
+        job = CrawlJob(
+            scan_schedule_id=schedule.id,
+            job_type='scheduled',
+            status=CrawlJobStatus.PENDING,
+            source_ids=[], # Can be updated later
+            keyword_group_ids=schedule.keyword_group_ids,
+            total_sources=0,
+            processed_sources=0,
+            mentions_found=0
+        )
+        db.add(job)
+        db.commit()
+        db.refresh(job)
+        
+        # Update ScanLog with job_id
+        log_entry.job_id = job.id
+        db.commit()
+        
+        # Execute the scan logic using `app.services.scan_service.execute_scan`
+        from app.services.scan_service import execute_scan
+        
+        job.status = CrawlJobStatus.RUNNING
+        job.started_at = datetime.now(timezone.utc)
+        db.commit()
+        
+        try:
+            # We map source_group_ids/keyword_group_ids to the execute_scan params
+            # mode="HYBRID" uses keyword_group_ids and auto-discovers if sources not provided
+            result = execute_scan(
+                db=db,
+                user_id=schedule.user_id,
+                keyword_group_ids=schedule.keyword_group_ids or [],
+                keywords=[],
+                source_ids=[], # You might want to resolve source_group_ids to source_ids if needed
+                mode="HYBRID",
+                job_id=job.id,
+                project_id=None
+            )
+            
+            job.status = CrawlJobStatus.COMPLETED
+            job.completed_at = datetime.now(timezone.utc)
+            job.mentions_found = result.get('created_mentions_count', 0)
+            
+            # Log success
+            db.add(ScanLog(
+                scan_schedule_id=schedule.id,
+                job_id=job.id,
+                level="INFO",
+                message=f"Scan completed successfully. Mentions found: {job.mentions_found}"
+            ))
+            db.commit()
+            
+        except Exception as e:
+            job.status = CrawlJobStatus.FAILED
+            job.completed_at = datetime.now(timezone.utc)
+            job.error_message = str(e)[:2000]
+            
+            db.add(ScanLog(
+                scan_schedule_id=schedule.id,
+                job_id=job.id,
+                level="ERROR",
+                message=f"Scan failed: {job.error_message}"
+            ))
+            db.commit()
+            
+    except Exception as e:
+        logger.error(f"❌ Error in execute_scan_schedule_job {schedule_id}: {e}")
+    finally:
+        db.close()
+
+
+def sync_scan_schedules():
+    """Sync active ScanSchedules from DB to APScheduler using CronTrigger."""
+    global scheduler_started
+    if not scheduler_started:
+        return
+        
+    db = get_db()
+    try:
+        from app.models.crawl import ScanSchedule
+        
+        # Find all active schedules
+        active_schedules = db.execute(
+            select(ScanSchedule).where(ScanSchedule.is_active == True)
+        ).scalars().all()
+        
+        # Get existing scan schedule jobs
+        existing_jobs = [job.id for job in scheduler.get_jobs() if job.id.startswith('schedule_')]
+        
+        # Keep track of ones we need to keep
+        keep_job_ids = []
+        
+        for schedule in active_schedules:
+            job_id = f"schedule_{schedule.id}"
+            keep_job_ids.append(job_id)
+            
+            try:
+                # Add or update job
+                scheduler.add_job(
+                    execute_scan_schedule_job,
+                    CronTrigger.from_crontab(schedule.cron_expression, timezone=schedule.timezone or 'Asia/Ho_Chi_Minh'),
+                    args=[schedule.id],
+                    id=job_id,
+                    name=f"Scan Schedule {schedule.id}: {schedule.name}",
+                    replace_existing=True
+                )
+            except Exception as e:
+                logger.error(f"❌ Failed to add/update ScanSchedule {schedule.id} job: {e}")
+                
+        # Remove jobs that are no longer active or deleted
+        for job_id in existing_jobs:
+            if job_id not in keep_job_ids:
+                try:
+                    scheduler.remove_job(job_id)
+                except Exception as e:
+                    logger.warning(f"Could not remove stale job {job_id}: {e}")
+                    
+        logger.info(f"🔄 Synced {len(active_schedules)} active ScanSchedules to APScheduler.")
+    except Exception as e:
+        logger.error(f"❌ Error in sync_scan_schedules: {e}")
+    finally:
+        db.close()
