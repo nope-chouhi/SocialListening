@@ -28,6 +28,7 @@ export default function ReportsPage() {
   const [copied, setCopied] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [previewMode, setPreviewMode] = useState(false);
+  const [exportHistory, setExportHistory] = useState<any[]>([]);
 
   const [dateRange, setDateRange] = useState('30d');
   
@@ -49,7 +50,26 @@ export default function ReportsPage() {
 
   useEffect(() => {
     fetchData();
+    fetchExports();
+    
+    // Poll history every 5s if there are pending/running tasks
+    const interval = setInterval(() => {
+      setExportHistory(prev => {
+        if (prev.some(e => e.status === 'pending' || e.status === 'running')) {
+          fetchExports();
+        }
+        return prev;
+      });
+    }, 5000);
+    return () => clearInterval(interval);
   }, [activeProject, dateRange]);
+
+  const fetchExports = async () => {
+    try {
+      const res = await reports.listExports(1, 10);
+      setExportHistory(res.items || []);
+    } catch (e) {}
+  };
 
   const fetchData = async () => {
     try {
@@ -90,32 +110,29 @@ export default function ReportsPage() {
 
   const handleExport = async () => {
     setExporting(true);
-    toast.loading('Đang chuẩn bị PDF trên trình duyệt...', { id: 'export-pdf' });
+    toast.loading('Requesting PDF generation on server...', { id: 'export-pdf' });
     try {
-      const html2pdf = (await import('html2pdf.js')).default;
-      const element = document.getElementById('report-content');
-      
-      if (!element) {
-        toast.error('Không tìm thấy nội dung báo cáo để xuất', { id: 'export-pdf' });
-        setExporting(false);
-        return;
-      }
-      
-      const opt: any = {
-        margin:       10,
-        filename:     `Nope_Report_${new Date().toISOString().split('T')[0]}.pdf`,
-        image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2, useCORS: true },
-        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-      };
-
-      await html2pdf().set(opt).from(element).save();
-      toast.success('Đã lưu PDF thành công!', { id: 'export-pdf' });
-    } catch (e) {
-      console.error('Lỗi khi xuất PDF', e);
-      toast.error('Lỗi khi xuất PDF', { id: 'export-pdf' });
+      await reports.requestExport('pdf', activeProject?.id);
+      toast.success('PDF export requested! Check the history below.', { id: 'export-pdf' });
+      fetchExports();
+    } catch (e: any) {
+      toast.error(e?.response?.data?.detail || 'Error requesting PDF export', { id: 'export-pdf' });
     } finally {
       setExporting(false);
+    }
+  };
+
+  const downloadFile = async (exportId: number, filename: string) => {
+    try {
+      const blob = await reports.downloadExport(exportId);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      toast.error('Failed to download file');
     }
   };
 
@@ -466,6 +483,60 @@ export default function ReportsPage() {
             </div>
 
           </div>
+        </div>
+      </div>
+
+      {/* Export History Section */}
+      <div className="bg-white dark:bg-[#1E293B] p-6 rounded-xl border border-gray-200 dark:border-gray-800">
+        <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4">Recent Exports</h3>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <thead className="bg-gray-50 dark:bg-[#0f172a] text-gray-500">
+              <tr>
+                <th className="px-4 py-3">ID</th>
+                <th className="px-4 py-3">Type</th>
+                <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3">Requested At</th>
+                <th className="px-4 py-3">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {exportHistory.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-4 py-8 text-center text-gray-500">No recent exports found.</td>
+                </tr>
+              ) : (
+                exportHistory.map((ex) => (
+                  <tr key={ex.id} className="border-t border-gray-100 dark:border-gray-800">
+                    <td className="px-4 py-3">#{ex.id}</td>
+                    <td className="px-4 py-3 font-semibold uppercase">{ex.report_type}</td>
+                    <td className="px-4 py-3">
+                      <span className={cn(
+                        "px-2 py-1 rounded-md text-xs font-medium",
+                        ex.status === 'success' && "bg-emerald-100 text-emerald-700",
+                        ex.status === 'failed' && "bg-rose-100 text-rose-700",
+                        (ex.status === 'pending' || ex.status === 'running') && "bg-blue-100 text-blue-700 animate-pulse"
+                      )}>
+                        {ex.status}
+                      </span>
+                      {ex.error_message && <p className="text-xs text-rose-500 mt-1 max-w-xs truncate" title={ex.error_message}>{ex.error_message}</p>}
+                    </td>
+                    <td className="px-4 py-3">{new Date(ex.created_at).toLocaleString()}</td>
+                    <td className="px-4 py-3">
+                      {ex.status === 'success' && (
+                        <button 
+                          onClick={() => downloadFile(ex.id, `Export_${ex.id}.${ex.report_type}`)}
+                          className="text-emerald-600 hover:text-emerald-700 flex items-center font-medium"
+                        >
+                          <Download className="w-4 h-4 mr-1" /> Download
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

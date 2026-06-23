@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FileSpreadsheet, Download, RefreshCcw, Table, Check } from 'lucide-react';
 import { mentions as mentionsApi, reports as reportsApi } from '@/lib/api';
 import { useProject } from '@/contexts/ProjectContext';
@@ -21,6 +21,29 @@ export default function ExcelReportPage() {
   const [dateRange, setDateRange] = useState('30d');
   const [loading, setLoading] = useState(false);
   const [exportScope, setExportScope] = useState<'all' | 'mentions'>('all');
+  const [exportHistory, setExportHistory] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetchExports();
+    
+    // Poll history every 5s if there are pending/running tasks
+    const interval = setInterval(() => {
+      setExportHistory(prev => {
+        if (prev.some(e => e.status === 'pending' || e.status === 'running')) {
+          fetchExports();
+        }
+        return prev;
+      });
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const fetchExports = async () => {
+    try {
+      const res = await reportsApi.listExports(1, 10);
+      setExportHistory(res.items || []);
+    } catch (e) {}
+  };
 
   const handleExport = async () => {
     try {
@@ -41,28 +64,43 @@ export default function ExcelReportPage() {
       let filename;
       
       if (exportScope === 'all') {
-        blob = await reportsApi.exportProjectSummaryXlsx(params);
-        filename = `Nope_Project_Summary_${new Date().toISOString().slice(0, 10)}.xlsx`;
+        await reportsApi.requestExport('excel', activeProject?.id);
+        toast.success('Excel export requested! Check the history below.');
+        fetchExports();
       } else {
-        blob = await mentionsApi.exportCsv(params);
-        filename = `Nope_Mentions_Export_${new Date().toISOString().slice(0, 10)}.csv`;
+        // Raw mentions CSV still synchronous
+        const blob = await mentionsApi.exportCsv(params);
+        const filename = `Nope_Mentions_Export_${new Date().toISOString().slice(0, 10)}.csv`;
+        if (!blob || blob.size === 0) {
+          toast.error('Không có dữ liệu để xuất với bộ lọc hiện tại');
+          return;
+        }
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+        toast.success(`CSV file downloaded!`);
       }
-      
-      if (!blob || blob.size === 0) {
-        toast.error('Không có dữ liệu để xuất với bộ lọc hiện tại');
-        return;
-      }
+    } catch (error: any) {
+      toast.error(error?.response?.data?.detail || 'Error requesting export');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const downloadFile = async (exportId: number, filename: string) => {
+    try {
+      const blob = await reportsApi.downloadExport(exportId);
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
       a.download = filename;
       a.click();
       URL.revokeObjectURL(url);
-      toast.success(`Excel file generated!`);
-    } catch (error: any) {
-      toast.error(error?.response?.data?.detail || 'Lỗi khi xuất dữ liệu');
-    } finally {
-      setLoading(false);
+    } catch (e) {
+      toast.error('Failed to download file');
     }
   };
 
@@ -145,6 +183,60 @@ export default function ExcelReportPage() {
           </button>
         </div>
 
+      </div>
+
+      {/* Export History Section */}
+      <div className="mt-8 bg-white dark:bg-[#1E293B] p-6 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800">
+        <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4">Recent Exports</h3>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <thead className="bg-gray-50 dark:bg-[#0f172a] text-gray-500">
+              <tr>
+                <th className="px-4 py-3">ID</th>
+                <th className="px-4 py-3">Type</th>
+                <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3">Requested At</th>
+                <th className="px-4 py-3">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {exportHistory.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-4 py-8 text-center text-gray-500">No recent exports found.</td>
+                </tr>
+              ) : (
+                exportHistory.map((ex) => (
+                  <tr key={ex.id} className="border-t border-gray-100 dark:border-gray-800">
+                    <td className="px-4 py-3">#{ex.id}</td>
+                    <td className="px-4 py-3 font-semibold uppercase">{ex.report_type}</td>
+                    <td className="px-4 py-3">
+                      <span className={cn(
+                        "px-2 py-1 rounded-md text-xs font-medium",
+                        ex.status === 'success' && "bg-emerald-100 text-emerald-700",
+                        ex.status === 'failed' && "bg-rose-100 text-rose-700",
+                        (ex.status === 'pending' || ex.status === 'running') && "bg-blue-100 text-blue-700 animate-pulse"
+                      )}>
+                        {ex.status}
+                      </span>
+                      {ex.error_message && <p className="text-xs text-rose-500 mt-1 max-w-xs truncate" title={ex.error_message}>{ex.error_message}</p>}
+                    </td>
+                    <td className="px-4 py-3">{new Date(ex.created_at).toLocaleString()}</td>
+                    <td className="px-4 py-3">
+                      {ex.status === 'success' && (
+                        <button 
+                          onClick={() => downloadFile(ex.id, `Export_${ex.id}.${ex.report_type}`)}
+                          className="text-emerald-600 hover:text-emerald-700 flex items-center font-medium"
+                        >
+                          <Download className="w-4 h-4 mr-1" /> Download
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

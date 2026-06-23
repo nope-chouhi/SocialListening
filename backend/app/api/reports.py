@@ -1,23 +1,25 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, BackgroundTasks
 from sqlalchemy.orm import Session
 from sqlalchemy import select, func, and_
 from datetime import datetime
 from typing import List, Optional
 from math import ceil
-from fastapi.responses import StreamingResponse, Response
+from fastapi.responses import StreamingResponse, Response, FileResponse
+import os
 
 from app.services.export_service import ExportService
 
 from app.core.database import get_db
 from app.core.security import get_current_active_user
 from app.models.user import User
-from app.models.report import Report, ReportType, ReportStatus
+from app.models.report import Report, ReportType, ReportStatus, ReportExport, ExportStatus
 from app.models.mention import Mention, AIAnalysis
 from app.models.alert import Alert
 from app.models.incident import Incident
 from app.models.keyword import KeywordGroup
 from app.schemas.report import (
-    ReportCreate, ReportResponse, ReportListResponse
+    ReportCreate, ReportResponse, ReportListResponse,
+    ReportExportResponse, ReportExportListResponse
 )
 from app.core.tenant import apply_tenant_filter
 
@@ -541,4 +543,105 @@ def export_project_summary(
         content=content,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers={"Content-Disposition": "attachment; filename=project_summary.xlsx"}
+    )
+
+@router.post("/export/{report_type}", response_model=ReportExportResponse, status_code=201)
+def request_async_export(
+    report_type: str,
+    background_tasks: BackgroundTasks,
+    project_id: Optional[int] = Query(None),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Request an asynchronous export generation (pdf or excel)"""
+    if report_type not in ["pdf", "excel", "xlsx"]:
+        raise HTTPException(status_code=400, detail="Invalid report type")
+        
+    export_job = ReportExport(
+        report_type=report_type,
+        project_id=project_id,
+        requested_by=current_user.id,
+        status=ExportStatus.PENDING,
+        created_at=datetime.utcnow()
+    )
+    db.add(export_job)
+    db.commit()
+    db.refresh(export_job)
+    
+    background_tasks.add_task(ExportService.process_export, export_job.id)
+    
+    return export_job
+
+@router.get("/exports/history", response_model=ReportExportListResponse)
+def list_exports(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """List asynchronous export history for the user"""
+    query = select(ReportExport)
+    if not current_user.is_superuser:
+        query = query.where(ReportExport.requested_by == current_user.id)
+        
+    count_query = select(func.count()).select_from(query.subquery())
+    total = db.execute(count_query).scalar() or 0
+    
+    offset = (page - 1) * page_size
+    query = query.order_by(ReportExport.created_at.desc()).offset(offset).limit(page_size)
+    
+    exports = db.execute(query).scalars().all()
+    total_pages = ceil(total / page_size) if total > 0 else 1
+    
+    return ReportExportListResponse(
+        items=exports,
+        total=total,
+        page=page,
+        page_size=page_size,
+        total_pages=total_pages
+    )
+
+@router.get("/exports/{export_id}", response_model=ReportExportResponse)
+def get_export_status(
+    export_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Get the status of an asynchronous export"""
+    query = select(ReportExport).where(ReportExport.id == export_id)
+    if not current_user.is_superuser:
+        query = query.where(ReportExport.requested_by == current_user.id)
+        
+    export_job = db.execute(query).scalar_one_or_none()
+    if not export_job:
+        raise HTTPException(status_code=404, detail="Export not found")
+        
+    return export_job
+
+@router.get("/exports/{export_id}/download")
+def download_export(
+    export_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Download a successfully generated asynchronous export"""
+    query = select(ReportExport).where(ReportExport.id == export_id)
+    if not current_user.is_superuser:
+        query = query.where(ReportExport.requested_by == current_user.id)
+        
+    export_job = db.execute(query).scalar_one_or_none()
+    if not export_job:
+        raise HTTPException(status_code=404, detail="Export not found")
+        
+    if export_job.status != ExportStatus.SUCCESS or not export_job.file_path:
+        raise HTTPException(status_code=400, detail="Export is not ready for download")
+        
+    if not os.path.exists(export_job.file_path):
+        raise HTTPException(status_code=404, detail="Export file has been removed or does not exist")
+        
+    filename = os.path.basename(export_job.file_path)
+    return FileResponse(
+        path=export_job.file_path,
+        filename=filename,
+        media_type="application/octet-stream"
     )

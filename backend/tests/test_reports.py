@@ -37,6 +37,13 @@ def override_get_db():
     # Mocking execution to return empty results for our basic tests
     mock_db.execute.return_value.scalars.return_value.all.return_value = []
     mock_db.execute.return_value.scalar.return_value = 0
+    
+    def mock_refresh(obj):
+        obj.id = 1
+        if not hasattr(obj, 'created_at') or obj.created_at is None:
+            obj.created_at = datetime.utcnow()
+            
+    mock_db.refresh.side_effect = mock_refresh
     yield mock_db
 
 app.dependency_overrides[get_current_active_user] = override_get_superuser
@@ -158,3 +165,50 @@ def test_export_unsupported_formats():
     assert client.get("/api/reports/mentions/export?format=pdf").status_code == 400
     assert client.get("/api/reports/alerts/export?format=xlsx").status_code == 400
     assert client.get("/api/reports/project-summary/export?format=csv").status_code == 400
+
+@patch("app.services.export_service.ExportService.process_export")
+def test_async_export_request(mock_process_export):
+    app.dependency_overrides[get_db] = override_get_db
+    response = client.post("/api/reports/export/pdf")
+    assert response.status_code == 201
+    data = response.json()
+    assert data["report_type"] == "pdf"
+    assert data["status"] == "pending"
+    assert "id" in data
+    mock_process_export.assert_called_once_with(1)
+
+    response = client.post("/api/reports/export/invalid_type")
+    assert response.status_code == 400
+
+def test_async_export_history():
+    response = client.get("/api/reports/exports/history")
+    assert response.status_code == 200
+    data = response.json()
+    assert "items" in data
+    assert "total" in data
+    assert data["items"] == []  # mock db returns []
+    assert data["total"] == 0   # mock db returns 0
+
+def test_get_export_status():
+    from app.models.report import ReportExport, ExportStatus
+    # Override the mock temporarily
+    mock_db = next(override_get_db())
+    mock_job = ReportExport(
+        id=1,
+        report_type="excel",
+        requested_by=1,
+        status=ExportStatus.SUCCESS,
+        created_at=datetime.utcnow()
+    )
+    mock_db.execute.return_value.scalar_one_or_none.return_value = mock_job
+    app.dependency_overrides[get_db] = lambda: mock_db
+    
+    res = client.get("/api/reports/exports/1")
+    assert res.status_code == 200
+    data = res.json()
+    assert data["id"] == 1
+    assert data["report_type"] == "excel"
+    assert data["status"] == "success"
+    
+    # Restore mock
+    app.dependency_overrides[get_db] = override_get_db
