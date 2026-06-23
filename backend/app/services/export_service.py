@@ -14,6 +14,11 @@ from app.models.source import Source
 from app.models.keyword import KeywordGroup
 from app.core.tenant import apply_tenant_filter
 from app.models.user import User
+from app.models.report import ReportExport, ExportStatus
+from app.services.pdf_generator import PDFGenerator
+import os
+import traceback
+from app.core.database import SessionLocal
 
 class ExportService:
     @staticmethod
@@ -335,3 +340,115 @@ class ExportService:
         wb.save(output)
         output.seek(0)
         return output.getvalue()
+
+    @staticmethod
+    def process_export(export_id: int):
+        db = SessionLocal()
+        export_job = db.execute(select(ReportExport).where(ReportExport.id == export_id)).scalar_one_or_none()
+        if not export_job:
+            db.close()
+            return
+
+        try:
+            export_job.status = ExportStatus.RUNNING
+            db.commit()
+
+            current_user = db.execute(select(User).where(User.id == export_job.requested_by)).scalar_one_or_none()
+            filters = {}
+            if export_job.project_id:
+                filters["project_id"] = export_job.project_id
+
+            # Create data dir
+            export_dir = os.path.join(os.getcwd(), 'data', 'exports')
+            os.makedirs(export_dir, exist_ok=True)
+            
+            timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
+            file_name = f"Export_{export_id}_{timestamp_str}.{export_job.report_type}"
+            file_path = os.path.join(export_dir, file_name)
+
+            if export_job.report_type == 'excel' or export_job.report_type == 'xlsx':
+                content = ExportService.export_project_summary_xlsx(db, current_user, filters)
+                with open(file_path, "wb") as f:
+                    f.write(content)
+            elif export_job.report_type == 'pdf':
+                # Build data dict for PDF
+                mentions_query = apply_tenant_filter(select(Mention), Mention, current_user)
+                project_name = "Tất cả dự án"
+                if filters.get("project_id"):
+                    mentions_query = mentions_query.where(Mention.project_id == filters["project_id"])
+                    project = db.execute(apply_tenant_filter(select(KeywordGroup), KeywordGroup, current_user).where(KeywordGroup.id == filters["project_id"])).scalar_one_or_none()
+                    if project:
+                        project_name = project.name
+                        
+                mentions = db.execute(mentions_query).scalars().all()
+                mention_ids = [m.id for m in mentions]
+                
+                analyses_list = db.execute(select(AIAnalysis).where(AIAnalysis.mention_id.in_(mention_ids))).scalars().all() if mention_ids else []
+                analyses = {a.mention_id: a for a in analyses_list}
+                
+                sentiment_counts = {"positive": 0, "negative": 0, "neutral": 0}
+                source_counts = {}
+                selected_mentions = []
+                
+                for m in mentions:
+                    analysis = analyses.get(m.id)
+                    sent_val = "neutral"
+                    if analysis:
+                        sent_val = analysis.sentiment.value if hasattr(analysis.sentiment, 'value') else analysis.sentiment
+                        if sent_val == 'negative_medium':
+                            sent_val = 'negative'
+                        if sent_val in sentiment_counts:
+                            sentiment_counts[sent_val] += 1
+                    
+                    st = m.source_type or "unknown"
+                    source_counts[st] = source_counts.get(st, 0) + 1
+                    
+                    if m.add_to_report:
+                        selected_mentions.append({
+                            "title": m.title,
+                            "domain": m.domain,
+                            "sentiment": sent_val,
+                            "snippet": m.snippet or m.content
+                        })
+                
+                sources_list = [{"name": k.capitalize(), "count": v} for k, v in source_counts.items()]
+                sources_list.sort(key=lambda x: x["count"], reverse=True)
+                
+                alerts = db.execute(apply_tenant_filter(select(Alert), Alert, current_user)).scalars().all()
+                incidents_query = select(Incident)
+                if not current_user.is_superuser:
+                    incidents_query = incidents_query.where(Incident.user_id == current_user.id)
+                incidents = db.execute(incidents_query).scalars().all()
+
+                pdf_data = {
+                    "project_name": project_name,
+                    "date_from": None,
+                    "date_to": None,
+                    "metrics": {
+                        "total_mentions": len(mentions),
+                        "sentiment": sentiment_counts,
+                        "total_alerts": len(alerts),
+                        "total_incidents": len(incidents)
+                    },
+                    "top_sources": sources_list,
+                    "selected_mentions": selected_mentions
+                }
+                
+                content = PDFGenerator.generate_project_summary(pdf_data)
+                with open(file_path, "wb") as f:
+                    f.write(content)
+            else:
+                raise ValueError(f"Unsupported report type: {export_job.report_type}")
+
+            export_job.file_path = file_path
+            export_job.status = ExportStatus.SUCCESS
+            export_job.completed_at = datetime.now()
+            db.commit()
+
+        except Exception as e:
+            export_job.status = ExportStatus.FAILED
+            export_job.error_message = str(e) + "\n" + traceback.format_exc()
+            export_job.completed_at = datetime.now()
+            db.commit()
+        finally:
+            db.close()

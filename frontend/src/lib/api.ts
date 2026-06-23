@@ -624,6 +624,24 @@ export const reports = {
     const response = await api.delete(`/api/reports/${id}`);
     return response.data;
   },
+  // Async Exports
+  requestExport: async (type: string, projectId?: number) => {
+    const params = projectId ? { project_id: projectId } : {};
+    const response = await api.post(`/api/reports/export/${type}`, null, { params });
+    return response.data;
+  },
+  listExports: async (page = 1, pageSize = 20) => {
+    const response = await api.get('/api/reports/exports/history', { params: { page, page_size: pageSize } });
+    return response.data;
+  },
+  getExportStatus: async (id: number) => {
+    const response = await api.get(`/api/reports/exports/${id}`);
+    return response.data;
+  },
+  downloadExport: async (id: number) => {
+    const response = await api.get(`/api/reports/exports/${id}/download`, { responseType: 'blob' });
+    return response.data;
+  },
 };
 
 // ─── Legal Response (Takedown) ────────────────────────────────────────────────

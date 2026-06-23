@@ -26,7 +26,7 @@ from app.models.incident import (
 from app.models.crawl import CrawlJob, ScanSchedule, CrawlJobStatus
 
 # Report models
-from app.models.report import Report, ReportType, ReportStatus
+from app.models.report import Report, ReportType, ReportStatus, ReportExport, ExportStatus
 
 # Service models
 from app.models.service import (
@@ -76,7 +76,7 @@ __all__ = [
     "Incident", "IncidentStatus", "TakedownStatus", "TakedownPlatform",
     "IncidentLog", "EvidenceFile", "TakedownRequest", "ResponseTemplate",
     "CrawlJob", "ScanSchedule", "CrawlJobStatus",
-    "Report", "ReportType", "ReportStatus",
+    "Report", "ReportType", "ReportStatus", "ReportExport", "ExportStatus",
     "ServiceCategory", "Service", "ServiceRequest", "ServiceRequestLog", "ServiceDeliverable",
     "ServiceType", "Platform", "RiskLevel", "ServiceRequestStatus", "ApprovalStatus", "Priority", "DeliverableType",
     "Role", "UserRole", "APIKey", "BrandingSettings", "AuditLog",

@@ -71,3 +71,24 @@ class SystemSettings(Base):
     # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+class ExportStatus(str, Enum):
+    PENDING = "pending"
+    RUNNING = "running"
+    SUCCESS = "success"
+    FAILED = "failed"
+
+class ReportExport(Base):
+    __tablename__ = "report_exports"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    report_type = Column(String(50), nullable=False)  # 'pdf' or 'excel'
+    project_id = Column(Integer, index=True, nullable=True)
+    requested_by = Column(Integer, nullable=False, index=True)
+    
+    status = Column(SQLEnum(ExportStatus, values_callable=lambda x: [e.value for e in x]), default=ExportStatus.PENDING, index=True)
+    file_path = Column(Text, nullable=True)
+    error_message = Column(Text, nullable=True)
+    
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+    completed_at = Column(DateTime(timezone=True), nullable=True)

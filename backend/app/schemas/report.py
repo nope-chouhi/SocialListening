@@ -1,7 +1,30 @@
-﻿from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field
 from datetime import datetime
 from typing import Optional, List, Dict, Any
-from app.models.report import ReportType, ReportStatus
+from app.models.report import ReportType, ReportStatus, ExportStatus
+
+# Report Export Schemas
+class ReportExportResponse(BaseModel):
+    id: int
+    report_type: str
+    project_id: Optional[int]
+    requested_by: int
+    status: ExportStatus
+    file_path: Optional[str]
+    error_message: Optional[str]
+    created_at: datetime
+    completed_at: Optional[datetime]
+
+    class Config:
+        orm_mode = True
+
+class ReportExportListResponse(BaseModel):
+    items: List[ReportExportResponse]
+    total: int
+    page: int
+    page_size: int
+    total_pages: int
+
 
 
 # Report Schemas
