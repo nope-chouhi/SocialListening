@@ -168,6 +168,7 @@ def test_export_unsupported_formats():
 
 @patch("app.services.export_service.ExportService.process_export")
 def test_async_export_request(mock_process_export):
+    app.dependency_overrides[get_db] = override_get_db
     response = client.post("/api/reports/export/pdf")
     assert response.status_code == 201
     data = response.json()
