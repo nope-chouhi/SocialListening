@@ -20,6 +20,8 @@ import MentionCard from '@/components/dashboard/MentionCard';
 import AlertCard from '@/components/dashboard/AlertCard';
 import RealtimeStatsSection from '@/components/dashboard/RealtimeStatsSection';
 import { useProject } from '@/contexts/ProjectContext';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 export default function DashboardPage() {
   const { activeProject, projects } = useProject();
@@ -132,56 +134,53 @@ export default function DashboardPage() {
       <Toaster position="top-right" />
       
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-        <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-wide">Dashboard</h1>
-            <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 rounded-md">
-              <Activity className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-              <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">AI Anomaly Monitor Active</span>
+      <PageHeader
+        title="Dashboard"
+        subtitle="Tổng quan giám sát truyền thông, mentions và cảnh báo rủi ro."
+        badge={
+          <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 rounded-md">
+            <Activity className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+            <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">AI Anomaly Monitor Active</span>
+          </div>
+        }
+        actions={
+          <>
+            <div className="inline-flex bg-white dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-lg p-1 shadow-sm dark:shadow-inner backdrop-blur-md">
+              {['today', '7d', '30d'].map((range) => (
+                <button
+                  key={range}
+                  onClick={() => setTimeRange(range)}
+                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-300 ${
+                    timeRange === range 
+                      ? 'bg-gray-100 text-gray-900 shadow-sm border border-gray-200 dark:bg-white/10 dark:text-white dark:shadow-[0_2px_10px_rgba(255,255,255,0.1)] dark:border-white/10' 
+                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50 dark:text-zinc-500 dark:hover:text-zinc-300 dark:hover:bg-white/5'
+                  }`}
+                >
+                  {range === 'today' ? 'Hôm nay' : range === '7d' ? '7 ngày' : '30 ngày'}
+                </button>
+              ))}
             </div>
-          </div>
-          <p className="text-sm text-slate-500 dark:text-gray-400 mt-1">Tổng quan giám sát truyền thông, mentions và cảnh báo rủi ro.</p>
-        </div>
-        
-        <div className="flex items-center space-x-3">
-          <div className="inline-flex bg-white dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-lg p-1 shadow-sm dark:shadow-inner backdrop-blur-md">
-            {['today', '7d', '30d'].map((range) => (
-              <button
-                key={range}
-                onClick={() => setTimeRange(range)}
-                className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-300 ${
-                  timeRange === range 
-                    ? 'bg-gray-100 text-gray-900 shadow-sm border border-gray-200 dark:bg-white/10 dark:text-white dark:shadow-[0_2px_10px_rgba(255,255,255,0.1)] dark:border-white/10' 
-                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50 dark:text-zinc-500 dark:hover:text-zinc-300 dark:hover:bg-white/5'
-                }`}
-              >
-                {range === 'today' ? 'Hôm nay' : range === '7d' ? '7 ngày' : '30 ngày'}
-              </button>
-            ))}
-          </div>
-          <button 
-            onClick={handleRefresh}
-            className="p-2.5 text-gray-500 hover:text-gray-900 bg-white hover:bg-gray-50 border border-gray-200 dark:text-zinc-400 dark:hover:text-slate-900 dark:text-white dark:bg-black/40 dark:hover:bg-white/10 dark:border-white/10 rounded-lg shadow-sm transition-all duration-300 active:scale-95 backdrop-blur-md"
-            title="Làm mới"
-          >
-            <RefreshCcw className={`w-4 h-4 ${loadingCharts || loadingMetrics ? 'animate-spin text-indigo-600 dark:text-indigo-400' : ''}`} />
-          </button>
-        </div>
-      </div>
+            <button 
+              onClick={handleRefresh}
+              className="p-2.5 text-gray-500 hover:text-gray-900 bg-white hover:bg-gray-50 border border-gray-200 dark:text-zinc-400 dark:hover:text-slate-900 dark:text-white dark:bg-black/40 dark:hover:bg-white/10 dark:border-white/10 rounded-lg shadow-sm transition-all duration-300 active:scale-95 backdrop-blur-md"
+              title="Làm mới"
+            >
+              <RefreshCcw className={`w-4 h-4 ${loadingCharts || loadingMetrics ? 'animate-spin text-indigo-600 dark:text-indigo-400' : ''}`} />
+            </button>
+          </>
+        }
+      />
 
       {!activeProject ? (
-        <div className="flex-1 w-full flex flex-col items-center justify-center min-h-[50vh] bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10 p-8 text-center mt-6">
-          <div className="w-20 h-20 bg-indigo-50 dark:bg-indigo-900/30 rounded-full flex items-center justify-center mb-6">
-            <Activity className="w-10 h-10 text-indigo-600 dark:text-indigo-400" />
-          </div>
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-3">Chào mừng đến với Nope</h2>
-          <p className="text-slate-500 dark:text-gray-400 max-w-md mb-8">
-            {projects && projects.length > 0 
+        <EmptyState
+          icon={<Activity className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />}
+          title="Chào mừng đến với Nope"
+          description={
+            projects && projects.length > 0 
               ? "Vui lòng chọn một dự án từ menu bên trái để xem tổng quan giám sát."
-              : "Bạn chưa có dự án nào. Vui lòng liên hệ Admin để được cấp quyền hoặc tạo dự án mới."}
-          </p>
-        </div>
+              : "Bạn chưa có dự án nào. Vui lòng liên hệ Admin để được cấp quyền hoặc tạo dự án mới."
+          }
+        />
       ) : (
         <>
           {/* Real-time section */}
