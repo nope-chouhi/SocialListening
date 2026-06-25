@@ -1,24 +1,19 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { 
-  BarChart3, AlertTriangle, FileText, Database, 
-  TrendingUp, TrendingDown, RefreshCcw,
-  Users, Map, PieChart, Sparkles, Activity
-} from 'lucide-react';
+import { Activity, RefreshCcw } from 'lucide-react';
 import { dashboard, auth } from '@/lib/api';
 import toast, { Toaster } from 'react-hot-toast';
 import { withTimeout } from '@/lib/utils/timeout';
 
-import dynamic from 'next/dynamic';
-
-const DashboardKpiCard = dynamic(() => import('@/components/dashboard/DashboardKpiCard'), { ssr: false });
-const TrendChart = dynamic(() => import('@/components/dashboard/TrendChart'), { ssr: false, loading: () => <div className="animate-pulse bg-gray-800/50 rounded-xl h-full w-full"></div> });
-const SentimentDonutChart = dynamic(() => import('@/components/dashboard/SentimentDonutChart'), { ssr: false, loading: () => <div className="animate-pulse bg-gray-800/50 rounded-xl h-full w-full"></div> });
-const HotKeywordsWidget = dynamic(() => import('@/components/dashboard/HotKeywordsWidget'), { ssr: false, loading: () => <div className="animate-pulse bg-gray-800/50 rounded-xl h-full w-full"></div> });
-import MentionCard from '@/components/dashboard/MentionCard';
-import AlertCard from '@/components/dashboard/AlertCard';
 import RealtimeStatsSection from '@/components/dashboard/RealtimeStatsSection';
+import DashboardMetricGrid from '@/components/dashboard/DashboardMetricGrid';
+import MentionTrendCard from '@/components/dashboard/MentionTrendCard';
+import SentimentOverviewCard from '@/components/dashboard/SentimentOverviewCard';
+import HotKeywordsCard from '@/components/dashboard/HotKeywordsCard';
+import RecentMentionsPanel from '@/components/dashboard/RecentMentionsPanel';
+import RiskAlertsPanel from '@/components/dashboard/RiskAlertsPanel';
+
 import { useProject } from '@/contexts/ProjectContext';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -127,8 +122,6 @@ export default function DashboardPage() {
     fetchDashboardData(cacheKey);
   };
 
-  // Removed blocking loading spinner to render shell immediately
-
   return (
     <div className="space-y-6">
       <Toaster position="top-right" />
@@ -145,15 +138,15 @@ export default function DashboardPage() {
         }
         actions={
           <>
-            <div className="inline-flex bg-white dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-lg p-1 shadow-sm dark:shadow-inner backdrop-blur-md">
+            <div className="inline-flex bg-white dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-lg p-1 shadow-sm dark:shadow-inner backdrop-blur-md">
               {['today', '7d', '30d'].map((range) => (
                 <button
                   key={range}
                   onClick={() => setTimeRange(range)}
                   className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-300 ${
                     timeRange === range 
-                      ? 'bg-gray-100 text-gray-900 shadow-sm border border-gray-200 dark:bg-white/10 dark:text-white dark:shadow-[0_2px_10px_rgba(255,255,255,0.1)] dark:border-white/10' 
-                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50 dark:text-zinc-500 dark:hover:text-zinc-300 dark:hover:bg-white/5'
+                      ? 'bg-slate-100 text-slate-900 shadow-sm border border-slate-200 dark:bg-white/10 dark:text-white dark:shadow-[0_2px_10px_rgba(255,255,255,0.1)] dark:border-white/10' 
+                      : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50 dark:text-zinc-500 dark:hover:text-zinc-300 dark:hover:bg-white/5'
                   }`}
                 >
                   {range === 'today' ? 'Hôm nay' : range === '7d' ? '7 ngày' : '30 ngày'}
@@ -162,7 +155,7 @@ export default function DashboardPage() {
             </div>
             <button 
               onClick={handleRefresh}
-              className="p-2.5 text-gray-500 hover:text-gray-900 bg-white hover:bg-gray-50 border border-gray-200 dark:text-zinc-400 dark:hover:text-slate-900 dark:text-white dark:bg-black/40 dark:hover:bg-white/10 dark:border-white/10 rounded-lg shadow-sm transition-all duration-300 active:scale-95 backdrop-blur-md"
+              className="p-2.5 text-slate-500 hover:text-slate-900 bg-white hover:bg-slate-50 border border-slate-200 dark:text-zinc-400 dark:hover:text-slate-100 dark:bg-black/40 dark:hover:bg-white/10 dark:border-white/10 rounded-lg shadow-sm transition-all duration-300 active:scale-95 backdrop-blur-md"
               title="Làm mới"
             >
               <RefreshCcw className={`w-4 h-4 ${loadingCharts || loadingMetrics ? 'animate-spin text-indigo-600 dark:text-indigo-400' : ''}`} />
@@ -186,98 +179,44 @@ export default function DashboardPage() {
           {/* Real-time section */}
           <RealtimeStatsSection projectId={activeProject.id} />
 
+          {/* Historical Overview */}
+          <div className="pt-4 space-y-6">
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <span className="w-1.5 h-6 bg-indigo-500 rounded-full"></span>
+              Historical Overview ({timeRange === 'today' ? 'Hôm nay' : timeRange === '7d' ? '7 ngày' : '30 ngày'})
+            </h2>
+            
+            <DashboardMetricGrid metrics={metrics} isLoading={loadingMetrics} />
 
-          {/* Lists Section */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Latest Mentions */}
-        <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl shadow-sm dark:shadow-2xl border border-gray-200 dark:border-white/10 flex flex-col h-[600px] overflow-hidden group hover:border-gray-300 dark:hover:border-white/20 transition-all duration-500">
-          <div className="p-4 border-b border-gray-100 dark:border-white/5 flex justify-between items-center bg-gray-50 dark:bg-black/20">
-            <h2 className="text-base font-bold text-slate-900 dark:text-white tracking-wide">Mentions Mới Nhất</h2>
-            <span className="text-[10px] font-black tracking-[0.1em] uppercase bg-indigo-50 border border-indigo-200 text-indigo-600 dark:bg-indigo-500/20 dark:border-indigo-500/30 dark:text-indigo-300 px-3 py-1.5 rounded-lg shadow-sm">Top 10</span>
-          </div>
-          <div className="p-4 overflow-y-auto flex-1 space-y-3 custom-scrollbar">
-            {loadingMetrics ? (
-              <div className="space-y-4">
-                {[...Array(3)].map((_, i) => (
-                  <div key={i} className="animate-pulse flex space-x-4 p-4 border border-white/5 rounded-lg bg-white/5">
-                    <div className="rounded-full bg-white/10 h-10 w-10"></div>
-                    <div className="flex-1 space-y-3 py-1">
-                      <div className="h-2 bg-white/10 rounded w-3/4"></div>
-                      <div className="space-y-2">
-                        <div className="h-2 bg-white/10 rounded"></div>
-                        <div className="h-2 bg-white/10 rounded w-5/6"></div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2">
+                <MentionTrendCard trends={trends} isLoading={loadingCharts} />
               </div>
-            ) : !metrics?.latest_mentions || metrics.latest_mentions.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full text-gray-500 dark:text-zinc-400 font-medium tracking-wide">
-                <div className="w-16 h-16 mb-4 rounded-2xl bg-gray-100 dark:bg-white/5 flex items-center justify-center border border-gray-200 dark:border-white/10 shadow-sm dark:shadow-lg dark:shadow-black/20">
-                  <FileText className="w-8 h-8 text-slate-500 dark:text-gray-400 dark:text-zinc-500" />
-                </div>
-                <p className="text-sm text-gray-600 dark:text-zinc-300">Chưa có mention nào.</p>
-                <p className="text-xs mt-1.5 text-slate-500 dark:text-gray-400 dark:text-zinc-500">Hãy thêm nguồn và chạy quét đầu tiên.</p>
+              <div>
+                <SentimentOverviewCard sentiment={sentiment} isLoading={loadingCharts} />
               </div>
-            ) : (
-              metrics.latest_mentions.map((mention: any) => (
-                <MentionCard 
-                  key={mention.id} 
-                  mention={mention} 
-                  userRole={userRole}
-                  onActionComplete={fetchDashboardData} 
-                />
-              ))
-            )}
-          </div>
-        </div>
+            </div>
 
-        {/* Latest Alerts */}
-        <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl shadow-sm dark:shadow-2xl border border-gray-200 dark:border-white/10 flex flex-col h-[600px] overflow-hidden group hover:border-gray-300 dark:hover:border-white/20 transition-all duration-500">
-          <div className="p-4 border-b border-gray-100 dark:border-white/5 flex justify-between items-center bg-gray-50 dark:bg-black/20">
-            <h2 className="text-base font-bold text-slate-900 dark:text-white tracking-wide">Cảnh Báo Cần Xử Lý</h2>
-            <span className="text-[10px] font-black tracking-[0.1em] uppercase bg-rose-50 border border-rose-200 text-rose-600 dark:bg-rose-500/20 dark:border-rose-500/30 dark:text-rose-300 px-3 py-1.5 rounded-lg shadow-sm animate-pulse">Top 10</span>
+            <HotKeywordsCard keywords={hotKeywords} isLoading={loadingCharts} />
+
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+              <RecentMentionsPanel 
+                mentions={metrics?.latest_mentions || []} 
+                isLoading={loadingMetrics}
+                userRole={userRole}
+                onActionComplete={handleRefresh}
+              />
+              <RiskAlertsPanel 
+                alerts={metrics?.latest_alerts || []} 
+                isLoading={loadingMetrics}
+                userRole={userRole}
+                onActionComplete={handleRefresh}
+              />
+            </div>
           </div>
-          <div className="p-4 overflow-y-auto flex-1 space-y-3 custom-scrollbar">
-            {loadingMetrics ? (
-              <div className="space-y-4">
-                {[...Array(3)].map((_, i) => (
-                  <div key={i} className="animate-pulse flex space-x-4 p-4 border border-white/5 rounded-lg bg-white/5">
-                    <div className="rounded-full bg-white/10 h-10 w-10"></div>
-                    <div className="flex-1 space-y-3 py-1">
-                      <div className="h-2 bg-white/10 rounded w-3/4"></div>
-                      <div className="space-y-2">
-                        <div className="h-2 bg-white/10 rounded"></div>
-                        <div className="h-2 bg-white/10 rounded w-5/6"></div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : !metrics?.latest_alerts || metrics.latest_alerts.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full text-gray-500 dark:text-zinc-400 font-medium tracking-wide">
-                <div className="w-16 h-16 mb-4 rounded-2xl bg-gray-100 dark:bg-white/5 flex items-center justify-center border border-gray-200 dark:border-white/10 shadow-sm dark:shadow-lg dark:shadow-black/20">
-                  <AlertTriangle className="w-8 h-8 text-slate-500 dark:text-gray-400 dark:text-zinc-500" />
-                </div>
-                <p className="text-sm text-gray-600 dark:text-zinc-300">Không có cảnh báo mới nào.</p>
-              </div>
-            ) : (
-              metrics.latest_alerts.map((alert: any) => (
-                <AlertCard 
-                  key={alert.id} 
-                  alert={alert} 
-                  userRole={userRole}
-                  onActionComplete={fetchDashboardData} 
-                />
-              ))
-            )}
-          </div>
-        </div>
-      </div>
         </>
       )}
       
     </div>
   );
 }
-
