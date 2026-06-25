@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Image as ImageIcon, Download, RefreshCcw } from 'lucide-react';
+import { Image as ImageIcon, RefreshCcw } from 'lucide-react';
 import { reports } from '@/lib/api';
 import { useProject } from '@/contexts/ProjectContext';
 import toast from 'react-hot-toast';
@@ -9,11 +9,15 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
   BarChart, Bar, PieChart, Pie, Cell, Legend
 } from 'recharts';
+import { InfographicExportNotice } from '@/components/reports/InfographicExportNotice';
+import { ReportDataScopeNotice } from '@/components/reports/ReportDataScopeNotice';
+import { ReportErrorState } from '@/components/reports/ReportErrorState';
 
 export default function InfographicPage() {
   const { activeProject } = useProject();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -22,47 +26,23 @@ export default function InfographicPage() {
   const fetchData = async () => {
     try {
       setLoading(true);
+      setFetchError(null);
       const params: any = { date_from: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString() };
       if (activeProject) params.project_id = activeProject.id;
       
       const res = await reports.summaryData(params);
       setData(res);
-    } catch (error) {
-      toast.error('Lỗi tải dữ liệu báo cáo');
+    } catch (error: any) {
+      const msg = error?.response?.data?.detail || error?.message || 'Failed to load infographic data';
+      setFetchError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleExport = async () => {
-    toast.loading('Đang xuất ảnh...', { id: 'export-img' });
-    try {
-      const html2pdf = (await import('html2pdf.js')).default;
-      const element = document.getElementById('infographic-content');
-      if (!element) return;
-      
-      const opt = {
-        margin:       0,
-        filename:     `Nope_Infographic_${new Date().toISOString().split('T')[0]}.jpg`,
-        image:        { type: 'jpeg', quality: 1.0 },
-        html2canvas:  { scale: 2, useCORS: true },
-        jsPDF:        { unit: 'px', format: [element.offsetWidth, element.offsetHeight], orientation: 'portrait' }
-      };
-
-      // Since we want an image, we can just save it. Wait, html2pdf saves PDF.
-      // We can use html2canvas directly.
-      const html2canvas = (await import('html2pdf.js')).default.html2canvas || (await import('html2pdf.js')).default.Worker?.prototype?.html2canvas;
-      // It's easier to just let html2pdf output an image by generating a 1-page PDF that looks like an image, or use native html2canvas.
-      // But actually, we don't need to support perfect image export right now since the old page said "Preview only".
-      // Let's implement it with html2pdf as PDF for now but label it "Download".
-      
-      toast.dismiss('export-img');
-      toast.error('Tính năng xuất ảnh đang được hoàn thiện. Vui lòng dùng tính năng chụp màn hình.');
-    } catch (e) {
-      console.error(e);
-      toast.error('Lỗi khi xuất ảnh', { id: 'export-img' });
-    }
-  };
+  // Image export is not implemented. The InfographicExportNotice component
+  // replaces the previous button that called toast.error() internally.
 
   if (loading && !data) {
     return (
@@ -71,6 +51,14 @@ export default function InfographicPage() {
           <RefreshCcw className="w-5 h-5 mr-2 animate-spin text-pink-400" />
           Đang tải Infographic...
         </div>
+      </div>
+    );
+  }
+
+  if (fetchError && !data) {
+    return (
+      <div className="max-w-5xl mx-auto">
+        <ReportErrorState errorMessage={fetchError} onRetry={fetchData} />
       </div>
     );
   }
@@ -88,6 +76,7 @@ export default function InfographicPage() {
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto pb-20">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-[#1E293B] p-4 rounded-xl border border-gray-200 dark:border-gray-800">
         <div>
           <h1 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
@@ -96,15 +85,17 @@ export default function InfographicPage() {
           </h1>
         </div>
         <div>
-          <button 
-            onClick={handleExport}
-            className="flex items-center justify-center space-x-2 px-5 py-2 bg-pink-500 hover:bg-pink-600 text-white rounded-lg transition-all shadow-sm font-medium text-sm"
-          >
-            <Download className="w-4 h-4" />
-            <span>Export Image</span>
-          </button>
+          {/* InfographicExportNotice replaces the old misleading "Export Image" button */}
+          <InfographicExportNotice />
         </div>
       </div>
+
+      {/* Data Scope Notice */}
+      <ReportDataScopeNotice
+        projectName={activeProject?.name}
+        dateRange="30d"
+        dateRangeLabel="Last 30 days"
+      />
 
       <div className="overflow-x-auto pb-8">
         <div id="infographic-content" className="w-[1000px] mx-auto bg-[#0a0f1c] rounded-3xl overflow-hidden border border-white/10 shadow-2xl relative text-white">

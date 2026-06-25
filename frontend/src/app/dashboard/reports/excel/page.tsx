@@ -5,6 +5,8 @@ import { FileSpreadsheet, Download, RefreshCcw, Table, Check } from 'lucide-reac
 import { mentions as mentionsApi, reports as reportsApi } from '@/lib/api';
 import { useProject } from '@/contexts/ProjectContext';
 import toast from 'react-hot-toast';
+import { ReportDataScopeNotice } from '@/components/reports/ReportDataScopeNotice';
+import { ExportHistoryTable } from '@/components/reports/ExportHistoryTable';
 
 const cn = (...classes: (string | undefined | null | false)[]) => classes.filter(Boolean).join(' ');
 
@@ -22,6 +24,7 @@ export default function ExcelReportPage() {
   const [loading, setLoading] = useState(false);
   const [exportScope, setExportScope] = useState<'all' | 'mentions'>('all');
   const [exportHistory, setExportHistory] = useState<any[]>([]);
+  const [exportHistoryLoading, setExportHistoryLoading] = useState(true);
 
   useEffect(() => {
     fetchExports();
@@ -39,10 +42,12 @@ export default function ExcelReportPage() {
   }, []);
 
   const fetchExports = async () => {
+    setExportHistoryLoading(true);
     try {
       const res = await reportsApi.listExports(1, 10);
       setExportHistory(res.items || []);
     } catch (e) {}
+    finally { setExportHistoryLoading(false); }
   };
 
   const handleExport = async () => {
@@ -105,7 +110,15 @@ export default function ExcelReportPage() {
   };
 
   return (
-    <div className="max-w-3xl mx-auto py-10">
+    <div className="max-w-3xl mx-auto py-10 space-y-6">
+
+      {/* Data Scope Notice */}
+      <ReportDataScopeNotice
+        projectName={activeProject?.name}
+        dateRange={dateRange}
+        dateRangeLabel={DATE_RANGE_OPTIONS.find(r => r.value === dateRange)?.label}
+      />
+
       <div className="bg-white dark:bg-[#1E293B] rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800 overflow-hidden">
         
         {/* Header */}
@@ -188,55 +201,11 @@ export default function ExcelReportPage() {
       {/* Export History Section */}
       <div className="mt-8 bg-white dark:bg-[#1E293B] p-6 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800">
         <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4">Recent Exports</h3>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-gray-50 dark:bg-[#0f172a] text-gray-500">
-              <tr>
-                <th className="px-4 py-3">ID</th>
-                <th className="px-4 py-3">Type</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Requested At</th>
-                <th className="px-4 py-3">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {exportHistory.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-gray-500">No recent exports found.</td>
-                </tr>
-              ) : (
-                exportHistory.map((ex) => (
-                  <tr key={ex.id} className="border-t border-gray-100 dark:border-gray-800">
-                    <td className="px-4 py-3">#{ex.id}</td>
-                    <td className="px-4 py-3 font-semibold uppercase">{ex.report_type}</td>
-                    <td className="px-4 py-3">
-                      <span className={cn(
-                        "px-2 py-1 rounded-md text-xs font-medium",
-                        ex.status === 'success' && "bg-emerald-100 text-emerald-700",
-                        ex.status === 'failed' && "bg-rose-100 text-rose-700",
-                        (ex.status === 'pending' || ex.status === 'running') && "bg-blue-100 text-blue-700 animate-pulse"
-                      )}>
-                        {ex.status}
-                      </span>
-                      {ex.error_message && <p className="text-xs text-rose-500 mt-1 max-w-xs truncate" title={ex.error_message}>{ex.error_message}</p>}
-                    </td>
-                    <td className="px-4 py-3">{new Date(ex.created_at).toLocaleString()}</td>
-                    <td className="px-4 py-3">
-                      {ex.status === 'success' && (
-                        <button 
-                          onClick={() => downloadFile(ex.id, `Export_${ex.id}.${ex.report_type}`)}
-                          className="text-emerald-600 hover:text-emerald-700 flex items-center font-medium"
-                        >
-                          <Download className="w-4 h-4 mr-1" /> Download
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+        <ExportHistoryTable
+          exports={exportHistory}
+          loading={exportHistoryLoading}
+          onDownload={downloadFile}
+        />
       </div>
     </div>
   );
