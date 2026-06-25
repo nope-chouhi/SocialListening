@@ -1,0 +1,25 @@
+{
+  "name": "sociallistening",
+  "version": "1.0.0",
+  "description": "Platform giám sát và xử lý khủng hoảng danh tiếng trên mạng xã hội.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nope-chouhi/SocialListening.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/nope-chouhi/SocialListening/issues"
+  },
+  "homepage": "https://github.com/nope-chouhi/SocialListening#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.61.1",
+    "@types/node": "^26.0.1"
+  }
+}
