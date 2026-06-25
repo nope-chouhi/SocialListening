@@ -10,7 +10,7 @@ import {
   Facebook, Youtube, RefreshCw, SlidersHorizontal, Sparkles,
   Twitter, Instagram, Mic, Video, Link2Off, Tag,
   SearchCode, Download, CheckSquare, Square, Calendar,
-  Scan, ChevronLeft, ChevronRight, Info
+  Scan, ChevronLeft, ChevronRight, Info, Link2, ShieldAlert, ShieldCheck
 } from 'lucide-react';
 import { mentions as mentionsApi, dashboard, keywords as keywordsApi, crawl, savedFilters } from '@/lib/api';
 import { useProject } from '@/contexts/ProjectContext';
@@ -40,6 +40,7 @@ interface MentionItem {
   original_url?: string | null;
   visit_url_invalid_reason?: string | null;
   source_integrity_level?: 'high' | 'medium' | 'low' | 'unavailable' | null;
+  source_confidence?: number | 'low' | 'high' | null;
   author: string | null;
   published_at: string | null;
   collected_at: string | null;
@@ -1366,161 +1367,210 @@ function MentionsPageContent() {
                   </div>
                 </div>
               )}
-              {mentionsList.map((mention) => (
-              <div key={mention.id} className="bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10 overflow-hidden group hover:border-gray-300 transition-colors">
-                <div className="p-5">
-                  <div className="flex items-start gap-4">
-                    {/* Source Avatar/Logo */}
-                    <div className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 ${
-                      mention.source_type?.startsWith('facebook') ? 'bg-blue-100 text-blue-600' :
-                      mention.source_type?.startsWith('youtube') || mention.source_type === 'video' ? 'bg-red-100 text-red-600' :
-                      mention.source_type === 'tiktok' ? 'bg-black text-white' :
-                      'bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-slate-500 dark:text-gray-400'
-                    }`}>
-                      <SourceIcon type={mention.source_type} className="w-6 h-6" />
-                    </div>
+              {mentionsList.map((mention) => {
+const getMentionSourceLabel = (mention: any) => {
+  if (mention.source_name && mention.source_name.trim() !== '') return mention.source_name;
+  if (mention.domain && mention.domain.trim() !== '') return mention.domain;
+  return mention.source_type || 'Unknown Source';
+};
 
-                    {/* Content */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-4 mb-1">
-                        <div>
-                           <div className="flex items-center gap-2 mb-1">
-                             <h3 className="text-base font-bold text-slate-900 dark:text-white truncate" title={mention.title || mention.author || 'Unknown Author'}>
-                               {highlightText(mention.title || mention.author || 'Unknown Author', searchTerm)}
-                             </h3>
-                             {activeScanJobId && mention.job_id === activeScanJobId && (
-                               <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-[10px] uppercase font-extrabold px-1.5 py-0.5 rounded-sm shrink-0 border border-blue-200 dark:border-blue-800">New</span>
-                             )}
+const extractDomain = (url: string | null | undefined) => {
+  try {
+    if (!url) return '';
+    const hostname = new URL(url).hostname;
+    return hostname.replace(/^www\./, '');
+  } catch {
+    return '';
+  }
+};
+
+const getSourceIntegrityLabel = (level: string | null | undefined) => {
+  switch (level) {
+    case 'high': return { label: 'Trusted', color: 'bg-emerald-50 text-emerald-600 border-emerald-200 px-1.5 py-0.5 rounded border font-bold', title: 'Nguồn được xác thực an toàn' };
+    case 'low': return { label: 'Low Trust', color: 'bg-amber-50 text-amber-600 border-amber-200 px-1.5 py-0.5 rounded border font-bold', title: 'Nguồn có độ tin cậy thấp' };
+    default: return null;
+  }
+};
+return (
+              <div key={mention.id} className="bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10 overflow-hidden group hover:border-gray-300 transition-colors">
+                
+                {/* Source & Provenance Header */}
+                <div className="px-5 py-3 bg-slate-50 dark:bg-white/5 border-b border-gray-100 dark:border-white/5 flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 shadow-sm border border-gray-200 dark:border-white/10 ${
+                      mention.source_type?.startsWith('facebook') ? 'bg-blue-50 text-blue-600' :
+                      mention.source_type?.startsWith('youtube') || mention.source_type === 'video' ? 'bg-red-50 text-red-600' :
+                      mention.source_type === 'tiktok' ? 'bg-zinc-100 text-zinc-800' :
+                      'bg-white dark:bg-white/5 text-gray-600 dark:text-slate-400'
+                    }`}>
+                      <SourceIcon type={mention.source_type} className="w-4 h-4" />
+                    </div>
+                    
+                    <div className="flex flex-col">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-sm font-semibold text-slate-900 dark:text-white tracking-wide">
+                          {mention.domain && mention.domain.toLowerCase() !== 'unknown' ? mention.domain : extractDomain(mention.canonical_url || mention.url) || 'Nguồn chưa xác định'}
+                        </span>
+                        {/* Trust Badges */}
+                        {(() => {
+                          const isLowConfidence = mention.source_confidence === 'low' || (typeof mention.source_confidence === 'number' && mention.source_confidence < 0.5);
+                          if (typeof mention.source_confidence !== 'undefined' && !isLowConfidence) {
+                             return <span className="text-[10px] bg-emerald-50 text-emerald-600 border border-emerald-200 px-1.5 py-0.5 rounded font-bold" title="Độ tin cậy cao">Trusted</span>;
+                          }
+                          if (isLowConfidence) {
+                             return <span className="text-[10px] bg-amber-50 text-amber-600 border border-amber-200 px-1.5 py-0.5 rounded font-bold" title="Độ tin cậy thấp">Low Trust</span>;
+                          }
+                          return null;
+                        })()}
+                        {activeScanJobId && mention.job_id === activeScanJobId && (
+                           <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-[10px] uppercase font-extrabold px-1.5 py-0.5 rounded-sm shrink-0 border border-blue-200 dark:border-blue-800">New</span>
+                        )}
+                      </div>
+                      <span className="text-[11px] text-slate-500 dark:text-zinc-400 font-medium tracking-wider uppercase">
+                        {mention.source_type || 'Unknown Source'} • {mention.published_at ? new Date(mention.published_at).toLocaleString('vi-VN') : new Date(mention.collected_at!).toLocaleString('vi-VN')}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2 items-center">
+                    {mention.ai_analysis?.ai_provider && (
+                       <span className={
+                         mention.ai_analysis.ai_provider === 'failed'
+                         ? "bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-400 px-2 py-1 rounded-md text-[10px] font-bold border border-red-200 dark:border-red-500/20 shadow-sm"
+                         : "bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400 px-2 py-1 rounded-md text-[10px] font-bold border border-indigo-200 dark:border-indigo-500/20 shadow-sm"
+                       }>
+                         {mention.ai_analysis.ai_provider === 'failed' ? 'AI FAILED' :
+                          ['dummy', 'dummy_ai'].includes(mention.ai_analysis.ai_provider) ? 'RULE-BASED' :
+                          mention.ai_analysis.ai_provider.toUpperCase()}
+                       </span>
+                     )}
+                     <div className={`px-2 py-1 rounded-md border border-gray-200 dark:border-white/10 shadow-sm text-[11px] font-bold flex items-center whitespace-nowrap ${
+                       mention.sentiment === 'positive' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' :
+                       mention.sentiment === 'negative' ? 'bg-rose-50 text-rose-600 border-rose-200' :
+                       'bg-white dark:bg-white/10 text-gray-600 dark:text-slate-400'
+                     }`}>
+                       <select
+                         value={mention.sentiment === 'positive' ? 'positive' : mention.sentiment === 'negative' ? 'negative' : 'neutral'}
+                         onChange={(e) => handleAction(mention.id, 'sentiment', () => mentionsApi.updateSentiment(mention.id, e.target.value), 'Đã cập nhật sentiment')}
+                         className="bg-transparent border-none outline-none font-bold cursor-pointer appearance-none pr-3"
+                       >
+                         <option value="positive" className="text-emerald-600 font-bold">Positive</option>
+                         <option value="neutral" className="text-gray-600 font-bold">Neutral</option>
+                         <option value="negative" className="text-rose-600 font-bold">Negative</option>
+                       </select>
+                       <ChevronDown className="w-3 h-3 pointer-events-none -ml-2" />
+                     </div>
+                  </div>
+                </div>
+
+                {/* Main Content */}
+                <div className="p-5 flex flex-col md:flex-row gap-5">
+                  {/* Media Rendering safely */}
+                  {(() => {
+                    const meta = mention.metadata || (mention as any).meta_data;
+                    if (!meta) return null;
+
+                    const mediaUrl = meta.media_url;
+                    let imageUrl = meta.image_url || meta.media_thumbnail;
+                    
+                    // Validate image url
+                    const isSafeImage = imageUrl && typeof imageUrl === 'string' && !imageUrl.startsWith('sediment://') && !imageUrl.includes('image_asset_pointer') && (imageUrl.startsWith('http://') || imageUrl.startsWith('https://'));
+                    if (!isSafeImage) imageUrl = null;
+
+                    if (mediaUrl) {
+                      if (mediaUrl.match(/\.(mp4|webm|ogg)$/i)) {
+                        return (
+                          <div className="shrink-0 w-full md:w-48 h-32 rounded-lg overflow-hidden border border-gray-200 dark:border-white/10 bg-slate-100 dark:bg-white/5">
+                            <video controls className="w-full h-full object-cover" poster={imageUrl}>
+                              <source src={mediaUrl} type="video/mp4" />
+                            </video>
+                          </div>
+                        );
+                      }
+                      if (mediaUrl.match(/\.(mp3|wav|m4a)$/i)) {
+                         return (
+                           <div className="shrink-0 w-full md:w-48 p-3 rounded-lg border border-gray-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 flex items-center">
+                             <audio controls className="w-full">
+                               <source src={mediaUrl} type="audio/mpeg" />
+                             </audio>
                            </div>
-                           {searchTerm && (
-                              <div className="flex items-center gap-2 mt-1 mb-1 flex-wrap">
-                                {mention.matched_in && mention.matched_in.length > 0 ? (
-                                  <div className="text-[11px] text-indigo-600 dark:text-indigo-400 font-medium flex gap-1.5 items-center bg-indigo-50 dark:bg-indigo-900/20 px-2 py-0.5 rounded-full border border-indigo-100 dark:border-indigo-800/30">
-                                    <Search className="w-3 h-3" />
-                                    Matched in: {mention.matched_in.join(', ')}
-                                  </div>
-                                ) : (
-                                  <div className="text-[11px] text-slate-500 dark:text-gray-400 font-medium flex gap-1.5 items-center bg-gray-50 dark:bg-white/5 px-2 py-0.5 rounded-full border border-gray-200 dark:border-white/10">
-                                    <Search className="w-3 h-3" />
-                                    Semantic / AI Match
-                                  </div>
-                                )}
-                                {mention.match_strength && (
-                                  <div className={`text-[11px] font-bold px-2 py-0.5 rounded-full uppercase ${
-                                    mention.match_strength === 'exact' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' :
-                                    mention.match_strength === 'strong' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
-                                    'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-slate-500 dark:text-gray-400'
-                                  }`}>
-                                    {mention.match_strength} match
-                                  </div>
-                                )}
+                         );
+                      }
+                    }
+
+                    if (imageUrl) {
+                      return (
+                        <div className="shrink-0 w-full md:w-48 h-32 rounded-lg overflow-hidden border border-gray-200 dark:border-white/10 bg-slate-100 dark:bg-white/5">
+                          <img src={imageUrl} alt="Preview" className="w-full h-full object-cover" loading="lazy" />
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
+
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-base font-bold text-slate-900 dark:text-white line-clamp-2 leading-tight" title={mention.title || mention.author || 'Unknown Author'}>
+                       {mention.title ? highlightText(mention.title, searchTerm) : <span className="text-slate-400 italic">Không có tiêu đề</span>}
+                    </h3>
+
+                    <p className="text-sm text-slate-600 dark:text-zinc-300 mt-2 line-clamp-3 leading-relaxed">
+                      {highlightText(mention.snippet || mention.content?.substring(0, 300) || '', searchTerm)}
+                    </p>
+
+                    {/* Metadata Bottom row */}
+                    <div className="flex flex-wrap items-center gap-3 mt-3">
+                       {searchTerm && (
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {mention.matched_in && mention.matched_in.length > 0 ? (
+                              <div className="text-[10px] text-indigo-600 dark:text-indigo-400 font-bold flex gap-1 items-center bg-indigo-50 dark:bg-indigo-900/20 px-2 py-0.5 rounded shadow-sm border border-indigo-100 dark:border-indigo-800/30">
+                                <Search className="w-3 h-3" />
+                                {mention.matched_in.join(', ')}
+                              </div>
+                            ) : (
+                              <div className="text-[10px] text-slate-500 dark:text-gray-400 font-bold flex gap-1 items-center bg-gray-50 dark:bg-white/5 px-2 py-0.5 rounded shadow-sm border border-gray-200 dark:border-white/10">
+                                <Search className="w-3 h-3" />
+                                Semantic Match
                               </div>
                             )}
-                           <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-slate-500 dark:text-gray-400 mt-1">
-                              <span>{getMentionSourceLabel(mention)}</span>
-                             <span>•</span>
-                             <span>Ảnh hưởng: {mention.influence_score ? `${mention.influence_score}/10` : 'Chưa có dữ liệu'}</span>
-                             <span>•</span>
-                             <span className={mention.risk_score && mention.risk_score >= 80 ? 'text-rose-600 font-bold' : ''}>Rủi ro: {mention.risk_score ?? mention.ai_analysis?.risk_score ?? 'Chưa phân tích'}</span>
-                             <span>•</span>
-                             <span>{mention.published_at ? new Date(mention.published_at).toLocaleString() : new Date(mention.collected_at!).toLocaleString()}</span>
-                             {mention.ai_analysis?.ai_provider && (
-                               <>
-                                 <span>•</span>
-                                 <span className={
-                                   mention.ai_analysis.ai_provider === 'failed'
-                                   ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 px-1.5 py-0.5 rounded text-[10px] font-bold"
-                                   : "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400 px-1.5 py-0.5 rounded text-[10px] font-bold"
-                                 }>
-                                   {mention.ai_analysis.ai_provider === 'failed' ? 'AI FAILED' :
-                                    ['dummy', 'dummy_ai'].includes(mention.ai_analysis.ai_provider) ? 'RULE-BASED' :
-                                    mention.ai_analysis.ai_provider.toUpperCase()}
-                                 </span>
-                               </>
-                             )}
-                           </div>
-                        </div>
-                        {/* Sentiment Badge */}
-                        <div className={`px-2 py-0.5 rounded-md text-xs font-bold flex items-center whitespace-nowrap ${
-                           mention.sentiment === 'positive' ? 'bg-emerald-50 text-emerald-600' :
-                           mention.sentiment === 'negative' ? 'bg-rose-50 text-rose-600' :
-                           'bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-slate-500 dark:text-gray-400'
-                        }`}>
-                           <select
-                             value={mention.sentiment === 'positive' ? 'positive' : mention.sentiment === 'negative' ? 'negative' : 'neutral'}
-                             onChange={(e) => handleAction(mention.id, 'sentiment', () => mentionsApi.updateSentiment(mention.id, e.target.value), 'Đã cập nhật sentiment')}
-                             className="bg-transparent border-none outline-none font-bold cursor-pointer appearance-none pr-1"
-                           >
-                             <option value="positive" className="text-emerald-600">Positive</option>
-                             <option value="neutral" className="text-gray-600">Neutral</option>
-                             <option value="negative" className="text-rose-600">Negative</option>
-                           </select>
-                           <ChevronDown className="w-3 h-3 pointer-events-none" />
-                        </div>
-                      </div>
-
-                      {/* Body */}
-                      <p className="text-sm text-slate-700 dark:text-gray-300 mt-3 line-clamp-3 leading-relaxed">
-                        {highlightText(mention.snippet || mention.content?.substring(0, 300) || '', searchTerm)}
-                      </p>
-
-                      {/* Media Rendering */}
-                      {(() => {
-                        const meta = mention.metadata || (mention as any).meta_data;
-                        if (!meta) return null;
-
-                        const mediaUrl = meta.media_url;
-                        const imageUrl = meta.image_url || meta.media_thumbnail;
-
-                        if (mediaUrl) {
-                          // Check if it's a video file (mp4, webm, etc)
-                          if (mediaUrl.match(/\.(mp4|webm|ogg)$/i)) {
-                            return (
-                              <div className="mt-3 rounded-lg overflow-hidden border border-gray-200 dark:border-slate-200 dark:border-gray-800 bg-gray-50 dark:bg-black max-w-md">
-                                <video controls className="w-full h-auto max-h-64 object-cover" poster={imageUrl}>
-                                  <source src={mediaUrl} type="video/mp4" />
-                                  Trình duyệt không hỗ trợ video.
-                                </video>
+                            {mention.match_strength && (
+                              <div className={`text-[10px] font-bold px-2 py-0.5 rounded shadow-sm border uppercase ${
+                                mention.match_strength === 'exact' ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400' :
+                                mention.match_strength === 'strong' ? 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400' :
+                                'bg-white text-gray-600 border-gray-200 dark:bg-white/5 dark:text-slate-400'
+                              }`}>
+                                {mention.match_strength} match
                               </div>
-                            );
-                          }
-                          // Otherwise assume audio or other media, provide a link or iframe if needed.
-                          // VnE GO mostly uses audio or video.
-                          if (mediaUrl.match(/\.(mp3|wav|m4a)$/i)) {
-                             return (
-                               <div className="mt-3 p-3 rounded-lg border border-gray-200 dark:border-slate-200 dark:border-gray-800 bg-gray-50 dark:bg-white/5 max-w-md">
-                                 <audio controls className="w-full h-10">
-                                   <source src={mediaUrl} type="audio/mpeg" />
-                                 </audio>
-                               </div>
-                             );
-                          }
-                        }
-
-                        if (imageUrl) {
-                          return (
-                            <div className="mt-3 rounded-lg overflow-hidden border border-gray-200 dark:border-slate-200 dark:border-gray-800 max-w-sm">
-                              <img src={imageUrl} alt="Media thumbnail" className="w-full h-auto max-h-48 object-cover" loading="lazy" />
-                            </div>
-                          );
-                        }
-                        return null;
-                      })()}
-                      {/* Hashtags Mock */}
-                      <div className="flex flex-wrap items-center gap-2 mt-3">
-                        {keywordTexts(mention.matched_keywords).map((kw, i) => (
-                           <span key={i} className="text-xs font-medium text-blue-600 cursor-pointer hover:underline">#{kw}</span>
-                        ))}
-                      </div>
+                            )}
+                          </div>
+                       )}
+                       
+                       {/* Keywords */}
+                       {keywordTexts(mention.matched_keywords).length > 0 && (
+                         <div className="flex items-center gap-1.5 px-2 py-0.5 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-600 dark:text-zinc-300 text-[10px] tracking-wide font-bold rounded shadow-sm">
+                           <Link2 className="w-3 h-3" />
+                           {keywordTexts(mention.matched_keywords).join(', ')}
+                         </div>
+                       )}
+                       
+                       {/* Influence & Risk */}
+                       {mention.influence_score !== undefined && (
+                         <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 border-l border-gray-300 pl-3">
+                           Ảnh hưởng: <strong>{mention.influence_score}/10</strong>
+                         </span>
+                       )}
+                       {mention.risk_score !== undefined && (
+                         <span className={`text-[11px] font-medium border-l border-gray-300 pl-3 ${mention.risk_score >= 80 ? 'text-rose-600 font-bold' : 'text-slate-500'}`}>
+                           Rủi ro: <strong>{mention.risk_score}</strong>
+                         </span>
+                       )}
                     </div>
                   </div>
                 </div>
 
                  {/* Actions Footer */}
-                <div className="bg-gray-50 dark:bg-[#0a0f1c]/50 px-5 py-3 border-t border-gray-100 dark:border-white/5 flex flex-wrap items-center justify-between gap-3">
-                   <div className="flex flex-wrap items-center gap-4">
+                <div className="bg-slate-50 dark:bg-[#0a0f1c]/50 px-5 py-3 border-t border-gray-100 dark:border-white/5 flex flex-wrap items-center justify-between gap-3">
+                   <div className="flex flex-wrap items-center gap-3">
                      {(() => {
-                        // Use backend-resolved URL when available; fall back to client-side check
                         const integrityLevel = mention.source_integrity_level;
                         const isLowIntegrity = integrityLevel === 'low' || integrityLevel === 'unavailable';
                         const visitStatus = getVisitUrlStatus(mention.canonical_url || mention.url);
@@ -1531,19 +1581,19 @@ function MentionsPageContent() {
                           const tooltipText = mention.visit_url_invalid_reason
                             ? mention.visit_url_invalid_reason
                             : isLowIntegrity
-                            ? (integrityLevel === 'low' ? 'Link nguồn độ tin cậy thấp' : 'Không xác minh được nguồn bài')
-                            : 'Không có link bài gốc hợp lệ';
+                            ? (integrityLevel === 'low' ? 'Độ tin cậy thấp' : 'Không xác minh được nguồn')
+                            : 'Không có link an toàn';
                           return (
-                            <div className="flex items-center gap-1.5 text-xs font-bold text-slate-500 dark:text-gray-400 cursor-not-allowed group/tooltip relative" title={tooltipText}>
-                             <Link2Off className="w-3.5 h-3.5" /> Visit
+                            <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500 dark:text-gray-400 cursor-not-allowed group/tooltip relative" title={tooltipText}>
+                             <Link2Off className="w-3.5 h-3.5" /> Không thể Visit
                              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover/tooltip:block px-2 py-1 bg-gray-800 text-slate-900 dark:text-white text-[10px] rounded whitespace-nowrap z-10">{tooltipText}</div>
                            </div>
                           );
                         }
                         return (
                           <>
-                            <button onClick={() => handleVisit(mention)} className="flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-700 transition-colors">
-                              <ExternalLink className="w-3.5 h-3.5" /> Visit
+                            <button onClick={() => handleVisit(mention)} className="flex items-center gap-1.5 text-[11px] font-bold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-2.5 py-1.5 rounded-lg border border-indigo-200 dark:border-indigo-500/30 transition-colors shadow-sm">
+                              <ExternalLink className="w-3.5 h-3.5" /> Visit Nguồn
                             </button>
                             {integrityBadge && (
                               <span
@@ -1558,27 +1608,27 @@ function MentionsPageContent() {
                       })()}
 
                      {mention.is_visited && (
-                       <div className="flex items-center gap-1.5 text-[11px] font-medium text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-500/20">
-                         <CheckCircle2 className="w-3 h-3" /> Đã xem
-                         {(mention.visit_count ?? 0) > 0 && <span className="text-emerald-500">({mention.visit_count} lượt)</span>}
+                       <div className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 px-2 py-1.5 rounded-lg border border-emerald-200 dark:border-emerald-500/20 shadow-sm">
+                         <CheckCircle2 className="w-3.5 h-3.5" /> Đã xem
+                         {(mention.visit_count ?? 0) > 0 && <span className="text-emerald-500 ml-0.5">({mention.visit_count})</span>}
                        </div>
                      )}
 
                      <button
                        onClick={() => handleAction(mention.id, 'review', () => mentionsApi.markReviewed(mention.id), 'Đã đánh dấu xem')}
-                       className={`flex items-center gap-1.5 text-xs font-bold transition-colors ${
+                       className={`flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1.5 rounded-lg transition-colors border shadow-sm ${
                          mention.is_reviewed
-                           ? 'text-emerald-600 dark:text-emerald-400 hover:text-emerald-700'
-                           : 'text-gray-500 hover:text-gray-700'
+                           ? 'text-emerald-700 bg-emerald-50 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800'
+                           : 'text-slate-600 bg-white border-slate-200 hover:bg-slate-50 dark:bg-white/5 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/10'
                        }`}
-                       title="Đánh dấu đã xem"
+                       title="Đánh dấu đã xem nội bộ"
                      >
-                       <CheckCircle2 className="w-3.5 h-3.5" /> Đã xem
+                       <CheckCircle2 className="w-3.5 h-3.5" /> Review
                      </button>
                      {(!mention.sentiment || !mention.risk_score) && (
                        <button
                          onClick={() => handleAction(mention.id, 'analyze', () => mentionsApi.analyze(mention.id), 'Đã phân tích xong')}
-                         className="flex items-center gap-1.5 text-xs font-medium text-purple-600 hover:text-purple-700 transition-colors"
+                         className="flex items-center gap-1.5 text-[11px] font-bold text-purple-700 bg-purple-50 border-purple-200 px-2.5 py-1.5 rounded-lg hover:bg-purple-100 transition-colors shadow-sm dark:bg-purple-900/30 dark:border-purple-800 dark:text-purple-400"
                          title="Phân tích AI"
                        >
                          <BrainCircuit className="w-3.5 h-3.5" /> Phân tích AI
@@ -1587,12 +1637,13 @@ function MentionsPageContent() {
                      {(mention.risk_score !== undefined && mention.risk_score >= 50) && (
                        <button
                          onClick={() => handleAction(mention.id, 'alert', () => mentionsApi.createAlert(mention.id), 'Đã tạo cảnh báo rủi ro')}
-                         className="flex items-center gap-1.5 text-xs font-medium text-rose-600 hover:text-rose-700 transition-colors"
+                         className="flex items-center gap-1.5 text-[11px] font-bold text-rose-700 bg-rose-50 border-rose-200 px-2.5 py-1.5 rounded-lg hover:bg-rose-100 transition-colors shadow-sm dark:bg-rose-900/30 dark:border-rose-800 dark:text-rose-400"
                          title="Tạo cảnh báo"
                        >
-                         <AlertTriangle className="w-3.5 h-3.5" /> Tạo cảnh báo
+                         <AlertTriangle className="w-3.5 h-3.5" /> Cảnh báo
                        </button>
                      )}
+                     <div className="h-4 border-l border-slate-300 dark:border-slate-700 mx-1"></div>
                      <button
                        onClick={async () => {
                          const currentTags = mention.tags ? (Array.isArray(mention.tags) ? mention.tags.join(', ') : mention.tags) : '';
@@ -1608,28 +1659,28 @@ function MentionsPageContent() {
                            handleAction(mention.id, 'tags', () => mentionsApi.updateTags(mention.id, newTags), 'Đã cập nhật tags');
                          }
                        }}
-                       className="flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-slate-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 dark:text-gray-100"
+                       className="flex items-center gap-1.5 text-[11px] font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                      >
                        <Tag className="w-3.5 h-3.5" /> Tags
                      </button>
-                     <button onClick={() => handleToggleAddToReport(mention.id, mention.add_to_report)} className={`flex items-center gap-1.5 text-xs font-medium ${mention.add_to_report ? 'text-indigo-600' : 'text-gray-600 dark:text-slate-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 dark:text-gray-100'}`}>
-                       <FileText className="w-3.5 h-3.5" /> {mention.add_to_report ? 'Remove from PDF' : 'Add to PDF report'}
+                     <button onClick={() => handleToggleAddToReport(mention.id, mention.add_to_report)} className={`flex items-center gap-1.5 text-[11px] font-medium ${mention.add_to_report ? 'text-indigo-600' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}>
+                       <FileText className="w-3.5 h-3.5" /> {mention.add_to_report ? 'Remove PDF' : 'Add PDF'}
                      </button>
                      <button
                        disabled={!mention.author}
                        onClick={() => handleAction(mention.id, 'mute_author', () => mentionsApi.muteAuthor(mention.author!, activeProject!.id), `Đã ẩn tác giả ${mention.author}`)}
-                       className="flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-slate-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 disabled:opacity-50"
+                       className="flex items-center gap-1.5 text-[11px] font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white disabled:opacity-50"
                      >
                        <Eye className="w-3.5 h-3.5" /> Mute author
                      </button>
                      <button
                        disabled={!mention.domain}
                        onClick={() => handleAction(mention.id, 'mute_domain', () => mentionsApi.muteDomain(mention.domain!, activeProject!.id), `Đã ẩn nguồn ${mention.domain}`)}
-                       className="flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-slate-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 disabled:opacity-50"
+                       className="flex items-center gap-1.5 text-[11px] font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white disabled:opacity-50"
                      >
                        <Eye className="w-3.5 h-3.5" /> Mute site
                      </button>
-                     <button onClick={() => setDeleteConfirm({ isOpen: true, mentionId: mention.id, mentionTitle: mention.title || '' })} className="flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-slate-500 dark:text-gray-400 hover:text-red-600">
+                     <button onClick={() => setDeleteConfirm({ isOpen: true, mentionId: mention.id, mentionTitle: mention.title || '' })} className="flex items-center gap-1.5 text-[11px] font-medium text-slate-600 dark:text-slate-400 hover:text-rose-600">
                        <Trash2 className="w-3.5 h-3.5" /> Delete
                      </button>
                    </div>
@@ -1637,11 +1688,12 @@ function MentionsPageContent() {
                       type="checkbox"
                       checked={selectedIds.has(mention.id)}
                       onChange={() => toggleSelect(mention.id)}
-                      className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                      className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
                     />
                 </div>
                </div>
-            ))
+            );
+            })
             }
             </div>
           )}
