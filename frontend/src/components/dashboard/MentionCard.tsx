@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { 
   Facebook, Youtube, Globe, Rss, ExternalLink, Activity, 
-  CheckCircle2, AlertTriangle, FileText, BrainCircuit 
+  CheckCircle2, AlertTriangle, FileText, BrainCircuit, ShieldAlert, ShieldCheck, Image as ImageIcon, Link2, Info
 } from 'lucide-react';
 import { SentimentBadge, RiskBadge, CrisisLevelBadge } from './Badges';
 import DashboardQuickActionButton from './DashboardQuickActionButton';
+import { AppCard } from '@/components/ui/AppCard';
 import { mentions } from '@/lib/api';
 import { getSafeVisitUrl } from '@/lib/visit-url';
 import toast from 'react-hot-toast';
@@ -34,6 +35,18 @@ function keywordToText(keyword: any): string | null {
 
 function keywordTexts(keywords: any[] | null | undefined): string[] {
   return (keywords || []).map(keywordToText).filter((value): value is string => Boolean(value));
+}
+
+// Check if image URL is valid and safe to render
+function isValidImageUrl(url: any): boolean {
+  if (!url || typeof url !== 'string') return false;
+  if (url.startsWith('sediment://') || url.includes('image_asset_pointer')) return false;
+  try {
+    const parsed = new URL(url);
+    return ['http:', 'https:'].includes(parsed.protocol);
+  } catch {
+    return false;
+  }
 }
 
 export default function MentionCard({ mention, onActionComplete, userRole }: MentionCardProps) {
@@ -70,73 +83,108 @@ export default function MentionCard({ mention, onActionComplete, userRole }: Men
     return getSafeVisitUrl(url);
   };
 
-  const bestUrl = getSafeUrl(mention.canonical_url || mention.url || '');
+  const rawUrl = mention.canonical_url || mention.url || '';
+  const bestUrl = getSafeUrl(rawUrl);
   const keywordLabels = keywordTexts(mention.matched_keywords);
+  
+  const derivedDomain = extractDomain(bestUrl);
+  const sourceDomain = mention.domain && mention.domain.toLowerCase() !== 'unknown' 
+    ? mention.domain 
+    : derivedDomain || 'Nguồn chưa xác định';
 
-  const getSourceDisplay = () => {
-    if (mention.domain && mention.domain.toLowerCase() !== 'unknown') {
-      return mention.domain;
-    }
-    const derivedDomain = extractDomain(bestUrl);
-    if (derivedDomain) return derivedDomain;
-    return 'Nguồn chưa xác định';
-  };
+  const imageUrl = isValidImageUrl(mention.image_url) ? mention.image_url : null;
+
+  // Trust & Safety checks based on expected API fields (might be missing, handled safely)
+  const isLowConfidence = mention.source_confidence === 'low' || (typeof mention.source_confidence === 'number' && mention.source_confidence < 0.5);
+  const isUrlInvalid = mention.url_status === 'invalid' || mention.url_status === 'dead';
+  const isBlocked = mention.is_blocked === true;
+  
+  const disableVisit = isLowConfidence || isUrlInvalid || isBlocked || !bestUrl;
+  let visitWarning = null;
+  if (!bestUrl) visitWarning = "Không có URL";
+  else if (isBlocked) visitWarning = "Nguồn bị chặn (Blocked)";
+  else if (isUrlInvalid) visitWarning = "URL không hợp lệ hoặc đã chết";
+  else if (isLowConfidence) visitWarning = "Độ tin cậy của nguồn thấp";
 
   return (
-    <div className="bg-white dark:bg-[#1E293B] rounded-xl shadow-sm border border-slate-200 dark:border-gray-800 p-4 hover:shadow-md hover:border-slate-300 dark:border-gray-700 transition-all">
-      <div className="flex items-start justify-between">
-        <div className="flex items-center space-x-3">
-          <div className="p-2.5 bg-white dark:bg-[#111827] border border-gray-700/50 rounded-xl shadow-sm">
-            <SourceIcon type={mention.source_type} className="w-5 h-5 text-indigo-400" />
+    <AppCard hoverable className="overflow-hidden border border-slate-200 dark:border-white/10">
+      {/* Source & Provenance Header */}
+      <div className="px-4 py-3 bg-slate-50 dark:bg-black/20 border-b border-slate-100 dark:border-white/5 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2.5">
+          <div className="p-1.5 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg shadow-sm">
+            <SourceIcon type={mention.source_type} className="w-4 h-4 text-indigo-500 dark:text-indigo-400" />
           </div>
-          <div>
-            <h3 className="font-semibold text-slate-900 dark:text-white tracking-wide line-clamp-1 pr-2">
-              {mention.title || 'Không có tiêu đề'}
-            </h3>
-            <div className="flex items-center text-xs text-slate-500 dark:text-gray-400 mt-1.5 space-x-2 font-medium">
-              <span className="text-indigo-400 font-semibold tracking-wide">{getSourceDisplay()}</span>
-              <span className="text-gray-700">•</span>
-              <span>{new Date(mention.collected_at || mention.published_at).toLocaleString('vi-VN')}</span>
+          <div className="flex flex-col">
+            <div className="flex items-center gap-1.5">
+              <span className="text-sm font-semibold text-slate-900 dark:text-white tracking-wide">
+                {sourceDomain}
+              </span>
+              {typeof mention.source_confidence !== 'undefined' && !isLowConfidence && (
+                <span title="Độ tin cậy cao"><ShieldCheck className="w-3.5 h-3.5 text-emerald-500" /></span>
+              )}
+              {isLowConfidence && (
+                <span title="Độ tin cậy thấp"><ShieldAlert className="w-3.5 h-3.5 text-amber-500" /></span>
+              )}
             </div>
+            <span className="text-[10px] text-slate-500 dark:text-zinc-400 font-medium tracking-wider uppercase">
+              {mention.source_type || 'Unknown Source'} • {new Date(mention.collected_at || mention.published_at).toLocaleString('vi-VN')}
+            </span>
           </div>
         </div>
-        <div className="flex space-x-1.5 items-center">
+        
+        <div className="flex gap-1.5 items-center">
           {mention.ai_provider === 'failed' && (
-            <span className="px-2 py-0.5 text-[9px] font-bold tracking-wider text-red-400 bg-red-500/10 rounded-md border border-red-500/20 shadow-sm" title="AI Service Unavailable">
+            <span className="px-2 py-0.5 text-[9px] font-bold tracking-wider text-red-600 bg-red-50 border border-red-200 dark:text-red-400 dark:bg-red-500/10 dark:border-red-500/20 rounded-md shadow-sm" title="AI Service Unavailable">
               AI FAILED
             </span>
           )}
           {['dummy', 'dummy_ai', 'dummy_fallback'].includes(mention.ai_provider) && (
-            <span className="px-2 py-0.5 text-[9px] font-bold tracking-wider text-amber-400 bg-amber-500/10 rounded-md border border-amber-500/20 shadow-sm">
+            <span className="px-2 py-0.5 text-[9px] font-bold tracking-wider text-amber-600 bg-amber-50 border border-amber-200 dark:text-amber-400 dark:bg-amber-500/10 dark:border-amber-500/20 rounded-md shadow-sm">
               RULE-BASED
             </span>
           )}
           {mention.ai_provider && !['dummy', 'dummy_ai', 'dummy_fallback', 'failed'].includes(mention.ai_provider) && (
-            <span className="px-2 py-0.5 text-[9px] font-bold tracking-wider text-indigo-400 bg-indigo-500/10 rounded-md border border-indigo-500/20 shadow-sm">
+            <span className="px-2 py-0.5 text-[9px] font-bold tracking-wider text-indigo-600 bg-indigo-50 border border-indigo-200 dark:text-indigo-400 dark:bg-indigo-500/10 dark:border-indigo-500/20 rounded-md shadow-sm">
               {mention.ai_provider.toUpperCase()}
             </span>
           )}
-          <SentimentBadge sentiment={mention.sentiment} />
+          {mention.sentiment && <SentimentBadge sentiment={mention.sentiment} />}
         </div>
       </div>
 
-      <div className="mt-4">
-        <p className="text-sm text-slate-700 dark:text-gray-300 leading-relaxed line-clamp-2">
-          {mention.content}
-        </p>
-      </div>
-
-      <div className="mt-4 flex flex-wrap gap-2">
-        {keywordLabels.length > 0 && (
-          <span className="px-2.5 py-1 bg-white dark:bg-[#111827] border border-slate-300 dark:border-gray-700 text-slate-500 dark:text-gray-400 text-[11px] tracking-wide font-medium rounded-md shadow-sm">
-            KW: {keywordLabels.join(', ')}
-          </span>
+      {/* Main Content */}
+      <div className="p-4 flex flex-col md:flex-row gap-4">
+        {/* Preview Image if available safely */}
+        {imageUrl && (
+          <div className="shrink-0 w-full md:w-32 h-24 rounded-lg overflow-hidden border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5">
+            <img src={imageUrl} alt={mention.title || 'Preview'} className="w-full h-full object-cover" loading="lazy" />
+          </div>
         )}
-        <RiskBadge score={mention.risk_score} />
-        <CrisisLevelBadge level={mention.crisis_level} />
+        
+        <div className="flex-1 min-w-0 space-y-2">
+          <h3 className="font-bold text-base text-slate-900 dark:text-white leading-tight line-clamp-2">
+            {mention.title || <span className="text-slate-400 italic font-normal">Không có tiêu đề</span>}
+          </h3>
+          <p className="text-sm text-slate-600 dark:text-zinc-300 leading-relaxed line-clamp-3">
+            {mention.content || <span className="text-slate-400 italic">Không có nội dung trích xuất.</span>}
+          </p>
+          
+          {/* Metadata badges */}
+          <div className="flex flex-wrap gap-2 pt-1">
+            {keywordLabels.length > 0 && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-600 dark:text-zinc-300 text-[10px] tracking-wide font-bold rounded shadow-sm">
+                <Link2 className="w-3 h-3" />
+                {keywordLabels.join(', ')}
+              </span>
+            )}
+            {typeof mention.risk_score !== 'undefined' && <RiskBadge score={mention.risk_score} />}
+            {mention.crisis_level && <CrisisLevelBadge level={mention.crisis_level} />}
+          </div>
+        </div>
       </div>
 
-      <div className="mt-4 pt-4 border-t border-gray-800/80 flex flex-wrap items-center justify-between gap-3">
+      {/* Actions Footer */}
+      <div className="px-4 py-3 bg-slate-50/50 dark:bg-black/10 border-t border-slate-100 dark:border-white/5 flex flex-wrap items-center justify-between gap-3">
         <div className="flex space-x-2">
           <DashboardQuickActionButton
             label="Đã xem"
@@ -145,18 +193,15 @@ export default function MentionCard({ mention, onActionComplete, userRole }: Men
             isLoading={loadingAction === 'review'}
             variant="ghost"
           />
-          {(!mention.sentiment || !mention.risk_score) && canAnalyze && (
+          {(!mention.sentiment || typeof mention.risk_score === 'undefined') && canAnalyze && (
             <DashboardQuickActionButton
               label="Phân tích AI"
               icon={BrainCircuit}
-              onClick={() => handleAction('analyze', () => mentions.analyze(mention.id), 'Đã phân tích xong')}
+              onClick={() => handleAction('analyze', () => mentions.analyze(mention.id), 'Đã yêu cầu phân tích')}
               isLoading={loadingAction === 'analyze'}
               variant="secondary"
             />
           )}
-        </div>
-        
-        <div className="flex space-x-2">
           {canEscalate && mention.risk_score >= 50 && (
             <DashboardQuickActionButton
               label="Tạo cảnh báo"
@@ -166,23 +211,38 @@ export default function MentionCard({ mention, onActionComplete, userRole }: Men
               variant="danger"
             />
           )}
-          {(() => {
-            if (!bestUrl) return null;
-            return (
-              <a
-                href={bestUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center px-4 py-2 text-xs font-medium rounded-xl border transition-colors shadow-sm bg-white dark:bg-[#111827] text-slate-700 dark:text-gray-300 border-slate-300 dark:border-gray-700 hover:bg-gray-800"
-                title="Nguon bai viet"
-              >
-                <ExternalLink className="w-3.5 h-3.5 mr-2" />
-                Nguồn
-              </a>
-            );
-          })()}
+        </div>
+        
+        <div className="flex items-center gap-2">
+          {visitWarning && (
+            <div className="flex items-center gap-1.5 text-[11px] font-medium text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-2 py-1 rounded border border-amber-200 dark:border-amber-500/20">
+              <Info className="w-3.5 h-3.5" />
+              {visitWarning}
+            </div>
+          )}
+          {disableVisit ? (
+            <button
+              disabled
+              className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 text-slate-400 dark:text-zinc-500 cursor-not-allowed"
+              title={visitWarning || "Cannot visit link"}
+            >
+              <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
+              Truy cập an toàn
+            </button>
+          ) : (
+            <a
+              href={bestUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg border border-indigo-200 dark:border-indigo-500/30 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 transition-colors shadow-sm"
+              title={`Truy cập nguồn: ${sourceDomain}`}
+            >
+              <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
+              Truy cập an toàn
+            </a>
+          )}
         </div>
       </div>
-    </div>
+    </AppCard>
   );
 }
