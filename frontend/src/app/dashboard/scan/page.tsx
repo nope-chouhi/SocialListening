@@ -957,7 +957,7 @@ export default function ScanPage() {
                               if (error.includes(': ')) {
                                 const parts = error.split(': ');
                                 if (parts.length > 1) {
-                                  cleanMsg = parts.slice(1).join(': ');
+                                  cleanMsg = Array.isArray(parts) ? parts.slice(1).join(': ') : error;
                                 }
                               }
                               
@@ -1201,7 +1201,7 @@ export default function ScanPage() {
                   <div className="flex gap-2"><span className="text-gray-500 min-w-[160px]">Error message:</span><span className="text-rose-400 break-all">{debugInfo.lastErrorMessage}</span></div>
                 )}
                 {debugInfo.lastResponseData && (
-                  <div className="flex gap-2"><span className="text-gray-500 min-w-[160px]">Response data:</span><span className="text-slate-700 dark:text-gray-300 break-all">{JSON.stringify(debugInfo.lastResponseData).slice(0, 500)}</span></div>
+                  <div className="flex gap-2"><span className="text-gray-500 min-w-[160px]">Response data:</span><span className="text-slate-700 dark:text-gray-300 break-all">{(JSON.stringify(debugInfo.lastResponseData) || '').slice(0, 500)}</span></div>
                 )}
               </>
             )}

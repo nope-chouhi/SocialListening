@@ -212,7 +212,7 @@ export default function AnalysisPage() {
                         style={{ height: `${Math.round((d.count / maxDayCount) * 130)}px`, minHeight: '4px' }}
                         title={`${d.date}: ${d.count} mentions`}
                       />
-                      <span className="text-[9px] text-slate-500 dark:text-gray-400 truncate">{d.date.slice(5)}</span>
+                      <span className="text-[9px] text-slate-500 dark:text-gray-400 truncate">{typeof d.date === 'string' ? d.date.slice(5) : ''}</span>
                     </div>
                   ))}
                 </div>
@@ -229,7 +229,7 @@ export default function AnalysisPage() {
                 <p className="text-slate-500 dark:text-gray-400 text-sm text-center py-8">Chưa có dữ liệu nguồn</p>
               ) : (
                 <div className="space-y-3">
-                  {Object.entries(bySource)
+                  {Object.entries(bySource || {})
                     .sort(([, a], [, b]) => (b as number) - (a as number))
                     .slice(0, 8)
                     .map(([source, count]) => {

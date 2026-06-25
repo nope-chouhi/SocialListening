@@ -19,7 +19,7 @@ export default function HotKeywordsWidget({ data, isLoading }: { data: HotKeywor
 
   return (
     <div className="space-y-4">
-      {data.slice(0, 5).map((kw, i) => (
+      {Array.isArray(data) && data.slice(0, 5).map((kw, i) => (
         <div key={kw.keyword} className="flex items-center justify-between p-3.5 bg-white dark:bg-[#1E293B] hover:bg-[#283548] rounded-xl border border-slate-200 dark:border-gray-800 transition-colors shadow-sm">
           <div className="flex items-center space-x-3">
             <div className={`flex items-center justify-center w-8 h-8 rounded-lg ${i < 3 ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' : 'bg-white dark:bg-[#111827] text-slate-500 dark:text-gray-400 border border-slate-300 dark:border-gray-700'}`}>
