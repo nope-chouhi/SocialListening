@@ -22,6 +22,11 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
 } from 'recharts';
 import { getSafeVisitUrl, getVisitUrlStatus } from '@/lib/visit-url';
+import { MentionFilterBar } from '@/components/mentions/MentionFilterBar';
+import { MentionActiveFilterChips } from '@/components/mentions/MentionActiveFilterChips';
+import { MentionEmptyResults } from '@/components/mentions/MentionEmptyResults';
+import { AntiNoiseNotice } from '@/components/mentions/AntiNoiseNotice';
+import { MentionFilterErrorState } from '@/components/mentions/MentionFilterErrorState';
 
 /* ═══════════════════════════════════════════════════════════════════════════
    TYPE DEFINITIONS
@@ -271,6 +276,7 @@ function MentionsPageContent() {
   const [page, setPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState(initialSearch || '');
   const [searchInput, setSearchInput] = useState(initialSearch || '');
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [activeChartTab, setActiveChartTab] = useState<'reach' | 'sentiment'>('reach');
   const [chartTimeRange, setChartTimeRange] = useState<'days' | 'weeks' | 'months'>('days');
 
@@ -582,6 +588,7 @@ function MentionsPageContent() {
       const data = await mentionsApi.list(params);
       if (fetchId !== currentFetchIdRef.current) return;
 
+      setFetchError(null);
       setMentionsList(data.items);
       setTotalMentions(data.total);
       setTotalPages(data.total_pages);
@@ -645,7 +652,9 @@ function MentionsPageContent() {
       }
     } catch (error: any) {
       console.error('Error fetching mentions:', error);
-      toast.error(error.response?.data?.detail || 'Lỗi khi tải mentions');
+      const errMsg = error.response?.data?.detail || error.message || 'Lỗi khi tải mentions';
+      setFetchError(errMsg);
+      toast.error(errMsg);
       setSearchState('NO_LOCAL_RESULTS');
     } finally {
       setLoading(false);
@@ -1014,93 +1023,66 @@ function MentionsPageContent() {
       <div className="flex-1 w-full lg:w-[75%] min-w-0 flex flex-col gap-6">
 
         {/* Header & Filter Controls */}
-        <div className="flex flex-col gap-3 bg-white dark:bg-[#050A15] p-4 rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
-           <div className="flex flex-wrap items-center justify-between gap-4">
-             <div className="flex items-center gap-3">
-               <div className="relative" ref={sortRef}>
-                 <button onClick={() => setSortOpen(!sortOpen)} className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-gray-800 dark:bg-gray-800 text-slate-700 dark:text-gray-300 text-sm font-medium rounded-md transition-colors">
-                   {SORT_OPTIONS.find((o) => o.value === filters.sort_by)?.label || 'By relevance'}
-                   <ChevronDown className="w-4 h-4" />
-                 </button>
-                 {sortOpen && (
-                   <div className="absolute left-0 top-full mt-1 w-48 bg-white dark:bg-[#050A15] border border-gray-200 dark:border-white/10 rounded-lg shadow-xl z-20 py-1">
-                     {SORT_OPTIONS.map((opt) => (
-                       <button
-                         key={opt.value}
-                         onClick={() => { setFilters({ ...filters, sort_by: opt.value }); setSortOpen(false); setPage(1); }}
-                         className={`w-full text-left px-4 py-2 text-sm font-medium transition-colors ${
-                           filters.sort_by === opt.value
-                             ? 'bg-blue-50 text-blue-600'
-                             : 'text-gray-600 dark:text-slate-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-[#0a0f1c] dark:bg-[#0a0f1c]'
-                         }`}
-                       >
-                         {opt.label}
-                       </button>
-                     ))}
-                   </div>
-                 )}
-               </div>
+        <MentionFilterBar
+          searchInput={searchInput}
+          onSearchChange={handleSearchChange}
+          onScanClick={handleScanClick}
+          onExportClick={handleExportCsv}
+          onRefreshClick={() => { fetchMentions(); fetchChartData(); }}
+          onSaveFilterClick={openSaveFilterModal}
+          onClearFilters={clearAllFilters}
+          isScanning={activeScanJobId !== null}
+          isLoading={loading}
+          hasActiveFilters={!!hasActiveFilters}
+          sortValue={filters.sort_by}
+          onSortChange={(val) => { setFilters({ ...filters, sort_by: val }); setPage(1); }}
+          sortOptions={SORT_OPTIONS}
+          sortOpen={sortOpen}
+          setSortOpen={setSortOpen}
+        />
 
-               {hasActiveFilters && (
-                 <button onClick={() => { setFilters({ ...filters, sentiment: null, source_type: null, min_risk_score: null, min_influence_score: null }); setPage(1); }} className="flex items-center gap-1.5 text-sm text-gray-600 dark:text-slate-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 dark:text-gray-100 font-medium transition-colors">
-                   <RefreshCw className="w-3.5 h-3.5" /> Clear filters
-                 </button>
-               )}
+        <MentionActiveFilterChips
+          filters={filters}
+          searchTerm={searchTerm}
+          dateRange={dateRange}
+          onRemoveFilter={(key) => {
+            if (key === 'search') { setSearchTerm(''); setSearchInput(''); }
+            else if (key === 'dateRange') setDateRange('all');
+            else updateFilter(key as any, null);
+          }}
+          onClearAll={clearAllFilters}
+        />
 
-               <button onClick={openSaveFilterModal} className="flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700 font-bold transition-colors">
-                 <SlidersHorizontal className="w-3.5 h-3.5" /> Save filters
-               </button>
-             </div>
+        {/* Scan / Search Status */}
+        {(searchTerm || activeScanJobId || scanJobStatus) && (
+          <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600 dark:text-slate-500 dark:text-gray-400">
+            {searchTerm && (
+              <span className="font-medium bg-white dark:bg-[#050A15] border border-gray-200 dark:border-white/10 px-3 py-1.5 rounded-lg shadow-sm">
+                Tìm thấy <span className="font-bold text-slate-900 dark:text-white">{totalMentions}</span> kết quả cho <span className="text-blue-600 font-bold">'{searchTerm}'</span>
+              </span>
+            )}
 
-             <div className="flex items-center gap-3">
-                <button onClick={() => { fetchMentions(); fetchChartData(); }} className="p-2 text-slate-500 dark:text-gray-400 hover:text-blue-600 transition-colors">
-                  <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                </button>
-                <button onClick={handleExportCsv} className="p-2 text-slate-500 dark:text-gray-400 hover:text-blue-600 transition-colors">
-                  <Download className="w-4 h-4" />
-                </button>
-                <button
-                   onClick={handleScanClick}
-                   disabled={activeScanJobId !== null}
-                   className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
-                 >
-                   {activeScanJobId ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-                   {activeScanJobId ? 'Đang quét...' : 'Scan Now'}
-                 </button>
-             </div>
-           </div>
+            {activeScanJobId && (
+              <span className="flex items-center gap-1.5 text-blue-600 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/50 px-3 py-1.5 rounded-lg shadow-sm">
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                Đang quét thêm nguồn mới để mở rộng kết quả...
+              </span>
+            )}
 
-           {/* Scan / Search Status */}
-           {(searchTerm || activeScanJobId || scanJobStatus) && (
-             <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-gray-100 dark:border-white/5 text-sm text-gray-600 dark:text-slate-500 dark:text-gray-400">
-               {searchTerm && (
-                 <span className="font-medium">
-                   Tìm thấy <span className="font-bold text-slate-900 dark:text-white">{totalMentions}</span> kết quả cho <span className="text-blue-600 font-bold">'{searchTerm}'</span>
-                 </span>
-               )}
-
-               {activeScanJobId && (
-                 <span className="flex items-center gap-1.5 text-blue-600 bg-blue-50 dark:bg-blue-900/20 px-2 py-0.5 rounded-md">
-                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                   Đang quét thêm nguồn mới để mở rộng kết quả...
-                 </span>
-               )}
-
-               {!activeScanJobId && scanJobStatus && scanJobStatus.status === 'COMPLETED' && (
-                 <span className="flex items-center gap-1.5 text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-0.5 rounded-md">
-                   <CheckCircle2 className="w-3.5 h-3.5" />
-                   Quét xong: tìm thấy {scanJobStatus.meta_data?.actual_raw_results_count || 0}, thêm mới {scanJobStatus.meta_data?.created_mentions_count || 0}, bỏ qua {scanJobStatus.meta_data?.duplicate_mentions_count || 0} trùng lặp.
-                 </span>
-               )}
-               {!activeScanJobId && scanJobStatus && scanJobStatus.status === 'PARTIAL_FAILED' && (
-                 <span className="flex items-center gap-1.5 text-orange-600 bg-orange-50 dark:bg-orange-900/20 px-2 py-0.5 rounded-md">
-                   <AlertTriangle className="w-3.5 h-3.5" />
-                   Quét xong (có lỗi 1 phần): tìm thấy {scanJobStatus.meta_data?.actual_raw_results_count || 0}, thêm mới {scanJobStatus.meta_data?.created_mentions_count || 0}.
-                 </span>
-               )}
-             </div>
-           )}
-        </div>
+            {!activeScanJobId && scanJobStatus && scanJobStatus.status === 'COMPLETED' && (
+              <span className="flex items-center gap-1.5 text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800/50 px-3 py-1.5 rounded-lg shadow-sm">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                Quét xong: tìm thấy {scanJobStatus.meta_data?.actual_raw_results_count || 0}, thêm mới {scanJobStatus.meta_data?.created_mentions_count || 0}, bỏ qua {scanJobStatus.meta_data?.duplicate_mentions_count || 0} trùng lặp.
+              </span>
+            )}
+            {!activeScanJobId && scanJobStatus && scanJobStatus.status === 'PARTIAL_FAILED' && (
+              <span className="flex items-center gap-1.5 text-orange-600 bg-orange-50 dark:bg-orange-900/20 border border-orange-100 dark:border-orange-800/50 px-3 py-1.5 rounded-lg shadow-sm">
+                <AlertTriangle className="w-3.5 h-3.5" />
+                Quét xong (có lỗi 1 phần): tìm thấy {scanJobStatus.meta_data?.actual_raw_results_count || 0}, thêm mới {scanJobStatus.meta_data?.created_mentions_count || 0}.
+              </span>
+            )}
+          </div>
+        )}
 
         {/* Chart Section */}
         <div className="bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10 overflow-hidden">
@@ -1237,7 +1219,12 @@ function MentionsPageContent() {
 
         {/* MENTIONS LIST */}
         <div className="space-y-4">
-          {loading && !mentionsList.length ? (
+          {fetchError ? (
+            <MentionFilterErrorState 
+              errorMessage={fetchError} 
+              onRetry={() => { setFetchError(null); fetchMentions(); }} 
+            />
+          ) : loading && !mentionsList.length ? (
             <div className="py-4 space-y-4">
               {[...Array(5)].map((_, i) => (
                 <div key={i} className="animate-pulse flex flex-col sm:flex-row gap-4 p-5 bg-white dark:bg-[#050A15] border border-gray-200 dark:border-white/10 rounded-xl">
@@ -1251,53 +1238,17 @@ function MentionsPageContent() {
               ))}
             </div>
           ) : mentionsList.length === 0 ? (
-              <div className="py-20 flex flex-col items-center justify-center text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
-                {searchState === 'TYPING' || searchState === 'SEARCHING_DB' ? (
-                  <>
-                    <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-4" />
-                    <p className="text-gray-600 dark:text-slate-500 dark:text-gray-400">{searchState === 'TYPING' ? 'Đang nhập từ khóa...' : `Đang tìm kiếm '${searchTerm}'...`}</p>
-                  </>
-                ) : (
-                  <>
-                    <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 rounded-full flex items-center justify-center mb-4">
-                      <Search className="w-8 h-8 text-slate-500 dark:text-gray-400" />
-                    </div>
-                    {dateRange === '1d' ? (
-                       <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Không có kết quả trong hôm nay.</h3>
-                    ) : (
-                       <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">
-                         {searchTerm ? `Không tìm thấy kết quả cho '${searchTerm}'.` : 'Chưa có dữ liệu.'}
-                       </h3>
-                    )}
-                    
-                    {dateRange === '1d' ? (
-                       <div className="flex flex-wrap gap-3 mt-4 justify-center">
-                         <button onClick={() => { setDateRange('7d'); setPage(1); }} className="px-4 py-2 bg-blue-50 text-blue-600 border border-blue-100 hover:bg-blue-100 rounded-lg text-sm font-medium transition-colors">Mở rộng 7 ngày</button>
-                         <button onClick={() => { setDateRange('30d'); setPage(1); }} className="px-4 py-2 bg-blue-50 text-blue-600 border border-blue-100 hover:bg-blue-100 rounded-lg text-sm font-medium transition-colors">Mở rộng 30 ngày</button>
-                         {filters.source_type && (
-                           <button onClick={() => { setFilters(prev => ({...prev, source_type: null})); setPage(1); }} className="px-4 py-2 bg-gray-100 text-gray-600 border border-gray-200 hover:bg-gray-200 rounded-lg text-sm font-medium transition-colors">Xóa lọc nguồn</button>
-                         )}
-                       </div>
-                    ) : (
-                       <p className="text-gray-600 dark:text-slate-500 dark:text-gray-400 mb-6 max-w-sm">Có thể dữ liệu nằm ngoài phạm vi thời gian hoặc bộ lọc quá nghiêm ngặt.</p>
-                    )}
-
-                    {['AUTO_SCAN_STARTING', 'AUTO_SCAN_RUNNING'].includes(searchState) && (
-                      <div className="mt-6 flex items-center gap-2 text-blue-600 bg-blue-50 dark:bg-blue-900/30 px-4 py-2 rounded-lg text-sm font-medium">
-                        <Loader2 className="w-4 h-4 animate-spin" /> Đang quét thêm dữ liệu trên Internet...
-                      </div>
-                    )}
-                    
-                    {searchState === 'NO_LOCAL_RESULTS' && !['AUTO_SCAN_STARTING', 'AUTO_SCAN_RUNNING'].includes(searchState) && searchTerm && (
-                      <div className="mt-4">
-                        <button onClick={handleScanClick} disabled={activeScanJobId !== null || searchTerm.length < 2} className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2 disabled:opacity-50">
-                          <Search className="w-4 h-4" /> Thử quét lại (Scan Now)
-                        </button>
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
+            <MentionEmptyResults
+              searchState={searchState}
+              searchTerm={searchTerm}
+              dateRange={dateRange}
+              hasFilters={!!filters.source_type}
+              onExtend7Days={() => { setDateRange('7d'); setPage(1); }}
+              onExtend30Days={() => { setDateRange('30d'); setPage(1); }}
+              onClearFilters={() => { setFilters(prev => ({...prev, source_type: null})); setPage(1); }}
+              onScanClick={handleScanClick}
+              isScanning={activeScanJobId !== null}
+            />
           ) : (
             <div className="space-y-4">
               {loading && mentionsList.length > 0 && (
@@ -1819,6 +1770,7 @@ return (
              ))}
            </div>
         </div>
+        <AntiNoiseNotice />
 
         {/* Sentiment Filter */}
         <div className="bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10 p-4">
