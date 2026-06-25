@@ -220,7 +220,7 @@ export default function InfographicPage() {
                 <div className="flex-1 min-h-[300px]">
                   {data?.top_sources && data.top_sources.length > 0 ? (
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={data.top_sources.slice(0, 5)} layout="vertical" margin={{ top: 0, right: 30, left: 20, bottom: 0 }}>
+                      <BarChart data={Array.isArray(data?.top_sources) ? data.top_sources.slice(0, 5) : []} layout="vertical" margin={{ top: 0, right: 30, left: 20, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#334155" horizontal={true} vertical={false} />
                         <XAxis type="number" stroke="#94a3b8" />
                         <YAxis dataKey="name" type="category" stroke="#94a3b8" width={80} tick={{fontSize: 12}} />
@@ -229,7 +229,7 @@ export default function InfographicPage() {
                           contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', color: '#fff', borderRadius: '8px' }}
                         />
                         <Bar dataKey="count" fill="#8b5cf6" radius={[0, 4, 4, 0]}>
-                          {data.top_sources.slice(0, 5).map((entry: any, index: number) => (
+                          {Array.isArray(data?.top_sources) && data.top_sources.slice(0, 5).map((entry: any, index: number) => (
                             <Cell key={`cell-${index}`} fill={index === 0 ? '#8b5cf6' : '#6366f1'} />
                           ))}
                         </Bar>

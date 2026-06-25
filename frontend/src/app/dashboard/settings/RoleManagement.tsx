@@ -250,7 +250,7 @@ export default function RoleManagement() {
             <div>
               <p className="text-xs font-medium text-slate-700 dark:text-gray-300 mb-2.5">Quyền hạn ({role.permissions.length}):</p>
               <div className="flex flex-wrap gap-2">
-                {role.permissions.slice(0, 5).map((perm, idx) => (
+                {Array.isArray(role.permissions) && role.permissions.slice(0, 5).map((perm, idx) => (
                   <span
                     key={idx}
                     className="px-2.5 py-1 text-xs bg-white dark:bg-[#1E293B] text-slate-500 dark:text-gray-400 border border-slate-300 dark:border-gray-700 rounded-md"

@@ -446,7 +446,7 @@ export default function ReportsPage() {
                   <div className="rounded-2xl p-6 border shadow-sm" style={{ borderColor: `${accentColor}33`, backgroundColor: theme === 'light' ? '#f8fafc' : '#0f172a' }}>
                     <div className="text-sm font-medium opacity-80 mb-4">Top Sources by Mentions:</div>
                     <div className="space-y-3">
-                      {data?.top_sources?.slice(0, 5).map((s: any, i: number) => (
+                      {Array.isArray(data?.top_sources) && data.top_sources.slice(0, 5).map((s: any, i: number) => (
                         <div key={i} className="flex justify-between items-center">
                           <span className="font-semibold">{s.name}</span>
                           <span className="font-mono text-sm opacity-80">{s.count} mentions</span>
@@ -464,7 +464,7 @@ export default function ReportsPage() {
                 <div>
                   <h3 className="text-lg font-bold uppercase tracking-widest mb-4 opacity-50 border-b pb-2" style={{ borderColor: `${accentColor}33` }}>Influencers</h3>
                   <div className="rounded-2xl p-6 border shadow-sm grid grid-cols-2 gap-4" style={{ borderColor: `${accentColor}33`, backgroundColor: theme === 'light' ? '#f8fafc' : '#0f172a' }}>
-                    {data?.top_influencers?.slice(0, 6).map((inf: any, i: number) => (
+                    {Array.isArray(data?.top_influencers) && data.top_influencers.slice(0, 6).map((inf: any, i: number) => (
                       <div key={i} className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center opacity-50">
                           {inf.name.charAt(0).toUpperCase()}

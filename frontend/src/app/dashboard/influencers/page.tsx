@@ -52,7 +52,7 @@ export default function InfluencersPage() {
       {/* Top 3 Cards */}
       {filteredItems.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          {filteredItems.slice(0, 3).map((inf: any, idx: number) => (
+          {Array.isArray(filteredItems) && filteredItems.slice(0, 3).map((inf: any, idx: number) => (
             <div key={idx} className="bg-gradient-to-br from-slate-50 dark:from-[#1E293B] to-slate-100 dark:to-[#0F172A] border border-slate-200 dark:border-gray-800 hover:border-purple-500/30 rounded-2xl p-6 shadow-xl relative overflow-hidden group transition-all">
               <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                 {idx === 0 ? <TrophyIcon color="#F59E0B" /> : idx === 1 ? <TrophyIcon color="#94A3B8" /> : <TrophyIcon color="#B45309" />}

@@ -205,7 +205,7 @@ export default function APIWebhooks() {
                   <div className="mt-4 pt-4 border-t border-gray-800/50">
                     <p className="text-xs font-medium text-slate-500 dark:text-gray-400 mb-2.5">Quyền hạn ({key.permissions.length}):</p>
                     <div className="flex flex-wrap gap-2">
-                      {key.permissions.slice(0, 5).map((perm, idx) => (
+                      {Array.isArray(key.permissions) && key.permissions.slice(0, 5).map((perm, idx) => (
                         <span key={idx} className="px-2.5 py-1 text-[11px] font-medium bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-md uppercase tracking-wider">
                           {perm}
                         </span>

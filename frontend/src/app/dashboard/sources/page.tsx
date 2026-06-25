@@ -448,7 +448,7 @@ export default function SourcesPage() {
           </div>
         ) : topDomains && topDomains.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-            {topDomains.slice(0, 10).map((domain: any, idx: number) => (
+            {Array.isArray(topDomains) && topDomains.slice(0, 10).map((domain: any, idx: number) => (
               <Link
                 key={idx}
                 href={`/dashboard/mentions?search=${encodeURIComponent(domain.domain || '')}`}
@@ -700,7 +700,7 @@ export default function SourcesPage() {
                   if (error.includes(': ')) {
                     const parts = error.split(': ');
                     if (parts.length > 1) {
-                      cleanMsg = parts.slice(1).join(': ');
+                      cleanMsg = Array.isArray(parts) ? parts.slice(1).join(': ') : error;
                     }
                   }
                   
@@ -829,7 +829,7 @@ export default function SourcesPage() {
                         </td>
                         <td className="px-4 py-3 hidden xl:table-cell">
                           <div className="flex flex-wrap gap-1 max-w-[160px]">
-                            {(ds.matched_keywords_json || []).slice(0, 3).map((kw: string, i: number) => (
+                            {(Array.isArray(ds.matched_keywords_json) ? ds.matched_keywords_json : []).slice(0, 3).map((kw: string, i: number) => (
                               <span key={i} className="text-[10px] px-1.5 py-0.5 bg-indigo-500/10 text-indigo-400 rounded border border-indigo-500/20 truncate max-w-[80px]">{kw}</span>
                             ))}
                             {(ds.matched_keywords_json || []).length > 3 && (
