@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, Query, BackgroundTasks, UploadFile, File
+import uuid
 from sqlalchemy.orm import Session
 from sqlalchemy import select, func, and_
 from datetime import datetime
@@ -19,7 +20,8 @@ from app.models.incident import Incident
 from app.models.keyword import KeywordGroup
 from app.schemas.report import (
     ReportCreate, ReportResponse, ReportListResponse,
-    ReportExportResponse, ReportExportListResponse
+    ReportExportResponse, ReportExportListResponse,
+    ReportBuilderConfig
 )
 from app.core.tenant import apply_tenant_filter
 
@@ -550,6 +552,7 @@ def request_async_export(
     report_type: str,
     background_tasks: BackgroundTasks,
     project_id: Optional[int] = Query(None),
+    builder_config: Optional[ReportBuilderConfig] = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
@@ -562,6 +565,7 @@ def request_async_export(
         project_id=project_id,
         requested_by=current_user.id,
         status=ExportStatus.PENDING,
+        builder_config=builder_config.dict() if builder_config else None,
         created_at=datetime.utcnow()
     )
     db.add(export_job)
@@ -645,3 +649,31 @@ def download_export(
         filename=filename,
         media_type="application/octet-stream"
     )
+
+@router.post("/pdf/logo")
+def upload_pdf_logo(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Upload a logo for the PDF report builder"""
+    if file.content_type not in ["image/jpeg", "image/png"]:
+        raise HTTPException(status_code=400, detail="Invalid file type. Only JPEG and PNG are allowed.")
+    
+    # Optional size check (read chunk to see if it exceeds 5MB)
+    file.file.seek(0, 2)
+    size = file.file.tell()
+    file.file.seek(0)
+    if size > 5 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="File too large. Maximum size is 5MB.")
+
+    ext = ".png" if file.content_type == "image/png" else ".jpg"
+    filename = f"{uuid.uuid4()}{ext}"
+    
+    upload_dir = os.path.join(os.getcwd(), 'data', 'uploads', 'logos')
+    os.makedirs(upload_dir, exist_ok=True)
+    
+    file_path = os.path.join(upload_dir, filename)
+    with open(file_path, "wb") as buffer:
+        buffer.write(file.file.read())
+        
+    return {"logo_path": file_path}

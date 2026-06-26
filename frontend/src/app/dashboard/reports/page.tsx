@@ -43,6 +43,8 @@ export default function ReportsPage() {
   const [fontStyle, setFontStyle] = useState('font-sans');
   const [fontColor, setFontColor] = useState('#1e293b');
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [logoPath, setLogoPath] = useState<string | null>(null);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
 
   const [sections, setSections] = useState<Section[]>([
     { id: 'summary', name: 'Summary', enabled: true, count: 1, total: 1 },
@@ -119,11 +121,53 @@ export default function ReportsPage() {
     setSections(prev => prev.map(s => s.id === id ? { ...s, enabled: !s.enabled } : s));
   };
 
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    const file = e.target.files[0];
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please upload an image file');
+      return;
+    }
+    
+    setUploadingLogo(true);
+    const toastId = toast.loading('Uploading logo...');
+    try {
+      const res = await reports.uploadLogo(file);
+      setLogoPath(res.logo_path);
+      toast.success('Logo uploaded successfully', { id: toastId });
+    } catch (error: any) {
+      toast.error(error?.response?.data?.detail || 'Failed to upload logo', { id: toastId });
+    } finally {
+      setUploadingLogo(false);
+    }
+  };
+
   const handleExport = async () => {
     setExporting(true);
     toast.loading('Requesting PDF generation on server...', { id: 'export-pdf' });
     try {
-      await reports.requestExport('pdf', activeProject?.id);
+      const builderConfig = {
+        date_range: dateRange,
+        date_from: undefined, // handled by backend or we can pass explicit if needed
+        date_to: undefined,
+        sections: sections,
+        accent_color: accentColor,
+        font_style: fontStyle,
+        font_color: fontColor,
+        theme: theme,
+        logo_path: logoPath
+      };
+      
+      const days = parseInt(dateRange.replace('d', ''));
+      if (!isNaN(days)) {
+        const now = new Date();
+        const from = new Date();
+        from.setDate(now.getDate() - days);
+        builderConfig.date_from = from.toISOString() as any;
+        builderConfig.date_to = now.toISOString() as any;
+      }
+      
+      await reports.requestExport('pdf', activeProject?.id, builderConfig);
       toast.success('PDF export requested! Check the history below.', { id: 'export-pdf' });
       fetchExports();
     } catch (e: any) {
@@ -242,7 +286,36 @@ export default function ReportsPage() {
                     >
                       <span className={cn("absolute top-0.5 left-0.5 bg-white w-4 h-4 rounded-full transition-transform duration-200", section.enabled ? "translate-x-5" : "translate-x-0")} />
                     </button>
-                    <ChevronDown className="w-4 h-4 text-gray-400 cursor-pointer" />
+                    <div className="flex flex-col gap-1 opacity-50">
+                      <button 
+                        onClick={() => {
+                          if (idx === 0) return;
+                          setSections(prev => {
+                            const clone = [...prev];
+                            [clone[idx - 1], clone[idx]] = [clone[idx], clone[idx - 1]];
+                            return clone;
+                          });
+                        }}
+                        disabled={idx === 0}
+                        className="hover:text-emerald-500 disabled:opacity-30 disabled:hover:text-current"
+                      >
+                        <ChevronUp className="w-3 h-3 cursor-pointer" />
+                      </button>
+                      <button 
+                        onClick={() => {
+                          if (idx === sections.length - 1) return;
+                          setSections(prev => {
+                            const clone = [...prev];
+                            [clone[idx + 1], clone[idx]] = [clone[idx], clone[idx + 1]];
+                            return clone;
+                          });
+                        }}
+                        disabled={idx === sections.length - 1}
+                        className="hover:text-emerald-500 disabled:opacity-30 disabled:hover:text-current"
+                      >
+                        <ChevronDown className="w-3 h-3 cursor-pointer" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -257,10 +330,27 @@ export default function ReportsPage() {
               {/* Logo Upload */}
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-slate-700 dark:text-gray-300">Add your logo</label>
-                <div className="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl p-8 flex flex-col items-center justify-center bg-gray-50 dark:bg-[#0f172a] text-center opacity-70 cursor-not-allowed">
-                  <ImageIcon className="w-8 h-8 text-gray-400 mb-2" />
-                  <p className="text-sm text-gray-500 font-medium">Drag and drop your logo here</p>
-                  <p className="text-xs text-gray-400 mt-1">Logo upload feature coming soon.</p>
+                <div className="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl p-8 flex flex-col items-center justify-center bg-gray-50 dark:bg-[#0f172a] text-center hover:bg-gray-100 dark:hover:bg-[#1e293b] transition-colors relative">
+                  <input 
+                    type="file" 
+                    accept="image/jpeg, image/png" 
+                    onChange={handleLogoUpload}
+                    disabled={uploadingLogo}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed" 
+                  />
+                  {logoPath ? (
+                    <div className="flex flex-col items-center">
+                      <CheckCircle className="w-8 h-8 text-emerald-500 mb-2" />
+                      <p className="text-sm text-emerald-600 font-medium">Logo uploaded</p>
+                      <p className="text-xs text-gray-500 mt-1">Click to replace</p>
+                    </div>
+                  ) : (
+                    <>
+                      <ImageIcon className={cn("w-8 h-8 mb-2", uploadingLogo ? "text-emerald-500 animate-pulse" : "text-gray-400")} />
+                      <p className="text-sm text-gray-500 font-medium">{uploadingLogo ? 'Uploading...' : 'Click or drag logo here'}</p>
+                      <p className="text-xs text-gray-400 mt-1">JPEG or PNG, max 5MB</p>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -403,106 +493,128 @@ export default function ReportsPage() {
 
             {/* Content Blocks */}
             <div className="space-y-10">
-              
-              {isEnabled('summary') && (
-                <div>
-                  <h3 className="text-lg font-bold uppercase tracking-widest mb-4 opacity-50 border-b pb-2" style={{ borderColor: `${accentColor}33` }}>Summary</h3>
-                  <div className="grid grid-cols-2 gap-8">
-                    <div className="rounded-2xl p-6 border shadow-sm relative overflow-hidden" style={{ borderColor: `${accentColor}33`, backgroundColor: theme === 'light' ? '#f8fafc' : '#0f172a' }}>
-                      <div className="text-xs font-bold uppercase tracking-widest mb-2 opacity-60">Total Mentions</div>
-                      <div className="text-5xl font-black tracking-tight" style={{ color: accentColor }}>{data?.metrics?.total_mentions?.toLocaleString() || 0}</div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {isEnabled('sentiment') && (
-                <div>
-                  <h3 className="text-lg font-bold uppercase tracking-widest mb-4 opacity-50 border-b pb-2" style={{ borderColor: `${accentColor}33` }}>Sentiment</h3>
-                  <div className="grid grid-cols-1 gap-8">
-                    <div className="rounded-2xl p-6 border shadow-sm" style={{ borderColor: `${accentColor}33`, backgroundColor: theme === 'light' ? '#f8fafc' : '#0f172a' }}>
-                      <div className="flex gap-12">
-                        <div>
-                          <div className="text-xs font-bold uppercase tracking-widest mb-2 opacity-60">Positive</div>
-                          <div className="text-4xl font-black text-emerald-500">{data?.metrics?.sentiment?.positive || 0}</div>
-                        </div>
-                        <div>
-                          <div className="text-xs font-bold uppercase tracking-widest mb-2 opacity-60">Negative</div>
-                          <div className="text-4xl font-black text-rose-500">{data?.metrics?.sentiment?.negative || 0}</div>
-                        </div>
-                        <div>
-                          <div className="text-xs font-bold uppercase tracking-widest mb-2 opacity-60">Neutral</div>
-                          <div className="text-4xl font-black text-gray-500">{data?.metrics?.sentiment?.neutral || 0}</div>
+              {sections.filter(s => s.enabled).map(section => (
+                <div key={section.id}>
+                  {section.id === 'summary' && (
+                    <div>
+                      <h3 className="text-lg font-bold uppercase tracking-widest mb-4 opacity-50 border-b pb-2" style={{ borderColor: `${accentColor}33` }}>Summary</h3>
+                      <div className="grid grid-cols-2 gap-8">
+                        <div className="rounded-2xl p-6 border shadow-sm relative overflow-hidden" style={{ borderColor: `${accentColor}33`, backgroundColor: theme === 'light' ? '#f8fafc' : '#0f172a' }}>
+                          <div className="text-xs font-bold uppercase tracking-widest mb-2 opacity-60">Total Mentions</div>
+                          <div className="text-5xl font-black tracking-tight" style={{ color: accentColor }}>{data?.metrics?.total_mentions?.toLocaleString() || 0}</div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                </div>
-              )}
+                  )}
 
-              {isEnabled('analysis') && (
-                <div>
-                  <h3 className="text-lg font-bold uppercase tracking-widest mb-4 opacity-50 border-b pb-2" style={{ borderColor: `${accentColor}33` }}>Analysis & Trends</h3>
-                  <div className="rounded-2xl p-6 border shadow-sm" style={{ borderColor: `${accentColor}33`, backgroundColor: theme === 'light' ? '#f8fafc' : '#0f172a' }}>
-                    <div className="text-sm font-medium opacity-80 mb-4">Top Sources by Mentions:</div>
-                    <div className="space-y-3">
-                      {Array.isArray(data?.top_sources) && data.top_sources.slice(0, 5).map((s: any, i: number) => (
-                        <div key={i} className="flex justify-between items-center">
-                          <span className="font-semibold">{s.name}</span>
-                          <span className="font-mono text-sm opacity-80">{s.count} mentions</span>
+                  {section.id === 'sentiment' && (
+                    <div>
+                      <h3 className="text-lg font-bold uppercase tracking-widest mb-4 opacity-50 border-b pb-2" style={{ borderColor: `${accentColor}33` }}>Sentiment</h3>
+                      <div className="grid grid-cols-1 gap-8">
+                        <div className="rounded-2xl p-6 border shadow-sm" style={{ borderColor: `${accentColor}33`, backgroundColor: theme === 'light' ? '#f8fafc' : '#0f172a' }}>
+                          <div className="flex gap-12">
+                            <div>
+                              <div className="text-xs font-bold uppercase tracking-widest mb-2 opacity-60">Positive</div>
+                              <div className="text-4xl font-black text-emerald-500">{data?.metrics?.sentiment?.positive || 0}</div>
+                            </div>
+                            <div>
+                              <div className="text-xs font-bold uppercase tracking-widest mb-2 opacity-60">Negative</div>
+                              <div className="text-4xl font-black text-rose-500">{data?.metrics?.sentiment?.negative || 0}</div>
+                            </div>
+                            <div>
+                              <div className="text-xs font-bold uppercase tracking-widest mb-2 opacity-60">Neutral</div>
+                              <div className="text-4xl font-black text-gray-500">{data?.metrics?.sentiment?.neutral || 0}</div>
+                            </div>
+                          </div>
                         </div>
-                      ))}
-                      {(!data?.top_sources || data.top_sources.length === 0) && (
-                        <span className="opacity-50 italic">No sources data available.</span>
-                      )}
+                      </div>
                     </div>
-                  </div>
-                </div>
-              )}
+                  )}
 
-              {isEnabled('influencers') && (
-                <div>
-                  <h3 className="text-lg font-bold uppercase tracking-widest mb-4 opacity-50 border-b pb-2" style={{ borderColor: `${accentColor}33` }}>Influencers</h3>
-                  <div className="rounded-2xl p-6 border shadow-sm grid grid-cols-2 gap-4" style={{ borderColor: `${accentColor}33`, backgroundColor: theme === 'light' ? '#f8fafc' : '#0f172a' }}>
-                    {Array.isArray(data?.top_influencers) && data.top_influencers.slice(0, 6).map((inf: any, i: number) => (
-                      <div key={i} className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center opacity-50">
-                          {inf.name.charAt(0).toUpperCase()}
-                        </div>
-                        <div>
-                          <div className="font-semibold text-sm">{inf.name}</div>
-                          <div className="text-xs opacity-60">{inf.count} mentions</div>
+                  {section.id === 'analysis' && (
+                    <div>
+                      <h3 className="text-lg font-bold uppercase tracking-widest mb-4 opacity-50 border-b pb-2" style={{ borderColor: `${accentColor}33` }}>Analysis & Trends</h3>
+                      <div className="rounded-2xl p-6 border shadow-sm" style={{ borderColor: `${accentColor}33`, backgroundColor: theme === 'light' ? '#f8fafc' : '#0f172a' }}>
+                        <div className="text-sm font-medium opacity-80 mb-4">Top Sources by Mentions:</div>
+                        <div className="space-y-3">
+                          {Array.isArray(data?.top_sources) && data.top_sources.slice(0, 5).map((s: any, i: number) => (
+                            <div key={i} className="flex justify-between items-center">
+                              <span className="font-semibold">{s.name}</span>
+                              <span className="font-mono text-sm opacity-80">{s.count} mentions</span>
+                            </div>
+                          ))}
+                          {(!data?.top_sources || data.top_sources.length === 0) && (
+                            <span className="opacity-50 italic">No sources data available.</span>
+                          )}
                         </div>
                       </div>
-                    ))}
-                    {(!data?.top_influencers || data.top_influencers.length === 0) && (
-                      <span className="opacity-50 italic col-span-2">No influencer data available.</span>
-                    )}
-                  </div>
-                </div>
-              )}
+                    </div>
+                  )}
 
-              {isEnabled('mentions') && (
-                <div>
-                  <h3 className="text-lg font-bold uppercase tracking-widest mb-4 opacity-50 border-b pb-2" style={{ borderColor: `${accentColor}33` }}>Selected Mentions</h3>
-                  <div className="space-y-4">
-                    {data?.selected_mentions && data.selected_mentions.length > 0 ? (
-                      data.selected_mentions.map((m: any, i: number) => (
-                        <div key={i} className="p-4 rounded-xl border shadow-sm" style={{ borderColor: `${accentColor}22`, backgroundColor: theme === 'light' ? '#f8fafc' : '#0f172a' }}>
-                          <h4 className="font-bold text-sm mb-1">{m.title || 'Untitled'}</h4>
-                          <p className="text-xs opacity-70 mb-2">{m.domain || 'unknown'} • {new Date(m.published_at || Date.now()).toLocaleDateString()}</p>
-                          <p className="text-xs opacity-80 leading-relaxed line-clamp-3">{m.snippet || m.content?.substring(0, 200)}</p>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="p-6 text-center rounded-xl border opacity-50" style={{ borderColor: `${accentColor}33` }}>
-                        <p className="text-sm">No mentions selected for report.</p>
+                  {section.id === 'influencers' && (
+                    <div>
+                      <h3 className="text-lg font-bold uppercase tracking-widest mb-4 opacity-50 border-b pb-2" style={{ borderColor: `${accentColor}33` }}>Influencers</h3>
+                      <div className="rounded-2xl p-6 border shadow-sm grid grid-cols-2 gap-4" style={{ borderColor: `${accentColor}33`, backgroundColor: theme === 'light' ? '#f8fafc' : '#0f172a' }}>
+                        {Array.isArray(data?.top_influencers) && data.top_influencers.slice(0, 6).map((inf: any, i: number) => (
+                          <div key={i} className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center opacity-50">
+                              {inf.name.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                              <div className="font-semibold text-sm">{inf.name}</div>
+                              <div className="text-xs opacity-60">{inf.count} mentions</div>
+                            </div>
+                          </div>
+                        ))}
+                        {(!data?.top_influencers || data.top_influencers.length === 0) && (
+                          <span className="opacity-50 italic col-span-2">No influencer data available.</span>
+                        )}
                       </div>
-                    )}
-                  </div>
-                </div>
-              )}
+                    </div>
+                  )}
 
+                  {section.id === 'mentions' && (
+                    <div>
+                      <h3 className="text-lg font-bold uppercase tracking-widest mb-4 opacity-50 border-b pb-2" style={{ borderColor: `${accentColor}33` }}>Selected Mentions</h3>
+                      <div className="space-y-4">
+                        {data?.selected_mentions && data.selected_mentions.length > 0 ? (
+                          data.selected_mentions.map((m: any, i: number) => (
+                            <div key={i} className="p-4 rounded-xl border shadow-sm" style={{ borderColor: `${accentColor}22`, backgroundColor: theme === 'light' ? '#f8fafc' : '#0f172a' }}>
+                              <h4 className="font-bold text-sm mb-1">{m.title || 'Untitled'}</h4>
+                              <p className="text-xs opacity-70 mb-2">{m.domain || 'unknown'} • {new Date(m.published_at || Date.now()).toLocaleDateString()}</p>
+                              <p className="text-xs opacity-80 leading-relaxed line-clamp-3">{m.snippet || m.content?.substring(0, 200)}</p>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="p-6 text-center rounded-xl border opacity-50" style={{ borderColor: `${accentColor}33` }}>
+                            <p className="text-sm">No mentions selected for report.</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {section.id === 'alerts' && (
+                    <div>
+                      <h3 className="text-lg font-bold uppercase tracking-widest mb-4 opacity-50 border-b pb-2" style={{ borderColor: `${accentColor}33` }}>Alerts</h3>
+                      <div className="rounded-2xl p-6 border shadow-sm" style={{ borderColor: `${accentColor}33`, backgroundColor: theme === 'light' ? '#f8fafc' : '#0f172a' }}>
+                        <div className="text-xs font-bold uppercase tracking-widest mb-2 opacity-60">Total Alerts</div>
+                        <div className="text-5xl font-black tracking-tight" style={{ color: accentColor }}>{data?.metrics?.total_alerts?.toLocaleString() || 0}</div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {section.id === 'incidents' && (
+                    <div>
+                      <h3 className="text-lg font-bold uppercase tracking-widest mb-4 opacity-50 border-b pb-2" style={{ borderColor: `${accentColor}33` }}>Incidents</h3>
+                      <div className="rounded-2xl p-6 border shadow-sm" style={{ borderColor: `${accentColor}33`, backgroundColor: theme === 'light' ? '#f8fafc' : '#0f172a' }}>
+                        <div className="text-xs font-bold uppercase tracking-widest mb-2 opacity-60">Total Incidents</div>
+                        <div className="text-5xl font-black tracking-tight" style={{ color: accentColor }}>{data?.metrics?.total_incidents?.toLocaleString() || 0}</div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
 
             {/* Footer */}
