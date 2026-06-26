@@ -113,6 +113,21 @@ sequenceDiagram
     *   Antigravity invokes a GitHub API command via Hermes to open a Pull Request (PR).
 5.  **Operator Feedback**: Hermes posts a message on Telegram with the PR link and a brief summary of changes.
 
+### PR Merge Confirmation Requirement
+
+Merging Pull Requests into `main` requires explicit confirmation to prevent unreviewed code or environment breakage from reaching production.
+
+1.  **PR Created Notification**: After Antigravity opens a PR, Hermes sends the PR URL and summary to the operator’s Telegram chat.
+2.  **Confirmation Gate**: The operator must explicitly reply with approval before any merge action is triggered. Example approval phrase patterns:
+    *   `/approve PR <number>`
+    *   `approve merge #<number>`
+3.  **No Automatic Merge**: The merge step is not executed automatically, even if CI checks pass.
+4.  **Confirmation Review**: The agent must present key details before requesting confirmation:
+    *   Files changed summary
+    *   Verification commands / test results
+    *   Any deployment or migration notes
+    *   Risks or manual steps required
+
 ---
 
 ## 4. Setup and Configuration
