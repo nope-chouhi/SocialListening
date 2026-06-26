@@ -136,3 +136,19 @@ SYSTEM_WEBHOOK_URL=https://hermes-gateway.production/webhook/social-listening
 1.  **IP Filtering**: The Hermes webhook endpoint should only accept requests originating from trusted SocialListening production nodes (Vercel/Render).
 2.  **Write Access Control**: Antigravity runs with limited write permissions. It can modify documents and project code files, but direct push to the protected `main` branch is disabled. All code deployments MUST proceed through a Pull Request code review.
 3.  **Command Authorization**: Commands executed through the Telegram bot must require authentication or belong to authorized Chat IDs.
+
+### 4.3 Natural Command Mode
+The workflow currently supports **Hybrid Command Mode**:
+
+*   **Slash commands** (`/scan`, `/status`, `/triage`, `/report`) are explicit, role-checked, and routed deterministically.
+*   **Free-form messages** are accepted as natural language triggers only if they contain primary intent keywords or explicit action phrases that can be mapped to a known workflow.
+
+**In scope (current behavior):**
+*   Inline parameters in slash commands (e.g. `/scan --keywords "security breach"`).
+*   Follow-up / context-rich replies on an active incident thread (e.g. *"check the crawler logs and summarise"* after a risk alert).
+
+**Out of scope / not yet supported:**
+*   Fully open-ended natural language without any recognizable command surface.
+*   Implicit multi-step task planning that does not reference an existing workflow or artifact.
+
+Operators should prefer explicit commands unless the conversation has already been narrowed to a specific incident or report scope.
