@@ -625,9 +625,17 @@ export const reports = {
     return response.data;
   },
   // Async Exports
-  requestExport: async (type: string, projectId?: number) => {
+  requestExport: async (type: string, projectId?: number, builderConfig?: any) => {
     const params = projectId ? { project_id: projectId } : {};
-    const response = await api.post(`/api/reports/export/${type}`, null, { params });
+    const response = await api.post(`/api/reports/export/${type}`, builderConfig || null, { params });
+    return response.data;
+  },
+  uploadLogo: async (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await api.post('/api/reports/pdf/logo', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
     return response.data;
   },
   listExports: async (page = 1, pageSize = 20) => {

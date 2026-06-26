@@ -180,6 +180,50 @@ def test_async_export_request(mock_process_export):
     response = client.post("/api/reports/export/invalid_type")
     assert response.status_code == 400
 
+def test_upload_pdf_logo_invalid_type():
+    file_content = b"fake image content"
+    response = client.post(
+        "/api/reports/pdf/logo",
+        files={"file": ("test.txt", file_content, "text/plain")}
+    )
+    assert response.status_code == 400
+    assert "Invalid file type" in response.text
+
+def test_upload_pdf_logo_valid_type():
+    app.dependency_overrides[get_current_active_user] = override_get_superuser
+    file_content = b"fake image content"
+    response = client.post(
+        "/api/reports/pdf/logo",
+        files={"file": ("test.png", file_content, "image/png")}
+    )
+    assert response.status_code == 200
+    assert "logo_path" in response.json()
+    assert "test.png" not in response.json()["logo_path"]
+
+def test_request_export_saves_builder_config():
+    app.dependency_overrides[get_current_active_user] = override_get_superuser
+    with patch("app.api.reports.BackgroundTasks.add_task") as mock_bg:
+        builder_config = {
+            "theme": "dark",
+            "sections": [{"id": "summary", "enabled": True}]
+        }
+        response = client.post("/api/reports/export/pdf", json=builder_config)
+        assert response.status_code == 201
+        assert response.json()["status"] == "pending"
+
+def test_pdf_generator_respects_builder_config():
+    from app.services.pdf_generator import PDFGenerator
+    data = {
+        "project_name": "Test Project", 
+        "metrics": {},
+        "builder_config": {
+            "theme": "dark",
+            "sections": [{"id": "summary", "enabled": True}]
+        }
+    }
+    pdf_bytes = PDFGenerator.generate_project_summary(data)
+    assert len(pdf_bytes) > 0
+
 def test_async_export_history():
     response = client.get("/api/reports/exports/history")
     assert response.status_code == 200

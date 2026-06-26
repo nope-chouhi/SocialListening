@@ -373,12 +373,39 @@ class ExportService:
             elif export_job.report_type == 'pdf':
                 # Build data dict for PDF
                 mentions_query = apply_tenant_filter(select(Mention), Mention, current_user)
+                alerts_query = apply_tenant_filter(select(Alert), Alert, current_user)
+                incidents_query = select(Incident)
+                if not current_user.is_superuser:
+                    incidents_query = incidents_query.where(Incident.user_id == current_user.id)
+                
                 project_name = "Tất cả dự án"
                 if filters.get("project_id"):
                     mentions_query = mentions_query.where(Mention.project_id == filters["project_id"])
+                    alerts_query = alerts_query.where(Alert.project_id == filters["project_id"])
                     project = db.execute(apply_tenant_filter(select(KeywordGroup), KeywordGroup, current_user).where(KeywordGroup.id == filters["project_id"])).scalar_one_or_none()
                     if project:
                         project_name = project.name
+                
+                builder_config = export_job.builder_config or {}
+                date_from_str = builder_config.get("date_from")
+                date_to_str = builder_config.get("date_to")
+                
+                if date_from_str:
+                    try:
+                        dt_from = datetime.fromisoformat(date_from_str.replace('Z', '+00:00'))
+                        mentions_query = mentions_query.where(Mention.published_at >= dt_from)
+                        alerts_query = alerts_query.where(Alert.created_at >= dt_from)
+                        incidents_query = incidents_query.where(Incident.created_at >= dt_from)
+                    except:
+                        pass
+                if date_to_str:
+                    try:
+                        dt_to = datetime.fromisoformat(date_to_str.replace('Z', '+00:00'))
+                        mentions_query = mentions_query.where(Mention.published_at <= dt_to)
+                        alerts_query = alerts_query.where(Alert.created_at <= dt_to)
+                        incidents_query = incidents_query.where(Incident.created_at <= dt_to)
+                    except:
+                        pass
                         
                 mentions = db.execute(mentions_query).scalars().all()
                 mention_ids = [m.id for m in mentions]
@@ -414,16 +441,13 @@ class ExportService:
                 sources_list = [{"name": k.capitalize(), "count": v} for k, v in source_counts.items()]
                 sources_list.sort(key=lambda x: x["count"], reverse=True)
                 
-                alerts = db.execute(apply_tenant_filter(select(Alert), Alert, current_user)).scalars().all()
-                incidents_query = select(Incident)
-                if not current_user.is_superuser:
-                    incidents_query = incidents_query.where(Incident.user_id == current_user.id)
+                alerts = db.execute(alerts_query).scalars().all()
                 incidents = db.execute(incidents_query).scalars().all()
 
                 pdf_data = {
                     "project_name": project_name,
-                    "date_from": None,
-                    "date_to": None,
+                    "date_from": date_from_str,
+                    "date_to": date_to_str,
                     "metrics": {
                         "total_mentions": len(mentions),
                         "sentiment": sentiment_counts,
@@ -431,7 +455,8 @@ class ExportService:
                         "total_incidents": len(incidents)
                     },
                     "top_sources": sources_list,
-                    "selected_mentions": selected_mentions
+                    "selected_mentions": selected_mentions,
+                    "builder_config": builder_config
                 }
                 
                 content = PDFGenerator.generate_project_summary(pdf_data)

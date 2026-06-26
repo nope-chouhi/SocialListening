@@ -18,6 +18,17 @@ class ReportExportResponse(BaseModel):
     class Config:
         orm_mode = True
 
+class ReportBuilderConfig(BaseModel):
+    date_range: Optional[str] = "30d"
+    date_from: Optional[datetime] = None
+    date_to: Optional[datetime] = None
+    sections: Optional[List[Dict[str, Any]]] = None
+    accent_color: Optional[str] = "#6366f1"
+    font_style: Optional[str] = "font-sans"
+    font_color: Optional[str] = "#1e293b"
+    theme: Optional[str] = "light"
+    logo_path: Optional[str] = None
+
 class ReportExportListResponse(BaseModel):
     items: List[ReportExportResponse]
     total: int

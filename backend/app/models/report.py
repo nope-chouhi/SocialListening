@@ -89,6 +89,7 @@ class ReportExport(Base):
     status = Column(SQLEnum(ExportStatus, values_callable=lambda x: [e.value for e in x]), default=ExportStatus.PENDING, index=True)
     file_path = Column(Text, nullable=True)
     error_message = Column(Text, nullable=True)
+    builder_config = Column(JSON, nullable=True)
     
     created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
     completed_at = Column(DateTime(timezone=True), nullable=True)
