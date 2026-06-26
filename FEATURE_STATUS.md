@@ -77,7 +77,7 @@
 | **Mentions** | `/api/mentions/*` | ✅ DONE | Full CRUD + **real AI analysis** (OpenAI/Gemini) |
 | **Alerts** | `/api/alerts/*` | ✅ DONE | Full CRUD + acknowledge/resolve |
 | **Incidents** | `/api/incidents/*` | ✅ DONE | Full CRUD + logs |
-| **Reports** | `/api/reports/*` | ⚠️ PARTIAL | API exists but **no PDF/Excel generation** |
+| **Reports** | `/api/reports/*` | ✅ DONE | Real PDF/Excel generation implemented |
 | **Takedown** | `/api/takedown/*` | ⚠️ PARTIAL | Templates only, **no real AI** |
 | **Services** | `/api/services/*` | ✅ DONE | Service catalog |
 | **Service Requests** | `/api/service-requests/*` | ✅ DONE | Full workflow (submit/approve/reject/complete) |
@@ -158,10 +158,10 @@
 | **5. AI Analysis** | ⚠️ PARTIAL | **Uses dummy AI, not real AI** |
 | **6. Alert Creation** | ✅ DONE | Auto-create for high-risk, manual creation |
 | **7. Incident Management** | ✅ DONE | Create from mentions/alerts, track status |
-| **8. Report Generation** | ⚠️ PARTIAL | API exists but **no PDF/Excel export** |
+| **8. Report Generation** | ✅ DONE | Real PDF/Excel export implemented |
 | **9. Service Request** | ⚠️ PARTIAL | Backend complete, **UI partial** |
 
-**Summary**: 6/9 DONE, 3/9 PARTIAL
+**Summary**: 7/9 DONE, 2/9 PARTIAL
 
 ---
 
@@ -189,10 +189,8 @@
 
 ### ⚠️ MEDIUM PRIORITY (Reduces Functionality)
 
-4. **Report Generation Incomplete**
-   - **Issue**: No PDF/Excel generation
-   - **Impact**: Cannot export reports
-   - **Fix Required**: Integrate ReportLab/WeasyPrint + openpyxl
+4. ~~**Report Generation Incomplete**~~
+   - **Status**: ✅ **FIXED** - PDF/Excel generation integrated.
 
 5. **Service Request UI Incomplete**
    - **Issue**: Workflow UI not fully implemented
@@ -253,7 +251,6 @@
 - Automated scheduled scans
 - Email notifications
 - Webhook notifications
-- PDF/Excel report export
 - Role management UI
 - API key management UI
 - Branding UI

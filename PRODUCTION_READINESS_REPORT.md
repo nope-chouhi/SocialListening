@@ -184,7 +184,7 @@ alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT
 
 ### Workflow: Keyword → Source → Scan → Mention → AI Analysis → Alert → Incident → Report → Service Request
 
-**Working Steps** (7/9): ✅ FUNCTIONAL
+**Working Steps** (8/9): ✅ FUNCTIONAL
 1. ✅ Keyword Management - Create groups, add keywords
 2. ✅ Source Management - Create sources, configure schedules
 3. ✅ Scan/Crawl - Manual scan with keyword + source selection
@@ -192,9 +192,9 @@ alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT
 5. ✅ **AI Analysis** - Real AI with OpenAI/Gemini support (Phase 6 complete)
 6. ✅ Alert Creation - Auto-create for high-risk, manual creation
 7. ✅ Incident Management - Create from mentions/alerts, track status
+8. ✅ **Report Generation** - Real PDF/Excel exports implemented (Phase 6 Reports)
 
-**Partially Working** (2/9): ⚠️ INCOMPLETE
-8. ⚠️ **Report Generation** - API exists but no PDF/Excel export
+**Partially Working** (1/9): ⚠️ INCOMPLETE
 9. ⚠️ **Service Request** - Backend complete, UI partial
 
 ---
@@ -286,7 +286,7 @@ def send_email_alert(alert):
 | 3 | No email/webhook notifications | 🔴 CRITICAL | Open | Implement SMTP + HTTP POST (Phase 5) |
 | 4 | roles.display_name column missing | ⚠️ MEDIUM | **FIXED** | Migration 020 created |
 | 5 | change-password expects query params | ⚠️ MEDIUM | **FIXED** | Now accepts JSON body |
-| 6 | Report generation incomplete | ⚠️ MEDIUM | Open | Add PDF/Excel generation |
+| 6 | Report generation incomplete | ⚠️ MEDIUM | **✅ FIXED** | PDF/Excel generation added |
 | 7 | Service request UI incomplete | ⚠️ MEDIUM | Open | Complete workflow UI |
 | 8 | Role management UI not connected | 🟡 LOW | Open | Connect to API (after migration 020) |
 | 9 | Basic crawling logic | 🟡 LOW | Open | Add Playwright/Selenium |
@@ -444,8 +444,8 @@ Total Tests: 22
 2. 🔴 No automated scanning - **NEXT (Phase 4)**
 3. 🔴 No real notifications - **NEXT (Phase 5)**
 
-### Functional Limitations (4)
-4. ⚠️ Report generation incomplete (no PDF/Excel)
+### Functional Limitations (3)
+4. ~~⚠️ Report generation incomplete (no PDF/Excel)~~ - **✅ FIXED**
 5. ⚠️ Service request UI incomplete
 6. ⚠️ Role management UI not connected (after migration 020)
 7. ⚠️ Basic crawling logic (no JavaScript rendering)
