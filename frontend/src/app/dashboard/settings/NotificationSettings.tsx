@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Bell, Save, Send } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { api } from '@/lib/api';
 
 export default function NotificationSettings() {
   const [settings, setSettings] = useState({
@@ -28,29 +29,21 @@ export default function NotificationSettings() {
 
   const loadSettings = async () => {
     try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch('https://social-listening-backend.onrender.com/api/admin/settings/notifications', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+      const response = await api.get('/api/admin/settings/notifications');
+      const data = response.data;
+      setSettings({
+        webhookUrl: data.webhook_url || '',
+        telegramWebhook: data.telegram_webhook || '',
+        slackWebhook: data.slack_webhook || '',
+        discordWebhook: data.discord_webhook || '',
+        systemAlertsEnabled: data.system_alerts_enabled !== undefined ? data.system_alerts_enabled : true,
+        alertChannels: data.alert_channels || ['email'],
+        dailyReportEnabled: data.daily_report_enabled || false,
+        dailyReportTime: data.daily_report_time || '09:00',
+        weeklyReportEnabled: data.weekly_report_enabled || false,
+        weeklyReportDay: data.weekly_report_day || 0,
+        weeklyReportTime: data.weekly_report_time || '09:00'
       });
-
-      if (response.ok) {
-        const data = await response.json();
-        setSettings({
-          webhookUrl: data.webhook_url || '',
-          telegramWebhook: data.telegram_webhook || '',
-          slackWebhook: data.slack_webhook || '',
-          discordWebhook: data.discord_webhook || '',
-          systemAlertsEnabled: data.system_alerts_enabled !== undefined ? data.system_alerts_enabled : true,
-          alertChannels: data.alert_channels || ['email'],
-          dailyReportEnabled: data.daily_report_enabled || false,
-          dailyReportTime: data.daily_report_time || '09:00',
-          weeklyReportEnabled: data.weekly_report_enabled || false,
-          weeklyReportDay: data.weekly_report_day || 0,
-          weeklyReportTime: data.weekly_report_time || '09:00'
-        });
-      }
     } catch (error) {
       console.error('Failed to load notification settings:', error);
       toast.error('Không thể tải cấu hình thông báo');
@@ -62,35 +55,21 @@ export default function NotificationSettings() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch('https://social-listening-backend.onrender.com/api/admin/settings/notifications', {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          webhook_url: settings.webhookUrl,
-          telegram_webhook: settings.telegramWebhook,
-          slack_webhook: settings.slackWebhook,
-          discord_webhook: settings.discordWebhook,
-          system_alerts_enabled: settings.systemAlertsEnabled,
-          alert_channels: settings.alertChannels,
-          daily_report_enabled: settings.dailyReportEnabled,
-          daily_report_time: settings.dailyReportTime,
-          weekly_report_enabled: settings.weeklyReportEnabled,
-          weekly_report_day: settings.weeklyReportDay,
-          weekly_report_time: settings.weeklyReportTime
-        })
+      await api.put('/api/admin/settings/notifications', {
+        webhook_url: settings.webhookUrl,
+        telegram_webhook: settings.telegramWebhook,
+        slack_webhook: settings.slackWebhook,
+        discord_webhook: settings.discordWebhook,
+        system_alerts_enabled: settings.systemAlertsEnabled,
+        alert_channels: settings.alertChannels,
+        daily_report_enabled: settings.dailyReportEnabled,
+        daily_report_time: settings.dailyReportTime,
+        weekly_report_enabled: settings.weeklyReportEnabled,
+        weekly_report_day: settings.weeklyReportDay,
+        weekly_report_time: settings.weeklyReportTime
       });
-
-      if (response.ok) {
-        toast.success('Đã lưu cấu hình thông báo');
-      } else {
-        const error = await response.json();
-        toast.error(error.detail || 'Không thể lưu cấu hình');
-      }
-    } catch (error) {
+      toast.success('Đã lưu cấu hình thông báo');
+    } catch (error: any) {
       console.error('Failed to save notification settings:', error);
       toast.error('Không thể lưu cấu hình thông báo');
     } finally {
@@ -101,24 +80,12 @@ export default function NotificationSettings() {
   const handleTest = async (channel: string) => {
     setTesting(channel);
     try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch(`https://social-listening-backend.onrender.com/api/admin/settings/notifications/test?channel=${channel}`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        toast.success(data.message || `Test ${channel} thành công`);
-      } else {
-        const error = await response.json();
-        toast.error(error.detail || `Test ${channel} thất bại`);
-      }
-    } catch (error) {
+      const response = await api.post(`/api/admin/settings/notifications/test?channel=${channel}`);
+      const data = response.data;
+      toast.success(data.message || `Test ${channel} thành công`);
+    } catch (error: any) {
       console.error(`Failed to test ${channel}:`, error);
-      toast.error(`Không thể test ${channel}`);
+      toast.error(error.response?.data?.detail || `Test ${channel} thất bại`);
     } finally {
       setTesting(null);
     }

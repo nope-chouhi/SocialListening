@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Shield, Plus, Edit2, Trash2, X, Check, Users } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useDialog } from '@/components/ui/Dialog';
+import { api } from '@/lib/api';
 
 interface Role {
   id: number;
@@ -46,15 +47,8 @@ export default function RoleManagement() {
 
   const loadRoles = async () => {
     try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch('https://social-listening-backend.onrender.com/api/admin/roles/', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-
-      if (!response.ok) throw new Error('Failed to load roles');
-      
-      const data = await response.json();
-      setRoles(data);
+      const response = await api.get('/api/admin/roles/');
+      setRoles(response.data);
     } catch (error) {
       console.error('Error loading roles:', error);
       toast.error('Không thể tải danh sách vai trò');
@@ -65,15 +59,8 @@ export default function RoleManagement() {
 
   const loadAvailablePermissions = async () => {
     try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch('https://social-listening-backend.onrender.com/api/admin/roles/permissions/available', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-
-      if (!response.ok) throw new Error('Failed to load permissions');
-      
-      const data = await response.json();
-      setAvailablePermissions(data);
+      const response = await api.get('/api/admin/roles/permissions/available');
+      setAvailablePermissions(response.data);
     } catch (error) {
       console.error('Error loading permissions:', error);
     }
@@ -107,30 +94,18 @@ export default function RoleManagement() {
     e.preventDefault();
     
     try {
-      const token = localStorage.getItem('access_token');
       const url = editingRole
-        ? `https://social-listening-backend.onrender.com/api/admin/roles/${editingRole.id}`
-        : 'https://social-listening-backend.onrender.com/api/admin/roles/';
+        ? `/api/admin/roles/${editingRole.id}`
+        : '/api/admin/roles/';
       
-      const method = editingRole ? 'PUT' : 'POST';
-      
-      // For system roles, only send permissions and is_active
       const payload = editingRole?.is_system
         ? { permissions: formData.permissions, is_active: formData.is_active }
         : formData;
 
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload)
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || 'Failed to save role');
+      if (editingRole) {
+        await api.put(url, payload);
+      } else {
+        await api.post(url, payload);
       }
 
       toast.success(editingRole ? 'Cập nhật vai trò thành công' : 'Tạo vai trò thành công');
@@ -138,7 +113,7 @@ export default function RoleManagement() {
       loadRoles();
     } catch (error: any) {
       console.error('Error saving role:', error);
-      toast.error(error.message || 'Không thể lưu vai trò');
+      toast.error(error.response?.data?.detail || error.message || 'Không thể lưu vai trò');
     }
   };
 
@@ -151,22 +126,12 @@ export default function RoleManagement() {
     if (!ok) return;
 
     try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch(`https://social-listening-backend.onrender.com/api/admin/roles/${role.id}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || 'Failed to delete role');
-      }
-
+      await api.delete(`/api/admin/roles/${role.id}`);
       toast.success('Xóa vai trò thành công');
       loadRoles();
     } catch (error: any) {
       console.error('Error deleting role:', error);
-      toast.error(error.message || 'Không thể xóa vai trò');
+      toast.error(error.response?.data?.detail || error.message || 'Không thể xóa vai trò');
     }
   };
 

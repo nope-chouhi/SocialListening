@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { User as UserIcon, Save, Upload } from 'lucide-react';
-import { auth } from '@/lib/api';
+import { auth, api } from '@/lib/api';
 import { getRoleDisplayName, getRoleBadgeColor } from '@/lib/permissions';
 import toast from 'react-hot-toast';
 
@@ -57,30 +57,17 @@ export default function PersonalProfile() {
 
     setSaving(true);
     try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch('https://social-listening-backend.onrender.com/api/auth/me/profile', {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          full_name: profile.full_name.trim(),
-          phone: profile.phone?.trim() || null,
-          department: profile.department?.trim() || null
-        })
+      await api.put('/api/auth/me/profile', {
+        full_name: profile.full_name.trim(),
+        phone: profile.phone?.trim() || null,
+        department: profile.department?.trim() || null
       });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || 'Failed to update profile');
-      }
 
       toast.success('✅ Đã lưu thông tin cá nhân');
       await loadProfile(); // Reload to verify
     } catch (error: any) {
       console.error('Error updating profile:', error);
-      toast.error(error.message || 'Lỗi khi lưu thông tin');
+      toast.error(error.response?.data?.detail || error.message || 'Lỗi khi lưu thông tin');
     } finally {
       setSaving(false);
     }
@@ -121,23 +108,16 @@ export default function PersonalProfile() {
       
       // Uncomment when backend avatar endpoint is ready:
       /*
-      const token = localStorage.getItem('access_token');
       const formData = new FormData();
       formData.append('avatar', file);
 
-      const response = await fetch('https://social-listening-backend.onrender.com/api/auth/me/avatar', {
-        method: 'POST',
+      const response = await api.post('/api/auth/me/avatar', formData, {
         headers: {
-          'Authorization': `Bearer ${token}`
-        },
-        body: formData
+          'Content-Type': 'multipart/form-data'
+        }
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to upload avatar');
-      }
-
-      const data = await response.json();
+      const data = response.data;
       setAvatarUrl(data.avatar_url);
       toast.success('✅ Đã cập nhật ảnh đại diện');
       */

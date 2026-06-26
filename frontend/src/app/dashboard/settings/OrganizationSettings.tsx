@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Building, Save, Upload } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { api } from '@/lib/api';
 
 export default function OrganizationSettings() {
   const [settings, setSettings] = useState({
@@ -24,26 +25,18 @@ export default function OrganizationSettings() {
 
   const loadSettings = async () => {
     try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch('https://social-listening-backend.onrender.com/api/admin/settings/organization', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+      const response = await api.get('/api/admin/settings/organization');
+      const data = response.data;
+      setSettings({
+        organizationName: data.organization_name || '',
+        logoUrl: data.logo_url || '',
+        address: data.address || '',
+        contactEmail: data.contact_email || '',
+        hotline: data.hotline || '',
+        website: data.website || '',
+        timezone: data.timezone || 'Asia/Ho_Chi_Minh',
+        language: data.language || 'vi'
       });
-
-      if (response.ok) {
-        const data = await response.json();
-        setSettings({
-          organizationName: data.organization_name || '',
-          logoUrl: data.logo_url || '',
-          address: data.address || '',
-          contactEmail: data.contact_email || '',
-          hotline: data.hotline || '',
-          website: data.website || '',
-          timezone: data.timezone || 'Asia/Ho_Chi_Minh',
-          language: data.language || 'vi'
-        });
-      }
     } catch (error) {
       console.error('Failed to load organization settings:', error);
       toast.error('Không thể tải thông tin tổ chức');
@@ -55,32 +48,18 @@ export default function OrganizationSettings() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch('https://social-listening-backend.onrender.com/api/admin/settings/organization', {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          organization_name: settings.organizationName,
-          logo_url: settings.logoUrl,
-          address: settings.address,
-          contact_email: settings.contactEmail,
-          hotline: settings.hotline,
-          website: settings.website,
-          timezone: settings.timezone,
-          language: settings.language
-        })
+      await api.put('/api/admin/settings/organization', {
+        organization_name: settings.organizationName,
+        logo_url: settings.logoUrl,
+        address: settings.address,
+        contact_email: settings.contactEmail,
+        hotline: settings.hotline,
+        website: settings.website,
+        timezone: settings.timezone,
+        language: settings.language
       });
-
-      if (response.ok) {
-        toast.success('Đã lưu thông tin tổ chức');
-      } else {
-        const error = await response.json();
-        toast.error(error.detail || 'Không thể lưu thông tin');
-      }
-    } catch (error) {
+      toast.success('Đã lưu thông tin tổ chức');
+    } catch (error: any) {
       console.error('Failed to save organization settings:', error);
       toast.error('Không thể lưu thông tin tổ chức');
     } finally {

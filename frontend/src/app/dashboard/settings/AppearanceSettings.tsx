@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Palette, Save } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { api } from '@/lib/api';
 
 export default function AppearanceSettings() {
   const [settings, setSettings] = useState({
@@ -20,25 +21,17 @@ export default function AppearanceSettings() {
 
   const loadSettings = async () => {
     try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch('https://social-listening-backend.onrender.com/api/auth/me/preferences', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        const newSettings = {
-          theme: data.theme,
-          language: data.language,
-          sidebarCollapsed: data.sidebar_collapsed,
-          itemsPerPage: data.items_per_page
-        };
-        setSettings(newSettings);
-        // Apply theme immediately
-        applyTheme(data.theme);
-      }
+      const response = await api.get('/api/auth/me/preferences');
+      const data = response.data;
+      const newSettings = {
+        theme: data.theme,
+        language: data.language,
+        sidebarCollapsed: data.sidebar_collapsed,
+        itemsPerPage: data.items_per_page
+      };
+      setSettings(newSettings);
+      // Apply theme immediately
+      applyTheme(data.theme);
     } catch (error) {
       console.error('Failed to load preferences:', error);
       toast.error('Không thể tải cài đặt giao diện');
@@ -69,9 +62,6 @@ export default function AppearanceSettings() {
     
     setSaving(true);
     try {
-      const token = localStorage.getItem('access_token');
-      console.log('🔵 [AppearanceSettings] Token:', token ? 'exists' : 'missing');
-      
       const payload = {
         theme: settings.theme,
         language: settings.language,
@@ -80,31 +70,15 @@ export default function AppearanceSettings() {
       };
       console.log('🔵 [AppearanceSettings] Payload:', payload);
       
-      const response = await fetch('https://social-listening-backend.onrender.com/api/auth/me/preferences', {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload)
-      });
-
-      console.log('🔵 [AppearanceSettings] Response status:', response.status);
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log('✅ [AppearanceSettings] Success:', data);
-        // Apply theme immediately
-        applyTheme(settings.theme);
-        toast.success('✅ Đã lưu cài đặt giao diện');
-      } else {
-        const error = await response.json();
-        console.error('❌ [AppearanceSettings] Error:', error);
-        toast.error(error.detail || 'Không thể lưu cài đặt');
-      }
-    } catch (error) {
+      const response = await api.put('/api/auth/me/preferences', payload);
+      const data = response.data;
+      console.log('✅ [AppearanceSettings] Success:', data);
+      // Apply theme immediately
+      applyTheme(settings.theme);
+      toast.success('✅ Đã lưu cài đặt giao diện');
+    } catch (error: any) {
       console.error('❌ [AppearanceSettings] Exception:', error);
-      toast.error('Không thể lưu cài đặt giao diện');
+      toast.error(error.response?.data?.detail || 'Không thể lưu cài đặt giao diện');
     } finally {
       setSaving(false);
       console.log('🔵 [AppearanceSettings] handleSave finished');

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Palette, RotateCcw, Save } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useDialog } from '@/components/ui/Dialog';
+import { api } from '@/lib/api';
 
 interface BrandingData {
   id: number;
@@ -39,14 +40,8 @@ export default function BrandingSettings() {
 
   const loadSettings = async () => {
     try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch('https://social-listening-backend.onrender.com/api/branding/', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-
-      if (!response.ok) throw new Error('Failed to load branding settings');
-      
-      const data = await response.json();
+      const response = await api.get('/api/branding/');
+      const data = response.data;
       setSettings(data);
       setFormData({
         primary_color: data.primary_color,
@@ -70,19 +65,8 @@ export default function BrandingSettings() {
     setSaving(true);
 
     try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch('https://social-listening-backend.onrender.com/api/branding/', {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(formData)
-      });
-
-      if (!response.ok) throw new Error('Failed to save branding settings');
-
-      const data = await response.json();
+      const response = await api.put('/api/branding/', formData);
+      const data = response.data;
       setSettings(data);
       toast.success('Lưu cài đặt branding thành công');
     } catch (error) {
@@ -102,15 +86,8 @@ export default function BrandingSettings() {
     if (!ok) return;
 
     try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch('https://social-listening-backend.onrender.com/api/branding/reset', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-
-      if (!response.ok) throw new Error('Failed to reset branding settings');
-
-      const data = await response.json();
+      const response = await api.post('/api/branding/reset');
+      const data = response.data;
       setSettings(data);
       setFormData({
         primary_color: data.primary_color,

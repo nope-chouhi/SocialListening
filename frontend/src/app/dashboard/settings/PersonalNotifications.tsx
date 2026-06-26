@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Bell, Save } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { api } from '@/lib/api';
 
 export default function PersonalNotifications() {
   const [settings, setSettings] = useState({
@@ -21,23 +22,15 @@ export default function PersonalNotifications() {
 
   const loadSettings = async () => {
     try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch('https://social-listening-backend.onrender.com/api/auth/me/notification-settings', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+      const response = await api.get('/api/auth/me/notification-settings');
+      const data = response.data;
+      setSettings({
+        emailNotifications: data.email_notifications,
+        inAppNotifications: data.in_app_notifications,
+        alertNotifications: data.alert_notifications,
+        incidentNotifications: data.incident_notifications,
+        reportNotifications: data.report_notifications
       });
-
-      if (response.ok) {
-        const data = await response.json();
-        setSettings({
-          emailNotifications: data.email_notifications,
-          inAppNotifications: data.in_app_notifications,
-          alertNotifications: data.alert_notifications,
-          incidentNotifications: data.incident_notifications,
-          reportNotifications: data.report_notifications
-        });
-      }
     } catch (error) {
       console.error('Failed to load notification settings:', error);
       toast.error('Không thể tải cài đặt thông báo');
@@ -52,9 +45,6 @@ export default function PersonalNotifications() {
     
     setSaving(true);
     try {
-      const token = localStorage.getItem('access_token');
-      console.log('🔵 [PersonalNotifications] Token:', token ? 'exists' : 'missing');
-      
       const payload = {
         email_notifications: settings.emailNotifications,
         in_app_notifications: settings.inAppNotifications,
@@ -64,29 +54,13 @@ export default function PersonalNotifications() {
       };
       console.log('🔵 [PersonalNotifications] Payload:', payload);
       
-      const response = await fetch('https://social-listening-backend.onrender.com/api/auth/me/notification-settings', {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload)
-      });
-
-      console.log('🔵 [PersonalNotifications] Response status:', response.status);
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log('✅ [PersonalNotifications] Success:', data);
-        toast.success('✅ Đã lưu cài đặt thông báo');
-      } else {
-        const error = await response.json();
-        console.error('❌ [PersonalNotifications] Error:', error);
-        toast.error(error.detail || 'Không thể lưu cài đặt');
-      }
-    } catch (error) {
+      const response = await api.put('/api/auth/me/notification-settings', payload);
+      const data = response.data;
+      console.log('✅ [PersonalNotifications] Success:', data);
+      toast.success('✅ Đã lưu cài đặt thông báo');
+    } catch (error: any) {
       console.error('❌ [PersonalNotifications] Exception:', error);
-      toast.error('Không thể lưu cài đặt thông báo');
+      toast.error(error.response?.data?.detail || 'Không thể lưu cài đặt thông báo');
     } finally {
       setSaving(false);
       console.log('🔵 [PersonalNotifications] handleSave finished');
