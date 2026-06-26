@@ -31,6 +31,8 @@ reportlab==4.1.0
 
 # Background Jobs
 APScheduler==3.10.4
+croniter>=2.0.0
+
 
 # AI Providers (optional - install only if using real AI)
 openai>=1.0.0
