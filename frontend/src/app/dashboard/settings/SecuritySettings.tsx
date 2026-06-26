@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Lock, Save } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { api } from '@/lib/api';
 
 export default function SecuritySettings() {
   const [saving, setSaving] = useState(false);
@@ -33,30 +34,17 @@ export default function SecuritySettings() {
 
     setSaving(true);
     try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch('https://social-listening-backend.onrender.com/api/auth/me/change-password', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          current_password: passwords.current,
-          new_password: passwords.new,
-          confirm_password: passwords.confirm
-        })
+      await api.post('/api/auth/me/change-password', {
+        current_password: passwords.current,
+        new_password: passwords.new,
+        confirm_password: passwords.confirm
       });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || 'Failed to change password');
-      }
 
       toast.success('✅ Đã đổi mật khẩu thành công');
       setPasswords({ current: '', new: '', confirm: '' });
     } catch (error: any) {
       console.error('Error changing password:', error);
-      toast.error(`❌ ${error.message || 'Lỗi khi đổi mật khẩu'}`);
+      toast.error(`❌ ${error.response?.data?.detail || error.message || 'Lỗi khi đổi mật khẩu'}`);
     } finally {
       setSaving(false);
     }

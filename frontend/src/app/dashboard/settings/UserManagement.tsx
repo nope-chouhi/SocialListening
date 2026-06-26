@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Plus, Search, Edit, Trash2, Key, Power, Crown, User as UserIcon, X } from 'lucide-react';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import toast from 'react-hot-toast';
+import { api } from '@/lib/api';
 
 interface User {
   id: number;
@@ -48,23 +49,14 @@ export default function UserManagement() {
 
   const fetchUsers = async () => {
     try {
-      const token = localStorage.getItem('access_token');
       const params = new URLSearchParams();
       if (searchTerm) params.append('search', searchTerm);
       if (filterActive !== null) params.append('is_active', String(filterActive));
       if (filterSuperuser !== null) params.append('is_superuser', String(filterSuperuser));
 
-      const response = await fetch(
-        `/api/admin/users?${params}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        setUsers(data);
-      }
+      const response = await api.get(`/api/admin/users?${params}`);
+      const data = response.data;
+      setUsers(data);
     } catch (error) {
       console.error('Error fetching users:', error);
     } finally {
@@ -74,18 +66,9 @@ export default function UserManagement() {
 
   const fetchStats = async () => {
     try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch(
-        `/api/admin/users/stats/summary`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        setStats(data);
-      }
+      const response = await api.get(`/api/admin/users/stats/summary`);
+      const data = response.data;
+      setStats(data);
     } catch (error) {
       console.error('Error fetching stats:', error);
     }
@@ -93,136 +76,59 @@ export default function UserManagement() {
 
   const handleCreateUser = async (userData: any) => {
     try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch(
-        `/api/admin/users`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(userData),
-        }
-      );
-
-      if (response.ok) {
-        setShowCreateModal(false);
-        fetchUsers();
-        fetchStats();
-      } else {
-        const error = await response.json();
-        toast.error(error.detail || 'Lỗi khi tạo người dùng');
-      }
-    } catch (error) {
+      await api.post(`/api/admin/users`, userData);
+      setShowCreateModal(false);
+      fetchUsers();
+      fetchStats();
+    } catch (error: any) {
       console.error('Error creating user:', error);
-      toast.error('Lỗi khi tạo người dùng');
+      toast.error(error.response?.data?.detail || 'Lỗi khi tạo người dùng');
     }
   };
 
   const handleUpdateUser = async (userId: number, userData: any) => {
     try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch(
-        `/api/admin/users/${userId}`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(userData),
-        }
-      );
-
-      if (response.ok) {
-        setShowEditModal(false);
-        setSelectedUser(null);
-        fetchUsers();
-      } else {
-        const error = await response.json();
-        toast.error(error.detail || 'Lỗi khi cập nhật người dùng');
-      }
-    } catch (error) {
+      await api.put(`/api/admin/users/${userId}`, userData);
+      setShowEditModal(false);
+      setSelectedUser(null);
+      fetchUsers();
+    } catch (error: any) {
       console.error('Error updating user:', error);
-      toast.error('Lỗi khi cập nhật người dùng');
+      toast.error(error.response?.data?.detail || 'Lỗi khi cập nhật người dùng');
     }
   };
 
   const handleDeleteUser = async (userId: number) => {
     try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch(
-        `/api/admin/users/${userId}`,
-        {
-          method: 'DELETE',
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
-      if (response.ok) {
-        fetchUsers();
-        fetchStats();
-      } else {
-        const error = await response.json();
-        toast.error(error.detail || 'Lỗi khi xóa người dùng');
-      }
-    } catch (error) {
+      await api.delete(`/api/admin/users/${userId}`);
+      fetchUsers();
+      fetchStats();
+    } catch (error: any) {
       console.error('Error deleting user:', error);
-      toast.error('Lỗi khi xóa người dùng');
+      toast.error(error.response?.data?.detail || 'Lỗi khi xóa người dùng');
     }
   };
 
   const handleToggleActive = async (userId: number) => {
     try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch(
-        `/api/admin/users/${userId}/toggle-active`,
-        {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
-      if (response.ok) {
-        fetchUsers();
-        fetchStats();
-      } else {
-        const error = await response.json();
-        toast.error(error.detail || 'Lỗi khi thay đổi trạng thái');
-      }
-    } catch (error) {
+      await api.post(`/api/admin/users/${userId}/toggle-active`);
+      fetchUsers();
+      fetchStats();
+    } catch (error: any) {
       console.error('Error toggling active:', error);
-      toast.error('Lỗi khi thay đổi trạng thái');
+      toast.error(error.response?.data?.detail || 'Lỗi khi thay đổi trạng thái');
     }
   };
 
   const handleResetPassword = async (userId: number, newPassword: string) => {
     try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch(
-        `/api/admin/users/${userId}/reset-password`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ new_password: newPassword }),
-        }
-      );
-
-      if (response.ok) {
-        setShowResetPasswordModal(false);
-        setSelectedUser(null);
-        toast.success('Đặt lại mật khẩu thành công');
-      } else {
-        const error = await response.json();
-        toast.error(error.detail || 'Lỗi khi đặt lại mật khẩu');
-      }
-    } catch (error) {
+      await api.post(`/api/admin/users/${userId}/reset-password`, { new_password: newPassword });
+      setShowResetPasswordModal(false);
+      setSelectedUser(null);
+      toast.success('Đặt lại mật khẩu thành công');
+    } catch (error: any) {
       console.error('Error resetting password:', error);
-      toast.error('Lỗi khi đặt lại mật khẩu');
+      toast.error(error.response?.data?.detail || 'Lỗi khi đặt lại mật khẩu');
     }
   };
 

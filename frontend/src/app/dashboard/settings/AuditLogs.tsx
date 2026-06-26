@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { FileText, Search, Filter, Download, Calendar, User, Activity } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { api } from '@/lib/api';
 
 interface AuditLog {
   id: number;
@@ -48,8 +49,6 @@ export default function AuditLogs() {
 
   const loadLogs = async () => {
     try {
-      const token = localStorage.getItem('access_token');
-      
       // Build query params
       const params = new URLSearchParams();
       if (filters.user_id) params.append('user_id', filters.user_id);
@@ -60,14 +59,8 @@ export default function AuditLogs() {
       params.append('limit', filters.limit.toString());
       params.append('offset', filters.offset.toString());
 
-      const response = await fetch(`https://social-listening-backend.onrender.com/api/admin/audit/?${params}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-
-      if (!response.ok) throw new Error('Failed to load audit logs');
-      
-      const data = await response.json();
-      setLogs(data);
+      const response = await api.get(`/api/admin/audit/?${params}`);
+      setLogs(response.data);
     } catch (error) {
       console.error('Error loading audit logs:', error);
       toast.error('Không thể tải audit logs');
@@ -78,15 +71,8 @@ export default function AuditLogs() {
 
   const loadStats = async () => {
     try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch('https://social-listening-backend.onrender.com/api/admin/audit/stats/summary', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-
-      if (!response.ok) throw new Error('Failed to load stats');
-      
-      const data = await response.json();
-      setStats(data);
+      const response = await api.get('/api/admin/audit/stats/summary');
+      setStats(response.data);
     } catch (error) {
       console.error('Error loading stats:', error);
     }

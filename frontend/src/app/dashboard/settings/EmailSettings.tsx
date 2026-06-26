@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Mail, Save, Send } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { api } from '@/lib/api';
 
 export default function EmailSettings() {
   const [settings, setSettings] = useState({
@@ -26,27 +27,19 @@ export default function EmailSettings() {
 
   const loadSettings = async () => {
     try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch('https://social-listening-backend.onrender.com/api/admin/settings/email', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+      const response = await api.get('/api/admin/settings/email');
+      const data = response.data;
+      setSettings({
+        smtpHost: data.smtp_host || '',
+        smtpPort: data.smtp_port || 587,
+        smtpUsername: data.smtp_username || '',
+        smtpPassword: '', // Never load password from backend
+        fromEmail: data.from_email || '',
+        fromName: data.from_name || '',
+        useTls: data.use_tls !== undefined ? data.use_tls : true,
+        useSsl: data.use_ssl !== undefined ? data.use_ssl : false
       });
-
-      if (response.ok) {
-        const data = await response.json();
-        setSettings({
-          smtpHost: data.smtp_host || '',
-          smtpPort: data.smtp_port || 587,
-          smtpUsername: data.smtp_username || '',
-          smtpPassword: '', // Never load password from backend
-          fromEmail: data.from_email || '',
-          fromName: data.from_name || '',
-          useTls: data.use_tls !== undefined ? data.use_tls : true,
-          useSsl: data.use_ssl !== undefined ? data.use_ssl : false
-        });
-        setIsConfigured(data.is_configured || false);
-      }
+      setIsConfigured(data.is_configured || false);
     } catch (error) {
       console.error('Failed to load email settings:', error);
       toast.error('Không thể tải cấu hình email');
@@ -63,7 +56,6 @@ export default function EmailSettings() {
 
     setSaving(true);
     try {
-      const token = localStorage.getItem('access_token');
       const payload: any = {
         smtp_host: settings.smtpHost,
         smtp_port: settings.smtpPort,
@@ -79,26 +71,14 @@ export default function EmailSettings() {
         payload.smtp_password = settings.smtpPassword;
       }
 
-      const response = await fetch('https://social-listening-backend.onrender.com/api/admin/settings/email', {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload)
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setIsConfigured(data.is_configured);
-        toast.success('Đã lưu cấu hình email');
-        // Clear password field after save
-        setSettings({ ...settings, smtpPassword: '' });
-      } else {
-        const error = await response.json();
-        toast.error(error.detail || 'Không thể lưu cấu hình');
-      }
-    } catch (error) {
+      const response = await api.put('/api/admin/settings/email', payload);
+      const data = response.data;
+      
+      setIsConfigured(data.is_configured);
+      toast.success('Đã lưu cấu hình email');
+      // Clear password field after save
+      setSettings({ ...settings, smtpPassword: '' });
+    } catch (error: any) {
       console.error('Failed to save email settings:', error);
       toast.error('Không thể lưu cấu hình email');
     } finally {
@@ -114,22 +94,11 @@ export default function EmailSettings() {
 
     setTesting(true);
     try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch('https://social-listening-backend.onrender.com/api/admin/settings/email/test', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        toast.success(data.message || 'Email test thành công');
-      } else {
-        const error = await response.json();
-        toast.error(error.detail || 'Test email thất bại');
-      }
-    } catch (error) {
+      const response = await api.post('/api/admin/settings/email/test');
+      const data = response.data;
+      
+      toast.success(data.message || 'Email test thành công');
+    } catch (error: any) {
       console.error('Failed to test email:', error);
       toast.error('Không thể test email');
     } finally {

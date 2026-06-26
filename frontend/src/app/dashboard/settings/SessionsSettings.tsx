@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Clock, Monitor, LogOut, AlertCircle, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useDialog } from '@/components/ui/Dialog';
+import { api } from '@/lib/api';
 
 interface Session {
   id: number;
@@ -28,19 +29,9 @@ export default function SessionsSettings() {
 
   const loadSessions = async () => {
     try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch('https://social-listening-backend.onrender.com/api/auth/me/sessions', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setSessions(data.sessions || []);
-      } else {
-        toast.error('Không thể tải danh sách phiên đăng nhập');
-      }
+      const response = await api.get('/api/auth/me/sessions');
+      const data = response.data;
+      setSessions(data.sessions || []);
     } catch (error) {
       console.error('Failed to load sessions:', error);
       toast.error('Không thể tải danh sách phiên đăng nhập');
@@ -63,23 +54,12 @@ export default function SessionsSettings() {
 
     setRevoking(sessionId);
     try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch(`https://social-listening-backend.onrender.com/api/auth/me/sessions/${sessionId}/revoke`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (response.ok) {
-        toast.success('✅ Đã đăng xuất phiên thành công');
-        loadSessions(); // Reload sessions
-      } else {
-        toast.error('Không thể đăng xuất phiên');
-      }
-    } catch (error) {
+      await api.post(`/api/auth/me/sessions/${sessionId}/revoke`);
+      toast.success('✅ Đã đăng xuất phiên thành công');
+      loadSessions(); // Reload sessions
+    } catch (error: any) {
       console.error('Failed to revoke session:', error);
-      toast.error('Không thể đăng xuất phiên');
+      toast.error(error.response?.data?.detail || 'Không thể đăng xuất phiên');
     } finally {
       setRevoking(null);
     }
@@ -96,23 +76,12 @@ export default function SessionsSettings() {
     }
 
     try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch('https://social-listening-backend.onrender.com/api/auth/me/logout-other-sessions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (response.ok) {
-        toast.success('✅ Đã đăng xuất tất cả các phiên khác');
-        loadSessions(); // Reload sessions
-      } else {
-        toast.error('Không thể đăng xuất các phiên khác');
-      }
-    } catch (error) {
+      await api.post('/api/auth/me/logout-other-sessions');
+      toast.success('✅ Đã đăng xuất tất cả các phiên khác');
+      loadSessions(); // Reload sessions
+    } catch (error: any) {
       console.error('Failed to logout other sessions:', error);
-      toast.error('Không thể đăng xuất các phiên khác');
+      toast.error(error.response?.data?.detail || 'Không thể đăng xuất các phiên khác');
     }
   };
 

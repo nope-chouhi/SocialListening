@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { RefreshCw, Search, ChevronLeft, ChevronRight, X, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { api } from '@/lib/api';
 
 interface DeliveryLog {
   id: number;
@@ -30,7 +31,6 @@ export default function NotificationDeliveries() {
   const fetchLogs = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('access_token');
       const params = new URLSearchParams({
         page: page.toString(),
         page_size: '20'
@@ -38,17 +38,10 @@ export default function NotificationDeliveries() {
       if (statusFilter) params.append('status', statusFilter);
       if (channelFilter) params.append('channel', channelFilter);
 
-      const response = await fetch(`https://social-listening-backend.onrender.com/api/admin/settings/notifications/deliveries?${params}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setLogs(data.items);
-        setTotalPages(data.total_pages);
-      } else {
-        toast.error('Lỗi tải lịch sử gửi');
-      }
+      const response = await api.get(`/api/admin/settings/notifications/deliveries?${params}`);
+      const data = response.data;
+      setLogs(data.items);
+      setTotalPages(data.total_pages);
     } catch (error) {
       console.error(error);
       toast.error('Không thể kết nối máy chủ');
@@ -64,22 +57,12 @@ export default function NotificationDeliveries() {
   const handleRetry = async (logId: number) => {
     setRetryingId(logId);
     try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch(`https://social-listening-backend.onrender.com/api/admin/settings/notifications/deliveries/${logId}/retry`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-
-      if (response.ok) {
-        toast.success('Đã xếp hàng thử lại');
-        fetchLogs();
-      } else {
-        const error = await response.json();
-        toast.error(error.detail || 'Lỗi khi thử lại');
-      }
-    } catch (error) {
+      await api.post(`/api/admin/settings/notifications/deliveries/${logId}/retry`);
+      toast.success('Đã xếp hàng thử lại');
+      fetchLogs();
+    } catch (error: any) {
       console.error(error);
-      toast.error('Không thể kết nối máy chủ');
+      toast.error(error.response?.data?.detail || 'Lỗi khi thử lại');
     } finally {
       setRetryingId(null);
     }
