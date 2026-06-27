@@ -12,7 +12,7 @@ from app.core.database import get_db
 from app.core.tenant import apply_tenant_filter
 from app.core.security import get_current_active_user
 from app.models.user import User
-from app.models.mention import Mention, AIAnalysis
+from app.models.mention import Mention, AIAnalysis, SentimentScore
 from app.models.alert import Alert, AlertStatus, AlertSeverity
 from app.models.incident import Incident, IncidentStatus, IncidentLog
 from app.services.ai_service import analyze_mention as service_analyze_mention
@@ -357,6 +357,130 @@ def get_mentions_source_counts(
         import logging
         logging.getLogger(__name__).error(f"Error querying source counts: {e}")
         return {'web': 0, 'news': 0, 'blog': 0, 'video': 0, 'rss': 0}
+
+
+@router.get("/sentiment-facets")
+def get_sentiment_facets(
+    project_id: Optional[int] = Query(None),
+    q: Optional[str] = Query(None),
+    search_query: Optional[str] = Query(None),
+    keyword: Optional[str] = Query(None),
+    source_type: Optional[str] = Query(None),
+    source_types: Optional[List[str]] = Query(None),
+    source_id: Optional[int] = Query(None),
+    domain: Optional[str] = Query(None),
+    date_from: Optional[datetime] = Query(None),
+    date_to: Optional[datetime] = Query(None),
+    job_id: Optional[int] = Query(None),
+    sentiment: Optional[str] = Query(None),
+    sentiments: Optional[List[str]] = Query(None),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
+    """Return real sentiment facet counts aligned with current filter context."""
+    import logging
+    logger = logging.getLogger(__name__)
+
+    base = apply_tenant_filter(select(Mention.sentiment, func.count(Mention.id)), Mention, current_user)
+    base = base.where(Mention.verification_status != 'synthetic')
+    base = base.where(Mention.is_deleted.is_(False))
+    base = base.where(Mention.is_muted.is_(False))
+
+    url_ok = or_(
+        Mention.url.is_(None),
+        and_(
+            Mention.url.notilike('%news.google.com/rss/articles/%'),
+            Mention.url.notilike('%googleusercontent.com%'),
+            Mention.url.notilike('%corp.google.com%'),
+            Mention.url.notilike('%uberproxy%'),
+            Mention.url.notilike('%/rss%'),
+            Mention.url.notilike('%.xml'),
+        ),
+    )
+    base = base.where(url_ok)
+
+    if project_id is not None:
+        base = base.where(Mention.project_id == project_id)
+    if source_id is not None:
+        base = base.where(Mention.source_id == source_id)
+    if job_id is not None:
+        base = base.where(Mention.job_id == job_id)
+
+    term = None
+    if q and not job_id:
+        term = f'%{q}%'
+    if search_query and not job_id:
+        term = f'%{search_query}%'
+    if term:
+        base = base.where(or_(Mention.title.ilike(term), Mention.snippet.ilike(term), Mention.content.ilike(term)))
+    if keyword and not job_id:
+        base = base.where(Mention.keyword_text.ilike(f'%{keyword}%'))
+    if date_from and not job_id:
+        base = base.where(Mention.collected_at >= date_from)
+    if date_to and not job_id:
+        base = base.where(Mention.collected_at <= date_to)
+
+    if source_type:
+        base = base.where(Mention.source_type.in_([s.strip() for s in source_type.split(',') if s.strip()]))
+    if source_types:
+        base = base.where(Mention.source_type.in_(source_types))
+    if domain:
+        base = base.where(Mention.domain.ilike(f'%{domain}%'))
+
+    if sentiment:
+        base = base.where(Mention.sentiment.in_([s.strip() for s in sentiment.split(',') if s.strip()]))
+    if sentiments:
+        base = base.where(Mention.sentiment.in_(sentiments))
+
+    base = base.group_by(Mention.sentiment)
+    rows = db.execute(base).all()
+
+    counts: dict[str, int] = {'positive': 0, 'neutral': 0, 'negative': 0, 'unknown': 0}
+    for key, count in rows:
+        if isinstance(key, str) and key in counts:
+            counts[key] = count or 0
+
+    if counts.get('unknown', 0) == 0:
+        try:
+            unknown_query = (
+                apply_tenant_filter(select(func.count(Mention.id)), Mention, current_user)
+                .where(Mention.verification_status != 'synthetic')
+                .where(Mention.is_deleted.is_(False))
+                .where(Mention.is_muted.is_(False))
+                .where(url_ok)
+                .where(or_(Mention.sentiment.is_(None), Mention.sentiment.notin_(['positive', 'neutral', 'negative'])))
+            )
+            if project_id is not None:
+                unknown_query = unknown_query.where(Mention.project_id == project_id)
+            if source_id is not None:
+                unknown_query = unknown_query.where(Mention.source_id == source_id)
+            if job_id is not None:
+                unknown_query = unknown_query.where(Mention.job_id == job_id)
+            if term:
+                unknown_query = unknown_query.where(or_(Mention.title.ilike(term), Mention.snippet.ilike(term), Mention.content.ilike(term)))
+            if keyword and not job_id:
+                unknown_query = unknown_query.where(Mention.keyword_text.ilike(f'%{keyword}%'))
+            if date_from and not job_id:
+                unknown_query = unknown_query.where(Mention.collected_at >= date_from)
+            if date_to and not job_id:
+                unknown_query = unknown_query.where(Mention.collected_at <= date_to)
+            if source_type:
+                unknown_query = unknown_query.where(Mention.source_type.in_([s.strip() for s in source_type.split(',') if s.strip()]))
+            if source_types:
+                unknown_query = unknown_query.where(Mention.source_type.in_(source_types))
+            if domain:
+                unknown_query = unknown_query.where(Mention.domain.ilike(f'%{domain}%'))
+            if sentiment:
+                unknown_query = unknown_query.where(Mention.sentiment.in_([s.strip() for s in sentiment.split(',') if s.strip()]))
+            if sentiments:
+                unknown_query = unknown_query.where(Mention.sentiment.in_(sentiments))
+            counts['unknown'] = db.execute(unknown_query).scalar() or 0
+        except Exception:
+            logger.exception('Failed to query unknown sentiment count')
+
+    return counts
+
+
 
 
 @router.get("")

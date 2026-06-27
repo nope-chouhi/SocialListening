@@ -88,7 +88,11 @@ interface MentionItem {
 
 interface Filters {
   sentiment: string | null;
+  sentiments: string[];
+  source_types: string[];
   source_type: string | null;
+  date_from: string | null;
+  date_to: string | null;
   min_risk_score: number | null;
   min_influence_score: number | null;
   add_to_report?: boolean | null;
@@ -300,20 +304,20 @@ function MentionsPageContent() {
       setActiveScanJobId(null);
       setActiveScanKeyword('');
       setScanJobStatus(null);
-      // Reset scanned keywords when query changes so new scan triggers
-      if (q) {
-        scannedKeywordsRef.current?.clear();
-        setSearchState('SEARCHING_DB');
-      } else {
-        setSearchState('IDLE');
-      }
+      scannedKeywordsRef.current?.clear();
+      setSearchState('SEARCHING_DB');
     } else {
       setSearchState(prev => prev === 'TYPING' ? (q ? 'LOCAL_RESULTS_FOUND' : 'IDLE') : prev);
     }
   }, [searchParams, searchTerm]);
+
   const [filters, setFilters] = useState<Filters>({
     sentiment: null,
+    sentiments: [],
     source_type: null,
+    source_types: [],
+    date_from: null,
+    date_to: null,
     min_risk_score: null,
     min_influence_score: null,
     sort_by: 'newest',
@@ -326,6 +330,39 @@ function MentionsPageContent() {
   const [saveFilterName, setSaveFilterName] = useState('');
   const [saveFilterOverwrite, setSaveFilterOverwrite] = useState(false);
   const [dateRange, setDateRange] = useState('30d');
+
+  useEffect(() => {
+    let active = true;
+    const fetchFacets = async () => {
+      try {
+        const params: any = {};
+        const projectParam = searchParams?.get('project_id');
+        if (projectParam) params.project_id = Number(projectParam);
+        const qParam = searchParams?.get('q') || searchParams?.get('keyword');
+        if (qParam) params.q = qParam;
+        if (filters.sentiment) params.sentiment = filters.sentiment;
+        if (filters.source_type) params.source_type = filters.source_type;
+        if (filters.date_from) params.date_from = filters.date_from;
+        if (filters.date_to) params.date_to = filters.date_to;
+        const data = await mentionsApi.sentimentFacets(params);
+        if (active) {
+          setSentimentSummary({
+            total: (data?.positive || 0) + (data?.neutral || 0) + (data?.negative || 0) + (data?.unknown || 0),
+            positive: data?.positive || 0,
+            neutral: data?.neutral || 0,
+            negative: data?.negative || 0,
+            unknown: data?.unknown || 0,
+          });
+        }
+      } catch {
+        if (active) setSentimentSummary(null);
+      }
+    };
+    fetchFacets();
+    return () => {
+      active = false;
+    };
+  }, [filters, searchParams]);
   const [summarizeDrawerOpen, setSummarizeDrawerOpen] = useState(false);
   const [summarizing, setSummarizing] = useState(false);
   const [aiSummary, setAiSummary] = useState<any>(null);
@@ -474,7 +511,11 @@ function MentionsPageContent() {
       // Apply filters
       setFilters({
         sentiment: filterJson.sentiment || null,
+        sentiments: filterJson.sentiments || [],
         source_type: filterJson.source_type || null,
+        source_types: filterJson.source_types || [],
+        date_from: filterJson.date_from || null,
+        date_to: filterJson.date_to || null,
         min_risk_score: filterJson.min_risk_score || null,
         min_influence_score: filterJson.min_influence_score || null,
         sort_by: filterJson.sort_by || 'newest',
@@ -892,7 +933,17 @@ function MentionsPageContent() {
   };
 
   const clearAllFilters = () => {
-    setFilters({ sentiment: null, source_type: null, min_risk_score: null, min_influence_score: null, sort_by: 'newest' });
+    setFilters({
+      sentiment: null,
+      sentiments: [],
+      source_type: null,
+      source_types: [],
+      date_from: null,
+      date_to: null,
+      min_risk_score: null,
+      min_influence_score: null,
+      sort_by: 'newest',
+    });
     setSearchTerm('');
     setSearchInput('');
     setPage(1);
