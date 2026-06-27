@@ -467,6 +467,10 @@ export const mentions = {
     const response = await api.post('/api/ai/sentiment', { text });
     return response.data;
   },
+  sentimentFacets: async (params?: any) => {
+    const response = await api.get('/api/mentions/sentiment-facets', { params });
+    return response.data;
+  },
   summary: async (projectId?: number) => {
     const params: any = {};
     if (projectId) params.project_id = projectId;

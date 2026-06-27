@@ -300,17 +300,45 @@ function MentionsPageContent() {
       setActiveScanJobId(null);
       setActiveScanKeyword('');
       setScanJobStatus(null);
-      // Reset scanned keywords when query changes so new scan triggers
-      if (q) {
-        scannedKeywordsRef.current?.clear();
-        setSearchState('SEARCHING_DB');
-      } else {
-        setSearchState('IDLE');
-      }
+      scannedKeywordsRef.current?.clear();
+      setSearchState('SEARCHING_DB');
     } else {
       setSearchState(prev => prev === 'TYPING' ? (q ? 'LOCAL_RESULTS_FOUND' : 'IDLE') : prev);
     }
   }, [searchParams, searchTerm]);
+
+  useEffect(() => {
+    let active = true;
+    const fetchFacets = async () => {
+      try {
+        const params: any = {};
+        const projectParam = searchParams?.get('project_id');
+        if (projectParam) params.project_id = Number(projectParam);
+        const qParam = searchParams?.get('q') || searchParams?.get('keyword');
+        if (qParam) params.q = qParam;
+        if (filters.sentiment) params.sentiment = filters.sentiment;
+        if (filters.source_type) params.source_type = filters.source_type;
+        if (filters.date_from) params.date_from = filters.date_from;
+        if (filters.date_to) params.date_to = filters.date_to;
+        const data = await mentions.sentimentFacets(params);
+        if (active) {
+          setSentimentSummary({
+            total: (data?.positive || 0) + (data?.neutral || 0) + (data?.negative || 0) + (data?.unknown || 0),
+            positive: data?.positive || 0,
+            neutral: data?.neutral || 0,
+            negative: data?.negative || 0,
+            unknown: data?.unknown || 0,
+          });
+        }
+      } catch {
+        if (active) setSentimentSummary(null);
+      }
+    };
+    fetchFacets();
+    return () => {
+      active = false;
+    };
+  }, [filters, searchParams]);
   const [filters, setFilters] = useState<Filters>({
     sentiment: null,
     source_type: null,

@@ -220,6 +220,20 @@ Deployment:
 - After implementation and tests, stop and ask the user for confirmation.
 - Only create PR and merge if the user explicitly agrees and tests pass.
 
+## Task Mode: Plain-language task mode
+
+This project uses **Plain-language task mode** for `SocialListening`.
+
+- Treat short user messages as direct repo tasks for this project. Example inputs: `sửa lỗi X`, `thêm backend cho Y`, `kiểm tra phần Z`, `implement feature A`, `refactor B`.
+- When in this mode:
+  - Inspect source first to find related files instead of asking.
+  - Use the project's existing workflow automatically: pull latest `main`, create a focused branch, implement the smallest-possible fix, add/update docs when required, run relevant tests, then commit and push.
+  - Stop after push and ask for confirmation before opening a PR or merging. Default: do **not** create PR/merge unless explicitly confirmed.
+  - Do **not** deploy, run production migrations, or restart production unless explicitly requested.
+  - Never fabricate data, UI, API responses, or reports.
+  - Always report: branch, commit, files changed, docs updated, tests run, risks/notes, and whether PR/merge can proceed.
+- Ask back **only** when the request is genuinely ambiguous, may cause data loss, requires production deploy/migration, touches secrets/env, or has multiple risky solution paths.
+
 ## Deployment Rules
 - Do not run deploy.bat, deploy scripts, production migrations, or production restarts unless explicitly requested.
 - Assume Render/Vercel auto-deploy after merge unless the user asks for manual deployment verification.
