@@ -313,7 +313,9 @@ function MentionsPageContent() {
 
   const [filters, setFilters] = useState<Filters>({
     sentiment: null,
+    sentiments: [],
     source_type: null,
+    source_types: [],
     date_from: null,
     date_to: null,
     min_risk_score: null,
