@@ -67,6 +67,163 @@ class AIProvider(ABC):
 
 
 # ============================================================================
+# CUSTOM OPENAI-COMPATIBLE PROVIDER
+# ============================================================================
+
+class CustomAIProvider(AIProvider):
+    @property
+    def name(self) -> str:
+        return "custom"
+
+    def is_configured(self) -> bool:
+        return bool(getattr(settings, "AI_API_KEY", None) and getattr(settings, "AI_BASE_URL", None))
+
+    def __init__(self):
+        if not self.is_configured():
+            return
+        try:
+            from openai import OpenAI
+            self.client = OpenAI(api_key=settings.AI_API_KEY, base_url=settings.AI_BASE_URL)
+            models = getattr(settings, "AI_MODELS", "") or ""
+            self.model = next((m.strip() for m in models.split(",") if m.strip()), None)
+        except Exception:
+            logger.exception("Custom AI provider init failed")
+            self.client = None
+            self.model = None
+
+    def _handle_error(self, e: Exception):
+        raise AIProviderMalformedResponseError(f"Custom AI Error: {str(e)}")
+
+    def _parse_json(self, text: str) -> Dict:
+        if text.startswith("```"):
+            text = text.split("```")[1]
+            if text.startswith("json"):
+                text = text[4:]
+            text = text.strip()
+        try:
+            return json.loads(text)
+        except json.JSONDecodeError as e:
+            raise AIProviderMalformedResponseError(f"Custom AI JSON parse error: {e}")
+
+    def analyze_mention(self, content: str, title: Optional[str] = None) -> Dict:
+        if self.client is None or self.model is None:
+            raise AIAuthError("Custom AI provider not initialized")
+        if not content:
+            raise AIInternalValidationError("Empty content provided for analysis.")
+
+        start_time = time.time()
+        full_text = f"{title}\n\n{content}" if title else content
+
+        prompt = f"""Phân tích nội dung sau đây và trả về kết quả dưới dạng JSON:
+Nội dung: {full_text}
+Yêu cầu phân tích:
+1. sentiment: (positive, neutral, negative)
+2. risk_score: (0-100)
+3. crisis_level: (1-5)
+4. summary_vi: Tóm tắt ngắn gọn
+5. suggested_action: (monitor, respond, escalate, legal_review)
+6. responsible_department: (customer_service, PR, legal, executive)
+7. confidence_score: (0-100)
+Trả về JSON thuần túy:"""
+
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {"role": "system", "content": "Bạn là chuyên gia phân tích. Trả về JSON thuần túy."},
+                    {"role": "user", "content": prompt},
+                ],
+                temperature=0.3,
+                max_tokens=800,
+                timeout=settings.AI_PROVIDER_TIMEOUT_SECONDS,
+            )
+            result_text = response.choices[0].message.content.strip()
+            result = self._parse_json(result_text)
+
+            result["sentiment"] = result.get("sentiment", "neutral")
+            result["risk_score"] = float(result.get("risk_score", 50))
+            result["crisis_level"] = int(result.get("crisis_level", 2))
+            result["summary_vi"] = result.get("summary_vi", "")
+            result["suggested_action"] = result.get("suggested_action", "monitor")
+            result["responsible_department"] = result.get("responsible_department", "customer_service")
+
+            result["processing_time_ms"] = int((time.time() - start_time) * 1000)
+            result["ai_provider"] = self.name
+            result["model_version"] = self.model
+            return result
+        except Exception as e:
+            self._handle_error(e)
+
+    def generate_executive_brief(self, content: str) -> Dict:
+        if self.client is None or self.model is None:
+            raise AIAuthError("Custom AI provider not initialized")
+
+        prompt = f"""Tạo báo cáo điều hành (Executive Brief) cho nội dung sau:
+{content}
+Bạn phải trả về JSON thuần túy:
+{{
+  "summary_3_lines": "...",
+  "zalo_brief": "...",
+  "full_brief": "...",
+  "risk_level": "low/medium/high/critical",
+  "recommended_decision": "...",
+  "owner": "...",
+  "deadline": "..."
+}}"""
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {"role": "system", "content": "Bạn là chuyên gia phân tích khủng hoảng. Trả về JSON thuần túy."},
+                    {"role": "user", "content": prompt},
+                ],
+                temperature=0.3,
+                max_tokens=800,
+                timeout=settings.AI_PROVIDER_TIMEOUT_SECONDS,
+            )
+            return self._parse_json(response.choices[0].message.content.strip())
+        except Exception as e:
+            self._handle_error(e)
+
+    def expand_keyword(self, keyword: str) -> list[str]:
+        if self.client is None or self.model is None:
+            return []
+
+        prompt = f"""Given the keyword '{keyword}', generate 5 synonyms. Return ONLY a valid JSON array of strings."""
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.7,
+                max_tokens=150,
+                timeout=settings.AI_PROVIDER_TIMEOUT_SECONDS,
+            )
+            res = self._parse_json(response.choices[0].message.content.strip())
+            if isinstance(res, list):
+                return [str(x) for x in res]
+            return []
+        except Exception as e:
+            self._handle_error(e)
+            return []
+
+    def draft_response(self, prompt: str, max_tokens: int = 300) -> str:
+        if self.client is None or self.model is None:
+            raise AIAuthError("Custom AI provider not initialized")
+
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.7,
+                max_tokens=max_tokens,
+                timeout=settings.AI_PROVIDER_TIMEOUT_SECONDS,
+            )
+            return response.choices[0].message.content.strip()
+        except Exception as e:
+            self._handle_error(e)
+
+
+# ============================================================================
 # OPENAI PROVIDER
 # ============================================================================
 
@@ -385,6 +542,9 @@ class AIProviderManager:
         openai_prov = OpenAIProvider()
         if openai_prov.is_configured(): self._providers["openai"] = openai_prov
 
+        custom_prov = CustomAIProvider()
+        if custom_prov.is_configured(): self._providers["custom"] = custom_prov
+
         chain_str = getattr(settings, "AI_PROVIDER_CHAIN", None)
         if chain_str:
             self._chain = [p.strip().lower() for p in chain_str.split(",") if p.strip()]
@@ -396,7 +556,7 @@ class AIProviderManager:
                 self._chain = ["gemini"]
 
         # Filter out unsupported providers
-        supported_providers = {"gemini", "openai"}
+        supported_providers = {"gemini", "openai", "custom"}
         filtered_chain = []
         for p in self._chain:
             if p in supported_providers:

@@ -44,7 +44,13 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: str = ""
     OPENAI_MODEL: str = "gpt-4"
     
-    # Provider Settings
+    # Custom AI provider (OpenAI-compatible)
+    AI_API_KEY: str = ""
+    AI_BASE_URL: str = ""
+    AI_MODELS: str = "cx/gpt-5.4-mini,cx/gpt-5.4-mini-review,kr/glm-5,kr/deepseek-3.2"
+    
+    AI_PROVIDER: Optional[str] = None  # Legacy fallback
+    AI_PROVIDER_CHAIN: str = "gemini"
     AI_PROVIDER_TIMEOUT_SECONDS: int = 30
     AI_PROVIDER_COOLDOWN_SECONDS: int = 300
     AI_PROVIDER_MAX_RETRIES: int = 1
