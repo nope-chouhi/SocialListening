@@ -311,6 +311,24 @@ function MentionsPageContent() {
     }
   }, [searchParams, searchTerm]);
 
+  const [filters, setFilters] = useState<Filters>({
+    sentiment: null,
+    source_type: null,
+    date_from: null,
+    date_to: null,
+    min_risk_score: null,
+    min_influence_score: null,
+    sort_by: 'newest',
+  });
+  const [filterPanelOpen, setFilterPanelOpen] = useState(false);
+  const [sortOpen, setSortOpen] = useState(false);
+  const [savedFiltersOpen, setSavedFiltersOpen] = useState(false);
+  const [savedFiltersList, setSavedFiltersList] = useState<any[]>([]);
+  const [saveFilterModalOpen, setSaveFilterModalOpen] = useState(false);
+  const [saveFilterName, setSaveFilterName] = useState('');
+  const [saveFilterOverwrite, setSaveFilterOverwrite] = useState(false);
+  const [dateRange, setDateRange] = useState('30d');
+
   useEffect(() => {
     let active = true;
     const fetchFacets = async () => {
@@ -343,21 +361,6 @@ function MentionsPageContent() {
       active = false;
     };
   }, [filters, searchParams]);
-  const [filters, setFilters] = useState<Filters>({
-    sentiment: null,
-    source_type: null,
-    min_risk_score: null,
-    min_influence_score: null,
-    sort_by: 'newest',
-  });
-  const [filterPanelOpen, setFilterPanelOpen] = useState(false);
-  const [sortOpen, setSortOpen] = useState(false);
-  const [savedFiltersOpen, setSavedFiltersOpen] = useState(false);
-  const [savedFiltersList, setSavedFiltersList] = useState<any[]>([]);
-  const [saveFilterModalOpen, setSaveFilterModalOpen] = useState(false);
-  const [saveFilterName, setSaveFilterName] = useState('');
-  const [saveFilterOverwrite, setSaveFilterOverwrite] = useState(false);
-  const [dateRange, setDateRange] = useState('30d');
   const [summarizeDrawerOpen, setSummarizeDrawerOpen] = useState(false);
   const [summarizing, setSummarizing] = useState(false);
   const [aiSummary, setAiSummary] = useState<any>(null);

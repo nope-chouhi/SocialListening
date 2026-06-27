@@ -68,3 +68,30 @@ Before PR/merge, report:
 Do not run `deploy.bat` unless explicitly requested.
 
 Do not tell the user to run `deploy.bat` automatically after every merge. Render/Vercel auto-deploy from main may be sufficient.
+
+## Autonomous Fix Loop & Short Command Aliases
+
+Recognized short phrases act as direct commands and must not require long user prompts.
+
+Recognized phrases:
+- `tự fix đi` — inspect logs, fix build/type/runtime errors, verify, commit, push, recheck preview/health automatically
+- `làm tiếp đi` — continue current branch safely, validate git status first, do not discard work
+- `check deploy đi` — read-only status checks for Vercel preview and Render health/log
+- `tạo PR đi` — create/update PR into main with URL, summary, files changed, tests/checks, risks
+- `merge đi` — merge only when checks pass or user confirms; prefer squash merge
+- `dừng lại` — stop current task; report branch/status/files/commits without deleting anything
+
+Autonomous loop requirements:
+- Continue fix/push/check until:
+  - checks pass, or
+  - failure is not a small/locally fixable error, or
+  - retry becomes non-trivial
+- Fix small clear errors only: TypeScript errors, import/name mismatch, missing types/fields, build/lint/runtime errors with clear cause from logs
+- Do not perform non-reversible or architectural/product-level changes without confirmation
+
+Ask the user only when:
+- merge/main or production deploy is needed
+- env/secrets/config changes are required
+- data loss risk exists
+- large dependency/architecture changes are implied
+- the request remains ambiguous after source/log inspection

@@ -220,19 +220,50 @@ Deployment:
 - After implementation and tests, stop and ask the user for confirmation.
 - Only create PR and merge if the user explicitly agrees and tests pass.
 
-## Task Mode: Plain-language task mode
+## Task Mode: Plain-language task mode & autonomous short commands
 
-This project uses **Plain-language task mode** for `SocialListening`.
+This project supports two operative modes for `SocialListening`.
 
-- Treat short user messages as direct repo tasks for this project. Example inputs: `sửa lỗi X`, `thêm backend cho Y`, `kiểm tra phần Z`, `implement feature A`, `refactor B`.
-- When in this mode:
-  - Inspect source first to find related files instead of asking.
-  - Use the project's existing workflow automatically: pull latest `main`, create a focused branch, implement the smallest-possible fix, add/update docs when required, run relevant tests, then commit and push.
-  - Stop after push and ask for confirmation before opening a PR or merging. Default: do **not** create PR/merge unless explicitly confirmed.
-  - Do **not** deploy, run production migrations, or restart production unless explicitly requested.
-  - Never fabricate data, UI, API responses, or reports.
-  - Always report: branch, commit, files changed, docs updated, tests run, risks/notes, and whether PR/merge can proceed.
-- Ask back **only** when the request is genuinely ambiguous, may cause data loss, requires production deploy/migration, touches secrets/env, or has multiple risky solution paths.
+### A. Plain-language task mode
+- Treat short user messages as direct repo tasks.
+- Inspect source first to find related files instead of asking.
+- Use the project's existing workflow automatically: latest main, focused branch, minimal fix, docs when required, relevant tests, commit and push.
+- Default after push: do **not** create PR/merge unless explicitly confirmed.
+
+### B. Short Command Aliases
+Use these recognized phrases as direct commands.
+
+| Phrase | Behavior |
+|---|---|
+| "tự fix đi" | On the current task/branch/PR: read Vercel/Render/GitHub logs, identify build/type/runtime errors from logs, fix small clear errors, run verification, commit, push, and recheck preview/health. Do not stop at each small error. Repeat until the branch preview/check passes or hits a hard blocker. Do not ask for per-error confirmation. |
+| "làm tiếp đi" | Continue the current unfinished task on the current branch. Always run `git status` first, do not discard uncommitted work, and continue under the project rules. |
+| "check deploy đi" | Read-only status check of Vercel frontend preview and Render backend health/log. Do not manually deploy, restart, or run migrations. Report status clearly. |
+| "tạo PR đi" | Create or update PR from current branch into main and report PR URL, summary, files changed, tests/checks, and risks. Do not merge. |
+| "merge đi" | Merge only if PR checks pass or user explicitly accepts risk. Prefer squash merge. Do not force manual deploy unless requested. |
+| "dừng lại" | Stop the current task. Report branch, current status, changed files, current commits/pushes. Do not delete anything. |
+
+**Allowed autonomous actions** (no confirmation required):
+- Pull latest main and create/update task branch
+- Read Vercel preview logs (read-only)
+- Read Render health/log/status (read-only)
+- Read GitHub PR/checks status
+- Fix clearly identified small errors: TypeScript/imports/missing types/build/lint/runtime errors with obvious cause
+- Run relevant verification
+- Commit and push fixes
+- Create or update PR description/body; add/update docs when required
+
+**Still require explicit user confirmation before acting on**:
+- Merging to main
+- Manual deploy/restart/migration on production
+- Changing env/secrets/config with production impact
+- Any action with data loss risk
+- Adding large new dependencies or changing major architecture
+- Any step that cannot be justified from source/log inspection
+
+**Stopping rules for autonomous loops**:
+- Stop if verification still fails after non-trivial retry and the failure requires architectural/product decision
+- Stop if the error is not clearly identified from logs/source after reasonable inspection
+- Ask the user only when a decision is genuinely ambiguous or risky
 
 ## Deployment Rules
 - Do not run deploy.bat, deploy scripts, production migrations, or production restarts unless explicitly requested.
