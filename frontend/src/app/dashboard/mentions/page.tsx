@@ -933,7 +933,17 @@ function MentionsPageContent() {
   };
 
   const clearAllFilters = () => {
-    setFilters({ sentiment: null, source_type: null, min_risk_score: null, min_influence_score: null, sort_by: 'newest' });
+    setFilters({
+      sentiment: null,
+      sentiments: [],
+      source_type: null,
+      source_types: [],
+      date_from: null,
+      date_to: null,
+      min_risk_score: null,
+      min_influence_score: null,
+      sort_by: 'newest',
+    });
     setSearchTerm('');
     setSearchInput('');
     setPage(1);
