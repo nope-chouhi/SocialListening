@@ -83,6 +83,32 @@ Always use Pull Request workflow.
    - Risks/notes
    - Manual verification still required, if applicable
 
+For Telegram/default reporting, also follow the **Concise Reporting Style** subsection in this file. That concise style is the default for short status updates and questions. Detailed logs are only sent on request or when the error truly needs debugging.
+
+## Concise Reporting Style
+Default output style for Telegram and for reports/questions back to the user.
+
+Rules:
+- Ngắn gọn, tổng quan, đi thẳng vấn đề.
+- Ưu tiên format dễ đọc.
+- Có thể dùng emoji nhẹ: ✅ ⚠️ ❌ 🔧 🚀, không lạm dụng.
+
+Success format:
+- ✅ Xong
+- Branch / commit / PR nếu có
+- Tests/checks
+- Còn rủi ro gì không
+
+Asking format:
+- Chỉ hỏi đúng 1 câu quan trọng nhất.
+
+Rules:
+- Chỉ gửi log/chi tiết dài khi user yêu cầu hoặc khi lỗi thực sự cần debug.
+- Nếu có lỗi, chỉ trích dòng lỗi chính + file/dòng liên quan.
+- Không nói dài kiểu “mình sẽ tiếp tục…” nếu không cần.
+- Với lỗi nhỏ Hermes tự xử lý được: không hỏi, chỉ báo kết quả cuối vòng fix.
+- Với quyết định lớn (merge/deploy/restart/migration/env/secrets): hỏi ngắn gọn.
+
 ## Deployment Rule
 
 Do not run `deploy.bat` unless the user explicitly asks for manual deployment, auto-deploy is disabled/failing, or the task specifically requires manual deployment verification.

@@ -49,8 +49,9 @@ Browser/runtime changes:
 
 ## PR Handoff
 
-Before PR/merge, report:
+Before PR/merge, report the required fields. For Telegram/default updates, also follow the **Concise Reporting Style** section below; use detailed logs only when needed for debugging or when explicitly requested.
 
+Required fields:
 - Branch
 - Commit hash
 - PR URL
@@ -62,6 +63,31 @@ Before PR/merge, report:
 - Manual verification steps
 - Confirmation that no direct push to main was performed
 - Confirmation that `deploy.bat` was not run
+
+## Concise Reporting Style
+
+Default output style for Telegram and for reports/questions back to the user.
+
+Rules:
+- Ngắn gọn, tổng quan, đi thẳng vấn đề.
+- Ưu tiên format dễ đọc.
+- Có thể dùng emoji nhẹ: ✅ ⚠️ ❌ 🔧 🚀, không lạm dụng.
+
+Success format:
+- ✅ Xong
+- Branch / commit / PR nếu có
+- Tests/checks
+- Còn rủi ro gì không
+
+Asking format:
+- Chỉ hỏi đúng 1 câu quan trọng nhất.
+
+Rules:
+- Chỉ gửi log/chi tiết dài khi user yêu cầu hoặc khi lỗi thực sự cần debug.
+- Nếu có lỗi, chỉ trích dòng lỗi chính + file/dòng liên quan.
+- Không nói dài kiểu “mình sẽ tiếp tục…” nếu không cần.
+- Với lỗi nhỏ Hermes tự xử lý được: không hỏi, chỉ báo kết quả cuối vòng fix.
+- Với quyết định lớn (merge/deploy/restart/migration/env/secrets): hỏi ngắn gọn.
 
 ## Deployment
 
