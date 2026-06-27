@@ -363,13 +363,38 @@ function MentionsPageContent() {
       variant: 'danger',
     });
     if (!ok) return;
-    let success = 0;
-    for (const id of Array.from(selectedIds)) {
-      try { await mentionsApi.delete(id); success++; } catch {}
+    try {
+      await mentionsApi.bulkDelete(Array.from(selectedIds));
+      toast.success(`Đã xóa ${selectedIds.size} mentions`);
+      setSelectedIds(new Set());
+      fetchMentions();
+    } catch (e) {
+      toast.error('Lỗi khi xóa mentions');
     }
-    toast.success(`Đã xóa ${success}/${selectedIds.size} mentions`);
-    setSelectedIds(new Set());
-    fetchMentions();
+  };
+
+  const handleBulkReview = async (isReviewed: boolean) => {
+    if (selectedIds.size === 0) return;
+    try {
+      await mentionsApi.bulkReview(Array.from(selectedIds), isReviewed);
+      toast.success(`Đã đánh dấu ${selectedIds.size} mentions`);
+      setMentionsList(prev => prev.map(m => selectedIds.has(m.id) ? { ...m, is_reviewed: isReviewed } : m));
+      setSelectedIds(new Set());
+    } catch (e) {
+      toast.error('Lỗi cập nhật mentions');
+    }
+  };
+
+  const handleBulkSentiment = async (sentiment: string) => {
+    if (selectedIds.size === 0) return;
+    try {
+      await mentionsApi.bulkSentiment(Array.from(selectedIds), sentiment);
+      toast.success(`Đã cập nhật cảm xúc ${selectedIds.size} mentions`);
+      setMentionsList(prev => prev.map(m => selectedIds.has(m.id) ? { ...m, sentiment } : m));
+      setSelectedIds(new Set());
+    } catch (e) {
+      toast.error('Lỗi cập nhật mentions');
+    }
   };
 
   const hasSyncedUrlProject = useRef(false);
@@ -669,34 +694,39 @@ function MentionsPageContent() {
   const fetchChartData = async () => {
     setChartLoading(true);
     try {
-      // Map chartTimeRange to API range and granularity
-      let range = '30d';
       let granularity = 'daily';
       if (chartTimeRange === 'days') {
-        range = '7d';
         granularity = 'daily';
       } else if (chartTimeRange === 'weeks') {
-        range = '30d';
         granularity = 'weekly';
       } else if (chartTimeRange === 'months') {
-        range = '180d';
         granularity = 'monthly';
-      } else {
-        // fallback from dateRange
-        if (dateRange === '1d') range = 'today';
-        else if (dateRange === '7d') range = '7d';
       }
 
-      const res = await dashboard.trends(range, activeProject?.id, granularity);
+      const now = new Date();
+      let fromDate = new Date();
+      let toDate = new Date();
+      
+      if (dateRange === '1d') fromDate.setDate(now.getDate() - 1);
+      else if (dateRange === '7d') fromDate.setDate(now.getDate() - 7);
+      else if (dateRange === '30d') fromDate.setDate(now.getDate() - 30);
+      else if (dateRange === '90d') fromDate.setDate(now.getDate() - 90);
+
+      const params: any = {
+        granularity,
+        q: searchTerm || undefined,
+        project_id: activeProject?.id || undefined,
+        sentiment: filters.sentiment || undefined,
+        source_type: filters.source_type || undefined,
+        min_risk_score: filters.min_risk_score || undefined,
+        min_influence_score: filters.min_influence_score || undefined,
+        date_from: dateRange !== 'all' ? fromDate.toISOString() : undefined,
+        date_to: dateRange !== 'all' ? toDate.toISOString() : undefined,
+      };
+
+      const res = await mentionsApi.charts(params);
       if (res && res.items) {
-        const mappedData = res.items.map((item: any) => {
-          return {
-            date: item.date,
-            mentions: item.total_mentions,
-            reach: item.total_mentions * 10 // Placeholder for reach
-          };
-        });
-        setChartData(mappedData);
+        setChartData(res.items);
       } else {
         setChartData([]);
       }
@@ -1302,12 +1332,33 @@ function MentionsPageContent() {
                     <span>{selectedIds.size} đã chọn</span>
                   </div>
                   <div className="flex items-center gap-2">
+                    <select
+                      className="px-2 py-1.5 text-xs font-bold text-gray-700 bg-white border border-gray-300 rounded-lg"
+                      onChange={(e) => {
+                         if (e.target.value) {
+                           handleBulkSentiment(e.target.value);
+                           e.target.value = "";
+                         }
+                      }}
+                    >
+                      <option value="">-- Cảm xúc --</option>
+                      <option value="positive">Tích cực</option>
+                      <option value="neutral">Trung lập</option>
+                      <option value="negative">Tiêu cực</option>
+                    </select>
+                    <button
+                      onClick={() => handleBulkReview(true)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100 transition-colors"
+                    >
+                      <CheckSquare className="w-3.5 h-3.5" />
+                      Đánh dấu Review
+                    </button>
                     <button
                       onClick={handleBulkDelete}
                       className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-lg hover:bg-red-100 dark:hover:bg-red-500/20 transition-colors"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
-                      Xóa đã chọn
+                      Xóa
                     </button>
                     <button
                       onClick={() => setSelectedIds(new Set())}

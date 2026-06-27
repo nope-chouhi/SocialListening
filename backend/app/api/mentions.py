@@ -379,6 +379,7 @@ def list_mentions(
     keyword: Optional[str] = Query(None),
     project_id: Optional[int] = Query(None),
     is_muted: Optional[bool] = Query(None),
+    is_reviewed: Optional[bool] = Query(None),
     min_influence_score: Optional[float] = Query(None),
     sort_by: Optional[str] = Query("newest", pattern="^(newest|oldest|risk_high|risk_low|influence_high|engagement_high)$"),
     refresh: Optional[bool] = Query(False),
@@ -524,6 +525,8 @@ def list_mentions(
             query = query.where(Mention.is_muted == is_muted)
         else:
             query = query.where(Mention.is_muted == False)
+        if is_reviewed is not None:
+            query = query.where(Mention.is_reviewed == is_reviewed)
         if min_influence_score is not None:
             query = query.where(Mention.influence_score >= min_influence_score)
 
@@ -944,6 +947,145 @@ def list_mentions(
         raise HTTPException(status_code=500, detail="Lỗi hệ thống khi tải danh sách mentions")
 
 
+from app.schemas.mention import BulkDeleteRequest, BulkReviewRequest, BulkSentimentRequest
+
+@router.put("/bulk/delete", status_code=204)
+def bulk_delete_mentions(
+    req: BulkDeleteRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    mentions = db.execute(apply_tenant_filter(select(Mention), Mention, current_user).where(Mention.id.in_(req.mention_ids))).scalars().all()
+    for m in mentions:
+        m.is_deleted = True
+    db.commit()
+    return
+
+@router.put("/bulk/review")
+def bulk_review_mentions(
+    req: BulkReviewRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    mentions = db.execute(apply_tenant_filter(select(Mention), Mention, current_user).where(Mention.id.in_(req.mention_ids))).scalars().all()
+    for m in mentions:
+        m.is_reviewed = req.is_reviewed
+    db.commit()
+    return {"status": "success", "updated_count": len(mentions)}
+
+@router.put("/bulk/sentiment")
+def bulk_sentiment_mentions(
+    req: BulkSentimentRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    mentions = db.execute(apply_tenant_filter(select(Mention), Mention, current_user).where(Mention.id.in_(req.mention_ids))).scalars().all()
+    for m in mentions:
+        m.sentiment = req.sentiment
+        m.sentiment_confidence = 1.0
+    db.commit()
+    return {"status": "success", "updated_count": len(mentions)}
+
+@router.get("/charts")
+def get_mention_charts(
+    granularity: str = Query("daily", pattern="^(daily|weekly|monthly)$"),
+    source_type: Optional[str] = None,
+    source_types: Optional[List[str]] = Query(None),
+    sentiment: Optional[str] = None,
+    sentiments: Optional[List[str]] = Query(None),
+    min_risk_score: Optional[float] = Query(None),
+    search_query: Optional[str] = None,
+    q: Optional[str] = Query(None),
+    author: Optional[str] = None,
+    domain: Optional[str] = None,
+    date_from: Optional[datetime] = None,
+    date_to: Optional[datetime] = None,
+    job_id: Optional[int] = Query(None),
+    keyword: Optional[str] = Query(None),
+    project_id: Optional[int] = Query(None),
+    is_muted: Optional[bool] = Query(None),
+    is_reviewed: Optional[bool] = Query(None),
+    min_influence_score: Optional[float] = Query(None),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    from sqlalchemy import or_
+    from app.models.source import Source
+    
+    query = apply_tenant_filter(select(Mention), Mention, current_user)
+    query = query.where(Mention.verification_status != 'synthetic')
+    query = query.where(Mention.is_deleted == False)
+
+    global_valid_url_cond = or_(
+        Mention.url.is_(None),
+        and_(
+            Mention.url.notilike('%news.google.com/rss/articles/%'),
+            Mention.url.notilike('%googleusercontent.com%'),
+            Mention.url.notilike('%corp.google.com%'),
+            Mention.url.notilike('%uberproxy%'),
+            Mention.url.notilike('%/rss%'),
+            Mention.url.notilike('%.xml')
+        )
+    )
+    query = query.where(global_valid_url_cond)
+
+    if project_id:
+        query = query.where(Mention.project_id == project_id)
+    if is_muted is not None:
+        query = query.where(Mention.is_muted == is_muted)
+    else:
+        query = query.where(Mention.is_muted == False)
+    if is_reviewed is not None:
+        query = query.where(Mention.is_reviewed == is_reviewed)
+    if min_influence_score is not None:
+        query = query.where(Mention.influence_score >= min_influence_score)
+        
+    if sentiment:
+        sentiments_list = [s.strip() for s in sentiment.split(",")]
+        query = query.where(Mention.sentiment.in_(sentiments_list))
+    elif sentiments:
+        query = query.where(Mention.sentiment.in_(sentiments))
+        
+    if date_from:
+        query = query.where(Mention.collected_at >= date_from)
+    if date_to:
+        query = query.where(Mention.collected_at <= date_to)
+        
+    if q:
+        search_term = f"%{q}%"
+        query = query.where(or_(
+            Mention.title.ilike(search_term),
+            Mention.snippet.ilike(search_term),
+            Mention.content.ilike(search_term)
+        ))
+
+    mentions = db.execute(query).scalars().all()
+    
+    groups = {}
+    for m in mentions:
+        d = m.collected_at
+        if not d: continue
+        
+        if granularity == "daily":
+            key = d.strftime("%Y-%m-%d")
+        elif granularity == "weekly":
+            key = d.strftime("%Y-W%W")
+        else:
+            key = d.strftime("%Y-%m")
+            
+        if key not in groups:
+            groups[key] = {"date": key, "total_mentions": 0, "reach": 0, "sentiment_positive": 0, "sentiment_neutral": 0, "sentiment_negative": 0}
+            
+        groups[key]["total_mentions"] += 1
+        groups[key]["reach"] += int(m.reach_estimate or (m.influence_score or 1) * 10)
+        s = (m.sentiment or "").lower()
+        if s == "positive": groups[key]["sentiment_positive"] += 1
+        elif s == "negative": groups[key]["sentiment_negative"] += 1
+        elif s == "neutral": groups[key]["sentiment_neutral"] += 1
+
+    sorted_groups = [groups[k] for k in sorted(groups.keys())]
+    return {"items": sorted_groups, "granularity": granularity}
+
 @router.post("/{mention_id}/visit")
 def record_mention_visit(
     mention_id: int,
@@ -1342,13 +1484,14 @@ def create_incident_from_mention(
     }
 
 
-@router.post("/{mention_id}/mark-reviewed")
-def mark_mention_reviewed(
+@router.put("/{mention_id}/review")
+def update_mention_review(
     mention_id: int,
+    req: dict,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
-    """Mark a mention as reviewed"""
+    """Mark or unmark a mention as reviewed"""
     mention = db.execute(
         apply_tenant_filter(select(Mention), Mention, current_user).where(Mention.id == mention_id)
     ).scalar_one_or_none()
@@ -1356,7 +1499,7 @@ def mark_mention_reviewed(
     if not mention:
         raise HTTPException(status_code=404, detail="Mention not found")
 
-    mention.is_reviewed = True
+    mention.is_reviewed = req.get("is_reviewed", True)
     db.commit()
     db.refresh(mention)
 

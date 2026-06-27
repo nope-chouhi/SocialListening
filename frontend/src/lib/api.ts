@@ -431,12 +431,7 @@ export const mentions = {
   markReviewed: async (id: number) => {
     const response = await api.post(`/api/mentions/${id}/mark-reviewed`);
     return response.data;
-  },
-  updateTags: async (id: number, tags: string[]) => {
-    const response = await api.put(`/api/mentions/${id}/tags`, { tags });
-    return response.data;
-  },
-  updateMute: async (id: number, is_muted: boolean) => {
+  },updateMute: async (id: number, is_muted: boolean) => {
     const response = await api.put(`/api/mentions/${id}/mute`, { is_muted });
     return response.data;
   },
@@ -462,6 +457,30 @@ export const mentions = {
       responseType: 'blob',
     });
     return response.data as Blob;
+  },
+  charts: async (params?: Record<string, unknown>) => {
+    const response = await api.get('/api/mentions/charts', { params });
+    return response.data;
+  },
+  bulkDelete: async (mentionIds: number[]) => {
+    const response = await api.put('/api/mentions/bulk/delete', { mention_ids: mentionIds });
+    return response.data;
+  },
+  bulkReview: async (mentionIds: number[], isReviewed: boolean) => {
+    const response = await api.put('/api/mentions/bulk/review', { mention_ids: mentionIds, is_reviewed: isReviewed });
+    return response.data;
+  },
+  bulkSentiment: async (mentionIds: number[], sentiment: string) => {
+    const response = await api.put('/api/mentions/bulk/sentiment', { mention_ids: mentionIds, sentiment });
+    return response.data;
+  },
+  updateReview: async (id: number, isReviewed: boolean) => {
+    const response = await api.put(`/api/mentions/${id}/review`, { is_reviewed: isReviewed });
+    return response.data;
+  },
+  updateTags: async (id: number, tags: string[]) => {
+    const response = await api.put(`/api/mentions/${id}/tags`, { tags });
+    return response.data;
   },
   analyzeSentiment: async (text: string) => {
     const response = await api.post('/api/ai/sentiment', { text });

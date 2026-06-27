@@ -128,3 +128,44 @@ class MentionListResponse(BaseModel):
     page_size: int
     total_pages: int
 
+
+class BulkMentionsRequest(BaseModel):
+    mention_ids: List[int]
+
+
+class BulkReviewRequest(BulkMentionsRequest):
+    is_reviewed: bool
+
+
+class BulkSentimentRequest(BulkMentionsRequest):
+    sentiment: str
+
+
+class ChartDataPoint(BaseModel):
+    date: str
+    total_mentions: int
+    reach: int
+    sentiment_positive: int
+    sentiment_neutral: int
+    sentiment_negative: int
+
+
+class ChartResponse(BaseModel):
+    items: List[ChartDataPoint]
+    granularity: str
+
+
+class BulkDeleteRequest(BaseModel):
+    mention_ids: List[int]
+
+class BulkReviewRequest(BaseModel):
+    mention_ids: List[int]
+    is_reviewed: bool
+
+class BulkSentimentRequest(BaseModel):
+    mention_ids: List[int]
+    sentiment: str
+
+class ChartResponse(BaseModel):
+    granularity: str
+    items: List[dict]
