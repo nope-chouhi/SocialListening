@@ -17,11 +17,14 @@
 - Không thể tạo services mới
 - Không thể tạo service requests
 
-### 🎯 Mục Tiêu
+**Mục tiêu:**
 1. Fix backend errors
 2. Import 26 services từ Excel
 3. Test service request workflow
 4. Tích hợp với mentions/alerts/incidents
+
+**Thay đổi liên quan:**
+- `backend/app/schemas/service.py`: Đã cập nhật `ServiceCategoryResponse` để khai báo rõ `name`, `description`, `is_active`, `updated_at` thay vì kế thừa từ `ServiceCategoryBase`, giúp tránh lỗi serialization 500 khi backend trả về danh sách categories.
 
 ---
 

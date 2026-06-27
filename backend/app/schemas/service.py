@@ -90,8 +90,11 @@ class ServiceCategoryUpdate(BaseModel):
     is_active: Optional[bool] = None
 
 
-class ServiceCategoryResponse(ServiceCategoryBase):
+class ServiceCategoryResponse(BaseModel):
     id: int
+    name: str = Field(..., max_length=255)
+    description: Optional[str] = None
+    is_active: bool = True
     created_at: datetime
     updated_at: Optional[datetime] = None
 
