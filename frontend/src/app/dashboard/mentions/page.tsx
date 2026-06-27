@@ -511,7 +511,11 @@ function MentionsPageContent() {
       // Apply filters
       setFilters({
         sentiment: filterJson.sentiment || null,
+        sentiments: filterJson.sentiments || [],
         source_type: filterJson.source_type || null,
+        source_types: filterJson.source_types || [],
+        date_from: filterJson.date_from || null,
+        date_to: filterJson.date_to || null,
         min_risk_score: filterJson.min_risk_score || null,
         min_influence_score: filterJson.min_influence_score || null,
         sort_by: filterJson.sort_by || 'newest',
