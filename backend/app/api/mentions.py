@@ -359,6 +359,85 @@ def get_mentions_source_counts(
         return {'web': 0, 'news': 0, 'blog': 0, 'video': 0, 'rss': 0}
 
 
+def apply_mention_filters(
+    query,
+    source_id=None,
+    source_type=None,
+    source_types=None,
+    sentiment=None,
+    sentiments=None,
+    min_risk_score=None,
+    search_query=None,
+    q=None,
+    author=None,
+    domain=None,
+    date_from=None,
+    date_to=None,
+    job_id=None,
+    keyword=None,
+    project_id=None,
+    is_muted=None,
+    is_reviewed=None,
+    min_influence_score=None
+):
+    from sqlalchemy import or_
+    from app.models.mention import AIAnalysis
+    from app.models.mention import Mention
+
+    if project_id:
+        query = query.where(Mention.project_id == project_id)
+    if job_id:
+        query = query.where(Mention.job_id == job_id)
+    if source_id:
+        query = query.where(Mention.source_id == source_id)
+    if source_type:
+        query = query.where(Mention.source_type == source_type)
+    if source_types:
+        query = query.where(Mention.source_type.in_(source_types))
+    if keyword:
+        query = query.where(Mention.keyword == keyword)
+    
+    search_term = q or search_query
+    if search_term:
+        term = f'%{search_term}%'
+        query = query.where(
+            or_(
+                Mention.title.ilike(term),
+                Mention.content.ilike(term),
+                Mention.author.ilike(term),
+                Mention.domain.ilike(term)
+            )
+        )
+        
+    if sentiment:
+        sentiments_list = [s.strip() for s in sentiment.split(',')]
+        query = query.where(Mention.sentiment.in_(sentiments_list))
+    if sentiments:
+        query = query.where(Mention.sentiment.in_(sentiments))
+    if author:
+        query = query.where(Mention.author == author)
+    if domain:
+        query = query.where(Mention.domain == domain)
+    if min_risk_score is not None:
+        query = query.join(AIAnalysis, isouter=True).where(AIAnalysis.risk_score >= min_risk_score)
+    if date_from:
+        query = query.where(Mention.collected_at >= date_from)
+    if date_to:
+        query = query.where(Mention.collected_at <= date_to)
+    
+    if is_muted is not None:
+        query = query.where(Mention.is_muted == is_muted)
+    else:
+        query = query.where(Mention.is_muted == False)
+        
+    if is_reviewed is not None:
+        query = query.where(Mention.is_reviewed == is_reviewed)
+        
+    if min_influence_score is not None:
+        query = query.where(Mention.influence_score >= min_influence_score)
+        
+    return query
+
 @router.get("")
 def list_mentions(
     page: int = Query(1, ge=1),
@@ -986,6 +1065,61 @@ def bulk_sentiment_mentions(
     db.commit()
     return {"status": "success", "updated_count": len(mentions)}
 
+@router.get("/topics")
+def get_mention_topics(
+    source_type: Optional[str] = None,
+    source_types: Optional[List[str]] = Query(None),
+    sentiment: Optional[str] = None,
+    sentiments: Optional[List[str]] = Query(None),
+    min_risk_score: Optional[float] = Query(None),
+    search_query: Optional[str] = None,
+    q: Optional[str] = Query(None),
+    author: Optional[str] = None,
+    domain: Optional[str] = None,
+    date_from: Optional[datetime] = None,
+    date_to: Optional[datetime] = None,
+    job_id: Optional[int] = Query(None),
+    keyword: Optional[str] = Query(None),
+    project_id: Optional[int] = Query(None),
+    is_muted: Optional[bool] = Query(None),
+    is_reviewed: Optional[bool] = Query(None),
+    min_influence_score: Optional[float] = Query(None),
+    limit: int = Query(20, ge=1, le=100),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    query = apply_tenant_filter(select(Mention), Mention, current_user)
+    query = apply_mention_filters(
+        query=query, source_type=source_type, source_types=source_types,
+        sentiment=sentiment, sentiments=sentiments, min_risk_score=min_risk_score,
+        search_query=search_query, q=q, author=author, domain=domain,
+        date_from=date_from, date_to=date_to, job_id=job_id, keyword=keyword,
+        project_id=project_id, is_muted=is_muted, is_reviewed=is_reviewed,
+        min_influence_score=min_influence_score
+    )
+    
+    mentions = db.execute(query.order_by(Mention.collected_at.desc()).limit(2000)).scalars().all()
+    
+    topic_counts = {}
+    for m in mentions:
+        # Extract from tags
+        if isinstance(m.tags_json, list):
+            for t in m.tags_json:
+                t_lower = t.strip().lower()
+                topic_counts[t_lower] = topic_counts.get(t_lower, 0) + 1
+        
+        # Fallback to keyword if tags are empty
+        elif m.keyword:
+            kw_lower = m.keyword.strip().lower()
+            topic_counts[kw_lower] = topic_counts.get(kw_lower, 0) + 1
+            
+    # Sort by count
+    sorted_topics = sorted(topic_counts.items(), key=lambda x: x[1], reverse=True)
+    
+    results = [{"topic": k, "count": v} for k, v in sorted_topics[:limit]]
+    return {"topics": results}
+
+
 @router.get("/charts")
 def get_mention_charts(
     granularity: str = Query("daily", pattern="^(daily|weekly|monthly)$"),
@@ -1139,41 +1273,38 @@ def record_mention_visit(
 
 @router.get("/export")
 def export_mentions_csv(
-    sentiment: Optional[str] = None,
+    source_id: Optional[int] = None,
     source_type: Optional[str] = None,
-    project_id: Optional[int] = Query(None),
-    keyword: Optional[str] = Query(None),
+    source_types: Optional[List[str]] = Query(None),
+    sentiment: Optional[str] = None,
+    sentiments: Optional[List[str]] = Query(None),
+    min_risk_score: Optional[float] = Query(None, ge=0, le=100),
+    search_query: Optional[str] = None,
     q: Optional[str] = Query(None),
+    author: Optional[str] = None,
+    domain: Optional[str] = None,
     date_from: Optional[datetime] = None,
     date_to: Optional[datetime] = None,
+    job_id: Optional[int] = Query(None),
+    keyword: Optional[str] = Query(None),
+    project_id: Optional[int] = Query(None),
+    is_muted: Optional[bool] = Query(None),
+    is_reviewed: Optional[bool] = Query(None),
+    min_influence_score: Optional[float] = Query(None),
     limit: int = Query(5000, ge=1, le=10000),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ):
     """Export mentions as CSV (Excel-compatible)."""
-    query = apply_tenant_filter(select(Mention), Mention, current_user).where(Mention.is_muted == False)
-    if project_id:
-        query = query.where(Mention.project_id == project_id)
-    if sentiment:
-        sentiments_list = [s.strip() for s in sentiment.split(",")]
-        query = query.where(Mention.sentiment.in_(sentiments_list))
-    if source_type:
-        query = query.where(Mention.source_type == source_type)
-    if keyword:
-        query = query.where(Mention.keyword_text.ilike(f"%{keyword}%"))
-    if q:
-        search_term = f"%{q}%"
-        query = query.filter(
-            or_(
-                Mention.title.ilike(search_term),
-                Mention.snippet.ilike(search_term),
-                Mention.content.ilike(search_term),
-            )
-        )
-    if date_from:
-        query = query.where(Mention.collected_at >= date_from)
-    if date_to:
-        query = query.where(Mention.collected_at <= date_to)
+    query = apply_tenant_filter(select(Mention), Mention, current_user)
+    query = apply_mention_filters(
+        query=query, source_id=source_id, source_type=source_type, source_types=source_types,
+        sentiment=sentiment, sentiments=sentiments, min_risk_score=min_risk_score,
+        search_query=search_query, q=q, author=author, domain=domain,
+        date_from=date_from, date_to=date_to, job_id=job_id, keyword=keyword,
+        project_id=project_id, is_muted=is_muted, is_reviewed=is_reviewed,
+        min_influence_score=min_influence_score
+    )
 
     query = query.order_by(Mention.collected_at.desc()).limit(limit)
     rows = db.execute(query).scalars().all()

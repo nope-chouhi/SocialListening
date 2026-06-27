@@ -462,6 +462,10 @@ export const mentions = {
     const response = await api.get('/api/mentions/charts', { params });
     return response.data;
   },
+  topics: async (params?: Record<string, unknown>) => {
+    const response = await api.get('/api/mentions/topics', { params });
+    return response.data;
+  },
   bulkDelete: async (mentionIds: number[]) => {
     const response = await api.put('/api/mentions/bulk/delete', { mention_ids: mentionIds });
     return response.data;

@@ -266,7 +266,7 @@ function MentionsPageContent() {
   const [chartData, setChartData] = useState<any[]>([]);
   const [chartLoading, setChartLoading] = useState(false);
   const [sentimentSummary, setSentimentSummary] = useState<any>(null);
-  const [trendData, setTrendData] = useState<any[]>([]);
+  const [topicsData, setTopicsData] = useState<any[]>([]);
   const [sourceCounts, setSourceCounts] = useState<Record<string, number>>({});
   const { activeProject, setActiveProject, projects, fetchProjects } = useProject();
   const { confirm, prompt } = useDialog();
@@ -690,6 +690,34 @@ function MentionsPageContent() {
   useEffect(() => {
     fetchMentionsRef.current = fetchMentions;
   }, [fetchMentions]);
+
+  
+  const fetchTopicsData = useCallback(async () => {
+    try {
+      const params: any = {};
+      if (activeProject) params.project_id = activeProject.id;
+      if (searchTerm) params.search_query = searchTerm;
+      if (filters.source_type) params.source_type = filters.source_type;
+      if (filters.sentiment) params.sentiment = filters.sentiment;
+      if (filters.min_influence_score) params.min_influence_score = filters.min_influence_score;
+      
+      if (dateRange && dateRange !== 'all') {
+        const now = new Date();
+        const from = new Date();
+        if (dateRange === '1d') from.setDate(now.getDate() - 1);
+        else if (dateRange === '7d') from.setDate(now.getDate() - 7);
+        else if (dateRange === '30d') from.setDate(now.getDate() - 30);
+        else if (dateRange === '90d') from.setDate(now.getDate() - 90);
+        params.date_from = from.toISOString();
+        params.date_to = now.toISOString();
+      }
+
+      const response = await mentionsApi.topics(params);
+      setTopicsData(response.topics || []);
+    } catch (error) {
+      console.error('Error fetching topics:', error);
+    }
+  }, [activeProject, searchTerm, filters, dateRange]);
 
   const fetchChartData = async () => {
     setChartLoading(true);
