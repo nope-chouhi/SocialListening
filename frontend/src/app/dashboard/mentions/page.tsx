@@ -88,7 +88,11 @@ interface MentionItem {
 
 interface Filters {
   sentiment: string | null;
+  sentiments: string[];
+  source_types: string[];
   source_type: string | null;
+  date_from: string | null;
+  date_to: string | null;
   min_risk_score: number | null;
   min_influence_score: number | null;
   add_to_report?: boolean | null;
