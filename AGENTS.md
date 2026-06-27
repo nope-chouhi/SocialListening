@@ -68,20 +68,27 @@ Always use Pull Request workflow.
    - implementation scratch files
    - unrelated markdown artifacts unless explicitly requested
 
-6. Create a PR into main.
+6. After push, stop. Do not create PR automatically.
 
 7. Do not merge automatically.
 
-8. Before reporting done, provide:
+8. Before asking to create PR, provide:
    - Branch name
    - Commit hash
-   - PR URL if available
    - `git status --short`
    - `git diff --stat main...<branch>`
    - Files changed
+   - Docs updated
    - Commands/tests run
+   - Pass/fail
    - Risks/notes
-   - Manual verification still required, if applicable
+   - Ask whether to create PR
+
+9. Only create PR after user explicitly confirms.
+
+10. After PR is created, report the PR URL and required checks.
+
+11. Only merge after user explicitly confirms and checks have passed.
 
 ## Deployment Rule
 
