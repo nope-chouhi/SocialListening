@@ -324,7 +324,7 @@ function MentionsPageContent() {
         if (filters.source_type) params.source_type = filters.source_type;
         if (filters.date_from) params.date_from = filters.date_from;
         if (filters.date_to) params.date_to = filters.date_to;
-        const data = await mentions.sentimentFacets(params);
+        const data = await mentionsApi.sentimentFacets(params);
         if (active) {
           setSentimentSummary({
             total: (data?.positive || 0) + (data?.neutral || 0) + (data?.negative || 0) + (data?.unknown || 0),
