@@ -82,3 +82,5 @@ quick_*.py
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+
+.vercel/
