@@ -3,7 +3,7 @@ import io
 from typing import Optional, List, Dict, Any, Generator
 from datetime import datetime
 import openpyxl
-from openpyxl.styles import Font, PatternFill
+from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from sqlalchemy import select, and_, func
 from sqlalchemy.orm import Session
 

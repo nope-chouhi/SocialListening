@@ -35,3 +35,12 @@ The Excel export (`xlsx`) uses `openpyxl` with styled headers, custom column wid
 * Interactions are derived directly from social counts (`m.likes_count`, `m.shares_count`, `m.comments_count`).
 * "Social" vs "Non-Social" relies on a heuristic mapping of the `source_type` field.
 * Word Clouds are implemented as Frequency Tables for better PDF parsing compatibility without requiring heavy graphical libraries like `Pillow/wordcloud`.
+
+
+## Runtime Safety and Null/Empty Data Behavior
+
+To ensure robust production generation without exceptions:
+- **Excel Styling**: Excel styling utilizes full `openpyxl.styles` including `Alignment`, `Font`, `Border`, and `Side`.
+- **PDF Export Null Safety**: The PDF generator normalizes `None` numeric metrics to `0` instead of crashing string formatters.
+- **Empty Data Handling**: Empty sections in the PDF (such as no mentions, no trends, or no sentiment) render honest fallback text (`"No data available for this section."`) instead of throwing indexing errors or drawing empty charts.
+- **Data Integrity**: No fake data is used in fallback cases. Reports authentically represent exactly what the platform collected during the requested period.
