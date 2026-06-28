@@ -538,8 +538,8 @@ def export_project_summary(
         "date_from": date_from,
         "date_to": date_to
     }
-    
-    content = ExportService.export_project_summary_xlsx(db, current_user, filters)
+    export_data = ExportService.get_export_data(db, current_user, filters)
+    content = ExportService.export_project_summary_xlsx(export_data)
     
     return Response(
         content=content,

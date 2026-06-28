@@ -114,16 +114,17 @@ def test_export_project_summary_xlsx_valid_workbook():
     
     # Verify expected sheets exist
     sheet_names = wb.sheetnames
-    assert "Summary" in sheet_names
+    assert "Analytics Data" in sheet_names
     assert "Mentions" in sheet_names
-    assert "Alerts" in sheet_names
-    assert "Incidents" in sheet_names
+    assert "Sentiment" in sheet_names
+    assert "Sources" in sheet_names
+    assert "Numerical Data" in sheet_names
     
-    # Verify no fake data in Summary sheet (should be 0 since mock db returns empty list)
-    ws = wb["Summary"]
+    # Verify no fake data in Analytics Data sheet
+    ws = wb["Analytics Data"]
     found_mentions_row = False
     for row in ws.iter_rows(values_only=True):
-        if row and row[0] == "Tổng Mentions":
+        if row and row[0] == "Total Mentions":
             assert row[1] == 0  # No fake data
             found_mentions_row = True
     assert found_mentions_row

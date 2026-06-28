@@ -3,198 +3,228 @@ import os
 from datetime import datetime
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.graphics.shapes import Drawing, String
+from reportlab.graphics.charts.piecharts import Pie
+from reportlab.graphics.charts.barcharts import VerticalBarChart
 
 class PDFGenerator:
+    @staticmethod
+    def _create_pie_chart(data_dict, width=300, height=200):
+        d = Drawing(width, height)
+        pie = Pie()
+        pie.x = 65
+        pie.y = 15
+        pie.width = 170
+        pie.height = 170
+        
+        # order: positive, negative, neutral
+        pos = data_dict.get('positive', 0)
+        neg = data_dict.get('negative', 0)
+        neu = data_dict.get('neutral', 0)
+        
+        pie.data = [pos, neg, neu]
+        pie.labels = ['Positive', 'Negative', 'Neutral']
+        
+        # Colors match typical dashboard
+        pie.slices[0].fillColor = colors.HexColor('#22c55e') # Green
+        pie.slices[1].fillColor = colors.HexColor('#ef4444') # Red
+        pie.slices[2].fillColor = colors.HexColor('#64748b') # Gray/Neutral
+        
+        for i in range(3):
+            pie.slices[i].fontName = 'Helvetica'
+            pie.slices[i].fontSize = 10
+            
+        d.add(pie)
+        return d
+
+    @staticmethod
+    def _create_bar_chart(trend_data, width=400, height=200):
+        d = Drawing(width, height)
+        bc = VerticalBarChart()
+        bc.x = 50
+        bc.y = 50
+        bc.height = 125
+        bc.width = 300
+        
+        # Sort trend data by date
+        sorted_dates = sorted(trend_data.keys())
+        if not sorted_dates:
+            return d
+            
+        counts = [trend_data[dt]['count'] for dt in sorted_dates]
+        labels = [dt[-5:] for dt in sorted_dates] # MM-DD
+        
+        bc.data = [counts]
+        bc.categoryAxis.categoryNames = labels
+        bc.categoryAxis.labels.boxAnchor = 'n'
+        bc.categoryAxis.labels.dy = -5
+        bc.categoryAxis.labels.angle = 45
+        bc.categoryAxis.labels.fontName = 'Helvetica'
+        
+        bc.bars[0].fillColor = colors.HexColor('#3b82f6')
+        
+        d.add(bc)
+        return d
+
     @staticmethod
     def generate_project_summary(data: dict) -> bytes:
         buffer = io.BytesIO()
         doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=30, leftMargin=30, topMargin=30, bottomMargin=18)
         
-        builder_config = data.get('builder_config', {})
+        metrics = data.get('metrics', {})
+        comparison = data.get('comparison', {})
+        sources_list = data.get('sources_list', [])
+        tags_list = data.get('tags_list', [])
+        top_mentions = data.get('top_mentions', [])
+        exec_summary = data.get('exec_summary', '')
         
-        # Colors
-        accent_color_hex = builder_config.get('accent_color', '#4f46e5')
-        theme = builder_config.get('theme', 'light')
-        bg_color_hex = '#ffffff' if theme == 'light' else '#050A15'
-        text_color_hex = builder_config.get('font_color', '#1e293b') if theme == 'light' else '#ffffff'
-        table_bg_hex = '#f8fafc' if theme == 'light' else '#0f172a'
-        
-        try:
-            accent_color = colors.HexColor(accent_color_hex)
-            bg_color = colors.HexColor(bg_color_hex)
-            text_color = colors.HexColor(text_color_hex)
-            table_bg_color = colors.HexColor(table_bg_hex)
-        except:
-            accent_color = colors.HexColor("#4f46e5")
-            bg_color = colors.white
-            text_color = colors.black
-            table_bg_color = colors.HexColor("#f8fafc")
-            
-        # Fonts
-        font_map = {
-            'font-sans': ('Helvetica', 'Helvetica-Bold'),
-            'font-serif': ('Times-Roman', 'Times-Bold'),
-            'font-mono': ('Courier', 'Courier-Bold')
-        }
-        font_style_choice = builder_config.get('font_style', 'font-sans')
-        normal_font, bold_font = font_map.get(font_style_choice, ('Helvetica', 'Helvetica-Bold'))
-        
-        # We need to manually adjust styles because reportlab defaults are fixed
+        # Styles
         styles = getSampleStyleSheet()
-        title_style = ParagraphStyle('CustomTitle', parent=styles['Heading1'], fontName=bold_font, textColor=text_color)
-        h2_style = ParagraphStyle('CustomH2', parent=styles['Heading2'], fontName=bold_font, textColor=accent_color)
-        normal_style = ParagraphStyle('CustomNormal', parent=styles['Normal'], fontName=normal_font, textColor=text_color)
-        italic_style = ParagraphStyle('CustomItalic', parent=styles['Normal'], fontName=normal_font, textColor=text_color)
+        title_style = ParagraphStyle('Title', parent=styles['Heading1'], fontName='Helvetica-Bold', fontSize=24, textColor=colors.HexColor('#1e293b'), alignment=1, spaceAfter=20)
+        h2_style = ParagraphStyle('H2', parent=styles['Heading2'], fontName='Helvetica-Bold', fontSize=16, textColor=colors.HexColor('#3b82f6'), spaceBefore=15, spaceAfter=10)
+        normal_style = ParagraphStyle('Normal', parent=styles['Normal'], fontName='Helvetica', fontSize=10, textColor=colors.HexColor('#334155'), leading=14)
+        bold_style = ParagraphStyle('Bold', parent=normal_style, fontName='Helvetica-Bold')
+        summary_style = ParagraphStyle('Summary', parent=normal_style, fontSize=11, leading=16, textColor=colors.HexColor('#0f172a'))
         
         elements = []
         
-        # Logo
-        logo_path = builder_config.get('logo_path')
-        if logo_path and os.path.exists(logo_path):
-            from reportlab.platypus import Image as RLImage
-            try:
-                img = RLImage(logo_path, width=100, height=50)
-                img.hAlign = 'LEFT'
-                elements.append(img)
-                elements.append(Spacer(1, 12))
-            except Exception:
-                pass
-        
-        # Title
+        # COVER PAGE
         project_name = data.get('project_name', 'All Projects')
         if project_name == 'Tất cả dự án':
             project_name = 'All Projects'
             
-        elements.append(Paragraph(f"Project Summary Report: {project_name}", title_style))
-        elements.append(Spacer(1, 12))
+        elements.append(Spacer(1, 150))
+        elements.append(Paragraph("Social Listening Report", title_style))
+        elements.append(Paragraph(f"Project: {project_name}", ParagraphStyle('Subtitle', parent=title_style, fontSize=18, textColor=colors.HexColor('#64748b'))))
         
-        date_from_val = data.get('date_from') or 'All time'
-        date_to_val = data.get('date_to') or 'All time'
-        if date_from_val != 'All time':
-            date_from_val = str(date_from_val).split('T')[0]
-        if date_to_val != 'All time':
-            date_to_val = str(date_to_val).split('T')[0]
-            
-        elements.append(Paragraph(f"From: {date_from_val}", normal_style))
-        elements.append(Paragraph(f"To: {date_to_val}", normal_style))
-        elements.append(Paragraph(f"Generated At: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", normal_style))
-        elements.append(Spacer(1, 24))
+        date_from_val = str(data.get('date_from') or 'All time').split('T')[0]
+        date_to_val = str(data.get('date_to') or 'All time').split('T')[0]
         
-        # Sections configuration
-        sections = builder_config.get('sections', [])
-        # If no sections provided, use defaults
-        if not sections:
-            sections = [
-                {"id": "summary", "enabled": True, "name": "Summary"},
-                {"id": "analysis", "enabled": True, "name": "Analysis & Trends"},
-                {"id": "sentiment", "enabled": True, "name": "Sentiment"},
-                {"id": "influencers", "enabled": True, "name": "Influencers & Sources"},
-                {"id": "mentions", "enabled": True, "name": "Mentions"},
-                {"id": "alerts", "enabled": False, "name": "Alerts"},
-                {"id": "incidents", "enabled": False, "name": "Incidents"}
+        elements.append(Spacer(1, 40))
+        elements.append(Paragraph(f"Period: {date_from_val} to {date_to_val}", ParagraphStyle('CenterBold', parent=bold_style, alignment=1, fontSize=12)))
+        elements.append(Paragraph(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", ParagraphStyle('Center', parent=normal_style, alignment=1)))
+        
+        elements.append(PageBreak())
+        
+        # 1. EXECUTIVE SUMMARY
+        elements.append(Paragraph("1. Executive Summary", h2_style))
+        elements.append(Paragraph(exec_summary, summary_style))
+        elements.append(Spacer(1, 20))
+        
+        # 2. OVERVIEW KPIs
+        elements.append(Paragraph("2. Key Performance Indicators", h2_style))
+        kpi_data = [
+            ["Total Mentions", "Total Reach", "Interactions"],
+            [f"{metrics.get('total_mentions', 0):,}", f"{metrics.get('total_reach', 0):,}", f"{metrics.get('interactions', 0):,}"]
+        ]
+        
+        comp_data = []
+        if comparison:
+            comp_data = [
+                ["vs Prev Period", "vs Prev Period", "vs Prev Period"],
+                [comparison.get('mentions_change', '0%'), comparison.get('reach_change', '0%'), comparison.get('interactions_change', '0%')]
             ]
+            kpi_data.extend(comp_data)
             
-        metrics = data.get('metrics', {})
-        sentiment = metrics.get('sentiment', {})
+        t_kpi = Table(kpi_data, colWidths=[170, 170, 170])
+        style_cmds = [
+            ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#f1f5f9')),
+            ('TEXTCOLOR', (0,0), (-1,0), colors.HexColor('#475569')),
+            ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+            ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+            ('FONTNAME', (0,1), (-1,1), 'Helvetica-Bold'),
+            ('FONTSIZE', (0,1), (-1,1), 18),
+            ('TEXTCOLOR', (0,1), (-1,1), colors.HexColor('#0f172a')),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 10),
+            ('TOPPADDING', (0,0), (-1,-1), 10),
+            ('GRID', (0,0), (-1,-1), 1, colors.HexColor('#e2e8f0'))
+        ]
+        if comparison:
+            style_cmds.extend([
+                ('FONTNAME', (0,2), (-1,2), 'Helvetica'),
+                ('FONTSIZE', (0,2), (-1,2), 9),
+                ('TEXTCOLOR', (0,2), (-1,2), colors.HexColor('#64748b')),
+                ('FONTNAME', (0,3), (-1,3), 'Helvetica-Bold'),
+                ('FONTSIZE', (0,3), (-1,3), 11),
+                ('TEXTCOLOR', (0,3), (-1,3), colors.HexColor('#3b82f6')) # Blue for changes
+            ])
+            
+        t_kpi.setStyle(TableStyle(style_cmds))
+        elements.append(t_kpi)
+        elements.append(Spacer(1, 30))
         
-        section_number = 1
-        for sec in sections:
-            if not sec.get('enabled'):
-                continue
-                
-            sec_id = sec.get('id')
-            sec_name = sec.get('name', sec_id)
+        # 3. ANALYSIS CHARTS
+        elements.append(Paragraph("3. Analysis & Trends", h2_style))
+        
+        # Side-by-side or stacked charts
+        # Since ReportLab tables are easiest for layout, we put drawings in a table
+        pie_drawing = PDFGenerator._create_pie_chart(metrics.get('sentiment', {}))
+        bar_drawing = PDFGenerator._create_bar_chart(metrics.get('daily_trend', {}))
+        
+        chart_table = Table([[pie_drawing, bar_drawing]], colWidths=[250, 250])
+        chart_table.setStyle(TableStyle([('VALIGN', (0,0), (-1,-1), 'TOP')]))
+        
+        elements.append(chart_table)
+        
+        chart_labels = Table([["Sentiment Breakdown", "Daily Mention Volume"]], colWidths=[250, 250])
+        chart_labels.setStyle(TableStyle([('ALIGN', (0,0), (-1,-1), 'CENTER'), ('FONTNAME', (0,0), (-1,-1), 'Helvetica-Bold')]))
+        elements.append(chart_labels)
+        
+        elements.append(PageBreak())
+        
+        # 4. SOURCES & CONTEXT
+        elements.append(Paragraph("4. Sources & Topics", h2_style))
+        
+        # Top Sources Table
+        s_data = [["Top Domains / Platforms", "Mentions"]]
+        for s in sources_list[:10]:
+            s_data.append([str(s['name']), f"{s['count']:,}"])
             
-            elements.append(Paragraph(f"{section_number}. {sec_name}", h2_style))
-            elements.append(Spacer(1, 12))
+        # Top Tags Table
+        t_data = [["Top Trending Topics/Hashtags", "Frequency"]]
+        for t in tags_list[:10]:
+            t_data.append([str(t['name']), f"{t['count']:,}"])
             
-            if sec_id == 'summary' or sec_id == 'alerts' or sec_id == 'incidents':
-                metrics_data = [["Metric", "Value"]]
-                if sec_id == 'summary':
-                    metrics_data.append(["Total Mentions", str(metrics.get("total_mentions", 0))])
-                if sec_id == 'alerts' or sec_id == 'summary':
-                    metrics_data.append(["Total Alerts", str(metrics.get("total_alerts", 0))])
-                if sec_id == 'incidents' or sec_id == 'summary':
-                    metrics_data.append(["Total Incidents", str(metrics.get("total_incidents", 0))])
-                
-                t_metrics = Table(metrics_data, colWidths=[300, 100])
-                t_metrics.setStyle(TableStyle([
-                    ('BACKGROUND', (0, 0), (-1, 0), accent_color),
-                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-                    ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-                    ('FONTNAME', (0, 0), (-1, 0), bold_font),
-                    ('FONTNAME', (0, 1), (-1, -1), normal_font),
-                    ('TEXTCOLOR', (0, 1), (-1, -1), text_color),
-                    ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-                    ('BACKGROUND', (0, 1), (-1, -1), table_bg_color),
-                    ('GRID', (0,0), (-1,-1), 1, colors.HexColor("#e2e8f0"))
-                ]))
-                elements.append(t_metrics)
-                
-            elif sec_id == 'sentiment':
-                metrics_data = [
-                    ["Sentiment", "Count"],
-                    ["Positive", str(sentiment.get("positive", 0))],
-                    ["Negative", str(sentiment.get("negative", 0))],
-                    ["Neutral", str(sentiment.get("neutral", 0))],
-                ]
-                t_metrics = Table(metrics_data, colWidths=[300, 100])
-                t_metrics.setStyle(TableStyle([
-                    ('BACKGROUND', (0, 0), (-1, 0), accent_color),
-                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-                    ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-                    ('FONTNAME', (0, 0), (-1, 0), bold_font),
-                    ('FONTNAME', (0, 1), (-1, -1), normal_font),
-                    ('TEXTCOLOR', (0, 1), (-1, -1), text_color),
-                    ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-                    ('BACKGROUND', (0, 1), (-1, -1), table_bg_color),
-                    ('GRID', (0,0), (-1,-1), 1, colors.HexColor("#e2e8f0"))
-                ]))
-                elements.append(t_metrics)
-                
-            elif sec_id == 'analysis' or sec_id == 'influencers':
-                sources = data.get('top_sources', [])
-                if not sources:
-                    elements.append(Paragraph("No sources data available.", normal_style))
-                else:
-                    source_data = [["Source", "Mention Count"]]
-                    for s in sources[:5]:
-                        source_data.append([str(s.get('name', 'N/A')), str(s.get('count', 0))])
-                        
-                    t_sources = Table(source_data, colWidths=[300, 100])
-                    t_sources.setStyle(TableStyle([
-                        ('BACKGROUND', (0, 0), (-1, 0), accent_color),
-                        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-                        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-                        ('FONTNAME', (0, 0), (-1, 0), bold_font),
-                        ('FONTNAME', (0, 1), (-1, -1), normal_font),
-                        ('TEXTCOLOR', (0, 1), (-1, -1), text_color),
-                        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-                        ('BACKGROUND', (0, 1), (-1, -1), table_bg_color),
-                        ('GRID', (0,0), (-1,-1), 1, colors.HexColor("#e2e8f0"))
-                    ]))
-                    elements.append(t_sources)
-                    
-            elif sec_id == 'mentions':
-                mentions = data.get('selected_mentions', [])
-                if not mentions:
-                    elements.append(Paragraph("No mentions selected for report.", normal_style))
-                else:
-                    for m in mentions[:10]: # Limit to 10 in PDF
-                        elements.append(Paragraph(f"<b>{m.get('title', 'Untitled')}</b>", normal_style))
-                        elements.append(Paragraph(f"Source: {m.get('domain', 'N/A')} - Sentiment: {m.get('sentiment', 'N/A')}", normal_style))
-                        snippet = str(m.get('snippet') or m.get('content') or '')
-                        snippet = snippet.encode('ascii', 'ignore').decode('ascii')
-                        if len(snippet) > 200:
-                            snippet = snippet[:200] + "..."
-                        elements.append(Paragraph(f"<i>{snippet}</i>", italic_style))
-                        elements.append(Spacer(1, 12))
+        # Wrap in side-by-side table
+        tsrc = Table(s_data, colWidths=[180, 60])
+        tsrc.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#3b82f6')),
+            ('TEXTCOLOR', (0,0), (-1,0), colors.whitesmoke),
+            ('FONTNAME', (0,0), (-1,-1), 'Helvetica'),
+            ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+            ('GRID', (0,0), (-1,-1), 1, colors.HexColor('#e2e8f0')),
+            ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.white, colors.HexColor('#f8fafc')])
+        ]))
+        
+        ttag = Table(t_data, colWidths=[180, 60])
+        ttag.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#3b82f6')),
+            ('TEXTCOLOR', (0,0), (-1,0), colors.whitesmoke),
+            ('FONTNAME', (0,0), (-1,-1), 'Helvetica'),
+            ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+            ('GRID', (0,0), (-1,-1), 1, colors.HexColor('#e2e8f0')),
+            ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.white, colors.HexColor('#f8fafc')])
+        ]))
+        
+        elements.append(Table([[tsrc, ttag]], colWidths=[260, 260], style=[('VALIGN', (0,0), (-1,-1), 'TOP')]))
+        elements.append(Spacer(1, 30))
+        
+        # 5. TOP MENTIONS
+        elements.append(Paragraph("5. Top Mentions by Reach", h2_style))
+        
+        for m in top_mentions:
+            elements.append(Paragraph(f"<b>{m.get('title', 'Untitled')}</b>", normal_style))
+            elements.append(Paragraph(f"Platform: {m.get('domain', 'N/A')} | Sentiment: {m.get('sentiment', 'neutral').capitalize()} | Reach: {m.get('reach', 0):,}", ParagraphStyle('Meta', parent=normal_style, textColor=colors.HexColor('#64748b'), fontSize=9)))
             
-            elements.append(Spacer(1, 24))
-            section_number += 1
-                
+            snippet = str(m.get('snippet') or '')
+            snippet = snippet.encode('ascii', 'ignore').decode('ascii')
+            if len(snippet) > 300:
+                snippet = snippet[:300] + "..."
+            elements.append(Paragraph(f"<i>\"{snippet}\"</i>", ParagraphStyle('Snippet', parent=normal_style, leftIndent=10, textColor=colors.HexColor('#475569'))))
+            elements.append(Spacer(1, 15))
+            
         doc.build(elements)
         buffer.seek(0)
         return buffer.getvalue()
