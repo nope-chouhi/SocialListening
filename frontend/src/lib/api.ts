@@ -876,10 +876,40 @@ export const aiChat = {
     const response = await api.post('/api/ai/chat', messages);
     return response.data;
   },
-  getChatConfig: async () => {
+  getConfig: async () => {
     const response = await api.get('/api/ai/chat/config');
     return response.data;
   },
+  
+  // Sessions
+  getSessions: async () => {
+    const response = await api.get('/api/ai/chat/sessions');
+    return response.data;
+  },
+  createSession: async (title?: string) => {
+    const response = await api.post('/api/ai/chat/sessions', { title: title || 'New Chat' });
+    return response.data;
+  },
+  getSession: async (id: number) => {
+    const response = await api.get(`/api/ai/chat/sessions/${id}`);
+    return response.data;
+  },
+  deleteSession: async (id: number) => {
+    const response = await api.delete(`/api/ai/chat/sessions/${id}`);
+    return response.data;
+  },
+  
+  // Messaging
+  sendMessageToSession: async (sessionId: number, content: string) => {
+    const response = await api.post(`/api/ai/chat/sessions/${sessionId}/messages`, { content });
+    return response.data;
+  },
+  
+  // Usage
+  getUsageSummary: async () => {
+    const response = await api.get('/api/ai/usage');
+    return response.data;
+  }
 };
 
 // ─── AI Config (Admin) ────────────────────────────────────────────────────────

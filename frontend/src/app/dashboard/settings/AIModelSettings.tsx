@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Sparkles, Save, TestTube2, Loader2, CheckCircle, XCircle, Eye, EyeOff, Zap } from 'lucide-react';
-import { aiConfig } from '@/lib/api';
+import { aiConfig, aiChat } from '@/lib/api';
 import toast from 'react-hot-toast';
 
 interface AIModelConfigData {
@@ -49,6 +49,7 @@ export default function AIModelSettings() {
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string; preview?: string } | null>(null);
   const [showApiKey, setShowApiKey] = useState(false);
+  const [usage, setUsage] = useState<any>(null);
 
   // Form state
   const [provider, setProvider] = useState('gemini');
@@ -61,7 +62,18 @@ export default function AIModelSettings() {
 
   useEffect(() => {
     loadConfig();
+    loadUsage();
   }, []);
+
+  const loadUsage = async () => {
+    try {
+      // @ts-ignore
+      const data = await aiChat.getUsageSummary();
+      setUsage(data);
+    } catch (err) {
+      console.error('Failed to load usage', err);
+    }
+  };
 
   const loadConfig = async () => {
     try {
@@ -178,6 +190,32 @@ export default function AIModelSettings() {
           Chọn AI provider và cấu hình cho tính năng AI Assistant. Khách hàng sẽ được tính phí khi sử dụng tính năng AI.
         </p>
       </div>
+
+      {/* Usage Summary */}
+      {usage && (
+        <div className="p-4 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl">
+          <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
+            <Zap className="w-4 h-4 text-purple-500" />
+            Thống kê sử dụng AI
+          </h3>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div>
+              <p className="text-xs text-slate-500 dark:text-gray-400">Tổng số yêu cầu</p>
+              <p className="text-lg font-bold text-slate-900 dark:text-white">{usage.total_requests}</p>
+            </div>
+            <div>
+              <p className="text-xs text-slate-500 dark:text-gray-400">Thành công / Thất bại</p>
+              <p className="text-lg font-bold text-slate-900 dark:text-white">
+                <span className="text-emerald-500">{usage.successful_requests}</span> / <span className="text-red-500">{usage.failed_requests}</span>
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-slate-500 dark:text-gray-400">Tổng Tokens</p>
+              <p className="text-lg font-bold text-slate-900 dark:text-white">{usage.total_tokens || 0}</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Enable/Disable Toggle */}
       <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl">
