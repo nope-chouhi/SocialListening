@@ -1,4 +1,4 @@
-﻿import pytest
+import pytest
 from fastapi.testclient import TestClient
 from unittest.mock import patch, MagicMock
 from app.main import app
@@ -40,9 +40,13 @@ def override_get_db():
     
     mock_db.query.return_value = mock_query
     
-    yield mock_db
+import pytest
 
-app.dependency_overrides[get_db] = override_get_db
+@pytest.fixture(autouse=True, scope="module")
+def setup_overrides():
+    app.dependency_overrides[get_db] = override_get_db
+    yield
+    app.dependency_overrides.clear()
 
 @patch("app.api.saved_filters.SavedFilter")
 def test_create_saved_filter(mock_saved_filter):

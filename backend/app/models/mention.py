@@ -80,6 +80,15 @@ class Mention(Base):
     original_url = Column(Text, nullable=True)
     canonical_url = Column(Text, nullable=True)
     
+    @classmethod
+    def verifiable_filter(cls):
+        from sqlalchemy import or_, and_
+        return or_(
+            and_(cls.url.isnot(None), cls.url != ""),
+            and_(cls.original_url.isnot(None), cls.original_url != ""),
+            and_(cls.canonical_url.isnot(None), cls.canonical_url != "")
+        )
+    
     
     __table_args__ = (
         Index('idx_mention_published', 'published_at'),

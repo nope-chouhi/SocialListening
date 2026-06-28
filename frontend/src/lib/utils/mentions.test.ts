@@ -21,6 +21,21 @@ describe('getMentionSourceLabel', () => {
     expect(getMentionSourceLabel(mention)).toBe('youtube.com');
   });
 
+  it('returns hostname from original_url if url is absent', () => {
+    const mention: SourceLabelMention = { original_url: 'https://www.tiktok.com/@user/video' };
+    expect(getMentionSourceLabel(mention)).toBe('tiktok.com');
+  });
+
+  it('returns hostname from permalink if url and original_url are absent', () => {
+    const mention: SourceLabelMention = { permalink: 'https://www.facebook.com/post' };
+    expect(getMentionSourceLabel(mention)).toBe('facebook.com');
+  });
+
+  it('returns hostname from source_url if others are absent', () => {
+    const mention: SourceLabelMention = { source_url: 'https://news.google.com/feed' };
+    expect(getMentionSourceLabel(mention)).toBe('news.google.com');
+  });
+
   it('returns normalized source_type if URL is absent or invalid', () => {
     const mention: SourceLabelMention = { url: 'invalid-url', source_type: 'video' };
     expect(getMentionSourceLabel(mention)).toBe('YouTube');

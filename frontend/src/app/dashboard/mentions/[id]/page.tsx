@@ -170,7 +170,7 @@ export default function MentionDetailPage() {
             </div>
             <div className="mt-8 pt-5 border-t border-slate-200 dark:border-gray-800">
               {(() => {
-                const bestUrl = getSafeUrl(mention.canonical_url || mention.url || '');
+                const bestUrl = getSafeUrl(mention.canonical_url || mention.original_url || mention.permalink || mention.source_url || mention.url || '');
                 if (!bestUrl) return null;
                 return (
                   <a 

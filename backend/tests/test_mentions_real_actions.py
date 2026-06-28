@@ -51,8 +51,14 @@ def override_get_db():
     
     yield mock_db
 
-app.dependency_overrides[get_current_active_user] = override_get_superuser
-app.dependency_overrides[get_db] = override_get_db
+import pytest
+
+@pytest.fixture(autouse=True, scope="module")
+def setup_overrides():
+    app.dependency_overrides[get_current_active_user] = override_get_superuser
+    app.dependency_overrides[get_db] = override_get_db
+    yield
+    app.dependency_overrides.clear()
 
 client = TestClient(app)
 

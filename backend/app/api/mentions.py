@@ -1246,7 +1246,7 @@ def export_mentions_csv(
     current_user: User = Depends(get_current_active_user),
 ):
     """Export mentions as CSV (Excel-compatible)."""
-    query = apply_tenant_filter(select(Mention), Mention, current_user)
+    query = apply_tenant_filter(select(Mention), Mention, current_user, include_unverifiable=True)
     query = apply_mention_filters(
         query=query, source_id=source_id, source_type=source_type, source_types=source_types,
         sentiment=sentiment, sentiments=sentiments, min_risk_score=min_risk_score,
@@ -1303,7 +1303,7 @@ def get_mention(
 ):
     """Get a mention by ID with AI analysis"""
     mention = db.execute(
-        apply_tenant_filter(select(Mention), Mention, current_user).where(Mention.id == mention_id)
+        apply_tenant_filter(select(Mention), Mention, current_user, include_unverifiable=True).where(Mention.id == mention_id)
     ).scalar_one_or_none()
 
     if not mention:
@@ -1365,7 +1365,7 @@ def analyze_mention(
 ):
     """Run AI analysis on a mention"""
     mention = db.execute(
-        apply_tenant_filter(select(Mention), Mention, current_user).where(Mention.id == mention_id)
+        apply_tenant_filter(select(Mention), Mention, current_user, include_unverifiable=True).where(Mention.id == mention_id)
     ).scalar_one_or_none()
 
     if not mention:
@@ -1471,7 +1471,7 @@ def create_alert_from_mention(
 ):
     """Create an alert from a mention"""
     mention = db.execute(
-        apply_tenant_filter(select(Mention), Mention, current_user).where(Mention.id == mention_id)
+        apply_tenant_filter(select(Mention), Mention, current_user, include_unverifiable=True).where(Mention.id == mention_id)
     ).scalar_one_or_none()
 
     if not mention:
@@ -1528,7 +1528,7 @@ def create_incident_from_mention(
 ):
     """Create an incident from a mention"""
     mention = db.execute(
-        apply_tenant_filter(select(Mention), Mention, current_user).where(Mention.id == mention_id)
+        apply_tenant_filter(select(Mention), Mention, current_user, include_unverifiable=True).where(Mention.id == mention_id)
     ).scalar_one_or_none()
 
     if not mention:
@@ -1574,7 +1574,7 @@ def update_mention_review(
 ):
     """Mark or unmark a mention as reviewed"""
     mention = db.execute(
-        apply_tenant_filter(select(Mention), Mention, current_user).where(Mention.id == mention_id)
+        apply_tenant_filter(select(Mention), Mention, current_user, include_unverifiable=True).where(Mention.id == mention_id)
     ).scalar_one_or_none()
 
     if not mention:
@@ -1598,7 +1598,7 @@ def delete_mention(
 ):
     """Delete a mention (Soft delete)"""
     mention = db.execute(
-        apply_tenant_filter(select(Mention), Mention, current_user).where(Mention.id == mention_id)
+        apply_tenant_filter(select(Mention), Mention, current_user, include_unverifiable=True).where(Mention.id == mention_id)
     ).scalar_one_or_none()
 
     if not mention:
@@ -1618,7 +1618,7 @@ def update_mention_tags(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
-    mention = db.execute(apply_tenant_filter(select(Mention), Mention, current_user).where(Mention.id == mention_id)).scalar_one_or_none()
+    mention = db.execute(apply_tenant_filter(select(Mention), Mention, current_user, include_unverifiable=True).where(Mention.id == mention_id)).scalar_one_or_none()
     if not mention: raise HTTPException(status_code=404, detail="Mention not found")
     mention.tags_json = req.tags
     db.commit()
@@ -1638,7 +1638,7 @@ def update_mention_add_to_report(
     current_user: User = Depends(get_current_active_user)
 ):
     """Toggle add_to_report flag for a mention"""
-    mention = db.execute(apply_tenant_filter(select(Mention), Mention, current_user).where(Mention.id == mention_id)).scalar_one_or_none()
+    mention = db.execute(apply_tenant_filter(select(Mention), Mention, current_user, include_unverifiable=True).where(Mention.id == mention_id)).scalar_one_or_none()
     if not mention: raise HTTPException(status_code=404, detail="Mention not found")
     mention.add_to_report = req.add_to_report
     db.commit()
@@ -1666,11 +1666,11 @@ def summarize_current_results(
         if not req.mention_ids:
             raise HTTPException(status_code=400, detail="No mention ids provided for summary.")
         mentions = db.execute(
-            apply_tenant_filter(select(Mention), Mention, current_user).where(Mention.id.in_(req.mention_ids))
+            apply_tenant_filter(select(Mention), Mention, current_user, include_unverifiable=True).where(Mention.id.in_(req.mention_ids))
         ).scalars().all()
     else:
         # Build query from filters
-        query = apply_tenant_filter(select(Mention), Mention, current_user)
+        query = apply_tenant_filter(select(Mention), Mention, current_user, include_unverifiable=True)
         filters = req.filters or {}
 
         if filters.get("project_id"):
@@ -1756,7 +1756,7 @@ def update_mention_mute(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
-    mention = db.execute(apply_tenant_filter(select(Mention), Mention, current_user).where(Mention.id == mention_id)).scalar_one_or_none()
+    mention = db.execute(apply_tenant_filter(select(Mention), Mention, current_user, include_unverifiable=True).where(Mention.id == mention_id)).scalar_one_or_none()
     if not mention: raise HTTPException(status_code=404, detail="Mention not found")
     mention.is_muted = req.is_muted
     db.commit()
@@ -1773,7 +1773,7 @@ def update_mention_sentiment(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
-    mention = db.execute(apply_tenant_filter(select(Mention), Mention, current_user).where(Mention.id == mention_id)).scalar_one_or_none()
+    mention = db.execute(apply_tenant_filter(select(Mention), Mention, current_user, include_unverifiable=True).where(Mention.id == mention_id)).scalar_one_or_none()
     if not mention: raise HTTPException(status_code=404, detail="Mention not found")
     mention.sentiment = req.sentiment
     mention.sentiment_confidence = 1.0  # manual override
@@ -1791,7 +1791,7 @@ def mute_domain(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
-    mentions = db.execute(apply_tenant_filter(select(Mention), Mention, current_user).where(Mention.project_id == req.project_id, Mention.domain == req.domain)).scalars().all()
+    mentions = db.execute(apply_tenant_filter(select(Mention), Mention, current_user, include_unverifiable=True).where(Mention.project_id == req.project_id, Mention.domain == req.domain)).scalars().all()
     for m in mentions:
         m.is_muted = True
     db.commit()
@@ -1807,7 +1807,7 @@ def mute_author(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
-    mentions = db.execute(apply_tenant_filter(select(Mention), Mention, current_user).where(Mention.project_id == req.project_id, Mention.author == req.author)).scalars().all()
+    mentions = db.execute(apply_tenant_filter(select(Mention), Mention, current_user, include_unverifiable=True).where(Mention.project_id == req.project_id, Mention.author == req.author)).scalars().all()
     for m in mentions:
         m.is_muted = True
     db.commit()

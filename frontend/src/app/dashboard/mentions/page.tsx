@@ -43,6 +43,8 @@ interface MentionItem {
   url: string | null;
   canonical_url?: string | null;
   original_url?: string | null;
+  permalink?: string | null;
+  source_url?: string | null;
   visit_url_invalid_reason?: string | null;
   source_integrity_level?: 'high' | 'medium' | 'low' | 'unavailable' | null;
   source_confidence?: number | 'low' | 'high' | null;
@@ -987,9 +989,9 @@ function MentionsPageContent() {
   };
 
   const handleVisit = async (mention: MentionItem) => {
-    const safeUrl = getSafeUrl(mention.canonical_url || mention.url);
+    const safeUrl = getSafeUrl(mention.canonical_url || mention.original_url || mention.permalink || mention.source_url || mention.url);
     if (!safeUrl) {
-      toast.error(mention.visit_url_invalid_reason || 'Khong co link bai goc hop le');
+      toast.error(mention.visit_url_invalid_reason || 'Không có link bài gốc hợp lệ');
       return;
     }
 
@@ -1616,7 +1618,7 @@ return (
                      {(() => {
                         const integrityLevel = mention.source_integrity_level;
                         const isLowIntegrity = integrityLevel === 'low' || integrityLevel === 'unavailable';
-                        const visitStatus = getVisitUrlStatus(mention.canonical_url || mention.url);
+                        const visitStatus = getVisitUrlStatus(mention.canonical_url || mention.original_url || mention.permalink || mention.source_url || mention.url);
                         const safeUrl = visitStatus.url;
                         const integrityBadge = getSourceIntegrityLabel(integrityLevel);
 
