@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, BackgroundTasks, UploadFile, File
 import uuid
+import json
 from sqlalchemy.orm import Session
 from sqlalchemy import select, func, and_
-from datetime import datetime
-from typing import List, Optional
+from datetime import datetime, timedelta
+from typing import List, Optional, Dict, Any
 from math import ceil
 from fastapi.responses import StreamingResponse, Response, FileResponse
 import os
@@ -560,12 +561,16 @@ def request_async_export(
     if report_type not in ["pdf", "excel", "xlsx"]:
         raise HTTPException(status_code=400, detail="Invalid report type")
         
+    builder_config_payload = None
+    if builder_config:
+        builder_config_payload = json.loads(builder_config.json())
+        
     export_job = ReportExport(
         report_type=report_type,
         project_id=project_id,
         requested_by=current_user.id,
         status=ExportStatus.PENDING,
-        builder_config=builder_config.dict() if builder_config else None,
+        builder_config=builder_config_payload,
         created_at=datetime.utcnow()
     )
     db.add(export_job)
