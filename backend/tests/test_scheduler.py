@@ -41,3 +41,26 @@ def test_scheduler_lock_sqlite():
         assert status_mock.locked_at is not None
         
     assert status_mock.is_locked is False
+
+@patch('app.jobs.scan_jobs.scheduler_lock')
+@patch('app.jobs.scan_jobs.SessionLocal')
+@patch('app.jobs.scan_jobs.getattr')
+def test_run_automated_scans_locked(mock_getattr, mock_session, mock_lock):
+    from app.jobs.scan_jobs import run_automated_scans
+    
+    mock_getattr.return_value = True
+    
+    db_mock = MagicMock()
+    mock_session.return_value = db_mock
+    
+    # Mock lock yielding False (meaning another worker holds the lock)
+    context_manager_mock = MagicMock()
+    context_manager_mock.__enter__.return_value = False
+    mock_lock.return_value = context_manager_mock
+    
+    run_automated_scans()
+    
+    # Verify lock was checked
+    mock_lock.assert_called_once_with(db_mock, 1004, "run_automated_scans")
+    # Verify no db executes happened because we exited early
+    db_mock.execute.assert_not_called()
