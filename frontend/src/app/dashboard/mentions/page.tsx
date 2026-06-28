@@ -243,9 +243,8 @@ function keywordTexts(keywords: any[] | null | undefined): string[] {
   return (keywords || []).map(keywordToText).filter((value): value is string => Boolean(value));
 }
 
-function getMentionSourceLabel(mention: MentionItem): string {
-  return mention.domain || 'Không xác định';
-}
+// Use extracted helper
+import { getMentionSourceLabel } from '@/lib/utils/mentions';
 
 /* ═══════════════════════════════════════════════════════════════════════════
    MAIN COMPONENT

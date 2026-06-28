@@ -527,56 +527,13 @@ def list_mentions(
 
         query = apply_tenant_filter(select(Mention), Mention, current_user)
         has_ai_filter = min_risk_score is not None
-        need_source_join = bool(source_type or source_types or domain)
+        # We NO LONGER join Source just for source_type or domain because Mention table has these fields now.
+        # Joining Source causes mentions without a linked source (e.g., ad-hoc web searches) to be dropped.
+        need_source_join = False
         need_ai_join = has_ai_filter or sort_by in ("risk_high", "risk_low")
 
         if source_id:
             query = query.where(Mention.source_id == source_id)
-
-        if need_source_join:
-            query = query.join(Source, Source.id == Mention.source_id)
-            if source_type:
-                st_list = [s.strip() for s in source_type.split(",") if s.strip()]
-                # Validate BEFORE querying — invalid alias → HTTP 400
-                invalid = []
-                for st in st_list:
-                    try:
-                        validate_source_type_alias(st)
-                    except ValueError as e:
-                        invalid.append(str(e))
-                if invalid:
-                    raise HTTPException(status_code=400, detail=f"Invalid source_type: {'; '.join(invalid)}")
-                # All aliases are valid — normalize to enum values
-                enum_values: list[str] = []
-                for st in st_list:
-                    mapped = normalize_source_type_for_source_model(st)
-                    if mapped:
-                        enum_values.extend(mapped)
-                if enum_values:
-                    query = query.where(Source.source_type.in_(enum_values))
-                # If enum_values is empty (e.g. twitter filter), no Source records can match
-                elif st_list:  # valid alias but no Source enum equivalent → no results
-                    query = query.where(false())
-            elif source_types:
-                invalid = []
-                for st in source_types:
-                    try:
-                        validate_source_type_alias(st)
-                    except ValueError as e:
-                        invalid.append(str(e))
-                if invalid:
-                    raise HTTPException(status_code=400, detail=f"Invalid source_type: {'; '.join(invalid)}")
-                enum_values = []
-                for st in source_types:
-                    mapped = normalize_source_type_for_source_model(st)
-                    if mapped:
-                        enum_values.extend(mapped)
-                if enum_values:
-                    query = query.where(Source.source_type.in_(enum_values))
-                elif source_types:
-                    query = query.where(sqlalchemy.false())
-            if domain:
-                query = query.where(Source.url.ilike(f"%{domain}%"))
 
         # Mentions filtering directly
         query = query.where(Mention.verification_status != 'synthetic')
@@ -609,9 +566,7 @@ def list_mentions(
         if min_influence_score is not None:
             query = query.where(Mention.influence_score >= min_influence_score)
 
-        # In case source_type is directly on mention (new model)
-        if source_type and not need_source_join:
-            # Aliases already validated above — safe to normalize
+        if source_type:
             mapped_types = set(normalize_source_type_for_mention(source_type) or [])
             if mapped_types:
                 condition = Mention.source_type.in_(list(mapped_types))
@@ -626,7 +581,7 @@ def list_mentions(
                     )
                     condition = or_(condition, and_(Mention.source_type.is_(None), valid_url_cond))
                 query = query.where(condition)
-        elif source_types and not need_source_join:
+        elif source_types:
             mapped_types = set()
             for st in source_types:
                 mapped = normalize_source_type_for_mention(st)
@@ -645,7 +600,7 @@ def list_mentions(
                     )
                     condition = or_(condition, and_(Mention.source_type.is_(None), valid_url_cond))
                 query = query.where(condition)
-        if domain and not need_source_join:
+        if domain:
             query = query.where(Mention.domain.ilike(f"%{domain}%"))
         if sentiment:
             sentiments_list = [s.strip() for s in sentiment.split(",")]
@@ -727,52 +682,41 @@ def list_mentions(
             if min_influence_score is not None:
                 count_base = count_base.where(Mention.influence_score >= min_influence_score)
 
-            # Direct mention filters
+            # Direct mention filters for count_base
             if source_type:
-                st_list = [s.strip() for s in source_type.split(",")]
-                mapped_types = set()
-                for st in st_list:
-                    if st == 'web': mapped_types.update(['web', 'website', 'web_search', 'article', 'unknown'])
-                    elif st == 'video': mapped_types.update(['video', 'videos', 'youtube', 'yt'])
-                    elif st == 'blog': mapped_types.update(['blog', 'forum', 'blogs_forums', 'blogs/forums'])
-                    elif st == 'rss': mapped_types.update(['rss', 'feed', 'rss_feed'])
-                    elif st == 'news': mapped_types.update(['news', 'newspaper', 'article_news'])
-                    else: mapped_types.add(st)
-
-                condition = Mention.source_type.in_(list(mapped_types))
-                if 'web' in st_list:
-                    valid_url_cond = and_(
-                        Mention.url.isnot(None),
-                        Mention.url.notilike('%googleusercontent.com%'),
-                        Mention.url.notilike('%corp.google.com%'),
-                        Mention.url.notilike('%uberproxy%'),
-                        Mention.url.notilike('%/rss%'),
-                        Mention.url.notilike('%.xml')
-                    )
-                    condition = or_(condition, and_(Mention.source_type.is_(None), valid_url_cond))
-                count_base = count_base.where(condition)
+                mapped_types = set(normalize_source_type_for_mention(source_type) or [])
+                if mapped_types:
+                    condition = Mention.source_type.in_(list(mapped_types))
+                    if is_web_type(source_type.split(",")[0].strip()):
+                        valid_url_cond = and_(
+                            Mention.url.isnot(None),
+                            Mention.url.notilike('%googleusercontent.com%'),
+                            Mention.url.notilike('%corp.google.com%'),
+                            Mention.url.notilike('%uberproxy%'),
+                            Mention.url.notilike('%/rss%'),
+                            Mention.url.notilike('%.xml')
+                        )
+                        condition = or_(condition, and_(Mention.source_type.is_(None), valid_url_cond))
+                    count_base = count_base.where(condition)
             if source_types:
                 mapped_types = set()
                 for st in source_types:
-                    if st == 'web': mapped_types.update(['web', 'website', 'web_search', 'article', 'unknown'])
-                    elif st == 'video': mapped_types.update(['video', 'videos', 'youtube', 'yt'])
-                    elif st == 'blog': mapped_types.update(['blog', 'forum', 'blogs_forums', 'blogs/forums'])
-                    elif st == 'rss': mapped_types.update(['rss', 'feed', 'rss_feed'])
-                    elif st == 'news': mapped_types.update(['news', 'newspaper', 'article_news'])
-                    else: mapped_types.add(st)
-
-                condition = Mention.source_type.in_(list(mapped_types))
-                if 'web' in source_types:
-                    valid_url_cond = and_(
-                        Mention.url.isnot(None),
-                        Mention.url.notilike('%googleusercontent.com%'),
-                        Mention.url.notilike('%corp.google.com%'),
-                        Mention.url.notilike('%uberproxy%'),
-                        Mention.url.notilike('%/rss%'),
-                        Mention.url.notilike('%.xml')
-                    )
-                    condition = or_(condition, and_(Mention.source_type.is_(None), valid_url_cond))
-                count_base = count_base.where(condition)
+                    mapped = normalize_source_type_for_mention(st)
+                    if mapped:
+                        mapped_types.update(mapped)
+                if mapped_types:
+                    condition = Mention.source_type.in_(list(mapped_types))
+                    if any(is_web_type(st) for st in source_types):
+                        valid_url_cond = and_(
+                            Mention.url.isnot(None),
+                            Mention.url.notilike('%googleusercontent.com%'),
+                            Mention.url.notilike('%corp.google.com%'),
+                            Mention.url.notilike('%uberproxy%'),
+                            Mention.url.notilike('%/rss%'),
+                            Mention.url.notilike('%.xml')
+                        )
+                        condition = or_(condition, and_(Mention.source_type.is_(None), valid_url_cond))
+                    count_base = count_base.where(condition)
             if domain:
                 count_base = count_base.where(Mention.domain.ilike(f"%{domain}%"))
             if sentiment:
@@ -1022,7 +966,9 @@ def list_mentions(
     except HTTPException:
         raise
     except Exception as e:
+        import traceback
         logger.error(f"Critical error in list_mentions: {e}")
+        logger.error(traceback.format_exc())
         raise HTTPException(status_code=500, detail="Lỗi hệ thống khi tải danh sách mentions")
 
 
