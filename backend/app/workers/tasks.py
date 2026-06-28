@@ -195,11 +195,31 @@ async def _analyze_mention_async(mention_id: int, alert_threshold: float):
                 return {"error": "Mention not found", "mention_id": mention_id}
             
             # Analyze with AI
-            analysis_result = await ai_service.analyze_mention(
-                content=mention.content,
-                title=mention.title,
-                metadata=mention.meta_data
-            )
+            try:
+                # Call sync ai_service synchronously in threadpool to not block async loop
+                from fastapi.concurrency import run_in_threadpool
+                analysis_result = await run_in_threadpool(
+                    ai_service.analyze_mention,
+                    mention.content,
+                    mention.title,
+                    None
+                )
+                ai_provider = analysis_result.get("ai_provider", "unknown")
+                model_version = analysis_result.get("model_version", "1.0")
+            except Exception as e:
+                # Fallback to neutral if AI fails or unconfigured
+                analysis_result = {
+                    "sentiment": "neutral",
+                    "risk_score": 0.0,
+                    "crisis_level": 1,
+                    "summary_vi": "Failed to analyze or AI unconfigured.",
+                    "suggested_action": "monitor",
+                    "responsible_department": "customer_service",
+                    "confidence_score": 0.0,
+                    "reasoning": str(e)
+                }
+                ai_provider = "fallback"
+                model_version = "1.0"
             
             # Create AI analysis record
             ai_analysis = AIAnalysis(
@@ -211,9 +231,9 @@ async def _analyze_mention_async(mention_id: int, alert_threshold: float):
                 suggested_action=analysis_result["suggested_action"],
                 responsible_department=analysis_result["responsible_department"],
                 confidence_score=analysis_result["confidence_score"],
-                reasoning=analysis_result["reasoning"],
-                ai_provider="mock",  # Will be updated when real AI is integrated
-                model_version="1.0"
+                reasoning=analysis_result.get("reasoning", ""),
+                ai_provider=ai_provider,
+                model_version=model_version
             )
             
             db.add(ai_analysis)

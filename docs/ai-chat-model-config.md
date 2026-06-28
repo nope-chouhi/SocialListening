@@ -4,12 +4,12 @@ This document outlines the architecture, setup, and usage of the AI Chat feature
 
 ## Architecture & Persistence
 
-The platform supports a persistent, billing-ready AI chat experience.
+The platform supports a persistent, billing-ready AI chat experience, and utilizes this same AI architecture for background tasks (e.g. Sentiment Analysis).
 
-1. **`ai_model_config`**: A global (or organization-scoped) configuration table storing the active AI provider, model, API key, and rules (tokens/temperature).
+1. **`ai_model_config`**: A global (or organization-scoped) configuration table storing the active AI provider, model, API key, and rules (tokens/temperature). Used across the entire application (Chat, Sentiment Analysis, Summaries).
 2. **`ai_chat_sessions`**: Chat session persistence, allowing users to return to previous conversations.
 3. **`ai_chat_messages`**: Individual messages within a session, including user inputs and AI responses.
-4. **`ai_usage_logs`**: Tracks token usage and success/failure of each request. This forms the foundation for future customer billing.
+4. **`ai_usage_logs`**: Tracks token usage and success/failure of each request across **all features**, including background jobs (`request_type` = `chat`, `sentiment_analysis`, `executive_brief`, etc). This forms the foundation for future customer billing.
 
 ## Supported Providers
 

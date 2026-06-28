@@ -23,8 +23,12 @@ def analyze_sentiment(text: str) -> Dict:
             "confidence": result.get("confidence_score", 0.0) / 100.0,
         }
     except Exception as e:
-        logger.error(f"Sentiment analysis failed: {e}")
-        raise ValueError(f"AI Provider error: {e}")
+        logger.warning(f"ai_unconfigured or provider_error in sentiment_client: {e}")
+        return {
+            "sentiment": "neutral",
+            "score": 0.0,
+            "confidence": 0.0,
+        }
 
 def map_to_ai_sentiment(simple: str) -> str:
     """Map positive/negative/neutral to platform sentiment enum values."""
