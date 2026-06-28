@@ -257,3 +257,58 @@ def test_get_export_status():
     
     # Restore mock
     app.dependency_overrides[get_db] = override_get_db
+
+
+def test_excel_export_formatting_regression():
+    from app.services.export_service import ExportService
+    import openpyxl
+    import io
+    
+    data = {
+        "project_name": "Regression Project",
+        "date_from": "2026-01-01",
+        "date_to": "2026-01-31",
+        "metrics": {"total_mentions": 10},
+        "comparison": {},
+        "top_mentions": [],
+        "raw_mentions": [
+            {"id": 1, "date": "2026-01-10", "domain": "example.com", "title": "Test", "content": "A long snippet", "url": "http://example.com", "sentiment": "neutral", "reach": 100, "interactions": 0}
+        ],
+        "sentiment": {"positive": 1, "negative": 0, "neutral": 9},
+        "sources_list": [{"name": "example.com", "count": 10}],
+        "tags_list": [{"name": "test", "count": 10}],
+        "daily_trend": {"2026-01-10": 10}
+    }
+    
+    excel_bytes = ExportService.export_project_summary_xlsx(data)
+    wb = openpyxl.load_workbook(io.BytesIO(excel_bytes))
+    
+    sheet_names = wb.sheetnames
+    assert "Analytics Data" in sheet_names
+    assert "Mentions" in sheet_names
+    assert "Sentiment" in sheet_names
+    assert "Sources" in sheet_names
+    assert "Numerical Data" in sheet_names
+
+def test_pdf_export_none_and_empty_regression():
+    from app.services.pdf_generator import PDFGenerator
+    data_none = {
+        "project_name": "Test",
+        "date_from": "2026-01-01",
+        "date_to": "2026-01-31",
+        "metrics": {
+            "total_mentions": 10,
+            "total_reach": None,
+            "interactions": None,
+        },
+        "comparison": {},
+        "exec_summary": "Test summary",
+        "top_mentions": [
+            {"title": None, "domain": None, "sentiment": "positive", "reach": None, "snippet": None}
+        ],
+        "sources_list": [],
+        "tags_list": []
+    }
+    
+    pdf_bytes = PDFGenerator.generate_project_summary(data_none)
+    assert len(pdf_bytes) > 0
