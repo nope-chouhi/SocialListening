@@ -34,6 +34,9 @@ class MentionBase(BaseModel):
     is_deleted: Optional[bool] = False
     extraction_source: Optional[str] = None
     confidence: Optional[str] = None
+    source_name: Optional[str] = None
+    has_original_url: Optional[bool] = None
+    source_display: Optional[str] = None
 
 
 class MentionCreate(MentionBase):

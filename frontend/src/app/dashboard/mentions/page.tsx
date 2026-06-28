@@ -1438,7 +1438,7 @@ return (
                     <div className="flex flex-col">
                       <div className="flex items-center gap-1.5">
                         <span className="text-sm font-semibold text-slate-900 dark:text-white tracking-wide">
-                          {mention.domain && mention.domain.toLowerCase() !== 'unknown' ? mention.domain : extractDomain(mention.canonical_url || mention.url) || 'Nguồn chưa xác định'}
+                          {getMentionSourceLabel(mention)}
                         </span>
                         {/* Trust Badges */}
                         {(() => {
@@ -1543,7 +1543,21 @@ return (
                     </h3>
 
                     <p className="text-sm text-slate-600 dark:text-zinc-300 mt-2 line-clamp-3 leading-relaxed">
-                      {highlightText(mention.snippet || mention.content?.substring(0, 300) || '', searchTerm)}
+                      {(() => {
+                         const contentStr = mention.snippet || mention.content || '';
+                         if (!contentStr) return <span className="italic">Không có mô tả từ nguồn gốc.</span>;
+                         
+                         // Deduplicate if content starts with title
+                         let displayStr = contentStr;
+                         if (mention.title && displayStr.toLowerCase().startsWith(mention.title.toLowerCase())) {
+                             displayStr = displayStr.substring(mention.title.length).trim();
+                             if (displayStr.startsWith('-') || displayStr.startsWith(':')) {
+                                 displayStr = displayStr.substring(1).trim();
+                             }
+                         }
+                         if (!displayStr) return <span className="italic">Không có mô tả từ nguồn gốc.</span>;
+                         return highlightText(displayStr.length > 300 ? displayStr.substring(0, 300) + '...' : displayStr, searchTerm);
+                      })()}
                     </p>
 
                     {/* Metadata Bottom row */}
@@ -1611,10 +1625,10 @@ return (
                             ? mention.visit_url_invalid_reason
                             : isLowIntegrity
                             ? (integrityLevel === 'low' ? 'Độ tin cậy thấp' : 'Không xác minh được nguồn')
-                            : 'Không có link an toàn';
+                            : 'Không có link gốc';
                           return (
-                            <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500 dark:text-gray-400 cursor-not-allowed group/tooltip relative" title={tooltipText}>
-                             <Link2Off className="w-3.5 h-3.5" /> Không thể Visit
+                            <div className="flex items-center gap-1.5 text-[11px] font-bold text-amber-600 dark:text-amber-500 cursor-not-allowed group/tooltip relative" title={tooltipText}>
+                             <Link2Off className="w-3.5 h-3.5" /> Thiếu URL gốc
                              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover/tooltip:block px-2 py-1 bg-gray-800 text-slate-900 dark:text-white text-[10px] rounded whitespace-nowrap z-10">{tooltipText}</div>
                            </div>
                           );
@@ -1622,7 +1636,7 @@ return (
                         return (
                           <>
                             <button onClick={() => handleVisit(mention)} className="flex items-center gap-1.5 text-[11px] font-bold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-2.5 py-1.5 rounded-lg border border-indigo-200 dark:border-indigo-500/30 transition-colors shadow-sm">
-                              <ExternalLink className="w-3.5 h-3.5" /> Visit Nguồn
+                              <ExternalLink className="w-3.5 h-3.5" /> Mở bài gốc
                             </button>
                             {integrityBadge && (
                               <span
