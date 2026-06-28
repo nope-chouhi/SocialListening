@@ -99,3 +99,6 @@ from app.models.source_item import SourceItem
 # Webinar models
 from app.models.webinar import WebinarRegistration
 
+# AI Config models
+from app.models.ai_config import AIModelConfig
+

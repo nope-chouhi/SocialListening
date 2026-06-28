@@ -42,7 +42,8 @@ import {
   Award,
   Search,
   HelpCircle,
-  Zap
+  Zap,
+  Sparkles
 } from 'lucide-react';
 
 function WorkerStatusBadge() {
@@ -109,6 +110,7 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges, setIsWebi
   ];
 
   const systemNav = [
+    { name: 'AI Assistant', href: '/dashboard/assistant', icon: Sparkles },
     { name: 'Services', href: '/dashboard/services', icon: Briefcase },
   ];
 

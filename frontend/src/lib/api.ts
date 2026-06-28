@@ -876,6 +876,26 @@ export const aiChat = {
     const response = await api.post('/api/ai/chat', messages);
     return response.data;
   },
+  getChatConfig: async () => {
+    const response = await api.get('/api/ai/chat/config');
+    return response.data;
+  },
+};
+
+// ─── AI Config (Admin) ────────────────────────────────────────────────────────
+export const aiConfig = {
+  getConfig: async () => {
+    const response = await api.get('/api/admin/settings/ai-model');
+    return response.data;
+  },
+  updateConfig: async (data: any) => {
+    const response = await api.put('/api/admin/settings/ai-model', data);
+    return response.data;
+  },
+  testConnection: async (data: { provider: string; api_key: string; model_name: string; base_url?: string }) => {
+    const response = await api.post('/api/admin/settings/ai-model/test', data);
+    return response.data;
+  },
 };
 
 // ─── Competitors ─────────────────────────────────────────────────────────────
