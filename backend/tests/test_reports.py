@@ -211,6 +211,48 @@ def test_request_export_saves_builder_config():
         assert response.status_code == 201
         assert response.json()["status"] == "pending"
 
+def test_request_export_datetime_serialization():
+    from unittest.mock import MagicMock
+    mock_db = MagicMock()
+    
+    def mock_refresh(obj):
+        obj.id = 1
+    mock_db.refresh.side_effect = mock_refresh
+    
+    # Save old overrides to restore later
+    old_user = app.dependency_overrides.get(get_current_active_user)
+    old_db = app.dependency_overrides.get(get_db)
+    
+    app.dependency_overrides[get_current_active_user] = override_get_superuser
+    app.dependency_overrides[get_db] = lambda: mock_db
+    try:
+        with patch("app.api.reports.BackgroundTasks.add_task") as mock_bg:
+            # Pass native isoformat strings which pydantic parses to datetimes
+            builder_config = {
+                "theme": "dark",
+                "date_from": "2026-06-28T10:00:00Z",
+                "date_to": "2026-06-28T11:00:00Z",
+                "sections": [{"id": "summary", "enabled": True}]
+            }
+            response = client.post("/api/reports/export/pdf", json=builder_config)
+            assert response.status_code == 201
+            assert response.json()["status"] == "pending"
+            
+            added_job = mock_db.add.call_args[0][0]
+            assert added_job.builder_config is not None
+            assert isinstance(added_job.builder_config["date_from"], str)
+            assert isinstance(added_job.builder_config["date_to"], str)
+    finally:
+        if old_user:
+            app.dependency_overrides[get_current_active_user] = old_user
+        else:
+            app.dependency_overrides.pop(get_current_active_user, None)
+            
+        if old_db:
+            app.dependency_overrides[get_db] = old_db
+        else:
+            app.dependency_overrides.pop(get_db, None)
+
 def test_pdf_generator_respects_builder_config():
     from app.services.pdf_generator import PDFGenerator
     data = {
