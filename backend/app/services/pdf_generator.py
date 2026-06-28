@@ -95,22 +95,30 @@ class PDFGenerator:
         if project_name == 'Tất cả dự án':
             project_name = 'All Projects'
             
-        elements.append(Spacer(1, 150))
-        elements.append(Paragraph("Social Listening Report", title_style))
-        elements.append(Paragraph(f"Project: {project_name}", ParagraphStyle('Subtitle', parent=title_style, fontSize=18, textColor=colors.HexColor('#64748b'))))
+        elements.append(Spacer(1, 200))
+        elements.append(Paragraph(f"{project_name}", ParagraphStyle('CoverTitle', parent=title_style, fontSize=36, textColor=colors.HexColor('#0f172a'), alignment=1)))
         
         date_from_val = str(data.get('date_from') or 'All time').split('T')[0]
         date_to_val = str(data.get('date_to') or 'All time').split('T')[0]
         
-        elements.append(Spacer(1, 40))
-        elements.append(Paragraph(f"Period: {date_from_val} to {date_to_val}", ParagraphStyle('CenterBold', parent=bold_style, alignment=1, fontSize=12)))
-        elements.append(Paragraph(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", ParagraphStyle('Center', parent=normal_style, alignment=1)))
-        
+        elements.append(Spacer(1, 20))
+        elements.append(Paragraph(f"{date_from_val} - {date_to_val}", ParagraphStyle('CoverDate', parent=normal_style, fontSize=16, textColor=colors.HexColor('#64748b'), alignment=1)))
+        elements.append(PageBreak())
+
+        # SUMMARY TITLE PAGE
+        elements.append(Spacer(1, 250))
+        elements.append(Paragraph("Summary", ParagraphStyle('SectionTitle', parent=title_style, fontSize=48, textColor=colors.HexColor('#1e293b'), alignment=1)))
         elements.append(PageBreak())
         
-        # 1. EXECUTIVE SUMMARY
-        elements.append(Paragraph("1. Executive Summary", h2_style))
-        elements.append(Paragraph(exec_summary, summary_style))
+        # 1. EXECUTIVE SUMMARY & KPIS
+        elements.append(Paragraph("Overview", h2_style))
+        elements.append(Spacer(1, 10))
+        
+        elements.append(Paragraph("Executive Summary", ParagraphStyle('H3', parent=h2_style, fontSize=14, textColor=colors.HexColor('#334155'))))
+        if exec_summary:
+            elements.append(Paragraph(exec_summary, summary_style))
+        else:
+            elements.append(Paragraph("No executive summary data available.", normal_style))
         elements.append(Spacer(1, 20))
         
         # 2. OVERVIEW KPIs
@@ -160,8 +168,14 @@ class PDFGenerator:
         elements.append(t_kpi)
         elements.append(Spacer(1, 30))
         
+        # ANALYSIS TITLE PAGE
+        elements.append(PageBreak())
+        elements.append(Spacer(1, 250))
+        elements.append(Paragraph("Analysis", ParagraphStyle('SectionTitle', parent=title_style, fontSize=48, textColor=colors.HexColor('#1e293b'), alignment=1)))
+        elements.append(PageBreak())
+        
         # 3. ANALYSIS CHARTS
-        elements.append(Paragraph("3. Analysis & Trends", h2_style))
+        elements.append(Paragraph("Analysis & Trends", h2_style))
         
         sent_data = metrics.get('sentiment', {})
         trend_data = metrics.get('daily_trend', {})
@@ -225,7 +239,7 @@ class PDFGenerator:
             elements.append(Spacer(1, 30))
         
         # 5. TOP MENTIONS
-        elements.append(Paragraph("5. Top Mentions by Reach", h2_style))
+        elements.append(Paragraph("Top Mentions by Reach", h2_style))
         
         if not top_mentions:
             elements.append(Paragraph("No data available for this section.", normal_style))
@@ -246,6 +260,38 @@ class PDFGenerator:
                     snippet = snippet[:300] + "..."
                 elements.append(Paragraph(f"<i>'{snippet}'</i>", ParagraphStyle('Snippet', parent=normal_style, leftIndent=10, textColor=colors.HexColor('#475569'))))
                 elements.append(Spacer(1, 15))
+        
+        elements.append(PageBreak())
+        
+        # 6. RECENT MENTIONS
+        elements.append(Paragraph("Recent Mentions", h2_style))
+        raw_mentions = data.get('raw_mentions', [])
+        
+        if not raw_mentions:
+            elements.append(Paragraph("No data available for this section.", normal_style))
+        else:
+            # Get 5 most recent mentions based on date string
+            recent_mentions = sorted(raw_mentions, key=lambda x: str(x.get('date', '')), reverse=True)[:5]
+            for m in recent_mentions:
+                title_val = str(m.get('title') or 'Untitled')
+                domain_val = str(m.get('domain') or 'N/A')
+                sent_val = str(m.get('sentiment') or 'neutral').capitalize()
+                date_val = str(m.get('date') or '')
+                
+                elements.append(Paragraph(f"<b>{title_val}</b>", normal_style))
+                elements.append(Paragraph(f"Platform: {domain_val} | Sentiment: {sent_val} | Date: {date_val}", ParagraphStyle('Meta', parent=normal_style, textColor=colors.HexColor('#64748b'), fontSize=9)))
+                
+                snippet = str(m.get('content') or '')
+                snippet = snippet.encode('ascii', 'ignore').decode('ascii')
+                if len(snippet) > 300:
+                    snippet = snippet[:300] + "..."
+                elements.append(Paragraph(f"<i>'{snippet}'</i>", ParagraphStyle('Snippet', parent=normal_style, leftIndent=10, textColor=colors.HexColor('#475569'))))
+                elements.append(Spacer(1, 15))
+                
+        # CLOSING PAGE
+        elements.append(PageBreak())
+        elements.append(Spacer(1, 300))
+        elements.append(Paragraph("Thank You!", ParagraphStyle('Closing', parent=title_style, fontSize=48, textColor=colors.HexColor('#3b82f6'), alignment=1)))
             
         doc.build(elements)
         buffer.seek(0)
