@@ -102,9 +102,11 @@ export function ExportHistoryTable({ exports, onDownload, loading }: ExportHisto
               <td className="px-4 py-3">
                 {ex.status === 'success' && (
                   <button
-                    onClick={() =>
-                      onDownload(ex.id, `Nope_Export_${ex.id}.${ex.report_type}`)
-                    }
+                    onClick={() => {
+                      const extMap: Record<string, string> = { excel: 'xlsx', xlsx: 'xlsx', csv: 'csv', pdf: 'pdf' };
+                      const ext = extMap[ex.report_type.toLowerCase()] || ex.report_type;
+                      onDownload(ex.id, `Nope_Export_${ex.id}.${ext}`);
+                    }}
                     className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 font-semibold text-sm transition-colors"
                   >
                     <Download className="w-4 h-4" />

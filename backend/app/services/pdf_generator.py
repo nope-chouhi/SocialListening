@@ -193,12 +193,12 @@ class PDFGenerator:
             # Top Sources Table
             s_data = [["Top Domains / Platforms", "Mentions"]]
             for s in sources_list[:10]:
-                s_data.append([str(s['name']), f"{s['count']:,}"])
+                s_data.append([str(s.get('name', 'Unknown')), f"{safe_num(s.get('count', 0)):,}"])
                 
             # Top Tags Table
             t_data = [["Top Trending Topics/Hashtags", "Frequency"]]
             for t in tags_list[:10]:
-                t_data.append([str(t['name']), f"{t['count']:,}"])
+                t_data.append([str(t.get('name', 'Unknown')), f"{safe_num(t.get('count', 0)):,}"])
                 
             # Wrap in side-by-side table
             tsrc = Table(s_data, colWidths=[180, 60])

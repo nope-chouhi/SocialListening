@@ -306,8 +306,8 @@ def test_pdf_export_none_and_empty_regression():
         "top_mentions": [
             {"title": None, "domain": None, "sentiment": "positive", "reach": None, "snippet": None}
         ],
-        "sources_list": [],
-        "tags_list": []
+        "sources_list": [{"name": "X", "count": None}],
+        "tags_list": [{"name": "Y", "count": None}]
     }
     
     pdf_bytes = PDFGenerator.generate_project_summary(data_none)
