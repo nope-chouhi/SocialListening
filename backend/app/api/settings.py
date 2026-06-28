@@ -349,6 +349,7 @@ def get_notification_delivery(
     return log
 
 
+
 @router.post("/notifications/deliveries/{log_id}/retry")
 def retry_notification_delivery(
     log_id: int,
@@ -363,4 +364,181 @@ def retry_notification_delivery(
         raise HTTPException(status_code=400, detail=result.get("message", "Retry failed"))
         
     return {"success": True, "message": "Notification queued for retry or sent successfully"}
+
+
+# ─── AI Model Configuration ──────────────────────────────────────────────────
+
+@router.get("/ai-model")
+def get_ai_model_config(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_superuser)
+):
+    """Get AI model configuration - Admin only"""
+    from app.models.ai_config import AIModelConfig
+
+    config = db.execute(
+        select(AIModelConfig).where(AIModelConfig.id == 1)
+    ).scalar_one_or_none()
+
+    if not config:
+        config = AIModelConfig(
+            id=1,
+            provider='gemini',
+            model_name='gemini-2.5-flash',
+            is_enabled=True
+        )
+        db.add(config)
+        db.commit()
+        db.refresh(config)
+
+    # Mask the API key
+    masked_key = ""
+    if config.api_key:
+        key = config.api_key
+        if len(key) > 8:
+            masked_key = key[:4] + "..." + key[-4:]
+        else:
+            masked_key = "****"
+
+    return {
+        "id": config.id,
+        "provider": config.provider,
+        "api_key_masked": masked_key,
+        "model_name": config.model_name,
+        "base_url": config.base_url,
+        "max_tokens": config.max_tokens,
+        "temperature": config.temperature,
+        "is_enabled": config.is_enabled,
+        "created_at": config.created_at.isoformat() if config.created_at else None,
+        "updated_at": config.updated_at.isoformat() if config.updated_at else None,
+    }
+
+
+@router.put("/ai-model")
+def update_ai_model_config(
+    data: dict,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_superuser)
+):
+    """Update AI model configuration - Admin only"""
+    from app.models.ai_config import AIModelConfig
+
+    config = db.execute(
+        select(AIModelConfig).where(AIModelConfig.id == 1)
+    ).scalar_one_or_none()
+
+    if not config:
+        config = AIModelConfig(id=1)
+        db.add(config)
+
+    provider = data.get("provider")
+    if provider and provider in ("gemini", "openai", "custom"):
+        config.provider = provider
+
+    api_key = data.get("api_key")
+    if api_key is not None and api_key != "":
+        config.api_key = api_key
+
+    model_name = data.get("model_name")
+    if model_name:
+        config.model_name = model_name
+
+    base_url = data.get("base_url")
+    if base_url is not None:
+        config.base_url = base_url if base_url else None
+
+    max_tokens = data.get("max_tokens")
+    if max_tokens is not None:
+        config.max_tokens = max(128, min(16384, int(max_tokens)))
+
+    temperature = data.get("temperature")
+    if temperature is not None:
+        config.temperature = max(0.0, min(2.0, float(temperature)))
+
+    is_enabled = data.get("is_enabled")
+    if is_enabled is not None:
+        config.is_enabled = bool(is_enabled)
+
+    db.commit()
+    db.refresh(config)
+
+    masked_key = ""
+    if config.api_key:
+        key = config.api_key
+        if len(key) > 8:
+            masked_key = key[:4] + "..." + key[-4:]
+        else:
+            masked_key = "****"
+
+    return {
+        "id": config.id,
+        "provider": config.provider,
+        "api_key_masked": masked_key,
+        "model_name": config.model_name,
+        "base_url": config.base_url,
+        "max_tokens": config.max_tokens,
+        "temperature": config.temperature,
+        "is_enabled": config.is_enabled,
+        "created_at": config.created_at.isoformat() if config.created_at else None,
+        "updated_at": config.updated_at.isoformat() if config.updated_at else None,
+    }
+
+
+@router.post("/ai-model/test")
+def test_ai_model_connection(
+    data: dict,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_superuser)
+):
+    """Test AI provider connection - Admin only"""
+    provider = data.get("provider", "")
+    api_key = data.get("api_key", "")
+    model_name = data.get("model_name", "")
+    base_url = data.get("base_url", "")
+
+    if not api_key:
+        return {"success": False, "message": "API key is required", "response_preview": None}
+
+    test_prompt = "Xin chào, bạn có thể trả lời được không? Trả lời ngắn gọn trong 1 câu."
+
+    try:
+        if provider == "gemini":
+            import google.generativeai as genai
+            genai.configure(api_key=api_key)
+            model = genai.GenerativeModel(model_name or "gemini-2.5-flash")
+            response = model.generate_content(test_prompt)
+            preview = response.text.strip()[:200]
+            return {"success": True, "message": f"Kết nối Gemini ({model_name}) thành công!", "response_preview": preview}
+
+        elif provider == "openai":
+            from openai import OpenAI
+            client = OpenAI(api_key=api_key)
+            response = client.chat.completions.create(
+                model=model_name or "gpt-4o-mini",
+                messages=[{"role": "user", "content": test_prompt}],
+                max_tokens=100,
+                timeout=15
+            )
+            preview = response.choices[0].message.content.strip()[:200]
+            return {"success": True, "message": f"Kết nối OpenAI ({model_name}) thành công!", "response_preview": preview}
+
+        elif provider == "custom":
+            if not base_url:
+                return {"success": False, "message": "Base URL is required for custom provider", "response_preview": None}
+            from openai import OpenAI
+            client = OpenAI(api_key=api_key, base_url=base_url.rstrip("/"))
+            response = client.chat.completions.create(
+                model=model_name or "default",
+                messages=[{"role": "user", "content": test_prompt}],
+                max_tokens=100,
+                timeout=15
+            )
+            preview = response.choices[0].message.content.strip()[:200]
+            return {"success": True, "message": f"Kết nối Custom ({model_name}) thành công!", "response_preview": preview}
+
+        else:
+            return {"success": False, "message": f"Unknown provider: {provider}", "response_preview": None}
+
+    except Exception as e:
+        return {"success": False, "message": f"Lỗi kết nối: {str(e)}", "response_preview": None}
 

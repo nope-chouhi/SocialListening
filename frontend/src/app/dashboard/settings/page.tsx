@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Users, Shield, Building, Mail, Bell, Globe, Palette, FileText, User as UserIcon, Lock, Monitor, Settings } from 'lucide-react';
+import { Users, Shield, Building, Mail, Bell, Globe, Palette, FileText, User as UserIcon, Lock, Monitor, Settings, Sparkles } from 'lucide-react';
 import { auth } from '@/lib/api';
 import { canAccessAdmin, type User } from '@/lib/permissions';
 import LoadingSpinner from '@/components/LoadingSpinner';
@@ -18,9 +18,10 @@ import NotificationDeliveries from './NotificationDeliveries';
 import APIWebhooks from './APIWebhooks';
 import BrandingSettings from './BrandingSettings';
 import AuditLogs from './AuditLogs';
+import AIModelSettings from './AIModelSettings';
 
 type TabId = 'profile' | 'security' | 'personal-notifications' | 
-             'users' | 'permissions' | 'organization' | 'email' | 'system-notifications' | 'delivery-logs' | 'api' | 'branding' | 'logs';
+             'users' | 'permissions' | 'organization' | 'email' | 'system-notifications' | 'delivery-logs' | 'api' | 'branding' | 'logs' | 'ai-model';
 
 interface Tab {
   id: TabId;
@@ -60,7 +61,7 @@ export default function SettingsPage() {
 
   // Block access to admin tabs for normal users
   useEffect(() => {
-    const adminTabs: TabId[] = ['users', 'permissions', 'organization', 'email', 'system-notifications', 'delivery-logs', 'api', 'branding', 'logs'];
+    const adminTabs: TabId[] = ['users', 'permissions', 'organization', 'email', 'system-notifications', 'delivery-logs', 'api', 'branding', 'logs', 'ai-model'];
     if (!loading && !isAdmin && adminTabs.includes(activeTab)) {
       setActiveTab('profile');
     }
@@ -88,6 +89,7 @@ export default function SettingsPage() {
     { id: 'api', name: 'API & Webhooks', icon: Globe, description: 'API keys và webhooks', adminOnly: true },
     { id: 'branding', name: 'Giao diện hệ thống', icon: Palette, description: 'Logo và màu sắc', adminOnly: true },
     { id: 'logs', name: 'Audit Logs', icon: FileText, description: 'Lịch sử hoạt động', adminOnly: true },
+    { id: 'ai-model', name: 'Cấu hình AI', icon: Sparkles, description: 'Model AI và API keys', adminOnly: true },
   ];
 
   // Combine tabs based on role
@@ -95,7 +97,7 @@ export default function SettingsPage() {
 
   const renderTabContent = () => {
     // Block admin tabs for normal users
-    const adminTabs: TabId[] = ['users', 'permissions', 'organization', 'email', 'system-notifications', 'delivery-logs', 'api', 'branding', 'logs'];
+    const adminTabs: TabId[] = ['users', 'permissions', 'organization', 'email', 'system-notifications', 'delivery-logs', 'api', 'branding', 'logs', 'ai-model'];
     if (!isAdmin && adminTabs.includes(activeTab)) {
       return (
         <div className="bg-rose-500/10 border border-rose-500/20 rounded-xl p-8 text-center">
@@ -134,6 +136,8 @@ export default function SettingsPage() {
         return <BrandingSettings />;
       case 'logs':
         return <AuditLogs />;
+      case 'ai-model':
+        return <AIModelSettings />;
       default:
         return null;
     }
