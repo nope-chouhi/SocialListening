@@ -45,9 +45,12 @@ def override_get_db():
             
     mock_db.refresh.side_effect = mock_refresh
     yield mock_db
-
-app.dependency_overrides[get_current_active_user] = override_get_superuser
-app.dependency_overrides[get_db] = override_get_db
+@pytest.fixture(autouse=True, scope="module")
+def setup_overrides():
+    app.dependency_overrides[get_current_active_user] = override_get_superuser
+    app.dependency_overrides[get_db] = override_get_db
+    yield
+    app.dependency_overrides.clear()
 
 client = TestClient(app)
 

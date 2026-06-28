@@ -7,6 +7,9 @@ export interface SourceLabelMention {
   source_name?: string | null;
   domain?: string | null;
   url?: string | null;
+  original_url?: string | null;
+  permalink?: string | null;
+  source_url?: string | null;
   source_type?: string | null;
 }
 
@@ -15,9 +18,10 @@ export function getMentionSourceLabel(mention: SourceLabelMention): string {
   if (mention.source_name && mention.source_name.trim() !== '') return mention.source_name.trim();
   if (mention.domain && mention.domain.trim() !== '') return mention.domain.trim();
 
-  if (mention.url) {
+  const anyUrl = mention.url || mention.original_url || mention.permalink || mention.source_url;
+  if (anyUrl) {
     try {
-      const url = new URL(mention.url);
+      const url = new URL(anyUrl);
       const domainFromUrl = url.hostname.replace(/^www\./, '');
       if (domainFromUrl) return domainFromUrl;
     } catch (e) {
