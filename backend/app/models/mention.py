@@ -133,6 +133,38 @@ class AIAnalysis(Base):
     
     # Timestamps
     analyzed_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    @property
+    def source_name(self) -> str | None:
+        # Avoid eager loading errors, just safely return None if we can't get it
+        return None
+
+    @property
+    def has_original_url(self) -> bool:
+        return bool(self.url or self.original_url or self.canonical_url)
+
+    @property
+    def source_display(self) -> str:
+        if self.author and self.author.strip():
+            return self.author.strip()
+        if self.domain and self.domain.strip():
+            return self.domain.strip()
+        if self.url:
+            from urllib.parse import urlparse
+            try:
+                parsed = urlparse(self.url)
+                if parsed.netloc:
+                    return parsed.netloc.replace('www.', '')
+            except Exception:
+                pass
+        if self.source_type:
+            st = self.source_type.lower()
+            if st in ['video', 'youtube', 'yt']: return 'YouTube'
+            if st in ['news', 'newspaper']: return 'News'
+            if st in ['web', 'website', 'article']: return 'Web'
+            if st in ['blog', 'forum']: return 'Blog/Forum'
+            return self.source_type.replace('_', ' ').title()
+        return 'Unknown'
     
 
 class MentionVisit(Base):

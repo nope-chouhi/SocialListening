@@ -184,8 +184,16 @@ def override_get_user():
 
 def override_get_db():
     mock_db = MagicMock()
-    mock_db.execute.return_value.scalars.return_value.all.return_value = []
-    mock_db.execute.return_value.scalar.return_value = 0
+    
+    def mock_execute(*args, **kwargs):
+        res = MagicMock()
+        res.scalars.return_value.all.return_value = []
+        res.scalar.return_value = 0
+        # Ensure that if anyone calls .scalar() it returns 0 explicitly
+        res.scalar = MagicMock(return_value=0)
+        return res
+        
+    mock_db.execute.side_effect = mock_execute
     yield mock_db
 
 

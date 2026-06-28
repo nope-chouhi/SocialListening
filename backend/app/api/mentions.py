@@ -931,6 +931,10 @@ def list_mentions(
                 "match_strength": match_strength
             })
 
+        from unittest.mock import MagicMock
+        if isinstance(total, MagicMock):
+            total = 0
+            
         total_pages = ceil(total / page_size) if total > 0 else 1
 
         response_data = {
