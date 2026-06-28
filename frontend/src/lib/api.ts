@@ -661,8 +661,10 @@ export const reports = {
     });
     return response.data;
   },
-  listExports: async (page = 1, pageSize = 20) => {
-    const response = await api.get('/api/reports/exports/history', { params: { page, page_size: pageSize } });
+  listExports: async (page = 1, pageSize = 20, type?: string) => {
+    const params: any = { page, page_size: pageSize };
+    if (type) params.type = type;
+    const response = await api.get('/api/reports/exports/history', { params });
     return response.data;
   },
   getExportStatus: async (id: number) => {

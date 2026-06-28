@@ -580,11 +580,14 @@ def request_async_export(
 def list_exports(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
+    type: Optional[str] = Query(None, description="Filter by export type, e.g. 'pdf' or 'excel'"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
     """List asynchronous export history for the user"""
     query = select(ReportExport)
+    if type:
+        query = query.where(ReportExport.report_type == type)
     if not current_user.is_superuser:
         query = query.where(ReportExport.requested_by == current_user.id)
         
@@ -643,11 +646,28 @@ def download_export(
     if not os.path.exists(export_job.file_path):
         raise HTTPException(status_code=404, detail="Export file has been removed or does not exist")
         
-    filename = os.path.basename(export_job.file_path)
+    EXPORT_FILE_EXTENSIONS = {
+        "excel": "xlsx",
+        "xlsx": "xlsx",
+        "csv": "csv",
+        "pdf": "pdf",
+    }
+    
+    ext = EXPORT_FILE_EXTENSIONS.get(export_job.report_type.lower(), export_job.report_type.lower())
+    dl_filename = f"Nope_Export_{export_job.id}.{ext}"
+    
+    media_type = "application/octet-stream"
+    if ext == "xlsx":
+        media_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    elif ext == "csv":
+        media_type = "text/csv"
+    elif ext == "pdf":
+        media_type = "application/pdf"
+        
     return FileResponse(
         path=export_job.file_path,
-        filename=filename,
-        media_type="application/octet-stream"
+        filename=dl_filename,
+        media_type=media_type
     )
 
 @router.post("/pdf/logo")

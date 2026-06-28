@@ -44,7 +44,7 @@ export default function ExcelReportPage() {
   const fetchExports = async () => {
     setExportHistoryLoading(true);
     try {
-      const res = await reportsApi.listExports(1, 10);
+      const res = await reportsApi.listExports(1, 10, 'excel');
       setExportHistory(res.items || []);
     } catch (e) {}
     finally { setExportHistoryLoading(false); }

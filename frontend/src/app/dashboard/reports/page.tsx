@@ -75,7 +75,7 @@ export default function ReportsPage() {
   const fetchExports = async () => {
     setExportHistoryLoading(true);
     try {
-      const res = await reports.listExports(1, 10);
+      const res = await reports.listExports(1, 10, 'pdf');
       setExportHistory(res.items || []);
     } catch (e) {}
     finally { setExportHistoryLoading(false); }
