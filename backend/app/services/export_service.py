@@ -191,81 +191,160 @@ class ExportService:
         wb = openpyxl.Workbook()
         
         # Helper for styling headers
-        def style_header(ws, color="3b82f6"):
+        def style_header(ws, color="3b82f6", font_color="FFFFFF"):
             for cell in ws[1]:
-                cell.font = Font(bold=True, color="FFFFFF")
+                cell.font = Font(bold=True, color=font_color)
                 cell.fill = PatternFill(start_color=color, end_color=color, fill_type="solid")
             ws.freeze_panes = "A2"
+            ws.auto_filter.ref = ws.dimensions
             
         metrics = export_data.get('metrics', {})
         comparison = export_data.get('comparison', {})
         
-        # 1. SUMMARY & ANALYTICS SHEET
-        ws_summary = wb.active
-        ws_summary.title = "Analytics Data"
-        
-        ws_summary.append(["Social Listening Project Report"])
-        ws_summary["A1"].font = Font(bold=True, size=16, color="4f46e5")
-        ws_summary.append(["Project:", export_data.get('project_name', 'All')])
-        ws_summary.append(["Period:", f"{export_data.get('date_from')} to {export_data.get('date_to')}"])
-        ws_summary.append(["Generated:", str(datetime.now())])
-        ws_summary.append([])
-        
-        ws_summary.append(["Metric", "Current Period", "Comparison (vs Prev)"])
-        style_header(ws_summary, "4f46e5")
-        
-        ws_summary.append(["Total Mentions", metrics.get('total_mentions', 0), comparison.get('mentions_change', '0%')])
-        ws_summary.append(["Total Reach", metrics.get('total_reach', 0), comparison.get('reach_change', '0%')])
-        ws_summary.append(["Interactions", metrics.get('interactions', 0), comparison.get('interactions_change', '0%')])
-        
-        # 2. MENTIONS SHEET
-        ws_mentions = wb.create_sheet("Mentions")
-        mentions_headers = ["ID", "Date", "Domain", "Title", "Content/Snippet", "URL", "Sentiment", "Reach", "Interactions"]
+        # 1. MENTIONS SHEET (Main active sheet)
+        ws_mentions = wb.active
+        ws_mentions.title = "Mentions"
+        mentions_headers = ["ID", "Date", "Time", "Title", "Content/Snippet", "URL", "Domain", "Category", "Sentiment", "Tags"]
         ws_mentions.append(mentions_headers)
         style_header(ws_mentions, "3b82f6")
         
-        for m in export_data.get('top_mentions', []): # We pass all mentions in 'top_mentions' or a separate list. Wait, in helpers I truncated top_mentions to 10. Let's pass 'all_mentions_export' from the service.
-            pass # We will populate this from export_data['raw_mentions']
-            
         for m in export_data.get('raw_mentions', []):
-            ws_mentions.append([
-                m['id'], m['date'], m['domain'], m['title'], 
-                m['content'], m['url'], m['sentiment'], m['reach'], m['interactions']
-            ])
-            # Wrap content column
-            ws_mentions.cell(row=ws_mentions.max_row, column=5).alignment = Alignment(wrap_text=True)
+            dt_parts = m['date'].split(' ') if m['date'] else ["", ""]
+            date_str = dt_parts[0] if len(dt_parts) > 0 else ""
+            time_str = dt_parts[1] if len(dt_parts) > 1 else ""
             
+            # Map sentiment
+            sent = m.get('sentiment', 'neutral')
+            if str(sent) == "1": sent_label = "Positive"
+            elif str(sent) == "-1": sent_label = "Negative"
+            elif str(sent) == "0": sent_label = "Neutral"
+            else: sent_label = str(sent).capitalize()
+            
+            row = [
+                str(m['id']), # String to avoid scientific notation
+                date_str, 
+                time_str,
+                m.get('title', ''), 
+                m.get('content', ''), 
+                m.get('url', ''), 
+                m.get('domain', ''), 
+                "General", # Placeholder for Category if not available
+                sent_label, 
+                "" # Placeholder for Tags
+            ]
+            ws_mentions.append(row)
+            
+            # Style specific cells
+            curr_row = ws_mentions.max_row
+            ws_mentions.cell(row=curr_row, column=4).alignment = Alignment(wrap_text=True)
+            ws_mentions.cell(row=curr_row, column=5).alignment = Alignment(wrap_text=True)
+            url_cell = ws_mentions.cell(row=curr_row, column=6)
+            if url_cell.value and str(url_cell.value).startswith('http'):
+                url_cell.hyperlink = url_cell.value
+                url_cell.font = Font(color="0000FF", underline="single")
+            
+        # Set column widths
+        ws_mentions.column_dimensions['A'].width = 22
+        ws_mentions.column_dimensions['B'].width = 12
+        ws_mentions.column_dimensions['C'].width = 8
         ws_mentions.column_dimensions['D'].width = 30
-        ws_mentions.column_dimensions['E'].width = 60
+        ws_mentions.column_dimensions['E'].width = 50
         ws_mentions.column_dimensions['F'].width = 30
+        ws_mentions.column_dimensions['G'].width = 20
+        ws_mentions.column_dimensions['H'].width = 15
+        ws_mentions.column_dimensions['I'].width = 12
+        ws_mentions.column_dimensions['J'].width = 15
         
-        # 3. SENTIMENT SHEET
+        # 2. SENTIMENT SHEET
         ws_sent = wb.create_sheet("Sentiment")
         ws_sent.append(["Sentiment", "Count", "Percentage"])
         style_header(ws_sent, "10b981")
         
         total_m = metrics.get('total_mentions', 1) or 1
         for k, v in metrics.get('sentiment', {}).items():
-            pct = f"{(v / total_m) * 100:.1f}%"
+            pct = f"{(v / total_m) * 100:.2f}%"
             ws_sent.append([k.capitalize(), v, pct])
             
-        # 4. SOURCES SHEET
-        ws_sources = wb.create_sheet("Sources")
-        ws_sources.append(["Domain/Platform", "Mentions", "Percentage Share"])
-        style_header(ws_sources, "f59e0b")
-        
-        for s in metrics.get('sources_list', []):
-            pct = f"{(s['count'] / total_m) * 100:.1f}%"
-            ws_sources.append([s['name'], s['count'], pct])
+        if not metrics.get('sentiment'):
+            ws_sent.append(["No data available", "", ""])
             
-        # 5. NUMERICAL DATA (Daily)
-        ws_num = wb.create_sheet("Numerical Data")
-        ws_num.append(["Date", "Total Mentions", "Positive", "Negative", "Neutral", "Reach"])
+        ws_sent.column_dimensions['A'].width = 15
+        ws_sent.column_dimensions['B'].width = 12
+        ws_sent.column_dimensions['C'].width = 15
+            
+        # 3. CATEGORIES SHEET
+        ws_cat = wb.create_sheet("Categories")
+        ws_cat.append(["Category / Source", "Number of mentions", "Percentage Share"])
+        style_header(ws_cat, "f59e0b")
+        
+        sources = metrics.get('sources_list', [])
+        for s in sources:
+            pct = f"{(s.get('count', 0) / total_m) * 100:.2f}%"
+            ws_cat.append([s.get('name', 'Unknown'), s.get('count', 0), pct])
+            
+        if not sources:
+            ws_cat.append(["No data available", "", ""])
+            
+        ws_cat.column_dimensions['A'].width = 25
+        ws_cat.column_dimensions['B'].width = 20
+        ws_cat.column_dimensions['C'].width = 20
+            
+        # 4. NUMERICAL DATA SHEET
+        ws_num = wb.create_sheet("Numerical data")
+        ws_num.append(["Date", "Mentions count", "Positive mentions", "Negative mentions", "Neutral mentions", "Total Reach"])
         style_header(ws_num, "6366f1")
         
-        for dt, stats in sorted(metrics.get('daily_trend', {}).items()):
-            ws_num.append([dt, stats['count'], stats['positive'], stats['negative'], stats['neutral'], stats['reach']])
+        trend = metrics.get('daily_trend', {})
+        for dt, stats in sorted(trend.items()):
+            ws_num.append([dt, stats.get('count', 0), stats.get('positive', 0), stats.get('negative', 0), stats.get('neutral', 0), stats.get('reach', 0)])
             
+        if not trend:
+            ws_num.append(["No data available", "", "", "", "", ""])
+            
+        ws_num.column_dimensions['A'].width = 15
+        ws_num.column_dimensions['B'].width = 15
+        ws_num.column_dimensions['C'].width = 18
+        ws_num.column_dimensions['D'].width = 18
+        ws_num.column_dimensions['E'].width = 18
+        ws_num.column_dimensions['F'].width = 15
+            
+        # 5. ANALYTICS DATA SHEET
+        ws_analytics = wb.create_sheet("Analytics data")
+        ws_analytics.append(["Metric", "Value", "Comparison (vs Prev)"])
+        style_header(ws_analytics, "4f46e5")
+        
+        analytics_data = [
+            ("Project", export_data.get('project_name', 'All'), ""),
+            ("Period", f"{export_data.get('date_from')} to {export_data.get('date_to')}", ""),
+            ("Generated At", str(datetime.now().strftime('%Y-%m-%d %H:%M')), ""),
+            ("", "", ""),
+            ("Total Mentions", metrics.get('total_mentions', 0), comparison.get('mentions_change', '0%')),
+            ("Total Reach", metrics.get('total_reach', 0), comparison.get('reach_change', '0%')),
+            ("Interactions", metrics.get('interactions', 0), comparison.get('interactions_change', '0%')),
+            ("Positive Mentions", metrics.get('sentiment', {}).get('positive', 0), ""),
+            ("Negative Mentions", metrics.get('sentiment', {}).get('negative', 0), ""),
+        ]
+        
+        for row in analytics_data:
+            ws_analytics.append(row)
+            if row[0] == "":
+                # style the empty row separator
+                curr_row = ws_analytics.max_row
+                ws_analytics.cell(row=curr_row, column=1).fill = PatternFill(start_color="F1F5F9", end_color="F1F5F9", fill_type="solid")
+                ws_analytics.cell(row=curr_row, column=2).fill = PatternFill(start_color="F1F5F9", end_color="F1F5F9", fill_type="solid")
+                ws_analytics.cell(row=curr_row, column=3).fill = PatternFill(start_color="F1F5F9", end_color="F1F5F9", fill_type="solid")
+
+        ws_analytics.column_dimensions['A'].width = 30
+        ws_analytics.column_dimensions['B'].width = 25
+        ws_analytics.column_dimensions['C'].width = 25
+        
+        # Adjust frozen panes since auto_filter sets it for header
+        ws_mentions.freeze_panes = "A2"
+        ws_sent.freeze_panes = "A2"
+        ws_cat.freeze_panes = "A2"
+        ws_num.freeze_panes = "A2"
+        ws_analytics.freeze_panes = "A2"
+
         output = io.BytesIO()
         wb.save(output)
         output.seek(0)

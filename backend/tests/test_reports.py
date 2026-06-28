@@ -112,16 +112,15 @@ def test_export_project_summary_xlsx_valid_workbook():
     # Load workbook from response content
     wb = openpyxl.load_workbook(io.BytesIO(response.content))
     
-    # Verify expected sheets exist
     sheet_names = wb.sheetnames
-    assert "Analytics Data" in sheet_names
     assert "Mentions" in sheet_names
     assert "Sentiment" in sheet_names
-    assert "Sources" in sheet_names
-    assert "Numerical Data" in sheet_names
+    assert "Categories" in sheet_names
+    assert "Numerical data" in sheet_names
+    assert "Analytics data" in sheet_names
     
     # Verify no fake data in Analytics Data sheet
-    ws = wb["Analytics Data"]
+    ws = wb["Analytics data"]
     found_mentions_row = False
     for row in ws.iter_rows(values_only=True):
         if row and row[0] == "Total Mentions":
@@ -284,11 +283,11 @@ def test_excel_export_formatting_regression():
     wb = openpyxl.load_workbook(io.BytesIO(excel_bytes))
     
     sheet_names = wb.sheetnames
-    assert "Analytics Data" in sheet_names
     assert "Mentions" in sheet_names
     assert "Sentiment" in sheet_names
-    assert "Sources" in sheet_names
-    assert "Numerical Data" in sheet_names
+    assert "Categories" in sheet_names
+    assert "Numerical data" in sheet_names
+    assert "Analytics data" in sheet_names
 
 def test_pdf_export_none_and_empty_regression():
     from app.services.pdf_generator import PDFGenerator
