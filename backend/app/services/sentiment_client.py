@@ -19,12 +19,18 @@ def analyze_sentiment(text: str) -> Dict:
         result = analyze_mention(content=text)
         return {
             "sentiment": result.get("sentiment", "neutral"),
-            "score": result.get("risk_score", 0.0) / 100.0,
-            "confidence": result.get("confidence_score", 0.0) / 100.0,
+            "score": float(result.get("risk_score", 0.0)) / 100.0,
+            "confidence": float(result.get("confidence_score", 0.0)) / 100.0,
+            "status": result.get("status", "success")
         }
     except Exception as e:
-        logger.error(f"Sentiment analysis failed: {e}")
-        raise ValueError(f"AI Provider error: {e}")
+        logger.warning(f"Sentiment analysis failed in client: {e}. Returning safe fallback.")
+        return {
+            "sentiment": "neutral",
+            "score": 0.0,
+            "confidence": 0.0,
+            "status": "provider_error"
+        }
 
 def map_to_ai_sentiment(simple: str) -> str:
     """Map positive/negative/neutral to platform sentiment enum values."""

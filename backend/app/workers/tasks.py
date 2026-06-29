@@ -14,7 +14,7 @@ from app.models.mention import Mention, AIAnalysis, SentimentScore
 from app.models.alert import Alert, AlertSeverity, AlertStatus
 from app.models.crawl import CrawlJob, CrawlJobStatus
 from app.services.crawler_service import crawler_service
-from app.services.ai_service import ai_service
+from app.services import ai_service
 
 
 @celery_app.task(name="app.workers.tasks.crawl_source", bind=True)
@@ -194,11 +194,11 @@ async def _analyze_mention_async(mention_id: int, alert_threshold: float):
             if not mention:
                 return {"error": "Mention not found", "mention_id": mention_id}
             
-            # Analyze with AI
-            analysis_result = await ai_service.analyze_mention(
-                content=mention.content,
-                title=mention.title,
-                metadata=mention.meta_data
+            # Analyze with AI synchronously in thread pool
+            analysis_result = await asyncio.to_thread(
+                ai_service.analyze_mention,
+                mention.content,
+                mention.title
             )
             
             # Create AI analysis record
@@ -211,9 +211,9 @@ async def _analyze_mention_async(mention_id: int, alert_threshold: float):
                 suggested_action=analysis_result["suggested_action"],
                 responsible_department=analysis_result["responsible_department"],
                 confidence_score=analysis_result["confidence_score"],
-                reasoning=analysis_result["reasoning"],
-                ai_provider="mock",  # Will be updated when real AI is integrated
-                model_version="1.0"
+                reasoning="Status: " + str(analysis_result.get("status", "success")),
+                ai_provider=analysis_result.get("ai_provider", "unknown"),
+                model_version=analysis_result.get("model_version", "1.0")
             )
             
             db.add(ai_analysis)
