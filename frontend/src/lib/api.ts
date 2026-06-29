@@ -53,10 +53,10 @@ api.interceptors.response.use(
       console.error(`[API Error] ${method} ${url} → ${status}:`, msg || error.message);
     }
 
-    // Global 401 handler: clear token and redirect to login once.
-    // For ALL 401 errors, swallow the rejection so downstream .catch() / toast.error
-    // never fires — the user is about to be redirected anyway.
-    if (status === 401 || status === 403) {
+    // ── 401 Unauthorized: token is expired or missing — redirect to login once ──
+    // Swallow the rejection so downstream .catch() / toast.error never fires
+    // (the user is about to be redirected to the login page anyway).
+    if (status === 401) {
       if (!isRedirectingToLogin) {
         isRedirectingToLogin = true;
         localStorage.removeItem('access_token');
@@ -71,13 +71,26 @@ api.interceptors.response.use(
       return new Promise(() => {});
     }
 
+    // ── 403 Forbidden: user is authenticated but lacks permission ──────────────
+    // Do NOT clear the token or redirect to login.
+    // Surface the error normally so callers can display a "permission denied" message.
+    if (status === 403) {
+      console.warn(`[API] 403 Forbidden: ${method} ${url} — insufficient permissions`);
+      return Promise.reject(error);
+    }
+
     return Promise.reject(error);
   }
 );
 
-/** Check if an error is a 401 auth error — these are handled globally, so skip toasting. */
+/** Check if an error is a 401 Unauthorized (token missing / expired). */
 export function isAuthError(error: any): boolean {
-  return error?.response?.status === 401 || error?.response?.status === 403;
+  return error?.response?.status === 401;
+}
+
+/** Check if an error is a 403 Forbidden (authenticated but no permission). */
+export function isPermissionError(error: any): boolean {
+  return error?.response?.status === 403;
 }
 
 /** Extract readable error message from axios error, including HTTP status. */
