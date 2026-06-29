@@ -10,12 +10,41 @@ from app.core.config import settings
 from app.core.database import engine, Base, SessionLocal
 from app.api import (
     collectors,
-    auth, keywords, sources, mentions, alerts,
-    incidents, reports, dashboard, crawl, takedown, services, admin, users, settings as settings_api,
-    roles, api_keys, branding, audit, monitor, system, ai, evidence, ai_chat, competitors, influencers,
-    reputation, discovery, integrations, realtime, saved_filters,
-    organizations, billing
+    auth,
+    keywords,
+    sources,
+    mentions,
+    alerts,
+    incidents,
+    reports,
+    dashboard,
+    crawl,
+    takedown,
+    services,
+    admin,
+    users,
+    settings as settings_api,
+    roles,
+    api_keys,
+    branding,
+    audit,
+    monitor,
+    system,
+    ai,
+    ai_config,
+    evidence,
+    ai_chat,
+    competitors,
+    influencers,
+    reputation,
+    discovery,
+    integrations,
+    realtime,
+    saved_filters,
+    organizations,
+    billing,
 )
+
 from app.api import service_requests, webinar
 
 logging.basicConfig(level=logging.INFO)
@@ -227,6 +256,7 @@ app.include_router(system.router,           prefix="/api/system",            tag
 app.include_router(webinar.router,          prefix="/api/webinar",           tags=["Webinar"])
 app.include_router(ai.router,               prefix="/api/ai",                tags=["AI"])
 app.include_router(ai_chat.router,          prefix="/api/ai",                tags=["AI Chat"])
+app.include_router(ai_config.router,               prefix="/api/ai",                tags=["AI Config"])
 app.include_router(evidence.router,         prefix="/api/evidence",          tags=["Evidence Locker"])
 app.include_router(competitors.router,      prefix="/api/competitors",       tags=["Competitors"])
 app.include_router(influencers.router,      prefix="/api/influencers",       tags=["Influencers"])

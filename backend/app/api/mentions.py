@@ -15,7 +15,7 @@ from app.models.user import User
 from app.models.mention import Mention, AIAnalysis
 from app.models.alert import Alert, AlertStatus, AlertSeverity
 from app.models.incident import Incident, IncidentStatus, IncidentLog
-from app.services.ai_service import analyze_mention as service_analyze_mention
+from app.services.ai_service import analyze_mention as ai_analyze_mention
 from app.services.notification_service import notify_high_risk_mention
 from app.services.url_utils import (
     clean_final_url,
@@ -1377,32 +1377,10 @@ def analyze_mention(
     ).scalar_one_or_none()
 
     try:
-        analysis_result = service_analyze_mention(mention.content, mention.title)
+        analysis_result = ai_analyze_mention(mention.content, mention.title, db_session=db)
     except Exception as e:
-        err_str = str(e).lower()
-
-        mention.verification_status = "failed"
-        mention.verification_error = f"AI analysis failed: {str(e)}"
-        db.commit()
-
-        from fastapi.responses import JSONResponse
-        if any(key in err_str for key in ["incorrect api key", "invalid_api_key", "401", "authenticationerror", "ai_provider_not_configured", "openai_dependency_missing", "api key is missing", "not configured"]):
-            return JSONResponse(
-                status_code=400,
-                content={
-                    "success": False,
-                    "code": "AI_PROVIDER_INVALID_KEY",
-                    "message": "AI chưa được cấu hình hợp lệ. Vui lòng kiểm tra API key hoặc chuyển sang chế độ phân tích cơ bản."
-                }
-            )
-        return JSONResponse(
-            status_code=400,
-            content={
-                "success": False,
-                "code": "AI_ANALYSIS_FAILED",
-                "message": "Không thể thực hiện phân tích do lỗi hệ thống AI. Vui lòng thử lại sau."
-            }
-        )
+        logger.error(f"AI analysis failed for mention {mention.id}: {e}")
+        raise HTTPException(status_code=500, detail="AI analysis failed.")
 
     # Get AI provider name for tracking
     from app.core.config import settings
@@ -1444,10 +1422,19 @@ def analyze_mention(
 
     # Send notification if high risk
     if analysis_result['risk_score'] >= 70:
-        try:
-            notify_high_risk_mention(db, mention_id, analysis_result)
-        except Exception as e:
-            print(f"Failed to send notification: {e}")
+        # Prevent duplicate high‑risk alerts
+        from app.models.alert import Alert, AlertSeverity
+        existing_alert = db.execute(
+            select(Alert).where(
+                Alert.mention_id == mention_id,
+                Alert.severity.in_([AlertSeverity.HIGH, AlertSeverity.CRITICAL])
+            )
+        ).scalar_one_or_none()
+        if not existing_alert:
+            try:
+                notify_high_risk_mention(db, mention_id, analysis_result)
+            except Exception as e:
+                logger.error(f"Failed to send high‑risk notification: {e}")
 
     return {
         "mention_id": mention_id,
