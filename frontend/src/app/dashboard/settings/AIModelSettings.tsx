@@ -14,6 +14,10 @@ interface AIModelConfigData {
   temperature: number;
   is_enabled: boolean;
   system_prompt: string;
+  configured: boolean;
+  can_save: boolean;
+  migration_required: boolean;
+  error_message?: string;
 }
 
 const PROVIDER_OPTIONS = [
@@ -182,6 +186,17 @@ export default function AIModelSettings() {
           Chọn AI provider và cấu hình cho tính năng AI Assistant. Khách hàng sẽ được tính phí khi sử dụng tính năng AI.
         </p>
       </div>
+
+      {/* Migration Warning */}
+      {config?.migration_required && (
+        <div className="p-4 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-xl flex gap-3 text-red-600 dark:text-red-400">
+          <XCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+          <div>
+            <h3 className="text-sm font-semibold">Chưa thể lưu cấu hình</h3>
+            <p className="text-xs mt-1">{config.error_message}</p>
+          </div>
+        </div>
+      )}
 
       {/* Enable/Disable Toggle */}
       <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl">
@@ -380,7 +395,7 @@ export default function AIModelSettings() {
       <div className="flex items-center gap-3 pt-2">
         <button
           onClick={handleSave}
-          disabled={saving}
+          disabled={saving || (config?.can_save === false)}
           className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-medium transition-colors disabled:opacity-50 shadow-lg shadow-indigo-500/20"
         >
           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}

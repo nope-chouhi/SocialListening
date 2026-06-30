@@ -407,10 +407,14 @@ def get_ai_model_config(
                 "system_prompt": "",
                 "created_at": None,
                 "updated_at": None,
+                "configured": False,
+                "can_save": True,
+                "migration_required": False,
+                "error_message": None,
             }
     except Exception as e:
         db.rollback()
-        # On MissingColumn or MissingTable, return the default so frontend can load.
+        # On MissingColumn or MissingTable, return explicitly that migration is required.
         return {
             "id": 0,
             "provider": "gemini",
@@ -423,6 +427,10 @@ def get_ai_model_config(
             "system_prompt": "",
             "created_at": None,
             "updated_at": None,
+            "configured": False,
+            "can_save": False,
+            "migration_required": True,
+            "error_message": "Database migrations are required before AI configuration can be saved",
         }
 
     # Mask the API key
@@ -446,6 +454,10 @@ def get_ai_model_config(
         "system_prompt": config.system_prompt or "",
         "created_at": config.created_at.isoformat() if config.created_at else None,
         "updated_at": config.updated_at.isoformat() if config.updated_at else None,
+        "configured": True if config.api_key else False,
+        "can_save": True,
+        "migration_required": False,
+        "error_message": None,
     }
 
 
