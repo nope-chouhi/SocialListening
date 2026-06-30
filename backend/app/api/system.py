@@ -13,31 +13,38 @@ router = APIRouter()
 def run_migrations():
     """Run alembic upgrade head programmatically without auth."""
     try:
-        from app.core.database import engine
-        import sqlalchemy as sa
         import os
         import alembic.config
         import alembic.command
+        from app.core.config import settings
+
+        # Move to backend directory so alembic can find env.py
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        original_cwd = os.getcwd()
+        os.chdir(base_dir)
         
-        # FIX THE alembic_version table to the current head
-        with engine.begin() as conn:
-            conn.execute(sa.text("DELETE FROM alembic_version"))
-            conn.execute(sa.text("INSERT INTO alembic_version (version_num) VALUES ('34cb86bf9561')"))
-            
+        try:
+            alembic_cfg = alembic.config.Config("alembic.ini")
+            if settings.DATABASE_URL:
+                alembic_cfg.set_main_option("sqlalchemy.url", settings.DATABASE_URL.replace("%", "%%"))
+            alembic.command.upgrade(alembic_cfg, "head")
+        finally:
+            # Restore directory
+            os.chdir(original_cwd)
+
+        from app.core.database import engine
         from sqlalchemy.engine.reflection import Inspector
         inspector = Inspector.from_engine(engine)
         tables = inspector.get_table_names()
-        mentions_columns = [c['name'] for c in inspector.get_columns('mentions')] if 'mentions' in tables else []
         
         return {
             "status": "success",
             "message": "Database migrations applied successfully.",
-            "tables": tables,
-            "mentions_columns": mentions_columns
+            "tables": tables
         }
     except Exception as e:
         import traceback
-        raise HTTPException(status_code=500, detail=f"Check failed: {str(e)}\n{traceback.format_exc()}")
+        return {"status": "error", "detail": f"Migration failed: {str(e)}", "traceback": traceback.format_exc()}
 
 @router.get("/worker-status")
 def get_worker_status(
