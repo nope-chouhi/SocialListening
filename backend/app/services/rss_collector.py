@@ -302,8 +302,51 @@ def run_rss_collector(db: Session, source_ids: List[int] = None, ad_hoc_keywords
                         }
                     )
                     db.add(mention)
+                    db.flush()  # Get mention.id for AIAnalysis
                     result["mentions_created"] += 1
                     source_item.status = "matched" if matched_kws else "collected"
+
+                    # AI Analysis (non-blocking, mirrors crawl_service.py pattern)
+                    try:
+                        from app.services.ai_service import analyze_mention as ai_analyze
+                        from app.models.mention import AIAnalysis
+                        from app.models.alert import Alert, AlertSeverity, AlertStatus
+
+                        text_for_ai = f"{item['title']}\n\n{item['snippet']}"
+                        analysis_result = ai_analyze(text_for_ai, item["title"])
+
+                        if analysis_result.get("status") == "success":
+                            ai_analysis = AIAnalysis(
+                                mention_id=mention.id,
+                                sentiment=analysis_result["sentiment"],
+                                risk_score=analysis_result["risk_score"],
+                                crisis_level=analysis_result.get("crisis_level", 2),
+                                summary_vi=analysis_result.get("summary_vi", ""),
+                                suggested_action=analysis_result.get("suggested_action", "monitor"),
+                                responsible_department=analysis_result.get("responsible_department", "customer_service"),
+                                confidence_score=analysis_result.get("confidence_score", 65.0),
+                                ai_provider=analysis_result.get("ai_provider", "unknown"),
+                                model_version=analysis_result.get("model_version", "unknown"),
+                                processing_time_ms=analysis_result.get("processing_time_ms", 0),
+                            )
+                            db.add(ai_analysis)
+
+                            # Update mention sentiment based on AI result
+                            mention.sentiment = analysis_result["sentiment"]
+
+                            # Create alert if high risk
+                            if analysis_result["risk_score"] >= 70:
+                                severity = AlertSeverity.CRITICAL if analysis_result["risk_score"] >= 85 else AlertSeverity.HIGH
+                                alert = Alert(
+                                    mention_id=mention.id,
+                                    severity=severity,
+                                    status=AlertStatus.NEW,
+                                    title=f"High risk mention: {mention.title or mention.url}",
+                                    message=f"Risk: {analysis_result['risk_score']}, Sentiment: {analysis_result['sentiment']}"
+                                )
+                                db.add(alert)
+                    except Exception as ai_err:
+                        logger.info(f"AI analysis skipped for RSS mention {mention.id}: {ai_err}")
                 
             db.commit()
             

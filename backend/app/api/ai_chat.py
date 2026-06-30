@@ -28,7 +28,7 @@ def _get_ai_config(db: Session) -> Optional[AIModelConfig]:
     ).scalar_one_or_none()
 
 
-def _build_system_prompt(db: Session, current_user: User) -> str:
+def _build_system_prompt(db: Session, current_user: User, config: Optional[AIModelConfig] = None) -> str:
     """Build a system prompt with project context for the AI assistant."""
     total_mentions = db.execute(select(func.count(Mention.id))).scalar() or 0
     neg_count = db.execute(
@@ -38,7 +38,12 @@ def _build_system_prompt(db: Session, current_user: User) -> str:
         select(func.count(AIAnalysis.id)).where(AIAnalysis.sentiment.like('%positive%'))
     ).scalar() or 0
 
-    return f"""Bạn là AI Brand Assistant của hệ thống Social Listening "Nope".
+    # Use custom system_prompt from config if available
+    custom_prompt = ""
+    if config and getattr(config, 'system_prompt', None):
+        custom_prompt = config.system_prompt + "\n\n"
+
+    default_prompt = f"""Bạn là AI Brand Assistant của hệ thống Social Listening "Nope".
 Bạn giúp phân tích dữ liệu thương hiệu, mentions, cảnh báo, đối thủ và influencer.
 Trả lời bằng tiếng Việt. Trả lời chuyên nghiệp, ngắn gọn, có số liệu nếu có.
 
@@ -50,6 +55,8 @@ Dữ liệu hiện tại của người dùng:
 
 Nếu người dùng hỏi về dữ liệu cụ thể mà bạn không có, hãy hướng dẫn họ sử dụng các trang Mentions, Reports, hoặc Dashboard trên hệ thống.
 Không bịa đặt số liệu. Chỉ dùng dữ liệu thật được cung cấp ở trên."""
+
+    return custom_prompt + default_prompt
 
 
 def _call_ai_provider(config: AIModelConfig, messages: List[Dict[str, str]], system_prompt: str) -> str:
@@ -125,7 +132,7 @@ def chat_with_brand_assistant(
         )
 
     # Build system prompt with project context
-    system_prompt = _build_system_prompt(db, current_user)
+    system_prompt = _build_system_prompt(db, current_user, config)
 
     try:
         response_text = _call_ai_provider(config, messages, system_prompt)
