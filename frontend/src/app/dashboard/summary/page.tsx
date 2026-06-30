@@ -41,7 +41,18 @@ export default function AnalysisPage() {
     try {
       setAiLoading(true);
       const res = await mentionsApi.summarize({ project_id: activeProject.id });
-      setAiText(res.summary || res.result || 'Không có kết quả');
+      if (res && typeof res === 'object' && res.summary) {
+        let text = `TỔNG QUAN:\n${res.summary}\n\n`;
+        if (res.sentiment_insights) text += `ĐÁNH GIÁ TÌNH HÌNH:\n${res.sentiment_insights}\n\n`;
+        if (res.top_topics?.length) text += `CHỦ ĐỀ NỔI BẬT:\n- ${res.top_topics.join('\n- ')}\n\n`;
+        if (res.risks?.length) text += `RỦI RO:\n${res.risks.map((r: any) => `- [${(r.level || '').toUpperCase()}] ${r.title}: ${r.reason}`).join('\n')}\n\n`;
+        if (res.recommended_actions?.length) text += `HÀNH ĐỘNG ĐỀ XUẤT:\n- ${res.recommended_actions.join('\n- ')}\n\n`;
+        if (res.data_quality_notes) text += `GHI CHÚ DỮ LIỆU:\n${res.data_quality_notes}\n\n`;
+        text += `(Đã phân tích ${res.mentions_analyzed || 0} mentions vào lúc ${res.generated_at || new Date().toLocaleString()})`;
+        setAiText(text);
+      } else {
+        setAiText(res.summary || res.result || 'Không có kết quả');
+      }
     } catch (error: any) {
       console.error('[API Error] POST /api/mentions/summarize ->', error?.response?.status || error.message);
       const detail = error?.response?.data?.detail || '';
@@ -195,12 +206,16 @@ export default function AnalysisPage() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* 7-day Trend */}
+            {/* Trend Chart */}
             <div className="bg-white dark:bg-[#050A15] rounded-2xl shadow-sm border border-gray-100 dark:border-white/10 p-6">
-              <h2 className="text-base font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-                <TrendingUp className="w-4 h-4 text-indigo-500" />
-                Trend 7 ngày qua
-              </h2>
+              <div className="flex items-center gap-2 mb-4">
+                <TrendingUp className="w-4 h-4 text-slate-500" />
+                <h2 className="text-base font-bold text-slate-900 dark:text-white">
+                  {summary?.trend_start && summary?.trend_end 
+                    ? `Trend (từ ${summary.trend_start} đến ${summary.trend_end})` 
+                    : 'Trend 7 ngày qua'}
+                </h2>
+              </div>
               {byDay.length === 0 ? (
                 <p className="text-slate-500 dark:text-gray-400 text-sm text-center py-8">Chưa có dữ liệu</p>
               ) : (

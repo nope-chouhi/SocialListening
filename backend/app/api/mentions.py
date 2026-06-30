@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
-from sqlalchemy import select, func, text, and_, or_, desc, asc, case, false
+from sqlalchemy import select, func, text, and_, or_, desc, asc, case, false, cast, String
 from typing import List, Optional
 from pydantic import BaseModel
 from datetime import datetime, timezone, timedelta
@@ -15,7 +15,8 @@ from app.models.user import User
 from app.models.mention import Mention, AIAnalysis
 from app.models.alert import Alert, AlertStatus, AlertSeverity
 from app.models.incident import Incident, IncidentStatus, IncidentLog
-from app.services.ai_service import analyze_mention as ai_analyze_mention
+from app.services.ai_service import analyze_mention as ai_analyze_mention, _call_ai_provider
+from app.models.ai_config import AIModelConfig
 from app.services.notification_service import notify_high_risk_mention
 from app.services.url_utils import (
     clean_final_url,
@@ -209,15 +210,15 @@ def get_mentions_summary(
         # Sentiment counts
         try:
             positive = db.execute(
-                apply_tenant_filter(select(func.count(Mention.id)), Mention, current_user).where(and_(*base_filter, Mention.sentiment == 'positive'))
+                apply_tenant_filter(select(func.count(Mention.id)), Mention, current_user).where(and_(*base_filter, func.lower(cast(Mention.sentiment, String)) == 'positive'))
             ).scalar() or 0
 
             neutral = db.execute(
-                apply_tenant_filter(select(func.count(Mention.id)), Mention, current_user).where(and_(*base_filter, Mention.sentiment == 'neutral'))
+                apply_tenant_filter(select(func.count(Mention.id)), Mention, current_user).where(and_(*base_filter, func.lower(cast(Mention.sentiment, String)) == 'neutral'))
             ).scalar() or 0
 
             negative = db.execute(
-                apply_tenant_filter(select(func.count(Mention.id)), Mention, current_user).where(and_(*base_filter, Mention.sentiment == 'negative'))
+                apply_tenant_filter(select(func.count(Mention.id)), Mention, current_user).where(and_(*base_filter, func.lower(cast(Mention.sentiment, String)) == 'negative'))
             ).scalar() or 0
         except Exception as e:
             db.rollback()
@@ -241,12 +242,16 @@ def get_mentions_summary(
             logger.error(f"Error querying source type counts: {e}")
             source_type_counts = {}
 
-        # By day (last 7 days)
+        # By day (last 7 days from latest mention)
         try:
-            now = datetime.now(timezone.utc)
+            latest_date = db.execute(
+                apply_tenant_filter(select(func.max(Mention.collected_at)), Mention, current_user).where(and_(*base_filter))
+            ).scalar()
+            
+            end_date = latest_date if latest_date else datetime.now(timezone.utc)
             by_day = []
             for i in range(7):
-                day_start = (now - timedelta(days=i)).replace(hour=0, minute=0, second=0, microsecond=0)
+                day_start = (end_date - timedelta(days=i)).replace(hour=0, minute=0, second=0, microsecond=0)
                 day_end = day_start + timedelta(days=1)
                 count = db.execute(
                     apply_tenant_filter(select(func.count(Mention.id)), Mention, current_user).where(and_(*base_filter, Mention.collected_at >= day_start, Mention.collected_at < day_end))
@@ -269,7 +274,9 @@ def get_mentions_summary(
             "neutral": neutral,
             "duplicate": 0,  # TODO: implement duplicate detection
             "by_day": by_day,
-            "by_source_type": source_type_counts
+            "by_source_type": source_type_counts,
+            "trend_start": by_day[0]["date"] if by_day else None,
+            "trend_end": by_day[-1]["date"] if by_day else None
         }
     except Exception as e:
         logger.error(f"Critical error in get_mentions_summary: {e}")
@@ -1633,105 +1640,129 @@ def update_mention_add_to_report(
     return {"id": mention.id, "add_to_report": mention.add_to_report}
 
 
-class SummarizeRequest(BaseModel):
-    mention_ids: Optional[list[int]] = None
-    filters: Optional[dict] = None  # Same filter structure as list_mentions
+class AISummaryRequest(BaseModel):
     project_id: Optional[int] = None
-
+    date_from: Optional[datetime] = None
+    date_to: Optional[datetime] = None
+    source_type: Optional[str] = None
+    sentiment: Optional[str] = None
 
 @router.post("/summarize")
-def summarize_current_results(
-    req: SummarizeRequest,
+def summarize_mentions(
+    req: AISummaryRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
-    """Generate AI summary of current filtered results"""
-    from app.services.ai_service import generate_executive_brief
+    """Generate an AI executive summary based on filtered mentions"""
+    # 1. Verify AI config exists
+    config = db.execute(
+        select(AIModelConfig).where(AIModelConfig.user_id == current_user.id)
+    ).scalar_one_or_none()
 
-    # Get mentions based on request
-    if req.mention_ids is not None:
-        if not req.mention_ids:
-            raise HTTPException(status_code=400, detail="No mention ids provided for summary.")
-        mentions = db.execute(
-            apply_tenant_filter(select(Mention), Mention, current_user, include_unverifiable=True).where(Mention.id.in_(req.mention_ids))
-        ).scalars().all()
-    else:
-        # Build query from filters
-        query = apply_tenant_filter(select(Mention), Mention, current_user, include_unverifiable=True)
-        filters = req.filters or {}
+    if not config or not config.is_enabled or not config.api_key:
+        raise HTTPException(status_code=400, detail="Vui lòng cấu hình AI trong Settings trước khi tạo AI Summary.")
 
-        if filters.get("project_id"):
-            query = query.where(Mention.project_id == filters["project_id"])
-        elif req.project_id:
-            query = query.where(Mention.project_id == req.project_id)
+    # 2. Build base filter
+    base_filter = [Mention.is_muted == False, Mention.is_deleted == False, Mention.verification_status != 'synthetic']
+    if req.project_id:
+        base_filter.append(Mention.project_id == req.project_id)
+    if req.date_from:
+        base_filter.append(Mention.collected_at >= req.date_from)
+    if req.date_to:
+        base_filter.append(Mention.collected_at <= req.date_to)
+    if req.sentiment:
+        sentiments_list = [s.strip() for s in req.sentiment.split(",")]
+        base_filter.append(Mention.sentiment.in_(sentiments_list))
+    if req.source_type:
+        st_list = [s.strip() for s in req.source_type.split(",")]
+        mapped_types = set()
+        for st in st_list:
+            if st == 'web': mapped_types.update(['web', 'website', 'web_search', 'article', 'unknown'])
+            elif st == 'video': mapped_types.update(['video', 'videos', 'youtube', 'yt'])
+            elif st == 'blog': mapped_types.update(['blog', 'forum', 'blogs_forums', 'blogs/forums'])
+            elif st == 'rss': mapped_types.update(['rss', 'feed', 'rss_feed'])
+            elif st == 'news': mapped_types.update(['news', 'newspaper', 'article_news'])
+            else: mapped_types.add(st)
+        condition = Mention.source_type.in_(list(mapped_types))
+        if 'web' in st_list:
+            valid_url_cond = and_(
+                Mention.url.isnot(None),
+                Mention.url.notilike('%googleusercontent.com%'),
+                Mention.url.notilike('%corp.google.com%'),
+                Mention.url.notilike('%uberproxy%'),
+                Mention.url.notilike('%/rss%'),
+                Mention.url.notilike('%.xml')
+            )
+            condition = or_(condition, and_(Mention.source_type.is_(None), valid_url_cond))
+        base_filter.append(condition)
 
-        if filters.get("sentiment"):
-            query = query.where(Mention.sentiment == filters["sentiment"])
-
-        if filters.get("source_type"):
-            query = query.where(Mention.source_type == filters["source_type"])
-
-        if filters.get("date_from"):
-            query = query.where(Mention.collected_at >= filters["date_from"])
-
-        if filters.get("date_to"):
-            query = query.where(Mention.collected_at <= filters["date_to"])
-
-        query = query.where(Mention.is_muted == False).where(Mention.is_deleted == False)
-
-        mentions = db.execute(query.limit(50)).scalars().all()
+    # 3. Query limited mentions for AI context
+    mentions = db.execute(
+        apply_tenant_filter(select(Mention), Mention, current_user).where(and_(*base_filter)).order_by(desc(Mention.collected_at)).limit(50)
+    ).scalars().all()
 
     if not mentions:
-        return {
-            "summary": "Không có mentions để tóm tắt.",
-            "key_insights": [],
-            "sentiment_breakdown": {},
-            "total_mentions": 0
-        }
+        raise HTTPException(status_code=400, detail="Không có mentions nào để phân tích.")
 
-    # Prepare mention data for AI
-    mention_data = []
-    for m in mentions:
-        mention_data.append({
-            "title": m.title,
-            "content": m.content or m.snippet or "",
-            "url": m.url,
-            "sentiment": m.sentiment,
-            "source_type": m.source_type,
-            "domain": m.domain,
-            "published_at": m.published_at.isoformat() if m.published_at else None
-        })
+    # 4. Build context
+    context_lines = []
+    for idx, m in enumerate(mentions):
+        title = m.title or "No Title"
+        snippet = (m.snippet or m.content or "")[:200]
+        sent = m.sentiment or "neutral"
+        context_lines.append(f"[{idx+1}] [{sent.upper()}] {title} - {snippet}")
+    
+    context_text = "\n".join(context_lines)
 
-    # Format mention data into string
-    lines = []
-    for md in mention_data:
-        text_content = md['content'] if md['content'] else ''
-        lines.append(f"- {md['title']}: {text_content[:200]}...")
-    content_to_summarize = "\n".join(lines)
-    if len(content_to_summarize) > 20000:
-        content_to_summarize = content_to_summarize[:20000] + "..."
+    # 5. Build prompt
+    prompt = f"""Bạn là một trợ lý phân tích dữ liệu Social Listening chuyên nghiệp.
+Dưới đây là một mẫu dữ liệu (tối đa 50 mentions gần nhất) từ hệ thống:
 
-    # Call AI service for summary
+{context_text}
+
+Dựa VÀO ĐÚNG dữ liệu được cung cấp ở trên (không bịa đặt thêm số liệu, nguồn, hay thông tin ngoài), hãy viết một Báo cáo Executive Summary trả về **CHUẨN JSON** với cấu trúc sau:
+
+{{
+  "summary": "Tổng quan tình hình (1-2 đoạn văn).",
+  "sentiment_insights": "Đánh giá chi tiết về thái độ của người dùng (tích cực/tiêu cực/trung lập).",
+  "top_topics": ["Chủ đề 1", "Chủ đề 2"],
+  "risks": [
+    {{
+      "level": "low|medium|high|critical",
+      "title": "Tên rủi ro",
+      "reason": "Lý do rủi ro này tồn tại"
+    }}
+  ],
+  "recommended_actions": ["Hành động 1", "Hành động 2"],
+  "data_quality_notes": "Ghi chú về chất lượng hoặc số lượng dữ liệu (vd: Dữ liệu tập trung nhiều vào vấn đề A...).",
+  "mentions_analyzed": {len(mentions)},
+  "generated_at": "{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+}}
+
+CHÚ Ý:
+- KHÔNG trả về bất kỳ text nào ngoài chuỗi JSON hợp lệ.
+- Hãy tập trung phát hiện các rủi ro (risks) tiêu cực nếu có.
+- Viết bằng tiếng Việt.
+"""
+
     try:
-        summary_result = generate_executive_brief(content_to_summarize)
-
-        # Calculate sentiment breakdown
-        sentiment_counts = {}
-        for m in mentions:
-            sent = m.sentiment or "unknown"
-            sentiment_counts[sent] = sentiment_counts.get(sent, 0) + 1
-
-        return {
-            "summary": summary_result.get("full_brief", summary_result.get("summary_3_lines", "")),
-            "key_insights": summary_result.get("key_entities", []),
-            "sentiment_breakdown": sentiment_counts,
-            "total_mentions": len(mentions),
-            "mention_ids": [m.id for m in mentions]
-        }
+        response_text, usage = _call_ai_provider(config, prompt, max_tokens=1500)
+        
+        # Clean response if wrapped in markdown code blocks
+        if response_text.startswith("```json"):
+            response_text = response_text[7:]
+        if response_text.startswith("```"):
+            response_text = response_text[3:]
+        if response_text.endswith("```"):
+            response_text = response_text[:-3]
+            
+        import json
+        result = json.loads(response_text.strip())
+        return result
     except Exception as e:
         import logging
-        logging.error(f"AI summarize failed: {str(e)}")
-        raise HTTPException(status_code=503, detail="AI Service is currently unavailable. Please try again later.")
+        logging.getLogger(__name__).error(f"Error generating AI Summary: {e}")
+        raise HTTPException(status_code=500, detail=f"Lỗi khi gọi AI Provider: {str(e)}")
 
 class UpdateMuteRequest(BaseModel):
     is_muted: bool
@@ -1799,3 +1830,4 @@ def mute_author(
         m.is_muted = True
     db.commit()
     return {"status": "success", "muted_mentions": len(mentions), "author": req.author}
+

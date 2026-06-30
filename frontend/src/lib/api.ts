@@ -513,8 +513,8 @@ export const mentions = {
     const response = await api.put(`/api/mentions/${id}/add-to-report`, { add_to_report: add });
     return response.data;
   },
-  summarize: async (data: { mention_ids?: number[]; filters?: any; project_id?: number }) => {
-    const response = await api.post('/api/mentions/summarize', data, { timeout: 20000 });
+  summarize: async (params?: any) => {
+    const response = await api.post('/api/mentions/summarize', params, { timeout: 20000 });
     return response.data;
   },
 };
