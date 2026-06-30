@@ -395,18 +395,35 @@ def get_ai_model_config(
         ).scalar_one_or_none()
 
         if not config:
-            config = AIModelConfig(
-                user_id=current_user.id,
-                provider='gemini',
-                model_name='gemini-2.5-flash',
-                is_enabled=True
-            )
-            db.add(config)
-            db.commit()
-            db.refresh(config)
+            return {
+                "id": 0,
+                "provider": "gemini",
+                "api_key_masked": "",
+                "model_name": "gemini-2.5-flash",
+                "base_url": None,
+                "max_tokens": 2048,
+                "temperature": 0.7,
+                "is_enabled": False,
+                "system_prompt": "",
+                "created_at": None,
+                "updated_at": None,
+            }
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=400, detail="Database is not initialized. Please run migrations.")
+        # On MissingColumn or MissingTable, return the default so frontend can load.
+        return {
+            "id": 0,
+            "provider": "gemini",
+            "api_key_masked": "",
+            "model_name": "gemini-2.5-flash",
+            "base_url": None,
+            "max_tokens": 2048,
+            "temperature": 0.7,
+            "is_enabled": False,
+            "system_prompt": "",
+            "created_at": None,
+            "updated_at": None,
+        }
 
     # Mask the API key
     masked_key = ""
@@ -451,7 +468,7 @@ def update_ai_model_config(
             db.add(config)
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=400, detail="Database is not initialized. Please run migrations.")
+        raise HTTPException(status_code=400, detail="Database is not initialized. Cannot save configuration until migrations run.")
 
     provider = data.get("provider")
     if provider and provider in ("gemini", "openai", "custom"):
