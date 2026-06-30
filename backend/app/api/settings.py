@@ -234,7 +234,13 @@ def update_system_notification_settings(
         # Create if not exists
         settings = SystemNotificationSettings(id=1)
         db.add(settings)
-    
+    # Validate emails if provided
+    if settings_data.report_email_recipients:
+        emails = [e.strip() for e in settings_data.report_email_recipients.split(',') if e.strip()]
+        invalid = [e for e in emails if '@' not in e]
+        if invalid:
+            raise HTTPException(status_code=400, detail=f"Invalid email addresses: {', '.join(invalid)}")
+            
     # Update fields
     for field, value in settings_data.dict(exclude_unset=True).items():
         setattr(settings, field, value)
@@ -242,6 +248,13 @@ def update_system_notification_settings(
     db.commit()
     db.refresh(settings)
     
+    try:
+        from app.services.scheduler_service import sync_email_report_schedules
+        sync_email_report_schedules()
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f"Error syncing email report schedules: {e}")
+        
     return SystemNotificationSettingsResponse.from_orm(settings)
 
 
