@@ -10,7 +10,8 @@ class AIModelConfig(Base):
     """
     __tablename__ = "ai_model_config"
 
-    id = Column(Integer, primary_key=True)  # Always 1
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=True, index=True, unique=True)
     provider = Column(String(50), nullable=False, default='gemini')  # gemini, openai, custom
     api_key = Column(Text, nullable=True)  # API key for the selected provider
     model_name = Column(String(255), nullable=False, default='gemini-2.5-flash')

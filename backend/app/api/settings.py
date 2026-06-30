@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import select, func
 
 from app.core.database import get_db
-from app.core.security import get_current_superuser
+from app.core.security import get_current_superuser, get_current_user
 from app.models.user import User
 from app.models.system_settings import OrganizationSettings, EmailSettings, SystemNotificationSettings
 from app.models.alert import NotificationDeliveryLog
@@ -234,7 +234,13 @@ def update_system_notification_settings(
         # Create if not exists
         settings = SystemNotificationSettings(id=1)
         db.add(settings)
-    
+    # Validate emails if provided
+    if settings_data.report_email_recipients:
+        emails = [e.strip() for e in settings_data.report_email_recipients.split(',') if e.strip()]
+        invalid = [e for e in emails if '@' not in e]
+        if invalid:
+            raise HTTPException(status_code=400, detail=f"Invalid email addresses: {', '.join(invalid)}")
+            
     # Update fields
     for field, value in settings_data.dict(exclude_unset=True).items():
         setattr(settings, field, value)
@@ -242,6 +248,13 @@ def update_system_notification_settings(
     db.commit()
     db.refresh(settings)
     
+    try:
+        from app.services.scheduler_service import sync_email_report_schedules
+        sync_email_report_schedules()
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f"Error syncing email report schedules: {e}")
+        
     return SystemNotificationSettingsResponse.from_orm(settings)
 
 
@@ -371,19 +384,19 @@ def retry_notification_delivery(
 @router.get("/ai-model")
 def get_ai_model_config(
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_superuser)
+    current_user: User = Depends(get_current_user)
 ):
     """Get AI model configuration - Admin only"""
     from app.models.ai_config import AIModelConfig
 
     try:
         config = db.execute(
-            select(AIModelConfig).where(AIModelConfig.id == 1)
+            select(AIModelConfig).where(AIModelConfig.user_id == current_user.id)
         ).scalar_one_or_none()
 
         if not config:
             config = AIModelConfig(
-                id=1,
+                user_id=current_user.id,
                 provider='gemini',
                 model_name='gemini-2.5-flash',
                 is_enabled=True
@@ -391,14 +404,9 @@ def get_ai_model_config(
             db.add(config)
             db.commit()
             db.refresh(config)
-    except Exception:
+    except Exception as e:
         db.rollback()
-        config = AIModelConfig(
-            id=1,
-            provider='gemini',
-            model_name='gemini-2.5-flash',
-            is_enabled=False
-        )
+        raise HTTPException(status_code=400, detail="Database is not initialized. Please run migrations.")
 
     # Mask the API key
     masked_key = ""
@@ -428,22 +436,22 @@ def get_ai_model_config(
 def update_ai_model_config(
     data: dict,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_superuser)
+    current_user: User = Depends(get_current_user)
 ):
     """Update AI model configuration - Admin only"""
     from app.models.ai_config import AIModelConfig
 
     try:
         config = db.execute(
-            select(AIModelConfig).where(AIModelConfig.id == 1)
+            select(AIModelConfig).where(AIModelConfig.user_id == current_user.id)
         ).scalar_one_or_none()
 
         if not config:
-            config = AIModelConfig(id=1)
+            config = AIModelConfig(user_id=current_user.id)
             db.add(config)
-    except Exception:
+    except Exception as e:
         db.rollback()
-        return {"success": False, "message": "Database is not initialized. Please run migrations."}
+        raise HTTPException(status_code=400, detail="Database is not initialized. Please run migrations.")
 
     provider = data.get("provider")
     if provider and provider in ("gemini", "openai", "custom"):

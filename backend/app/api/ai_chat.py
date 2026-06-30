@@ -21,11 +21,11 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-def _get_ai_config(db: Session) -> Optional[AIModelConfig]:
-    """Retrieve the AI model configuration from DB."""
+def _get_ai_config(db: Session, user_id: int) -> Optional[AIModelConfig]:
+    """Retrieve the AI model configuration from DB for the specific user."""
     try:
         return db.execute(
-            select(AIModelConfig).where(AIModelConfig.id == 1)
+            select(AIModelConfig).where(AIModelConfig.user_id == user_id)
         ).scalar_one_or_none()
     except Exception:
         db.rollback()
@@ -127,7 +127,7 @@ def chat_with_brand_assistant(
         raise HTTPException(status_code=400, detail="Messages cannot be empty")
 
     # Get AI configuration
-    config = _get_ai_config(db)
+    config = _get_ai_config(db, current_user.id)
 
     if not config or not config.is_enabled or not config.api_key:
         raise HTTPException(
@@ -162,7 +162,7 @@ def get_chat_config(
     Get the current AI chat configuration status.
     Available to all authenticated users (not admin-only).
     """
-    config = _get_ai_config(db)
+    config = _get_ai_config(db, current_user.id)
 
     if not config:
         return {

@@ -648,6 +648,14 @@ export const reports = {
     const response = await api.get('/api/reports', { params });
     return response.data;
   },
+  getEmailSchedules: async () => {
+    const response = await api.get('/api/reports/email-schedules');
+    return response.data;
+  },
+  sendEmailReportNow: async (reportType: 'daily' | 'weekly' = 'daily') => {
+    const response = await api.post(`/api/reports/email-schedules/send-now?report_type=${reportType}`);
+    return response.data;
+  },
   get: async (id: number) => {
     const response = await api.get(`/api/reports/${id}`);
     return response.data;
@@ -1059,6 +1067,18 @@ export const collectors = {
     return response.data;
   },
 };
+
+export const systemSettings = {
+  getNotifications: async () => {
+    const response = await api.get('/api/settings/notifications');
+    return response.data;
+  },
+  updateNotifications: async (data: any) => {
+    const response = await api.put('/api/settings/notifications', data);
+    return response.data;
+  },
+};
+
 
 
 
