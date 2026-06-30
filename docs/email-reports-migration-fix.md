@@ -10,7 +10,12 @@ The root cause was a `DuplicateObject` error originating from an earlier migrati
 1. Updated `8842624c78e7_add_report_exports_table.py` to make the `exportstatus` enum creation safely idempotent using a PostgreSQL `DO $$ BEGIN ... END $$` block.
 2. Updated `028_add_report_email_recipients.py` to use idempotent raw SQL (`ALTER TABLE ... ADD COLUMN IF NOT EXISTS`) to prevent any partial execution errors if it was partially applied.
 
+## Root Cause Update (Corrective Migration)
+Although the earlier migration blocker was resolved and made idempotent, the production database remained missing the `report_email_recipients` column. Alembic had likely considered `028` already applied (or was skipped).
+
+Because editing an already-passed migration (`028`) does not trigger Alembic to re-run it, a **new corrective idempotent migration (`029`)** was introduced to explicitly ensure the column exists.
+
 ## Next Steps
-- Merge these fixes into the `main` branch.
-- Wait for the normal Vercel/Render automatic deployment to trigger. The updated startup migration flow will successfully run through `alembic upgrade head`.
-- **Do not** manually run production migrations using the debug endpoints or scripts unless the automated deployment is explicitly confirmed to have failed again.
+- Merge the new corrective migration `029` into `main`.
+- Wait for the normal Vercel/Render automatic deployment to trigger. The updated startup migration flow will successfully run through `alembic upgrade head` and apply `029`.
+- **Do not** manually run production migrations using the debug endpoints or scripts unless explicitly approved.
