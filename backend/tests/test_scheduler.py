@@ -64,3 +64,24 @@ def test_run_automated_scans_locked(mock_getattr, mock_session, mock_lock):
     mock_lock.assert_called_once_with(db_mock, 1004, "run_automated_scans")
     # Verify no db executes happened because we exited early
     db_mock.execute.assert_not_called()
+
+def test_worker_status_missing_table():
+    from fastapi.testclient import TestClient
+    from app.main import app
+    from app.core.database import get_db
+    from sqlalchemy.exc import ProgrammingError
+    
+    client = TestClient(app)
+    
+    db = MagicMock()
+    db.query.return_value.first.side_effect = ProgrammingError("SELECT", {}, Exception("relation missing"))
+    db.query.return_value.filter.return_value.count.side_effect = ProgrammingError("SELECT", {}, Exception("relation missing"))
+    
+    app.dependency_overrides[get_db] = lambda: db
+    
+    response = client.get("/api/system/worker-status")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["active_sources"] == 0
+    assert data["due_sources"] == 0
+    assert data["worker_mode"] == "none"

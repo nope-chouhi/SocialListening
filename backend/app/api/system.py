@@ -74,7 +74,11 @@ def get_worker_status(
     current_user: User = Depends(get_current_active_user)
 ):
     """Get the real-time status of the background worker."""
-    status_record = db.query(WorkerStatus).first()
+    try:
+        status_record = db.query(WorkerStatus).first()
+    except Exception:
+        db.rollback()
+        status_record = None
     
     # Check if worker is running (heartbeat within last 2 minutes)
     worker_running = False
@@ -92,7 +96,11 @@ def get_worker_status(
             worker_running = True
             
     # Get active sources count
-    active_sources = db.query(Source).filter(Source.is_active == True).count()
+    try:
+        active_sources = db.query(Source).filter(Source.is_active == True).count()
+    except Exception:
+        db.rollback()
+        active_sources = 0
     
     # Get due sources (rough estimate: active and next_crawl_at < now)
     try:
@@ -101,7 +109,8 @@ def get_worker_status(
             Source.is_active == True,
             Source.next_crawl_at <= func.now()
         ).count()
-    except:
+    except Exception:
+        db.rollback()
         due_sources = 0
 
     safe_last_error = None

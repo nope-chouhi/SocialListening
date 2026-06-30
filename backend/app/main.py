@@ -193,24 +193,35 @@ app.add_middleware(
 from fastapi.exceptions import HTTPException
 
 # ─── Global exception handler — ensures 500s return JSON + CORS ───────────────
+def _add_cors_headers(request: Request, response: JSONResponse) -> JSONResponse:
+    origin = request.headers.get("origin")
+    if origin and origin in settings.cors_origins:
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+    elif "*" in settings.cors_origins:
+        response.headers["Access-Control-Allow-Origin"] = "*"
+    return response
+
 @app.exception_handler(HTTPException)
 async def custom_http_exception_handler(request: Request, exc: HTTPException):
     # Temporarily expose full detail in production for debugging
     if exc.status_code >= 500:
         logger.error(f"HTTPException 500 on {request.method} {request.url}: {exc.detail}")
-    return JSONResponse(
+    response = JSONResponse(
         status_code=exc.status_code,
         content={"detail": exc.detail},
     )
+    return _add_cors_headers(request, response)
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     logger.error(f"Unhandled exception on {request.method} {request.url}: {traceback.format_exc()}")
     
-    return JSONResponse(
+    response = JSONResponse(
         status_code=500,
         content={"detail": f"Internal server error: {str(exc)}"},
     )
+    return _add_cors_headers(request, response)
 
 
 # ─── Health ───────────────────────────────────────────────────────────────────
