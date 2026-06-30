@@ -119,23 +119,33 @@ def send_scheduled_report_email(db: Session, report_type: str = "daily") -> dict
         mention_ids = [m.id for m in mentions]
         
         sentiment_counts = {"positive": 0, "negative": 0, "neutral": 0}
+        
+        # Build analysis lookup by mention_id (keeping the first/latest found per mention)
+        analysis_by_mention = {}
         if mention_ids:
             analyses = db.execute(select(AIAnalysis).where(AIAnalysis.mention_id.in_(mention_ids))).scalars().all()
             for a in analyses:
+                analysis_by_mention[a.mention_id] = a
+                
+        # Count sentiment per mention
+        for m in mentions:
+            a = analysis_by_mention.get(m.id)
+            if a:
                 sent_val = a.sentiment.value if hasattr(a.sentiment, 'value') else a.sentiment
-                if sent_val == 'negative_medium':
+                if not isinstance(sent_val, str):
+                    sent_val = str(sent_val).lower() if sent_val else "neutral"
+                else:
+                    sent_val = sent_val.lower()
+                    
+                if sent_val.startswith('negative'):
                     sent_val = 'negative'
+                    
                 if sent_val in sentiment_counts:
                     sentiment_counts[sent_val] += 1
                 else:
                     sentiment_counts["neutral"] += 1
-                    
-            # calculate neutral for those without analysis or default
-            analyzed_count = len(analyses)
-            if len(mentions) > analyzed_count:
-                sentiment_counts["neutral"] += (len(mentions) - analyzed_count)
-        else:
-            sentiment_counts["neutral"] = len(mentions)
+            else:
+                sentiment_counts["neutral"] += 1
             
         alerts_query = apply_tenant_filter(select(Alert), Alert, user).where(Alert.created_at >= date_from).where(Alert.created_at <= date_to)
         total_alerts = db.execute(select(func.count()).select_from(alerts_query.subquery())).scalar() or 0
@@ -169,8 +179,11 @@ def send_scheduled_report_email(db: Session, report_type: str = "daily") -> dict
             if res.get("success"):
                 success_count += 1
                 
-        if success_count > 0:
-            return {"success": True, "message": f"Successfully sent {report_type} report to {success_count} recipients."}
+        total_recipients = len(recipients)
+        if success_count == total_recipients:
+            return {"success": True, "message": f"Successfully sent {report_type} report to all {total_recipients} recipients."}
+        elif success_count > 0:
+            return {"success": True, "message": f"Partially succeeded: sent {report_type} report to {success_count} out of {total_recipients} recipients."}
         else:
             return {"success": False, "message": "Failed to send report to any recipient."}
             
