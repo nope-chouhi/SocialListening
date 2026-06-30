@@ -170,7 +170,7 @@ export default function SettingsPage() {
       {/* Tabs */}
       <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
         <div className="border-b border-white/10">
-          <nav className="flex overflow-x-auto -mb-px scrollbar-hide">
+          <nav className="flex overflow-x-auto -mb-px pb-2">
             {/* Personal Settings Group */}
             {personalTabs.map((tab) => {
               const Icon = tab.icon;
