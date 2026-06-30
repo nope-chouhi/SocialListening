@@ -19,7 +19,7 @@ def run_migrations():
         from app.core.config import settings
 
         # Move to backend directory so alembic can find env.py
-        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         original_cwd = os.getcwd()
         os.chdir(base_dir)
         
