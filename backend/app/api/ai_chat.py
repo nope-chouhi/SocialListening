@@ -23,9 +23,13 @@ router = APIRouter()
 
 def _get_ai_config(db: Session) -> Optional[AIModelConfig]:
     """Retrieve the AI model configuration from DB."""
-    return db.execute(
-        select(AIModelConfig).where(AIModelConfig.id == 1)
-    ).scalar_one_or_none()
+    try:
+        return db.execute(
+            select(AIModelConfig).where(AIModelConfig.id == 1)
+        ).scalar_one_or_none()
+    except Exception:
+        db.rollback()
+        return None
 
 
 def _build_system_prompt(db: Session, current_user: User, config: Optional[AIModelConfig] = None) -> str:
