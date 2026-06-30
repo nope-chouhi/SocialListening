@@ -16,6 +16,10 @@ class AIModelConfigResponse(BaseModel):
     system_prompt: Optional[str] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
+    configured: bool = False
+    can_save: bool = True
+    migration_required: bool = False
+    error_message: Optional[str] = None
 
     class Config:
         from_attributes = True
