@@ -356,3 +356,16 @@ def test_pdf_export_none_and_empty_regression():
     
     pdf_bytes = PDFGenerator.generate_project_summary(data_none)
     assert len(pdf_bytes) > 0
+
+
+def test_email_schedules_route_priority_regression():
+    # Because of route priority, /api/reports/email-schedules shouldn't be matched by /{report_id}
+    # It might return 200, 401, 403, or 500 (if mock DB fails), but should NOT return 422 Unprocessable Entity
+    response = client.get("/api/reports/email-schedules")
+    assert response.status_code != 422
+
+
+def test_email_schedules_send_now_route_priority_regression():
+    # Same for POST /email-schedules/send-now
+    response = client.post("/api/reports/email-schedules/send-now")
+    assert response.status_code != 422
