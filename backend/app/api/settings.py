@@ -376,20 +376,29 @@ def get_ai_model_config(
     """Get AI model configuration - Admin only"""
     from app.models.ai_config import AIModelConfig
 
-    config = db.execute(
-        select(AIModelConfig).where(AIModelConfig.id == 1)
-    ).scalar_one_or_none()
+    try:
+        config = db.execute(
+            select(AIModelConfig).where(AIModelConfig.id == 1)
+        ).scalar_one_or_none()
 
-    if not config:
+        if not config:
+            config = AIModelConfig(
+                id=1,
+                provider='gemini',
+                model_name='gemini-2.5-flash',
+                is_enabled=True
+            )
+            db.add(config)
+            db.commit()
+            db.refresh(config)
+    except Exception:
+        db.rollback()
         config = AIModelConfig(
             id=1,
             provider='gemini',
             model_name='gemini-2.5-flash',
-            is_enabled=True
+            is_enabled=False
         )
-        db.add(config)
-        db.commit()
-        db.refresh(config)
 
     # Mask the API key
     masked_key = ""
@@ -424,13 +433,17 @@ def update_ai_model_config(
     """Update AI model configuration - Admin only"""
     from app.models.ai_config import AIModelConfig
 
-    config = db.execute(
-        select(AIModelConfig).where(AIModelConfig.id == 1)
-    ).scalar_one_or_none()
+    try:
+        config = db.execute(
+            select(AIModelConfig).where(AIModelConfig.id == 1)
+        ).scalar_one_or_none()
 
-    if not config:
-        config = AIModelConfig(id=1)
-        db.add(config)
+        if not config:
+            config = AIModelConfig(id=1)
+            db.add(config)
+    except Exception:
+        db.rollback()
+        return {"success": False, "message": "Database is not initialized. Please run migrations."}
 
     provider = data.get("provider")
     if provider and provider in ("gemini", "openai", "custom"):
@@ -438,7 +451,9 @@ def update_ai_model_config(
 
     api_key = data.get("api_key")
     if api_key is not None and api_key != "":
-        config.api_key = api_key
+        # Do not overwrite if it is just the masked version being submitted back
+        if not (api_key.startswith("****") or (len(api_key) > 8 and api_key[4:7] == "...")):
+            config.api_key = api_key
 
     model_name = data.get("model_name")
     if model_name:
@@ -464,8 +479,12 @@ def update_ai_model_config(
     if system_prompt is not None:
         config.system_prompt = system_prompt if system_prompt.strip() else None
 
-    db.commit()
-    db.refresh(config)
+    try:
+        db.commit()
+        db.refresh(config)
+    except Exception as e:
+        db.rollback()
+        return {"success": False, "message": f"Failed to save config: {e}"}
 
     masked_key = ""
     if config.api_key:
@@ -533,9 +552,16 @@ def test_ai_model_connection(
                 return {"success": False, "message": "Base URL is required for custom provider", "response_preview": None}
             from openai import OpenAI
             client = OpenAI(api_key=api_key, base_url=base_url.rstrip("/"))
+            
+            sys_prompt = data.get("system_prompt")
+            sys_prompt = sys_prompt if sys_prompt and sys_prompt.strip() else "Bạn là chuyên gia phân tích."
+            
             response = client.chat.completions.create(
                 model=model_name or "default",
-                messages=[{"role": "user", "content": test_prompt}],
+                messages=[
+                    {"role": "system", "content": sys_prompt},
+                    {"role": "user", "content": test_prompt}
+                ],
                 max_tokens=100,
                 timeout=15
             )

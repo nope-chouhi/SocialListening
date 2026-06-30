@@ -58,7 +58,12 @@ def _get_db_session() -> Session:
     return SessionLocal()
 
 def _get_active_config(db: Session) -> Optional[AIModelConfig]:
-    return db.execute(select(AIModelConfig).where(AIModelConfig.id == 1)).scalar_one_or_none()
+    from sqlalchemy.exc import ProgrammingError, OperationalError
+    try:
+        return db.execute(select(AIModelConfig).where(AIModelConfig.id == 1)).scalar_one_or_none()
+    except (ProgrammingError, OperationalError):
+        db.rollback()
+        return None
 
 def _log_usage(db: Session, config: AIModelConfig, usage: Dict[str, Any], request_type: str, success: bool = True, error_message: str = None):
     try:
