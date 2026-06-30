@@ -413,6 +413,10 @@ export const crawl = {
 
 // ─── Mentions ─────────────────────────────────────────────────────────────────
 export const mentions = {
+  summarize: async (params?: any) => {
+    const response = await api.post('/api/mentions/summarize', params);
+    return response.data;
+  },
   list: async (params?: any) => {
     const response = await api.get('/api/mentions', { params });
     return response.data;

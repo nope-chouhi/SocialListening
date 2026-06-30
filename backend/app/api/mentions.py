@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
-from sqlalchemy import select, func, text, and_, or_, desc, asc, case, false
+from sqlalchemy import select, func, text, and_, or_, desc, asc, case, false, cast, String
 from typing import List, Optional
 from pydantic import BaseModel
 from datetime import datetime, timezone, timedelta
@@ -210,15 +210,15 @@ def get_mentions_summary(
         # Sentiment counts
         try:
             positive = db.execute(
-                apply_tenant_filter(select(func.count(Mention.id)), Mention, current_user).where(and_(*base_filter, func.lower(Mention.sentiment) == 'positive'))
+                apply_tenant_filter(select(func.count(Mention.id)), Mention, current_user).where(and_(*base_filter, func.lower(cast(Mention.sentiment, String)) == 'positive'))
             ).scalar() or 0
 
             neutral = db.execute(
-                apply_tenant_filter(select(func.count(Mention.id)), Mention, current_user).where(and_(*base_filter, func.lower(Mention.sentiment) == 'neutral'))
+                apply_tenant_filter(select(func.count(Mention.id)), Mention, current_user).where(and_(*base_filter, func.lower(cast(Mention.sentiment, String)) == 'neutral'))
             ).scalar() or 0
 
             negative = db.execute(
-                apply_tenant_filter(select(func.count(Mention.id)), Mention, current_user).where(and_(*base_filter, func.lower(Mention.sentiment) == 'negative'))
+                apply_tenant_filter(select(func.count(Mention.id)), Mention, current_user).where(and_(*base_filter, func.lower(cast(Mention.sentiment, String)) == 'negative'))
             ).scalar() or 0
         except Exception as e:
             db.rollback()
@@ -274,7 +274,9 @@ def get_mentions_summary(
             "neutral": neutral,
             "duplicate": 0,  # TODO: implement duplicate detection
             "by_day": by_day,
-            "by_source_type": source_type_counts
+            "by_source_type": source_type_counts,
+            "trend_start": by_day[0]["date"] if by_day else None,
+            "trend_end": by_day[-1]["date"] if by_day else None
         }
     except Exception as e:
         logger.error(f"Critical error in get_mentions_summary: {e}")
@@ -1638,174 +1640,6 @@ def update_mention_add_to_report(
     return {"id": mention.id, "add_to_report": mention.add_to_report}
 
 
-class SummarizeRequest(BaseModel):
-    mention_ids: Optional[list[int]] = None
-    filters: Optional[dict] = None  # Same filter structure as list_mentions
-    project_id: Optional[int] = None
-
-
-@router.post("/summarize")
-def summarize_current_results(
-    req: SummarizeRequest,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
-):
-    """Generate AI summary of current filtered results"""
-    from app.services.ai_service import generate_executive_brief
-
-    # Get mentions based on request
-    if req.mention_ids is not None:
-        if not req.mention_ids:
-            raise HTTPException(status_code=400, detail="No mention ids provided for summary.")
-        mentions = db.execute(
-            apply_tenant_filter(select(Mention), Mention, current_user, include_unverifiable=True).where(Mention.id.in_(req.mention_ids))
-        ).scalars().all()
-    else:
-        # Build query from filters
-        query = apply_tenant_filter(select(Mention), Mention, current_user, include_unverifiable=True)
-        filters = req.filters or {}
-
-        if filters.get("project_id"):
-            query = query.where(Mention.project_id == filters["project_id"])
-        elif req.project_id:
-            query = query.where(Mention.project_id == req.project_id)
-
-        if filters.get("sentiment"):
-            query = query.where(Mention.sentiment == filters["sentiment"])
-
-        if filters.get("source_type"):
-            query = query.where(Mention.source_type == filters["source_type"])
-
-        if filters.get("date_from"):
-            query = query.where(Mention.collected_at >= filters["date_from"])
-
-        if filters.get("date_to"):
-            query = query.where(Mention.collected_at <= filters["date_to"])
-
-        query = query.where(Mention.is_muted == False).where(Mention.is_deleted == False)
-
-        mentions = db.execute(query.limit(50)).scalars().all()
-
-    if not mentions:
-        return {
-            "summary": "Không có mentions để tóm tắt.",
-            "key_insights": [],
-            "sentiment_breakdown": {},
-            "total_mentions": 0
-        }
-
-    # Prepare mention data for AI
-    mention_data = []
-    for m in mentions:
-        mention_data.append({
-            "title": m.title,
-            "content": m.content or m.snippet or "",
-            "url": m.url,
-            "sentiment": m.sentiment,
-            "source_type": m.source_type,
-            "domain": m.domain,
-            "published_at": m.published_at.isoformat() if m.published_at else None
-        })
-
-    # Format mention data into string
-    lines = []
-    for md in mention_data:
-        text_content = md['content'] if md['content'] else ''
-        lines.append(f"- {md['title']}: {text_content[:200]}...")
-    content_to_summarize = "\n".join(lines)
-    if len(content_to_summarize) > 20000:
-        content_to_summarize = content_to_summarize[:20000] + "..."
-
-    # Call AI service for summary
-    try:
-        summary_result = generate_executive_brief(content_to_summarize)
-
-        # Calculate sentiment breakdown
-        sentiment_counts = {}
-        for m in mentions:
-            sent = m.sentiment or "unknown"
-            sentiment_counts[sent] = sentiment_counts.get(sent, 0) + 1
-
-        return {
-            "summary": summary_result.get("full_brief", summary_result.get("summary_3_lines", "")),
-            "key_insights": summary_result.get("key_entities", []),
-            "sentiment_breakdown": sentiment_counts,
-            "total_mentions": len(mentions),
-            "mention_ids": [m.id for m in mentions]
-        }
-    except Exception as e:
-        import logging
-        logging.error(f"AI summarize failed: {str(e)}")
-        raise HTTPException(status_code=503, detail="AI Service is currently unavailable. Please try again later.")
-
-class UpdateMuteRequest(BaseModel):
-    is_muted: bool
-
-@router.put("/{mention_id}/mute")
-def update_mention_mute(
-    mention_id: int,
-    req: UpdateMuteRequest,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
-):
-    mention = db.execute(apply_tenant_filter(select(Mention), Mention, current_user, include_unverifiable=True).where(Mention.id == mention_id)).scalar_one_or_none()
-    if not mention: raise HTTPException(status_code=404, detail="Mention not found")
-    mention.is_muted = req.is_muted
-    db.commit()
-    db.refresh(mention)
-    return {"id": mention.id, "is_muted": mention.is_muted}
-
-class UpdateSentimentRequest(BaseModel):
-    sentiment: str
-
-@router.put("/{mention_id}/sentiment")
-def update_mention_sentiment(
-    mention_id: int,
-    req: UpdateSentimentRequest,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
-):
-    mention = db.execute(apply_tenant_filter(select(Mention), Mention, current_user, include_unverifiable=True).where(Mention.id == mention_id)).scalar_one_or_none()
-    if not mention: raise HTTPException(status_code=404, detail="Mention not found")
-    mention.sentiment = req.sentiment
-    mention.sentiment_confidence = 1.0  # manual override
-    db.commit()
-    db.refresh(mention)
-    return {"id": mention.id, "sentiment": mention.sentiment}
-
-class MuteDomainRequest(BaseModel):
-    domain: str
-    project_id: int
-
-@router.post("/mute-domain")
-def mute_domain(
-    req: MuteDomainRequest,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
-):
-    mentions = db.execute(apply_tenant_filter(select(Mention), Mention, current_user, include_unverifiable=True).where(Mention.project_id == req.project_id, Mention.domain == req.domain)).scalars().all()
-    for m in mentions:
-        m.is_muted = True
-    db.commit()
-    return {"status": "success", "muted_mentions": len(mentions), "domain": req.domain}
-
-class MuteAuthorRequest(BaseModel):
-    author: str
-    project_id: int
-
-@router.post("/mute-author")
-def mute_author(
-    req: MuteAuthorRequest,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
-):
-    mentions = db.execute(apply_tenant_filter(select(Mention), Mention, current_user, include_unverifiable=True).where(Mention.project_id == req.project_id, Mention.author == req.author)).scalars().all()
-    for m in mentions:
-        m.is_muted = True
-    db.commit()
-    return {"status": "success", "muted_mentions": len(mentions), "author": req.author}
-
-
 class AISummaryRequest(BaseModel):
     project_id: Optional[int] = None
     date_from: Optional[datetime] = None
@@ -1929,3 +1763,71 @@ CHÚ Ý:
         import logging
         logging.getLogger(__name__).error(f"Error generating AI Summary: {e}")
         raise HTTPException(status_code=500, detail=f"Lỗi khi gọi AI Provider: {str(e)}")
+
+class UpdateMuteRequest(BaseModel):
+    is_muted: bool
+
+@router.put("/{mention_id}/mute")
+def update_mention_mute(
+    mention_id: int,
+    req: UpdateMuteRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    mention = db.execute(apply_tenant_filter(select(Mention), Mention, current_user, include_unverifiable=True).where(Mention.id == mention_id)).scalar_one_or_none()
+    if not mention: raise HTTPException(status_code=404, detail="Mention not found")
+    mention.is_muted = req.is_muted
+    db.commit()
+    db.refresh(mention)
+    return {"id": mention.id, "is_muted": mention.is_muted}
+
+class UpdateSentimentRequest(BaseModel):
+    sentiment: str
+
+@router.put("/{mention_id}/sentiment")
+def update_mention_sentiment(
+    mention_id: int,
+    req: UpdateSentimentRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    mention = db.execute(apply_tenant_filter(select(Mention), Mention, current_user, include_unverifiable=True).where(Mention.id == mention_id)).scalar_one_or_none()
+    if not mention: raise HTTPException(status_code=404, detail="Mention not found")
+    mention.sentiment = req.sentiment
+    mention.sentiment_confidence = 1.0  # manual override
+    db.commit()
+    db.refresh(mention)
+    return {"id": mention.id, "sentiment": mention.sentiment}
+
+class MuteDomainRequest(BaseModel):
+    domain: str
+    project_id: int
+
+@router.post("/mute-domain")
+def mute_domain(
+    req: MuteDomainRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    mentions = db.execute(apply_tenant_filter(select(Mention), Mention, current_user, include_unverifiable=True).where(Mention.project_id == req.project_id, Mention.domain == req.domain)).scalars().all()
+    for m in mentions:
+        m.is_muted = True
+    db.commit()
+    return {"status": "success", "muted_mentions": len(mentions), "domain": req.domain}
+
+class MuteAuthorRequest(BaseModel):
+    author: str
+    project_id: int
+
+@router.post("/mute-author")
+def mute_author(
+    req: MuteAuthorRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    mentions = db.execute(apply_tenant_filter(select(Mention), Mention, current_user, include_unverifiable=True).where(Mention.project_id == req.project_id, Mention.author == req.author)).scalars().all()
+    for m in mentions:
+        m.is_muted = True
+    db.commit()
+    return {"status": "success", "muted_mentions": len(mentions), "author": req.author}
+
