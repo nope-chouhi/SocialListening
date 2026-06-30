@@ -24,6 +24,28 @@ def run_migrations():
         os.chdir(base_dir)
         
         try:
+            from app.core.database import engine
+            import sqlalchemy as sa
+            
+            # Check current version
+            current_version = None
+            try:
+                with engine.connect() as conn:
+                    result = conn.execute(sa.text("SELECT version_num FROM alembic_version"))
+                    row = result.fetchone()
+                    if row:
+                        current_version = row[0]
+            except sa.exc.ProgrammingError:
+                # Table doesn't exist
+                pass
+                
+            # If empty or missing, stamp it to the revision BEFORE the worker_status enhance
+            if not current_version:
+                with engine.begin() as conn:
+                    conn.execute(sa.text("CREATE TABLE IF NOT EXISTS alembic_version (version_num VARCHAR(32) NOT NULL, PRIMARY KEY (version_num))"))
+                    conn.execute(sa.text("DELETE FROM alembic_version"))
+                    conn.execute(sa.text("INSERT INTO alembic_version (version_num) VALUES ('5fe3f0fbfb82')"))
+            
             alembic_cfg = alembic.config.Config("alembic.ini")
             if settings.DATABASE_URL:
                 alembic_cfg.set_main_option("sqlalchemy.url", settings.DATABASE_URL.replace("%", "%%"))
