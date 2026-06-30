@@ -17,24 +17,8 @@ depends_on = None
 
 
 def upgrade() -> None:
-    bind = op.get_bind()
-    from sqlalchemy.engine.reflection import Inspector
-    inspector = Inspector.from_engine(bind)
-    
-    if 'system_notification_settings' in inspector.get_table_names():
-        columns = [c['name'] for c in inspector.get_columns('system_notification_settings')]
-        if 'report_email_recipients' not in columns:
-            op.add_column('system_notification_settings', sa.Column('report_email_recipients', sa.Text(), nullable=True))
-    else:
-        op.add_column('system_notification_settings', sa.Column('report_email_recipients', sa.Text(), nullable=True))
+    op.execute("ALTER TABLE system_notification_settings ADD COLUMN IF NOT EXISTS report_email_recipients TEXT")
 
 
 def downgrade() -> None:
-    bind = op.get_bind()
-    from sqlalchemy.engine.reflection import Inspector
-    inspector = Inspector.from_engine(bind)
-    
-    if 'system_notification_settings' in inspector.get_table_names():
-        columns = [c['name'] for c in inspector.get_columns('system_notification_settings')]
-        if 'report_email_recipients' in columns:
-            op.drop_column('system_notification_settings', 'report_email_recipients')
+    op.execute("ALTER TABLE system_notification_settings DROP COLUMN IF EXISTS report_email_recipients")
