@@ -244,6 +244,7 @@ export default function AIModelSettings() {
             value={apiKey}
             onChange={(e) => setApiKey(e.target.value)}
             placeholder={config?.api_key_masked || 'Nhập API key...'}
+            autoComplete="new-password"
             className="w-full px-4 py-3 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-slate-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 pr-10"
           />
           <button
