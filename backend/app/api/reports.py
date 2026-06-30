@@ -435,6 +435,52 @@ def create_report(
     return ReportResponse.from_orm(report)
 
 
+@router.get("/email-schedules")
+def get_email_schedules(db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
+    """Get the current global email report schedule settings (Admin only recommended)"""
+    from app.models.system_settings import SystemNotificationSettings
+    import os
+    from app.core.config import settings
+    
+    # Just checking superuser, though this could be any active user depending on rules.
+    # The requirement says "global/admin-level scheduled email report setup"
+    if not current_user.is_superuser:
+        raise HTTPException(status_code=403, detail="Only admins can manage global email report settings.")
+        
+    sys_settings = db.execute(select(SystemNotificationSettings)).scalars().first()
+    if not sys_settings:
+        sys_settings = SystemNotificationSettings()
+        db.add(sys_settings)
+        db.commit()
+        db.refresh(sys_settings)
+        
+    smtp_configured = settings.SMTP_ENABLED or bool(os.getenv("RESEND_API_KEY"))
+    
+    return {
+        "daily_report_enabled": sys_settings.daily_report_enabled,
+        "daily_report_time": sys_settings.daily_report_time,
+        "weekly_report_enabled": sys_settings.weekly_report_enabled,
+        "weekly_report_day": sys_settings.weekly_report_day,
+        "weekly_report_time": sys_settings.weekly_report_time,
+        "report_email_recipients": sys_settings.report_email_recipients,
+        "email_provider_configured": smtp_configured
+    }
+
+@router.post("/email-schedules/send-now")
+def send_email_report_now(report_type: str = "daily", db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
+    """Send an immediate test report based on current settings (Admin only)"""
+    if not current_user.is_superuser:
+        raise HTTPException(status_code=403, detail="Only admins can send global email reports.")
+        
+    from app.services.email_report_service import send_scheduled_report_email
+    
+    result = send_scheduled_report_email(db, report_type)
+    if not result.get("success"):
+        raise HTTPException(status_code=400, detail=result.get("message", "Failed to send email report"))
+        
+    return result
+
+
 @router.get("/{report_id}", response_model=ReportResponse)
 def get_report(
     report_id: int,
@@ -739,48 +785,3 @@ def upload_pdf_logo(
         buffer.write(file.file.read())
         
     return {"logo_path": file_path}
-
-@router.get("/email-schedules")
-def get_email_schedules(db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
-    """Get the current global email report schedule settings (Admin only recommended)"""
-    from app.models.system_settings import SystemNotificationSettings
-    import os
-    from app.core.config import settings
-    
-    # Just checking superuser, though this could be any active user depending on rules.
-    # The requirement says "global/admin-level scheduled email report setup"
-    if not current_user.is_superuser:
-        raise HTTPException(status_code=403, detail="Only admins can manage global email report settings.")
-        
-    sys_settings = db.execute(select(SystemNotificationSettings)).scalars().first()
-    if not sys_settings:
-        sys_settings = SystemNotificationSettings()
-        db.add(sys_settings)
-        db.commit()
-        db.refresh(sys_settings)
-        
-    smtp_configured = settings.SMTP_ENABLED or bool(os.getenv("RESEND_API_KEY"))
-    
-    return {
-        "daily_report_enabled": sys_settings.daily_report_enabled,
-        "daily_report_time": sys_settings.daily_report_time,
-        "weekly_report_enabled": sys_settings.weekly_report_enabled,
-        "weekly_report_day": sys_settings.weekly_report_day,
-        "weekly_report_time": sys_settings.weekly_report_time,
-        "report_email_recipients": sys_settings.report_email_recipients,
-        "email_provider_configured": smtp_configured
-    }
-
-@router.post("/email-schedules/send-now")
-def send_email_report_now(report_type: str = "daily", db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
-    """Send an immediate test report based on current settings (Admin only)"""
-    if not current_user.is_superuser:
-        raise HTTPException(status_code=403, detail="Only admins can send global email reports.")
-        
-    from app.services.email_report_service import send_scheduled_report_email
-    
-    result = send_scheduled_report_email(db, report_type)
-    if not result.get("success"):
-        raise HTTPException(status_code=400, detail=result.get("message", "Failed to send email report"))
-        
-    return result
