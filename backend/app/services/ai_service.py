@@ -57,10 +57,12 @@ def _parse_json(text: str) -> Dict:
 def _get_db_session() -> Session:
     return SessionLocal()
 
-def _get_active_config(db: Session) -> Optional[AIModelConfig]:
+def _get_active_config(db: Session, user_id: Optional[int] = None) -> Optional[AIModelConfig]:
     from sqlalchemy.exc import ProgrammingError, OperationalError
     try:
-        return db.execute(select(AIModelConfig).where(AIModelConfig.id == 1)).scalar_one_or_none()
+        if user_id is not None:
+            return db.execute(select(AIModelConfig).where(AIModelConfig.user_id == user_id)).scalar_one_or_none()
+        return db.execute(select(AIModelConfig).where(AIModelConfig.is_enabled == True).limit(1)).scalar_one_or_none()
     except (ProgrammingError, OperationalError):
         db.rollback()
         return None
