@@ -37,23 +37,64 @@ def get_reports_summary(
     Get aggregated data for the Reports module.
     """
     now = datetime.utcnow()
-    # Simple summary for the frontend
-    
+
     total_mentions = db.execute(apply_tenant_filter(select(func.count(Mention.id)), Mention, current_user)).scalar() or 0
     total_analyzed = db.execute(
         select(func.count(AIAnalysis.id))
     ).scalar() or 0
-    
+
     positive = db.execute(
         select(func.count(AIAnalysis.id))
         .where(AIAnalysis.sentiment == 'positive')
     ).scalar() or 0
-    
+
     negative = db.execute(
         select(func.count(AIAnalysis.id))
         .where(AIAnalysis.sentiment.in_(['negative']))
     ).scalar() or 0
-    
+
+    # ── Real top_sources from DB: GROUP BY source_type, tenant-filtered ──────
+    source_rows = db.execute(
+        apply_tenant_filter(
+            select(Mention.source_type, func.count(Mention.id).label("cnt")),
+            Mention,
+            current_user,
+        )
+        .where(Mention.is_deleted == False)
+        .where(Mention.is_muted == False)
+        .group_by(Mention.source_type)
+        .order_by(func.count(Mention.id).desc())
+    ).all()
+
+    # Normalise raw source_type to display names (same convention as mentions.py)
+    _SOURCE_DISPLAY: dict = {
+        "news": "News", "newspaper": "News", "article_news": "News",
+        "video": "Video", "videos": "Video", "youtube": "YouTube",
+        "yt": "YouTube", "youtube_video": "YouTube", "youtube_channel": "YouTube",
+        "blog": "Blog/Forum", "forum": "Blog/Forum",
+        "blogs_forums": "Blog/Forum", "blogs/forums": "Blog/Forum",
+        "rss": "RSS", "feed": "RSS", "rss_feed": "RSS",
+        "facebook": "Facebook", "facebook_page": "Facebook",
+        "facebook_group": "Facebook", "facebook_profile": "Facebook",
+        "instagram": "Instagram", "instagram_business": "Instagram",
+        "tiktok": "TikTok",
+        "web": "Web", "website": "Web", "web_search": "Web",
+        "article": "Web", "global_search": "Web",
+    }
+
+    aggregated: dict[str, int] = {}
+    for raw_type, count in source_rows:
+        raw = (raw_type or "").lower().strip()
+        display = _SOURCE_DISPLAY.get(raw) or (
+            raw.replace("_", " ").title() if raw else "Web"
+        )
+        aggregated[display] = aggregated.get(display, 0) + count
+
+    top_sources = [
+        {"name": name, "count": count}
+        for name, count in sorted(aggregated.items(), key=lambda x: x[1], reverse=True)
+    ]
+
     return {
         "report_period": "All Time",
         "generated_at": now.isoformat(),
@@ -66,11 +107,7 @@ def get_reports_summary(
                 "neutral": total_analyzed - positive - negative if total_analyzed > 0 else 0
             }
         },
-        "top_sources": [
-            {"name": "Facebook", "count": int(total_mentions * 0.5)},
-            {"name": "News", "count": int(total_mentions * 0.3)},
-            {"name": "TikTok", "count": int(total_mentions * 0.2)}
-        ]
+        "top_sources": top_sources,
     }
 
 @router.get("/summary-data")
