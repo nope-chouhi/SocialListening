@@ -48,6 +48,7 @@ def get_ai_config(
         "base_url": config.base_url,
         "max_tokens": config.max_tokens,
         "temperature": config.temperature,
+        "system_prompt": config.system_prompt or "",
         "api_key_configured": bool(config.api_key),
         "api_key_masked": _mask_api_key(config.api_key),
     }
@@ -60,6 +61,7 @@ class AIConfigUpdate(BaseModel):
     max_tokens: Optional[int] = None
     temperature: Optional[float] = None
     is_enabled: Optional[bool] = None
+    system_prompt: Optional[str] = None
 
 @router.put("/config")
 def update_ai_config(
@@ -93,5 +95,7 @@ def update_ai_config(
         config.temperature = payload.temperature
     if payload.is_enabled is not None:
         config.is_enabled = payload.is_enabled
+    if payload.system_prompt is not None:
+        config.system_prompt = payload.system_prompt.strip() if payload.system_prompt.strip() else None
     db.commit()
     return {"status": "success", "detail": "AI configuration updated"}

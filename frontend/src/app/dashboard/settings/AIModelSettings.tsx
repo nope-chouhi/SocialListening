@@ -13,6 +13,7 @@ interface AIModelConfigData {
   max_tokens: number;
   temperature: number;
   is_enabled: boolean;
+  system_prompt: string;
 }
 
 const PROVIDER_OPTIONS = [
@@ -58,6 +59,7 @@ export default function AIModelSettings() {
   const [maxTokens, setMaxTokens] = useState(2048);
   const [temperature, setTemperature] = useState(0.7);
   const [isEnabled, setIsEnabled] = useState(true);
+  const [systemPrompt, setSystemPrompt] = useState('');
 
   useEffect(() => {
     loadConfig();
@@ -73,6 +75,7 @@ export default function AIModelSettings() {
       setMaxTokens(data.max_tokens || 2048);
       setTemperature(data.temperature ?? 0.7);
       setIsEnabled(data.is_enabled ?? true);
+      setSystemPrompt(data.system_prompt || '');
     } catch (err: any) {
       if (err?.response?.status !== 403) {
         toast.error('Không thể tải cấu hình AI');
@@ -104,6 +107,7 @@ export default function AIModelSettings() {
         temperature,
         is_enabled: isEnabled,
       };
+      data.system_prompt = systemPrompt;
       if (apiKey) data.api_key = apiKey;
       if (provider === 'custom') data.base_url = baseUrl;
       else data.base_url = '';
@@ -297,6 +301,21 @@ export default function AIModelSettings() {
           </p>
         </div>
       )}
+
+      {/* System Prompt */}
+      <div>
+        <label className="block text-sm font-semibold text-slate-700 dark:text-gray-300 mb-2">System Prompt (Chỉ dẫn AI)</label>
+        <textarea
+          value={systemPrompt}
+          onChange={(e) => setSystemPrompt(e.target.value)}
+          placeholder="Nhập chỉ dẫn cho AI... (ví dụ: Bạn là trợ lý AI chuyên phân tích thương hiệu. Trả lời bằng tiếng Việt.)"
+          rows={4}
+          className="w-full px-4 py-3 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-slate-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 resize-y"
+        />
+        <p className="text-xs text-slate-500 dark:text-gray-500 mt-1">
+          Chỉ dẫn này sẽ được gửi kèm mỗi lần gọi AI để phân tích sentiment, tạo báo cáo, và trả lời chat.
+        </p>
+      </div>
 
       {/* Advanced Settings */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">

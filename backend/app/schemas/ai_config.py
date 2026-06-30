@@ -13,6 +13,7 @@ class AIModelConfigResponse(BaseModel):
     max_tokens: int
     temperature: float
     is_enabled: bool
+    system_prompt: Optional[str] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
@@ -30,6 +31,7 @@ class AIModelConfigUpdate(BaseModel):
     max_tokens: int = Field(default=2048, ge=128, le=16384)
     temperature: float = Field(default=0.7, ge=0.0, le=2.0)
     is_enabled: bool = True
+    system_prompt: Optional[str] = None
 
 
 class AIModelTestRequest(BaseModel):

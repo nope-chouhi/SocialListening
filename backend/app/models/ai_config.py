@@ -18,6 +18,7 @@ class AIModelConfig(Base):
     max_tokens = Column(Integer, nullable=False, default=2048)
     temperature = Column(Float, nullable=False, default=0.7)
     is_enabled = Column(Boolean, nullable=False, default=True)
+    system_prompt = Column(Text, nullable=True)  # Custom system prompt for AI analysis
 
     # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)

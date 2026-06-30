@@ -86,8 +86,10 @@ def _call_ai_provider(config: AIModelConfig, prompt: str, max_tokens: int = 800,
     if not config.is_enabled or not config.api_key:
         raise AIConfigError("AI is disabled or API key is missing.")
 
+    # Use custom system_prompt from config if available, otherwise default
+    system_content = getattr(config, 'system_prompt', None) or "Bạn là chuyên gia phân tích. Trả về JSON thuần túy."
     messages = [
-        {"role": "system", "content": "Bạn là chuyên gia phân tích. Trả về JSON thuần túy."},
+        {"role": "system", "content": system_content},
         {"role": "user", "content": prompt}
     ]
     usage = {

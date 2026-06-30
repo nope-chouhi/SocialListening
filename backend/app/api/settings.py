@@ -409,6 +409,7 @@ def get_ai_model_config(
         "max_tokens": config.max_tokens,
         "temperature": config.temperature,
         "is_enabled": config.is_enabled,
+        "system_prompt": config.system_prompt or "",
         "created_at": config.created_at.isoformat() if config.created_at else None,
         "updated_at": config.updated_at.isoformat() if config.updated_at else None,
     }
@@ -459,6 +460,10 @@ def update_ai_model_config(
     if is_enabled is not None:
         config.is_enabled = bool(is_enabled)
 
+    system_prompt = data.get("system_prompt")
+    if system_prompt is not None:
+        config.system_prompt = system_prompt if system_prompt.strip() else None
+
     db.commit()
     db.refresh(config)
 
@@ -479,6 +484,7 @@ def update_ai_model_config(
         "max_tokens": config.max_tokens,
         "temperature": config.temperature,
         "is_enabled": config.is_enabled,
+        "system_prompt": config.system_prompt or "",
         "created_at": config.created_at.isoformat() if config.created_at else None,
         "updated_at": config.updated_at.isoformat() if config.updated_at else None,
     }
