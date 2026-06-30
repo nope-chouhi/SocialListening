@@ -242,6 +242,13 @@ def update_system_notification_settings(
     db.commit()
     db.refresh(settings)
     
+    try:
+        from app.services.scheduler_service import sync_email_report_schedules
+        sync_email_report_schedules()
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f"Error syncing email report schedules: {e}")
+        
     return SystemNotificationSettingsResponse.from_orm(settings)
 
 

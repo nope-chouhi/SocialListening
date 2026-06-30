@@ -81,6 +81,7 @@ class SystemNotificationSettingsBase(BaseModel):
     weekly_report_enabled: bool = False
     weekly_report_day: int = Field(0, ge=0, le=6)
     weekly_report_time: str = '09:00'
+    report_email_recipients: Optional[str] = None
 
 
 class SystemNotificationSettingsUpdate(BaseModel):
@@ -95,6 +96,7 @@ class SystemNotificationSettingsUpdate(BaseModel):
     weekly_report_enabled: Optional[bool] = None
     weekly_report_day: Optional[int] = Field(None, ge=0, le=6)
     weekly_report_time: Optional[str] = None
+    report_email_recipients: Optional[str] = None
 
 
 class SystemNotificationSettingsResponse(SystemNotificationSettingsBase):
