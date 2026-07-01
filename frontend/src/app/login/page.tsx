@@ -1,14 +1,18 @@
 'use client';
 
 import { useState, useEffect, useRef, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { auth, resetAuthRedirectLock } from '@/lib/api';
+import { useSearchParams } from 'next/navigation';
+import { API_BASE_URL, auth, resetAuthRedirectLock } from '@/lib/api';
 import LoadingSpinner from '@/components/LoadingSpinner';
+
+function getBackendUrl() {
+  return (API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || '').replace(/\/+$/, '');
+}
 
 /** Cache user profile after login so AuthContext reads instantly on next page */
 function cacheUserAfterLogin(token: string) {
   try {
-    const backendUrl = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/+$/, '');
+    const backendUrl = getBackendUrl();
     const meUrl = backendUrl ? `${backendUrl}/api/auth/me` : '/api/auth/me';
     fetch(meUrl, { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' })
       .then(r => r.ok ? r.json() : null)
@@ -20,31 +24,44 @@ function cacheUserAfterLogin(token: string) {
 }
 
 /** Wake up Render backend by calling /health directly to bypass Vercel 10s proxy limit */
-async function wakeBackend(): Promise<boolean> {
-  const backendUrl = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/+$/, '');
+async function wakeBackend(timeoutMs = 15000): Promise<boolean> {
+  const backendUrl = getBackendUrl();
   if (!backendUrl || backendUrl.includes('localhost')) return true; // dev: assume alive
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
   try {
-    // Render free tier cold starts take 50-60 seconds. 
-    // We MUST wait long enough, otherwise we falsely report it as offline.
     const res = await fetch(`${backendUrl}/health`, {
       method: 'GET',
-      signal: AbortSignal.timeout(90000), // Wait up to 90s for cold start
+      signal: controller.signal,
       cache: 'no-store',
     });
     return res.ok;
   } catch {
     return false;
+  } finally {
+    window.clearTimeout(timeoutId);
   }
 }
 
+function shouldRetryAfterWarmup(err: any) {
+  const status = err?.response?.status;
+  return (
+    err?.message === 'TIMEOUT' ||
+    err?.code === 'ECONNABORTED' ||
+    !err?.response ||
+    status === 502 ||
+    status === 503 ||
+    status === 504
+  );
+}
+
 function LoginContent() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [loginPhase, setLoginPhase] = useState<'idle' | 'waking' | 'authenticating'>('idle');
+  const [loginPhase, setLoginPhase] = useState<'idle' | 'waking' | 'authenticating' | 'redirecting'>('idle');
   const [serverStatus, setServerStatus] = useState<'checking' | 'ready' | 'slow'>('checking');
   const [elapsedSec, setElapsedSec] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -61,7 +78,7 @@ function LoginContent() {
     let cancelled = false;
     (async () => {
       setServerStatus('checking');
-      const ok = await wakeBackend();
+      const ok = await wakeBackend(12000);
       if (!cancelled) setServerStatus(ok ? 'ready' : 'slow');
     })();
     return () => { cancelled = true; };
@@ -102,22 +119,38 @@ function LoginContent() {
     setError('');
     setLoading(true);
     setLoginPhase('authenticating');
+    let isRedirecting = false;
 
     try {
       // Clear stale auth/session keys before attempting to log in
       clearAuthSession();
 
-      // We give it 90s max to handle slow network and Render cold starts.
-      const timeout = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('TIMEOUT')), 90000)
-      );
-      
-      const result = await Promise.race([auth.login(email, password), timeout]) as any;
+      // We give each attempt 90s max to handle slow network and Render cold starts.
+      const loginOnce = () => auth.login(email, password, { timeoutMs: 90000 });
+
+      let result: any;
+      try {
+        result = await loginOnce();
+      } catch (firstErr: any) {
+        if (!shouldRetryAfterWarmup(firstErr)) {
+          throw firstErr;
+        }
+        setLoginPhase('waking');
+        const backendReady = await wakeBackend(60000);
+        if (!backendReady) {
+          throw firstErr;
+        }
+        setLoginPhase('authenticating');
+        result = await loginOnce();
+      }
 
       // ── Success ──
       resetAuthRedirectLock();
       if (result?.access_token) cacheUserAfterLogin(result.access_token);
-      router.replace('/dashboard');
+      setLoginPhase('redirecting');
+      isRedirecting = true;
+      window.location.replace('/dashboard');
+      return;
     } catch (err: any) {
       const status = err.response?.status;
       if (status === 401 || status === 403) {
@@ -130,8 +163,10 @@ function LoginContent() {
         setError(err.response?.data?.detail || 'Đăng nhập thất bại. Vui lòng thử lại.');
       }
     } finally {
-      setLoading(false);
-      setLoginPhase('idle');
+      if (!isRedirecting) {
+        setLoading(false);
+        setLoginPhase('idle');
+      }
     }
   };
 
@@ -139,6 +174,7 @@ function LoginContent() {
     if (!loading) return 'Đăng nhập';
     const suffix = elapsedSec > 2 ? ` (${elapsedSec}s)` : '';
     if (loginPhase === 'waking') return `Đang chờ máy chủ khởi động...${suffix}`;
+    if (loginPhase === 'redirecting') return 'Đang mở dashboard...';
     return `Đang xác thực...${suffix}`;
   };
 

@@ -56,7 +56,9 @@ api.interceptors.response.use(
     // ── 401 Unauthorized: token is expired or missing — redirect to login once ──
     // Swallow the rejection so downstream .catch() / toast.error never fires
     // (the user is about to be redirected to the login page anyway).
-    if (status === 401) {
+    const isLoginRequest = url?.includes('/api/auth/login') || url?.endsWith('/auth/login');
+
+    if (status === 401 && !isLoginRequest) {
       if (!isRedirectingToLogin) {
         isRedirectingToLogin = true;
         localStorage.removeItem('access_token');
@@ -157,11 +159,12 @@ export const webinar = {
 };
 
 export const auth = {
-  login: async (email: string, password: string) => {
+  login: async (email: string, password: string, options?: { timeoutMs?: number }) => {
     const formData = new URLSearchParams();
     formData.append('username', email);
     formData.append('password', password);
     const response = await api.post('/api/auth/login', formData, {
+      ...(options?.timeoutMs ? { timeout: options.timeoutMs } : {}),
       headers: { 
         'Content-Type': 'application/x-www-form-urlencoded',
         'Cache-Control': 'no-cache, no-store, must-revalidate',
@@ -1078,7 +1081,6 @@ export const systemSettings = {
     return response.data;
   },
 };
-
 
 
 
