@@ -447,24 +447,39 @@ def get_email_schedules(db: Session = Depends(get_db), current_user: User = Depe
     if not current_user.is_superuser:
         raise HTTPException(status_code=403, detail="Only admins can manage global email report settings.")
         
-    sys_settings = db.execute(select(SystemNotificationSettings)).scalars().first()
-    if not sys_settings:
-        sys_settings = SystemNotificationSettings()
-        db.add(sys_settings)
-        db.commit()
-        db.refresh(sys_settings)
+    try:
+        sys_settings = db.execute(select(SystemNotificationSettings)).scalars().first()
+        if not sys_settings:
+            sys_settings = SystemNotificationSettings()
+            db.add(sys_settings)
+            db.commit()
+            db.refresh(sys_settings)
+    except Exception as e:
+        db.rollback()
+        sys_settings = None
         
     smtp_configured = settings.SMTP_ENABLED or bool(os.getenv("RESEND_API_KEY"))
     
-    return {
-        "daily_report_enabled": sys_settings.daily_report_enabled,
-        "daily_report_time": sys_settings.daily_report_time,
-        "weekly_report_enabled": sys_settings.weekly_report_enabled,
-        "weekly_report_day": sys_settings.weekly_report_day,
-        "weekly_report_time": sys_settings.weekly_report_time,
-        "report_email_recipients": sys_settings.report_email_recipients,
-        "email_provider_configured": smtp_configured
-    }
+    if sys_settings:
+        return {
+            "daily_report_enabled": getattr(sys_settings, 'daily_report_enabled', False),
+            "daily_report_time": getattr(sys_settings, 'daily_report_time', '09:00'),
+            "weekly_report_enabled": getattr(sys_settings, 'weekly_report_enabled', False),
+            "weekly_report_day": getattr(sys_settings, 'weekly_report_day', 0),
+            "weekly_report_time": getattr(sys_settings, 'weekly_report_time', '09:00'),
+            "report_email_recipients": getattr(sys_settings, 'report_email_recipients', ''),
+            "email_provider_configured": smtp_configured
+        }
+    else:
+        return {
+            "daily_report_enabled": False,
+            "daily_report_time": "09:00",
+            "weekly_report_enabled": False,
+            "weekly_report_day": 0,
+            "weekly_report_time": "09:00",
+            "report_email_recipients": "",
+            "email_provider_configured": smtp_configured
+        }
 
 @router.post("/email-schedules/send-now")
 def send_email_report_now(report_type: str = "daily", db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):

@@ -131,6 +131,7 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges, setIsWebi
   const NavItem = ({ item, isActive }: { item: { name: string; href: string; icon: any }, isActive: boolean }) => (
     <Link
       href={item.href}
+      prefetch={false}
       title={item.name}
       className={`group relative flex items-center rounded-xl transition-all duration-200 ${
         isActive
@@ -220,7 +221,7 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges, setIsWebi
           {!sidebarCollapsed && (
             <div className="flex items-center justify-between px-2 mb-1">
               <span className="text-[10px] font-bold tracking-widest text-zinc-600 uppercase">Projects</span>
-              <Link href="/dashboard/projects/new" title="New Project" className="text-zinc-600 hover:text-emerald-400 transition-colors">
+              <Link href="/dashboard/projects/new" title="New Project" className="text-zinc-600 hover:text-emerald-400 transition-colors" prefetch={false}>
                 <Plus className="w-3.5 h-3.5" />
               </Link>
             </div>
@@ -229,7 +230,7 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges, setIsWebi
           {sidebarCollapsed ? (
             /* Collapsed project: avatar only */
             <div className="flex flex-col items-center gap-2 mt-1">
-              <Link href="/dashboard/projects/new" title="New Project" className="w-10 h-10 rounded-xl flex items-center justify-center text-zinc-500 hover:text-emerald-400 hover:bg-white/5 transition-colors">
+              <Link href="/dashboard/projects/new" title="New Project" className="w-10 h-10 rounded-xl flex items-center justify-center text-zinc-500 hover:text-emerald-400 hover:bg-white/5 transition-colors" prefetch={false}>
                 <Plus className="w-4 h-4" />
               </Link>
               <button
@@ -503,7 +504,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
                   <p suppressHydrationWarning className="text-xs text-slate-500 dark:text-gray-400 truncate">{user?.email}</p>
                 </div>
                 <div className="py-1">
-                  <Link href="/dashboard/settings" className="block px-4 py-2 text-sm text-slate-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">
+                  <Link href="/dashboard/settings" className="block px-4 py-2 text-sm text-slate-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800" prefetch={false}>
                     System Settings
                   </Link>
                   <button onClick={() => { auth.logout(); router.push('/login'); }} className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50 dark:hover:bg-gray-800 font-medium">

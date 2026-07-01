@@ -359,10 +359,13 @@ def test_pdf_export_none_and_empty_regression():
 
 
 def test_email_schedules_route_priority_regression():
-    # Because of route priority, /api/reports/email-schedules shouldn't be matched by /{report_id}
-    # It might return 200, 401, 403, or 500 (if mock DB fails), but should NOT return 422 Unprocessable Entity
+    # It should return 200 and a valid schedule payload, handling missing DB gracefully
     response = client.get("/api/reports/email-schedules")
-    assert response.status_code != 422
+    assert response.status_code == 200
+    data = response.json()
+    assert "daily_report_enabled" in data
+    assert "weekly_report_enabled" in data
+    assert "report_email_recipients" in data
 
 
 def test_email_schedules_send_now_route_priority_regression():
