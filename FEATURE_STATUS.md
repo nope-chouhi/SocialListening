@@ -175,17 +175,23 @@
    - **Impact**: All sentiment/risk analysis is meaningless
    - **Fix Required**: Integrate OpenAI/Gemini/Anthropic API
 
-2. **No Automated Scanning**
-   - **Location**: Scheduled scans not executed
-   - **Issue**: No background worker (Celery/APScheduler)
-   - **Impact**: Must manually trigger all scans
-   - **Fix Required**: Implement background job scheduler
+### 🔴 Current Production Blockers
 
-3. **No Real Notifications**
-   - **Location**: Email/webhook sending not implemented
-   - **Issue**: SMTP config exists but no actual sending
-   - **Impact**: No automated alerts
-   - **Fix Required**: Implement email sending (smtplib) and webhook POST
+1. **Production Migration Stability**
+   - **Impact**: Potential issues during deployment
+   - **Fix Required**: Verify and stabilize migrations
+
+2. **AI Config Persistence Verification**
+   - **Impact**: Risk of AI configuration resetting
+   - **Fix Required**: Validate backend state persistence
+
+3. **Frontend Admin/Service UI Completion**
+   - **Impact**: Users cannot fully self-serve administration tasks
+   - **Fix Required**: Finish remaining React UI screens
+
+4. **Crawler Quality for JS-Heavy Sources**
+   - **Impact**: Missing mentions from complex SPAs
+   - **Fix Required**: Enhance parsing and rendering rules
 
 ### ⚠️ MEDIUM PRIORITY (Reduces Functionality)
 
@@ -248,9 +254,6 @@
 
 ### ❌ NOT TESTED (Not Implemented)
 
-- Automated scheduled scans
-- Email notifications
-- Webhook notifications
 - Role management UI
 - API key management UI
 - Branding UI
@@ -288,9 +291,9 @@ alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT
 
 ### Production Readiness
 
-- **Current State**: 83% complete, suitable for **demo/testing**
-- **Production Ready**: After fixing 3 critical issues (AI + background jobs + notifications)
-- **Fully Featured**: After all 15 issues fixed
+- **Current State**: Core features implemented, but production is not fully ready until verified by real production smoke tests.
+- **Implemented**: Scheduled scanning (controlled by env flags), Notification infrastructure (requires production env/smoke verification), PDF/Excel exports.
+- **Production Ready**: After resolving Current Production Blockers.
 
 ### Estimated Effort to Complete
 

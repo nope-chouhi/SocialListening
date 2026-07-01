@@ -220,60 +220,25 @@ OPENAI_API_KEY=sk-proj-xxxxxxxxxxxxx
 GEMINI_API_KEY=AIzaSyxxxxxxxxxxxxx
 ```
 
-#### 2. No Automated Scanning (PHASE 4 - NEXT)
-#### 2. No Automated Scanning (PHASE 4 - NEXT)
-- **Location**: Scheduled scans not executed
-- **Issue**: No background worker (Celery/APScheduler)
-- **Impact**: Must manually trigger all scans
-- **Fix Required**: Implement background job scheduler
-- **Estimated Effort**: 12-16 hours
-- **Code Example**:
-- **Location**: Scheduled scans not executed
-- **Issue**: No background worker (Celery/APScheduler)
-- **Impact**: Must manually trigger all scans
-- **Fix Required**: Implement background job scheduler
-- **Estimated Effort**: 12-16 hours
-- **Code Example**:
-```python
-# Required:
-from apscheduler.schedulers.background import BackgroundScheduler
+#### 2. ✅ Automated Scanning Implemented (Phase 4 COMPLETE)
+- **Status**: ✅ **FIXED** - Scheduled scanning is implemented and controlled by env flags.
 
-scheduler = BackgroundScheduler()
+#### 3. ✅ Real Notifications Implemented (Phase 5 COMPLETE)
+- **Status**: ✅ **FIXED** - Notification infrastructure is implemented (requires production env/smoke verification).
 
-@scheduler.scheduled_job('cron', hour='*/1')  # Every hour
-def run_scheduled_scans():
-    scans = db.query(ScanSchedule).filter(ScanSchedule.is_active == True).all()
-    for scan in scans:
-        if should_run_now(scan):
-            trigger_scan(scan)
+### ⏳ Current Production Blockers
 
-scheduler.start()
-```
+1. **Production Migration Stability**
+   - **Fix Required**: Verify and stabilize migrations before full production deployment
 
-#### 3. No Real Notifications (PHASE 5)
-- **Location**: Email/webhook sending not implemented
-- **Issue**: SMTP config exists but no actual sending
-- **Impact**: No automated alerts
-- **Fix Required**: Implement email sending (smtplib) and webhook POST
-- **Estimated Effort**: 6-8 hours
-- **Code Example**:
-```python
-# Required:
-import smtplib
-from email.mime.text import MIMEText
+2. **AI Config Persistence Verification**
+   - **Fix Required**: Validate backend state persistence for AI settings
 
-def send_email_alert(alert):
-    settings = get_email_settings()
-    msg = MIMEText(alert.description)
-    msg['Subject'] = f"Alert: {alert.title}"
-    msg['From'] = settings.smtp_from
-    msg['To'] = alert.recipient_email
-    
-    with smtplib.SMTP(settings.smtp_host, settings.smtp_port) as server:
-        server.starttls()
-        server.login(settings.smtp_user, settings.smtp_password)
-        server.send_message(msg)
-```
+3. **Frontend Admin/Service UI Completion**
+   - **Fix Required**: Finish remaining React UI screens for admins and services
+
+4. **Crawler Quality for JS-Heavy Sources**
+   - **Fix Required**: Enhance parsing and rendering rules for SPAs
 
 ---
 
@@ -282,8 +247,12 @@ def send_email_alert(alert):
 | # | Bug | Severity | Status | Fix |
 |---|-----|----------|--------|-----|
 | 1 | ~~AI analysis uses dummy data~~ | 🔴 CRITICAL | **✅ FIXED** | Phase 6 complete - Real AI integrated |
-| 2 | No automated scanning | 🔴 CRITICAL | Open | Implement background jobs (Phase 4) |
-| 3 | No email/webhook notifications | 🔴 CRITICAL | Open | Implement SMTP + HTTP POST (Phase 5) |
+| 2 | ~~No automated scanning~~ | 🔴 CRITICAL | **✅ FIXED** | Phase 4 complete - Scheduler added |
+| 3 | ~~No email/webhook notifications~~ | 🔴 CRITICAL | **✅ FIXED** | Phase 5 complete - SMTP/Webhook added |
+| 3.1 | Production migration stability | 🔴 CRITICAL | Open | Verify and stabilize migrations |
+| 3.2 | AI config persistence verification | 🔴 CRITICAL | Open | Validate backend state persistence |
+| 3.3 | Frontend admin/service UI | 🔴 CRITICAL | Open | Finish remaining React UI screens |
+| 3.4 | Crawler quality for JS-heavy sources | 🔴 CRITICAL | Open | Enhance parsing and rendering rules |
 | 4 | roles.display_name column missing | ⚠️ MEDIUM | **FIXED** | Migration 020 created |
 | 5 | change-password expects query params | ⚠️ MEDIUM | **FIXED** | Now accepts JSON body |
 | 6 | Report generation incomplete | ⚠️ MEDIUM | **✅ FIXED** | PDF/Excel generation added |
@@ -439,16 +408,15 @@ Total Tests: 22
 
 ## REMAINING LIMITATIONS
 
-### Production Blockers (2) - DOWN FROM 3
-1. 🔴 ~~AI analysis uses dummy data~~ - **✅ FIXED (Phase 6)**
-2. 🔴 No automated scanning - **NEXT (Phase 4)**
-3. 🔴 No real notifications - **NEXT (Phase 5)**
+### Production Blockers (4)
+1. 🔴 Production migration stability
+2. 🔴 AI config persistence verification
+3. 🔴 Frontend admin/service UI completion
+4. 🔴 Crawler quality for JS-heavy sources
 
-### Functional Limitations (3)
-4. ~~⚠️ Report generation incomplete (no PDF/Excel)~~ - **✅ FIXED**
-5. ⚠️ Service request UI incomplete
-6. ⚠️ Role management UI not connected (after migration 020)
-7. ⚠️ Basic crawling logic (no JavaScript rendering)
+### Functional Limitations (2)
+5. ⚠️ Role management UI not connected (after migration 020)
+6. ⚠️ Basic crawling logic (no JavaScript rendering)
 
 ### Nice-to-Have (3)
 8. 🟡 API keys UI missing
@@ -459,7 +427,7 @@ Total Tests: 22
 
 ## PRODUCTION READINESS ASSESSMENT
 
-### Current State: 87% Complete (UP FROM 83%)
+- **Current State**: Core features implemented, but production is not fully ready until verified by real production smoke tests.
 
 **✅ Ready for DEMO/TESTING**:
 - All core features functional
@@ -468,13 +436,15 @@ Total Tests: 22
 - Database stable
 - 90.9% of APIs working
 - **Real AI analysis** (OpenAI/Gemini support)
+- **Automated scanning** (controlled by env flags)
+- **Real notifications** (requires verification)
+- **PDF/Excel reports** (Phase 6)
 
 **⚠️ NOT Ready for PRODUCTION** until:
-1. ~~Real AI integration~~ - **✅ DONE (Phase 6)**
-2. Automated scanning (12-16 hours) - **Phase 4**
-3. Email/webhook notifications (6-8 hours) - **Phase 5**
-
-**Total Effort to Production**: 18-24 hours (2-3 days) - DOWN FROM 26-36 hours
+1. Production migration stability verified
+2. AI config persistence validated
+3. Frontend admin/service UI completed
+4. Crawler quality improved for JS-heavy sources
 
 ### Deployment Status
 
@@ -506,11 +476,11 @@ Total Tests: 22
 5. ⏳ **PENDING**: Test Role Management UI after deployment
 
 ### Short-term (Next Week)
-1. ✅ **DONE**: Integrate real AI (OpenAI/Gemini) - **Phase 6 Complete**
-2. 🔴 **HIGH**: Implement background job scheduler - **Phase 4 Next**
-3. 🔴 **HIGH**: Implement email/webhook notifications - **Phase 5 Next**
-4. ⚠️ **MEDIUM**: Complete report generation (PDF/Excel)
-5. ⚠️ **MEDIUM**: Complete service request UI
+1. 🔴 **HIGH**: Verify production migration stability
+2. 🔴 **HIGH**: Validate AI config persistence
+3. 🔴 **HIGH**: Complete frontend admin/service UI
+4. 🔴 **HIGH**: Enhance crawler quality for JS-heavy sources
+5. ⚠️ **MEDIUM**: Production environment smoke testing for notifications
 
 ### Long-term (Next Month)
 1. 🟡 **LOW**: Connect role management UI
@@ -523,35 +493,36 @@ Total Tests: 22
 
 ## CONCLUSION
 
-The Social Listening Web App is **87% complete** (up from 83%) and **ready for demo/testing**. The codebase is clean, well-structured, and has no fake UI. All core features are functional with real backend APIs and database persistence.
-
-**Phase 6 Achievement**: Real AI analysis is now implemented with OpenAI GPT-4 and Google Gemini Pro support, replacing the previous dummy keyword-based system.
+The Social Listening Web App has core features fully implemented, including Phase 4 (Automated Scanning), Phase 5 (Real Notifications), and Phase 6 (Reports). The codebase is clean, well-structured, and has no fake UI. 
 
 **Strengths**:
-- ✅ Solid architecture
-- ✅ Complete database schema
+- ✅ Solid architecture and database schema
 - ✅ Robust RBAC
 - ✅ Clean API design
 - ✅ Modern frontend
 - ✅ No fake UI
-- ✅ **Real AI analysis** (NEW)
+- ✅ **Real AI analysis** 
+- ✅ **Automated Scheduled Scanning**
+- ✅ **Notification Infrastructure**
+- ✅ **Report Export (PDF/Excel)**
 
 **Weaknesses**:
-- ❌ ~~AI uses dummy data~~ - **FIXED**
-- ❌ No automated scanning
-- ❌ No real notifications
+- ❌ Production migrations unverified
+- ❌ AI config persistence unverified
+- ❌ Missing admin/service UI pages
+- ❌ Poor JS rendering on crawler
 
-**Production Readiness**: After fixing 2 remaining critical issues (18-24 hours of work), the system will be production-ready.
+**Production Readiness**: Not fully ready for production until verified by real production smoke tests and resolution of Current Production Blockers.
 
 **Current Recommendation**: **APPROVED FOR DEMO**, **NOT APPROVED FOR PRODUCTION** until critical fixes are implemented.
 
-**Next Priority**: Phase 4 - Automated Background Scanning
+**Next Priority**: Resolving Current Production Blockers
 
 ---
 
 **Report Generated**: May 13, 2026  
 **Last Updated**: May 13, 2026 (Phase 6 Complete)  
-**Next Review**: After Phase 4 completion  
+**Next Review**: After resolution of production blockers  
 **Contact**: Kiro AI Assistant
 
 ---
