@@ -172,14 +172,23 @@
 1. ~~**AI Analysis is Fake**~~
    - **Status**: ✅ **FIXED** - Fully integrated with Gemini and OpenAI via failover chain.
 
-2. **No Automated Scanning**
-   - **Location**: Scheduled scans not executed
-   - **Issue**: Background worker (Celery) is implemented, but not activated in local/production runtime configuration (`RUN.bat` or `render.yaml`).
-   - **Impact**: Must manually trigger all scans
-   - **Fix Required**: Update deployment scripts and `RUN.bat` to launch Celery worker and beat.
+### 🔴 Current Production Blockers
 
-3. ~~**No Real Notifications**~~
-   - **Status**: ✅ **FIXED** - Email via Resend API/SMTP and Webhooks are fully implemented.
+1. **Production Migration Stability**
+   - **Impact**: Potential issues during deployment
+   - **Fix Required**: Verify and stabilize migrations
+
+2. **AI Config Persistence Verification**
+   - **Impact**: Risk of AI configuration resetting
+   - **Fix Required**: Validate backend state persistence
+
+3. **Frontend Admin/Service UI Completion**
+   - **Impact**: Users cannot fully self-serve administration tasks
+   - **Fix Required**: Finish remaining React UI screens
+
+4. **Crawler Quality for JS-Heavy Sources**
+   - **Impact**: Missing mentions from complex SPAs
+   - **Fix Required**: Enhance parsing and rendering rules
 
 ### ⚠️ MEDIUM PRIORITY (Reduces Functionality)
 
@@ -241,7 +250,7 @@
 
 ### ❌ NOT TESTED (Not Implemented / Not Running)
 
-- Automated scheduled scans (Implemented, but not activated in local/production runtime configuration.)
+- Automated scheduled scans (Implemented, but controlled by env flags)
 - API key management UI
 - Branding UI
 - Audit log UI
@@ -278,9 +287,9 @@ alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT
 
 ### Production Readiness
 
-- **Current State**: 91% complete, AI, Reports, and Notifications are ready.
-- **Production Ready**: After fixing background jobs (Celery) to enable scheduled scans.
-- **Fully Featured**: After all 8 issues fixed
+- **Current State**: Core features implemented (91% complete), but production is not fully ready until verified by real production smoke tests.
+- **Implemented**: Scheduled scanning (controlled by env flags), Notification infrastructure (requires production env/smoke verification), PDF/Excel exports.
+- **Production Ready**: After resolving Current Production Blockers.
 
 ### Estimated Effort to Complete
 

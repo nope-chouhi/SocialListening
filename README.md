@@ -69,13 +69,17 @@ Located in `scripts/` folder:
   - Service management
   - Service request workflow
   - Dashboard metrics
-- **Phase 4**: Automated background scanning
-- **Phase 5**: Real Notifications (SMTP/Webhook) & Delivery Logs + Retries
+- **Phase 4**: Automated background scanning (controlled by env flags)
+- **Phase 5**: Real Notifications (SMTP/Webhook) & Delivery Logs + Retries (requires production env/smoke verification)
+- **Phase 6**: Real PDF/Excel exports
 
-### ⏳ In Progress
-- Backend API fixes
-- Import 26 services from Excel
-- Integration with mentions/alerts/incidents
+### ⏳ Current Production Blockers
+- Production migration stability
+- AI config persistence verification
+- Frontend admin/service UI completion
+- Crawler quality for JS-heavy sources
+
+*Note: Production is not fully ready until verified by real production smoke tests.*
 
 ## 📞 Support
 
