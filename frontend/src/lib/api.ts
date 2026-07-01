@@ -53,10 +53,10 @@ api.interceptors.response.use(
       console.error(`[API Error] ${method} ${url} → ${status}:`, msg || error.message);
     }
 
-    // Global 401 handler: clear token and redirect to login once.
-    // For ALL 401 errors, swallow the rejection so downstream .catch() / toast.error
-    // never fires — the user is about to be redirected anyway.
-    if (status === 401 || status === 403) {
+    // ── 401 Unauthorized: token is expired or missing — redirect to login once ──
+    // Swallow the rejection so downstream .catch() / toast.error never fires
+    // (the user is about to be redirected to the login page anyway).
+    if (status === 401) {
       if (!isRedirectingToLogin) {
         isRedirectingToLogin = true;
         localStorage.removeItem('access_token');
@@ -71,13 +71,26 @@ api.interceptors.response.use(
       return new Promise(() => {});
     }
 
+    // ── 403 Forbidden: user is authenticated but lacks permission ──────────────
+    // Do NOT clear the token or redirect to login.
+    // Surface the error normally so callers can display a "permission denied" message.
+    if (status === 403) {
+      console.warn(`[API] 403 Forbidden: ${method} ${url} — insufficient permissions`);
+      return Promise.reject(error);
+    }
+
     return Promise.reject(error);
   }
 );
 
-/** Check if an error is a 401 auth error — these are handled globally, so skip toasting. */
+/** Check if an error is a 401 Unauthorized (token missing / expired). */
 export function isAuthError(error: any): boolean {
-  return error?.response?.status === 401 || error?.response?.status === 403;
+  return error?.response?.status === 401;
+}
+
+/** Check if an error is a 403 Forbidden (authenticated but no permission). */
+export function isPermissionError(error: any): boolean {
+  return error?.response?.status === 403;
 }
 
 /** Extract readable error message from axios error, including HTTP status. */
@@ -431,12 +444,7 @@ export const mentions = {
   markReviewed: async (id: number) => {
     const response = await api.post(`/api/mentions/${id}/mark-reviewed`);
     return response.data;
-  },
-  updateTags: async (id: number, tags: string[]) => {
-    const response = await api.put(`/api/mentions/${id}/tags`, { tags });
-    return response.data;
-  },
-  updateMute: async (id: number, is_muted: boolean) => {
+  },updateMute: async (id: number, is_muted: boolean) => {
     const response = await api.put(`/api/mentions/${id}/mute`, { is_muted });
     return response.data;
   },
@@ -463,6 +471,34 @@ export const mentions = {
     });
     return response.data as Blob;
   },
+  charts: async (params?: Record<string, unknown>) => {
+    const response = await api.get('/api/mentions/charts', { params });
+    return response.data;
+  },
+  topics: async (params?: Record<string, unknown>) => {
+    const response = await api.get('/api/mentions/topics', { params });
+    return response.data;
+  },
+  bulkDelete: async (mentionIds: number[]) => {
+    const response = await api.put('/api/mentions/bulk/delete', { mention_ids: mentionIds });
+    return response.data;
+  },
+  bulkReview: async (mentionIds: number[], isReviewed: boolean) => {
+    const response = await api.put('/api/mentions/bulk/review', { mention_ids: mentionIds, is_reviewed: isReviewed });
+    return response.data;
+  },
+  bulkSentiment: async (mentionIds: number[], sentiment: string) => {
+    const response = await api.put('/api/mentions/bulk/sentiment', { mention_ids: mentionIds, sentiment });
+    return response.data;
+  },
+  updateReview: async (id: number, isReviewed: boolean) => {
+    const response = await api.put(`/api/mentions/${id}/review`, { is_reviewed: isReviewed });
+    return response.data;
+  },
+  updateTags: async (id: number, tags: string[]) => {
+    const response = await api.put(`/api/mentions/${id}/tags`, { tags });
+    return response.data;
+  },
   analyzeSentiment: async (text: string) => {
     const response = await api.post('/api/ai/sentiment', { text });
     return response.data;
@@ -477,8 +513,8 @@ export const mentions = {
     const response = await api.put(`/api/mentions/${id}/add-to-report`, { add_to_report: add });
     return response.data;
   },
-  summarize: async (data: { mention_ids?: number[]; filters?: any; project_id?: number }) => {
-    const response = await api.post('/api/mentions/summarize', data, { timeout: 20000 });
+  summarize: async (params?: any) => {
+    const response = await api.post('/api/mentions/summarize', params, { timeout: 20000 });
     return response.data;
   },
 };
@@ -612,6 +648,14 @@ export const reports = {
     const response = await api.get('/api/reports', { params });
     return response.data;
   },
+  getEmailSchedules: async () => {
+    const response = await api.get('/api/reports/email-schedules');
+    return response.data;
+  },
+  sendEmailReportNow: async (reportType: 'daily' | 'weekly' = 'daily') => {
+    const response = await api.post(`/api/reports/email-schedules/send-now?report_type=${reportType}`);
+    return response.data;
+  },
   get: async (id: number) => {
     const response = await api.get(`/api/reports/${id}`);
     return response.data;
@@ -638,8 +682,10 @@ export const reports = {
     });
     return response.data;
   },
-  listExports: async (page = 1, pageSize = 20) => {
-    const response = await api.get('/api/reports/exports/history', { params: { page, page_size: pageSize } });
+  listExports: async (page = 1, pageSize = 20, type?: string) => {
+    const params: any = { page, page_size: pageSize };
+    if (type) params.type = type;
+    const response = await api.get('/api/reports/exports/history', { params });
     return response.data;
   },
   getExportStatus: async (id: number) => {
@@ -851,6 +897,26 @@ export const aiChat = {
     const response = await api.post('/api/ai/chat', messages);
     return response.data;
   },
+  getChatConfig: async () => {
+    const response = await api.get('/api/ai/chat/config');
+    return response.data;
+  },
+};
+
+// ─── AI Config (Admin) ────────────────────────────────────────────────────────
+export const aiConfig = {
+  getConfig: async () => {
+    const response = await api.get('/api/admin/settings/ai-model');
+    return response.data;
+  },
+  updateConfig: async (data: any) => {
+    const response = await api.put('/api/admin/settings/ai-model', data);
+    return response.data;
+  },
+  testConnection: async (data: { provider: string; api_key: string; model_name: string; base_url?: string }) => {
+    const response = await api.post('/api/admin/settings/ai-model/test', data);
+    return response.data;
+  },
 };
 
 // ─── Competitors ─────────────────────────────────────────────────────────────
@@ -1001,6 +1067,18 @@ export const collectors = {
     return response.data;
   },
 };
+
+export const systemSettings = {
+  getNotifications: async () => {
+    const response = await api.get('/api/settings/notifications');
+    return response.data;
+  },
+  updateNotifications: async (data: any) => {
+    const response = await api.put('/api/settings/notifications', data);
+    return response.data;
+  },
+};
+
 
 
 

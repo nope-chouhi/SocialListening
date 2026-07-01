@@ -3,7 +3,7 @@ import io
 from typing import Optional, List, Dict, Any, Generator
 from datetime import datetime
 import openpyxl
-from openpyxl.styles import Font, PatternFill
+from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from sqlalchemy import select, and_, func
 from sqlalchemy.orm import Session
 
@@ -16,6 +16,8 @@ from app.core.tenant import apply_tenant_filter
 from app.models.user import User
 from app.models.report import ReportExport, ExportStatus
 from app.services.pdf_generator import PDFGenerator
+from app.services.report_helpers import aggregate_period_data, calculate_period_comparison, generate_executive_summary
+from datetime import timedelta
 import os
 import traceback
 from app.core.database import SessionLocal
@@ -185,161 +187,250 @@ class ExportService:
             output.truncate(0)
 
     @staticmethod
-    def export_project_summary_xlsx(db: Session, current_user: User, filters: dict) -> bytes:
+    def export_project_summary_xlsx(export_data: dict) -> bytes:
         wb = openpyxl.Workbook()
         
-        # Helper for auto-sizing columns
-        def adjust_column_widths(ws):
-            for col in ws.columns:
-                max_length = 0
-                column = col[0].column_letter # Get the column name
-                for cell in col:
-                    try:
-                        if len(str(cell.value)) > max_length:
-                            max_length = len(str(cell.value))
-                    except:
-                        pass
-                adjusted_width = (max_length + 2)
-                # Cap the maximum width to avoid excessively wide columns for long text like content
-                ws.column_dimensions[column].width = min(adjusted_width, 80)
+        # Helper for styling headers
+        def style_header(ws, color="3b82f6", font_color="FFFFFF"):
+            for cell in ws[1]:
+                cell.font = Font(bold=True, color=font_color)
+                cell.fill = PatternFill(start_color=color, end_color=color, fill_type="solid")
+            ws.freeze_panes = "A2"
+            ws.auto_filter.ref = ws.dimensions
+            
+        metrics = export_data.get('metrics', {})
+        comparison = export_data.get('comparison', {})
         
-        # SUMMARY SHEET
-        ws_summary = wb.active
-        ws_summary.title = "Summary"
-        
-        # MENTIONS SHEET
-        ws_mentions = wb.create_sheet("Mentions")
-        mentions_headers = ["ID", "Keyword", "Source", "Platform", "Title", "Sentiment", "URL", "Published At"]
+        # 1. MENTIONS SHEET (Main active sheet)
+        ws_mentions = wb.active
+        ws_mentions.title = "Mentions"
+        mentions_headers = ["ID", "Date", "Time", "Title", "Content/Snippet", "URL", "Domain", "Category", "Sentiment", "Tags"]
         ws_mentions.append(mentions_headers)
-        for cell in ws_mentions[1]:
-            cell.font = Font(bold=True, color="FFFFFF")
-            cell.fill = PatternFill(start_color="3b82f6", end_color="3b82f6", fill_type="solid")
+        style_header(ws_mentions, "3b82f6")
+        
+        for m in export_data.get('raw_mentions', []):
+            dt_parts = m['date'].split(' ') if m['date'] else ["", ""]
+            date_str = dt_parts[0] if len(dt_parts) > 0 else ""
+            time_str = dt_parts[1] if len(dt_parts) > 1 else ""
+            
+            # Map sentiment
+            sent = m.get('sentiment', 'neutral')
+            if str(sent) == "1": sent_label = "Positive"
+            elif str(sent) == "-1": sent_label = "Negative"
+            elif str(sent) == "0": sent_label = "Neutral"
+            else: sent_label = str(sent).capitalize()
+            
+            row = [
+                str(m['id']), # String to avoid scientific notation
+                date_str, 
+                time_str,
+                m.get('title', ''), 
+                m.get('content', ''), 
+                m.get('url', ''), 
+                m.get('domain', ''), 
+                "General", # Placeholder for Category if not available
+                sent_label, 
+                "" # Placeholder for Tags
+            ]
+            ws_mentions.append(row)
+            
+            # Style specific cells
+            curr_row = ws_mentions.max_row
+            ws_mentions.cell(row=curr_row, column=4).alignment = Alignment(wrap_text=True)
+            ws_mentions.cell(row=curr_row, column=5).alignment = Alignment(wrap_text=True)
+            url_cell = ws_mentions.cell(row=curr_row, column=6)
+            if url_cell.value and str(url_cell.value).startswith('http'):
+                url_cell.hyperlink = url_cell.value
+                url_cell.font = Font(color="0000FF", underline="single")
+            
+        # Set column widths
+        ws_mentions.column_dimensions['A'].width = 22
+        ws_mentions.column_dimensions['B'].width = 12
+        ws_mentions.column_dimensions['C'].width = 8
+        ws_mentions.column_dimensions['D'].width = 30
+        ws_mentions.column_dimensions['E'].width = 50
+        ws_mentions.column_dimensions['F'].width = 30
+        ws_mentions.column_dimensions['G'].width = 20
+        ws_mentions.column_dimensions['H'].width = 15
+        ws_mentions.column_dimensions['I'].width = 12
+        ws_mentions.column_dimensions['J'].width = 15
+        
+        # 2. SENTIMENT SHEET
+        ws_sent = wb.create_sheet("Sentiment")
+        ws_sent.append(["Sentiment", "Count", "Percentage"])
+        style_header(ws_sent, "10b981")
+        
+        total_m = metrics.get('total_mentions', 1) or 1
+        for k, v in metrics.get('sentiment', {}).items():
+            pct = f"{(v / total_m) * 100:.2f}%"
+            ws_sent.append([k.capitalize(), v, pct])
+            
+        if not metrics.get('sentiment'):
+            ws_sent.append(["No data available", "", ""])
+            
+        ws_sent.column_dimensions['A'].width = 15
+        ws_sent.column_dimensions['B'].width = 12
+        ws_sent.column_dimensions['C'].width = 15
+            
+        # 3. CATEGORIES SHEET
+        ws_cat = wb.create_sheet("Categories")
+        ws_cat.append(["Category / Source", "Number of mentions", "Percentage Share"])
+        style_header(ws_cat, "f59e0b")
+        
+        sources = metrics.get('sources_list', [])
+        for s in sources:
+            pct = f"{(s.get('count', 0) / total_m) * 100:.2f}%"
+            ws_cat.append([s.get('name', 'Unknown'), s.get('count', 0), pct])
+            
+        if not sources:
+            ws_cat.append(["No data available", "", ""])
+            
+        ws_cat.column_dimensions['A'].width = 25
+        ws_cat.column_dimensions['B'].width = 20
+        ws_cat.column_dimensions['C'].width = 20
+            
+        # 4. NUMERICAL DATA SHEET
+        ws_num = wb.create_sheet("Numerical data")
+        ws_num.append(["Date", "Mentions count", "Positive mentions", "Negative mentions", "Neutral mentions", "Total Reach"])
+        style_header(ws_num, "6366f1")
+        
+        trend = metrics.get('daily_trend', {})
+        for dt, stats in sorted(trend.items()):
+            ws_num.append([dt, stats.get('count', 0), stats.get('positive', 0), stats.get('negative', 0), stats.get('neutral', 0), stats.get('reach', 0)])
+            
+        if not trend:
+            ws_num.append(["No data available", "", "", "", "", ""])
+            
+        ws_num.column_dimensions['A'].width = 15
+        ws_num.column_dimensions['B'].width = 15
+        ws_num.column_dimensions['C'].width = 18
+        ws_num.column_dimensions['D'].width = 18
+        ws_num.column_dimensions['E'].width = 18
+        ws_num.column_dimensions['F'].width = 15
+            
+        # 5. ANALYTICS DATA SHEET
+        ws_analytics = wb.create_sheet("Analytics data")
+        ws_analytics.append(["Metric", "Value", "Comparison (vs Prev)"])
+        style_header(ws_analytics, "4f46e5")
+        
+        analytics_data = [
+            ("Project", export_data.get('project_name', 'All'), ""),
+            ("Period", f"{export_data.get('date_from')} to {export_data.get('date_to')}", ""),
+            ("Generated At", str(datetime.now().strftime('%Y-%m-%d %H:%M')), ""),
+            ("", "", ""),
+            ("Total Mentions", metrics.get('total_mentions', 0), comparison.get('mentions_change', '0%')),
+            ("Total Reach", metrics.get('total_reach', 0), comparison.get('reach_change', '0%')),
+            ("Interactions", metrics.get('interactions', 0), comparison.get('interactions_change', '0%')),
+            ("Positive Mentions", metrics.get('sentiment', {}).get('positive', 0), ""),
+            ("Negative Mentions", metrics.get('sentiment', {}).get('negative', 0), ""),
+        ]
+        
+        for row in analytics_data:
+            ws_analytics.append(row)
+            if row[0] == "":
+                # style the empty row separator
+                curr_row = ws_analytics.max_row
+                ws_analytics.cell(row=curr_row, column=1).fill = PatternFill(start_color="F1F5F9", end_color="F1F5F9", fill_type="solid")
+                ws_analytics.cell(row=curr_row, column=2).fill = PatternFill(start_color="F1F5F9", end_color="F1F5F9", fill_type="solid")
+                ws_analytics.cell(row=curr_row, column=3).fill = PatternFill(start_color="F1F5F9", end_color="F1F5F9", fill_type="solid")
+
+        ws_analytics.column_dimensions['A'].width = 30
+        ws_analytics.column_dimensions['B'].width = 25
+        ws_analytics.column_dimensions['C'].width = 25
+        
+        # Adjust frozen panes since auto_filter sets it for header
         ws_mentions.freeze_panes = "A2"
-            
-        mentions_query = apply_tenant_filter(select(Mention), Mention, current_user)
-        project_name = "Tất cả dự án"
-        if filters.get("project_id"):
-            mentions_query = mentions_query.where(Mention.project_id == filters["project_id"])
-            project = db.execute(apply_tenant_filter(select(KeywordGroup), KeywordGroup, current_user).where(KeywordGroup.id == filters["project_id"])).scalar_one_or_none()
-            if project:
-                project_name = project.name
-        
-        if filters.get("date_from"):
-            mentions_query = mentions_query.where(Mention.published_at >= filters["date_from"])
-        if filters.get("date_to"):
-            mentions_query = mentions_query.where(Mention.published_at <= filters["date_to"])
-            
-        mentions = db.execute(mentions_query).scalars().all()
-        mention_ids = [m.id for m in mentions]
-        
-        analyses_list = db.execute(
-            select(AIAnalysis).where(AIAnalysis.mention_id.in_(mention_ids))
-        ).scalars().all() if mention_ids else []
-        analyses = {a.mention_id: a for a in analyses_list}
-        
-        sentiment_counts = {"positive": 0, "negative": 0, "neutral": 0}
+        ws_sent.freeze_panes = "A2"
+        ws_cat.freeze_panes = "A2"
+        ws_num.freeze_panes = "A2"
+        ws_analytics.freeze_panes = "A2"
 
-        for m in mentions:
-            analysis = analyses.get(m.id)
-            sentiment_str = "neutral"
-            if analysis:
-                sent_val = analysis.sentiment.value if hasattr(analysis.sentiment, 'value') else analysis.sentiment
-                if sent_val in sentiment_counts:
-                    sentiment_counts[sent_val] += 1
-                elif sent_val == 'negative_medium':
-                    sentiment_counts["negative"] += 1
-                sentiment_str = str(sent_val)
-
-            ws_mentions.append([
-                m.id, m.keyword_text, m.source_type, m.platform,
-                m.title, sentiment_str, m.url, ExportService._safe_str(m.published_at)
-            ])
-            
-        adjust_column_widths(ws_mentions)
-            
-        # ALERTS SHEET
-        ws_alerts = wb.create_sheet("Alerts")
-        alerts_headers = ["ID", "Severity", "Status", "Title", "Created At"]
-        ws_alerts.append(alerts_headers)
-        for cell in ws_alerts[1]:
-            cell.font = Font(bold=True, color="FFFFFF")
-            cell.fill = PatternFill(start_color="ef4444", end_color="ef4444", fill_type="solid")
-        ws_alerts.freeze_panes = "A2"
-            
-        alerts_query = apply_tenant_filter(select(Alert), Alert, current_user)
-        if filters.get("project_id"):
-            alerts_query = alerts_query.where(Alert.project_id == filters["project_id"])
-        if filters.get("date_from"):
-            alerts_query = alerts_query.where(Alert.created_at >= filters["date_from"])
-        if filters.get("date_to"):
-            alerts_query = alerts_query.where(Alert.created_at <= filters["date_to"])
-            
-        alerts = db.execute(alerts_query).scalars().all()
-        for a in alerts:
-            ws_alerts.append([
-                a.id, ExportService._safe_str(a.severity), ExportService._safe_str(a.status),
-                a.title, ExportService._safe_str(a.created_at)
-            ])
-            
-        adjust_column_widths(ws_alerts)
-            
-        # INCIDENTS SHEET
-        ws_incidents = wb.create_sheet("Incidents")
-        incidents_headers = ["ID", "Title", "Status", "Owner ID", "Created At"]
-        ws_incidents.append(incidents_headers)
-        for cell in ws_incidents[1]:
-            cell.font = Font(bold=True, color="FFFFFF")
-            cell.fill = PatternFill(start_color="f59e0b", end_color="f59e0b", fill_type="solid")
-        ws_incidents.freeze_panes = "A2"
-            
-        incidents_query = select(Incident)
-        if not current_user.is_superuser:
-            incidents_query = incidents_query.where(Incident.user_id == current_user.id)
-        if filters.get("date_from"):
-            incidents_query = incidents_query.where(Incident.created_at >= filters["date_from"])
-        if filters.get("date_to"):
-            incidents_query = incidents_query.where(Incident.created_at <= filters["date_to"])
-            
-        incidents = db.execute(incidents_query).scalars().all()
-        for i in incidents:
-            ws_incidents.append([
-                i.id, i.title, ExportService._safe_str(i.status), i.owner_id, ExportService._safe_str(i.created_at)
-            ])
-            
-        adjust_column_widths(ws_incidents)
-            
-        # POPULATE SUMMARY SHEET
-        ws_summary.append(["Báo Cáo Tổng Hợp (Project Summary Report)"])
-        ws_summary["A1"].font = Font(bold=True, size=16, color="4f46e5")
-        
-        ws_summary.append([])
-        ws_summary.append(["Thông Tin Chung", ""])
-        ws_summary["A3"].font = Font(bold=True, size=12)
-        
-        ws_summary.append(["Dự án", project_name])
-        ws_summary.append(["Từ ngày", filters.get("date_from") or "Tất cả"])
-        ws_summary.append(["Đến ngày", filters.get("date_to") or "Tất cả"])
-        ws_summary.append(["Ngày xuất báo cáo", ExportService._safe_str(datetime.now())])
-        
-        ws_summary.append([])
-        ws_summary.append(["Chỉ Số Tổng Quan", "Số Lượng"])
-        ws_summary["A9"].font = Font(bold=True, size=12)
-        ws_summary["B9"].font = Font(bold=True, size=12)
-        
-        ws_summary.append(["Tổng Mentions", len(mentions)])
-        ws_summary.append(["Tích cực (Positive)", sentiment_counts["positive"]])
-        ws_summary.append(["Tiêu cực (Negative)", sentiment_counts["negative"]])
-        ws_summary.append(["Trung lập (Neutral)", sentiment_counts["neutral"]])
-        ws_summary.append(["Tổng số Cảnh báo (Alerts)", len(alerts)])
-        ws_summary.append(["Tổng số Sự cố (Incidents)", len(incidents)])
-        
-        adjust_column_widths(ws_summary)
-
-        # Save to memory
         output = io.BytesIO()
         wb.save(output)
         output.seek(0)
         return output.getvalue()
+
+    @staticmethod
+    def get_export_data(db: Session, current_user: User, filters: dict, builder_config: dict = None) -> dict:
+        builder_config = builder_config or {}
+        date_from_str = builder_config.get("date_from") or (filters.get("date_from").isoformat() if filters.get("date_from") else None)
+        date_to_str = builder_config.get("date_to") or (filters.get("date_to").isoformat() if filters.get("date_to") else None)
+        project_id = filters.get("project_id")
+        
+        mentions_query = apply_tenant_filter(select(Mention), Mention, current_user)
+        project_name = "All Projects"
+        if project_id:
+            mentions_query = mentions_query.where(Mention.project_id == project_id)
+            project = db.execute(apply_tenant_filter(select(KeywordGroup), KeywordGroup, current_user).where(KeywordGroup.id == project_id)).scalar_one_or_none()
+            if project:
+                project_name = project.name
+                
+        dt_from, dt_to = None, None
+        if date_from_str:
+            try: dt_from = datetime.fromisoformat(date_from_str.replace('Z', '+00:00'))
+            except: pass
+        if date_to_str:
+            try: dt_to = datetime.fromisoformat(date_to_str.replace('Z', '+00:00'))
+            except: pass
+            
+        if dt_from: mentions_query = mentions_query.where(Mention.published_at >= dt_from)
+        if dt_to: mentions_query = mentions_query.where(Mention.published_at <= dt_to)
+        
+        mentions = db.execute(mentions_query).scalars().all()
+        mention_ids = [m.id for m in mentions]
+        analyses_list = db.execute(select(AIAnalysis).where(AIAnalysis.mention_id.in_(mention_ids))).scalars().all() if mention_ids else []
+        analyses_dict = {a.mention_id: a for a in analyses_list}
+        
+        current_metrics = aggregate_period_data(mentions, analyses_dict)
+        
+        previous_metrics = {"total_mentions": 0, "total_reach": 0, "interactions": 0}
+        if dt_from and dt_to:
+            duration = dt_to - dt_from
+            prev_from = dt_from - duration
+            prev_to = dt_from
+            prev_q = apply_tenant_filter(select(Mention), Mention, current_user)
+            if project_id: prev_q = prev_q.where(Mention.project_id == project_id)
+            prev_q = prev_q.where(and_(Mention.published_at >= prev_from, Mention.published_at < prev_to))
+            prev_mentions = db.execute(prev_q).scalars().all()
+            if prev_mentions:
+                p_ids = [m.id for m in prev_mentions]
+                p_ana = db.execute(select(AIAnalysis).where(AIAnalysis.mention_id.in_(p_ids))).scalars().all()
+                previous_metrics = aggregate_period_data(prev_mentions, {a.mention_id: a for a in p_ana})
+        
+        comparison = calculate_period_comparison(current_metrics, previous_metrics)
+        exec_summary = generate_executive_summary(current_metrics, comparison)
+        
+        raw_mentions = []
+        for m in mentions:
+            analysis = analyses_dict.get(m.id)
+            sent_val = "neutral"
+            if analysis:
+                sent_val = analysis.sentiment.value if hasattr(analysis.sentiment, 'value') else analysis.sentiment
+            inter = (m.likes_count or 0) + (m.shares_count or 0) + (m.comments_count or 0) + (m.views_count or 0)
+            raw_mentions.append({
+                "id": m.id,
+                "date": m.published_at.strftime('%Y-%m-%d %H:%M') if m.published_at else "",
+                "domain": m.domain or m.platform or "Unknown",
+                "title": m.title or "",
+                "content": m.snippet or m.content or "",
+                "url": m.url or "",
+                "sentiment": str(sent_val),
+                "reach": m.reach_estimate or 0,
+                "interactions": inter
+            })
+
+        return {
+            "project_name": project_name,
+            "date_from": date_from_str or "All time",
+            "date_to": date_to_str or "All time",
+            "metrics": current_metrics,
+            "comparison": comparison,
+            "exec_summary": exec_summary,
+            "top_mentions": current_metrics.get("top_mentions", []),
+            "sources_list": current_metrics.get("sources_list", []),
+            "tags_list": current_metrics.get("tags_list", []),
+            "raw_mentions": raw_mentions
+        }
 
     @staticmethod
     def process_export(export_id: int):
@@ -354,11 +445,7 @@ class ExportService:
             db.commit()
 
             current_user = db.execute(select(User).where(User.id == export_job.requested_by)).scalar_one_or_none()
-            filters = {}
-            if export_job.project_id:
-                filters["project_id"] = export_job.project_id
-
-            # Create data dir
+            
             export_dir = os.path.join(os.getcwd(), 'data', 'exports')
             os.makedirs(export_dir, exist_ok=True)
             
@@ -366,100 +453,17 @@ class ExportService:
             file_name = f"Export_{export_id}_{timestamp_str}.{export_job.report_type}"
             file_path = os.path.join(export_dir, file_name)
 
-            if export_job.report_type == 'excel' or export_job.report_type == 'xlsx':
-                content = ExportService.export_project_summary_xlsx(db, current_user, filters)
+            filters = {"project_id": export_job.project_id}
+            builder_config = export_job.builder_config or {}
+            
+            export_data = ExportService.get_export_data(db, current_user, filters, builder_config)
+
+            if export_job.report_type in ['excel', 'xlsx']:
+                content = ExportService.export_project_summary_xlsx(export_data)
                 with open(file_path, "wb") as f:
                     f.write(content)
             elif export_job.report_type == 'pdf':
-                # Build data dict for PDF
-                mentions_query = apply_tenant_filter(select(Mention), Mention, current_user)
-                alerts_query = apply_tenant_filter(select(Alert), Alert, current_user)
-                incidents_query = select(Incident)
-                if not current_user.is_superuser:
-                    incidents_query = incidents_query.where(Incident.user_id == current_user.id)
-                
-                project_name = "Tất cả dự án"
-                if filters.get("project_id"):
-                    mentions_query = mentions_query.where(Mention.project_id == filters["project_id"])
-                    alerts_query = alerts_query.where(Alert.project_id == filters["project_id"])
-                    project = db.execute(apply_tenant_filter(select(KeywordGroup), KeywordGroup, current_user).where(KeywordGroup.id == filters["project_id"])).scalar_one_or_none()
-                    if project:
-                        project_name = project.name
-                
-                builder_config = export_job.builder_config or {}
-                date_from_str = builder_config.get("date_from")
-                date_to_str = builder_config.get("date_to")
-                
-                if date_from_str:
-                    try:
-                        dt_from = datetime.fromisoformat(date_from_str.replace('Z', '+00:00'))
-                        mentions_query = mentions_query.where(Mention.published_at >= dt_from)
-                        alerts_query = alerts_query.where(Alert.created_at >= dt_from)
-                        incidents_query = incidents_query.where(Incident.created_at >= dt_from)
-                    except:
-                        pass
-                if date_to_str:
-                    try:
-                        dt_to = datetime.fromisoformat(date_to_str.replace('Z', '+00:00'))
-                        mentions_query = mentions_query.where(Mention.published_at <= dt_to)
-                        alerts_query = alerts_query.where(Alert.created_at <= dt_to)
-                        incidents_query = incidents_query.where(Incident.created_at <= dt_to)
-                    except:
-                        pass
-                        
-                mentions = db.execute(mentions_query).scalars().all()
-                mention_ids = [m.id for m in mentions]
-                
-                analyses_list = db.execute(select(AIAnalysis).where(AIAnalysis.mention_id.in_(mention_ids))).scalars().all() if mention_ids else []
-                analyses = {a.mention_id: a for a in analyses_list}
-                
-                sentiment_counts = {"positive": 0, "negative": 0, "neutral": 0}
-                source_counts = {}
-                selected_mentions = []
-                
-                for m in mentions:
-                    analysis = analyses.get(m.id)
-                    sent_val = "neutral"
-                    if analysis:
-                        sent_val = analysis.sentiment.value if hasattr(analysis.sentiment, 'value') else analysis.sentiment
-                        if sent_val == 'negative_medium':
-                            sent_val = 'negative'
-                        if sent_val in sentiment_counts:
-                            sentiment_counts[sent_val] += 1
-                    
-                    st = m.source_type or "unknown"
-                    source_counts[st] = source_counts.get(st, 0) + 1
-                    
-                    if m.add_to_report:
-                        selected_mentions.append({
-                            "title": m.title,
-                            "domain": m.domain,
-                            "sentiment": sent_val,
-                            "snippet": m.snippet or m.content
-                        })
-                
-                sources_list = [{"name": k.capitalize(), "count": v} for k, v in source_counts.items()]
-                sources_list.sort(key=lambda x: x["count"], reverse=True)
-                
-                alerts = db.execute(alerts_query).scalars().all()
-                incidents = db.execute(incidents_query).scalars().all()
-
-                pdf_data = {
-                    "project_name": project_name,
-                    "date_from": date_from_str,
-                    "date_to": date_to_str,
-                    "metrics": {
-                        "total_mentions": len(mentions),
-                        "sentiment": sentiment_counts,
-                        "total_alerts": len(alerts),
-                        "total_incidents": len(incidents)
-                    },
-                    "top_sources": sources_list,
-                    "selected_mentions": selected_mentions,
-                    "builder_config": builder_config
-                }
-                
-                content = PDFGenerator.generate_project_summary(pdf_data)
+                content = PDFGenerator.generate_project_summary(export_data)
                 with open(file_path, "wb") as f:
                     f.write(content)
             else:

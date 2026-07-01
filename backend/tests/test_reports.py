@@ -45,9 +45,12 @@ def override_get_db():
             
     mock_db.refresh.side_effect = mock_refresh
     yield mock_db
-
-app.dependency_overrides[get_current_active_user] = override_get_superuser
-app.dependency_overrides[get_db] = override_get_db
+@pytest.fixture(autouse=True, scope="module")
+def setup_overrides():
+    app.dependency_overrides[get_current_active_user] = override_get_superuser
+    app.dependency_overrides[get_db] = override_get_db
+    yield
+    app.dependency_overrides.clear()
 
 client = TestClient(app)
 
@@ -112,18 +115,18 @@ def test_export_project_summary_xlsx_valid_workbook():
     # Load workbook from response content
     wb = openpyxl.load_workbook(io.BytesIO(response.content))
     
-    # Verify expected sheets exist
     sheet_names = wb.sheetnames
-    assert "Summary" in sheet_names
     assert "Mentions" in sheet_names
-    assert "Alerts" in sheet_names
-    assert "Incidents" in sheet_names
+    assert "Sentiment" in sheet_names
+    assert "Categories" in sheet_names
+    assert "Numerical data" in sheet_names
+    assert "Analytics data" in sheet_names
     
-    # Verify no fake data in Summary sheet (should be 0 since mock db returns empty list)
-    ws = wb["Summary"]
+    # Verify no fake data in Analytics Data sheet
+    ws = wb["Analytics data"]
     found_mentions_row = False
     for row in ws.iter_rows(values_only=True):
-        if row and row[0] == "Tổng Mentions":
+        if row and row[0] == "Total Mentions":
             assert row[1] == 0  # No fake data
             found_mentions_row = True
     assert found_mentions_row
@@ -211,6 +214,48 @@ def test_request_export_saves_builder_config():
         assert response.status_code == 201
         assert response.json()["status"] == "pending"
 
+def test_request_export_datetime_serialization():
+    from unittest.mock import MagicMock
+    mock_db = MagicMock()
+    
+    def mock_refresh(obj):
+        obj.id = 1
+    mock_db.refresh.side_effect = mock_refresh
+    
+    # Save old overrides to restore later
+    old_user = app.dependency_overrides.get(get_current_active_user)
+    old_db = app.dependency_overrides.get(get_db)
+    
+    app.dependency_overrides[get_current_active_user] = override_get_superuser
+    app.dependency_overrides[get_db] = lambda: mock_db
+    try:
+        with patch("app.api.reports.BackgroundTasks.add_task") as mock_bg:
+            # Pass native isoformat strings which pydantic parses to datetimes
+            builder_config = {
+                "theme": "dark",
+                "date_from": "2026-06-28T10:00:00Z",
+                "date_to": "2026-06-28T11:00:00Z",
+                "sections": [{"id": "summary", "enabled": True}]
+            }
+            response = client.post("/api/reports/export/pdf", json=builder_config)
+            assert response.status_code == 201
+            assert response.json()["status"] == "pending"
+            
+            added_job = mock_db.add.call_args[0][0]
+            assert added_job.builder_config is not None
+            assert isinstance(added_job.builder_config["date_from"], str)
+            assert isinstance(added_job.builder_config["date_to"], str)
+    finally:
+        if old_user:
+            app.dependency_overrides[get_current_active_user] = old_user
+        else:
+            app.dependency_overrides.pop(get_current_active_user, None)
+            
+        if old_db:
+            app.dependency_overrides[get_db] = old_db
+        else:
+            app.dependency_overrides.pop(get_db, None)
+
 def test_pdf_generator_respects_builder_config():
     from app.services.pdf_generator import PDFGenerator
     data = {
@@ -256,3 +301,71 @@ def test_get_export_status():
     
     # Restore mock
     app.dependency_overrides[get_db] = override_get_db
+
+
+def test_excel_export_formatting_regression():
+    from app.services.export_service import ExportService
+    import openpyxl
+    import io
+    
+    data = {
+        "project_name": "Regression Project",
+        "date_from": "2026-01-01",
+        "date_to": "2026-01-31",
+        "metrics": {"total_mentions": 10},
+        "comparison": {},
+        "top_mentions": [],
+        "raw_mentions": [
+            {"id": 1, "date": "2026-01-10", "domain": "example.com", "title": "Test", "content": "A long snippet", "url": "http://example.com", "sentiment": "neutral", "reach": 100, "interactions": 0}
+        ],
+        "sentiment": {"positive": 1, "negative": 0, "neutral": 9},
+        "sources_list": [{"name": "example.com", "count": 10}],
+        "tags_list": [{"name": "test", "count": 10}],
+        "daily_trend": {"2026-01-10": 10}
+    }
+    
+    excel_bytes = ExportService.export_project_summary_xlsx(data)
+    wb = openpyxl.load_workbook(io.BytesIO(excel_bytes))
+    
+    sheet_names = wb.sheetnames
+    assert "Mentions" in sheet_names
+    assert "Sentiment" in sheet_names
+    assert "Categories" in sheet_names
+    assert "Numerical data" in sheet_names
+    assert "Analytics data" in sheet_names
+
+def test_pdf_export_none_and_empty_regression():
+    from app.services.pdf_generator import PDFGenerator
+    data_none = {
+        "project_name": "Test",
+        "date_from": "2026-01-01",
+        "date_to": "2026-01-31",
+        "metrics": {
+            "total_mentions": 10,
+            "total_reach": None,
+            "interactions": None,
+        },
+        "comparison": {},
+        "exec_summary": "Test summary",
+        "top_mentions": [
+            {"title": None, "domain": None, "sentiment": "positive", "reach": None, "snippet": None}
+        ],
+        "sources_list": [{"name": "X", "count": None}],
+        "tags_list": [{"name": "Y", "count": None}]
+    }
+    
+    pdf_bytes = PDFGenerator.generate_project_summary(data_none)
+    assert len(pdf_bytes) > 0
+
+
+def test_email_schedules_route_priority_regression():
+    # Because of route priority, /api/reports/email-schedules shouldn't be matched by /{report_id}
+    # It might return 200, 401, 403, or 500 (if mock DB fails), but should NOT return 422 Unprocessable Entity
+    response = client.get("/api/reports/email-schedules")
+    assert response.status_code != 422
+
+
+def test_email_schedules_send_now_route_priority_regression():
+    # Same for POST /email-schedules/send-now
+    response = client.post("/api/reports/email-schedules/send-now")
+    assert response.status_code != 422

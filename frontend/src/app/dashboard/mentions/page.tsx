@@ -43,6 +43,8 @@ interface MentionItem {
   url: string | null;
   canonical_url?: string | null;
   original_url?: string | null;
+  permalink?: string | null;
+  source_url?: string | null;
   visit_url_invalid_reason?: string | null;
   source_integrity_level?: 'high' | 'medium' | 'low' | 'unavailable' | null;
   source_confidence?: number | 'low' | 'high' | null;
@@ -243,9 +245,8 @@ function keywordTexts(keywords: any[] | null | undefined): string[] {
   return (keywords || []).map(keywordToText).filter((value): value is string => Boolean(value));
 }
 
-function getMentionSourceLabel(mention: MentionItem): string {
-  return mention.domain || 'Không xác định';
-}
+// Use extracted helper
+import { getMentionSourceLabel } from '@/lib/utils/mentions';
 
 /* ═══════════════════════════════════════════════════════════════════════════
    MAIN COMPONENT
@@ -266,7 +267,7 @@ function MentionsPageContent() {
   const [chartData, setChartData] = useState<any[]>([]);
   const [chartLoading, setChartLoading] = useState(false);
   const [sentimentSummary, setSentimentSummary] = useState<any>(null);
-  const [trendData, setTrendData] = useState<any[]>([]);
+  const [topicsData, setTopicsData] = useState<any[]>([]);
   const [sourceCounts, setSourceCounts] = useState<Record<string, number>>({});
   const { activeProject, setActiveProject, projects, fetchProjects } = useProject();
   const { confirm, prompt } = useDialog();
@@ -363,13 +364,38 @@ function MentionsPageContent() {
       variant: 'danger',
     });
     if (!ok) return;
-    let success = 0;
-    for (const id of Array.from(selectedIds)) {
-      try { await mentionsApi.delete(id); success++; } catch {}
+    try {
+      await mentionsApi.bulkDelete(Array.from(selectedIds));
+      toast.success(`Đã xóa ${selectedIds.size} mentions`);
+      setSelectedIds(new Set());
+      fetchMentions();
+    } catch (e) {
+      toast.error('Lỗi khi xóa mentions');
     }
-    toast.success(`Đã xóa ${success}/${selectedIds.size} mentions`);
-    setSelectedIds(new Set());
-    fetchMentions();
+  };
+
+  const handleBulkReview = async (isReviewed: boolean) => {
+    if (selectedIds.size === 0) return;
+    try {
+      await mentionsApi.bulkReview(Array.from(selectedIds), isReviewed);
+      toast.success(`Đã đánh dấu ${selectedIds.size} mentions`);
+      setMentionsList(prev => prev.map(m => selectedIds.has(m.id) ? { ...m, is_reviewed: isReviewed } : m));
+      setSelectedIds(new Set());
+    } catch (e) {
+      toast.error('Lỗi cập nhật mentions');
+    }
+  };
+
+  const handleBulkSentiment = async (sentiment: string) => {
+    if (selectedIds.size === 0) return;
+    try {
+      await mentionsApi.bulkSentiment(Array.from(selectedIds), sentiment);
+      toast.success(`Đã cập nhật cảm xúc ${selectedIds.size} mentions`);
+      setMentionsList(prev => prev.map(m => selectedIds.has(m.id) ? { ...m, sentiment } : m));
+      setSelectedIds(new Set());
+    } catch (e) {
+      toast.error('Lỗi cập nhật mentions');
+    }
   };
 
   const hasSyncedUrlProject = useRef(false);
@@ -666,37 +692,70 @@ function MentionsPageContent() {
     fetchMentionsRef.current = fetchMentions;
   }, [fetchMentions]);
 
+  
+  const fetchTopicsData = useCallback(async () => {
+    try {
+      const params: any = {};
+      if (activeProject) params.project_id = activeProject.id;
+      if (searchTerm) params.search_query = searchTerm;
+      if (filters.source_type) params.source_type = filters.source_type;
+      if (filters.sentiment) params.sentiment = filters.sentiment;
+      if (filters.min_influence_score) params.min_influence_score = filters.min_influence_score;
+      
+      if (dateRange && dateRange !== 'all') {
+        const now = new Date();
+        const from = new Date();
+        if (dateRange === '1d') from.setDate(now.getDate() - 1);
+        else if (dateRange === '7d') from.setDate(now.getDate() - 7);
+        else if (dateRange === '30d') from.setDate(now.getDate() - 30);
+        else if (dateRange === '90d') from.setDate(now.getDate() - 90);
+        params.date_from = from.toISOString();
+        params.date_to = now.toISOString();
+      }
+
+      const response = await mentionsApi.topics(params);
+      setTopicsData(response.topics || []);
+    } catch (error) {
+      console.error('Error fetching topics:', error);
+    }
+  }, [activeProject, searchTerm, filters, dateRange]);
+
   const fetchChartData = async () => {
     setChartLoading(true);
     try {
-      // Map chartTimeRange to API range and granularity
-      let range = '30d';
       let granularity = 'daily';
       if (chartTimeRange === 'days') {
-        range = '7d';
         granularity = 'daily';
       } else if (chartTimeRange === 'weeks') {
-        range = '30d';
         granularity = 'weekly';
       } else if (chartTimeRange === 'months') {
-        range = '180d';
         granularity = 'monthly';
-      } else {
-        // fallback from dateRange
-        if (dateRange === '1d') range = 'today';
-        else if (dateRange === '7d') range = '7d';
       }
 
-      const res = await dashboard.trends(range, activeProject?.id, granularity);
+      const now = new Date();
+      let fromDate = new Date();
+      let toDate = new Date();
+      
+      if (dateRange === '1d') fromDate.setDate(now.getDate() - 1);
+      else if (dateRange === '7d') fromDate.setDate(now.getDate() - 7);
+      else if (dateRange === '30d') fromDate.setDate(now.getDate() - 30);
+      else if (dateRange === '90d') fromDate.setDate(now.getDate() - 90);
+
+      const params: any = {
+        granularity,
+        q: searchTerm || undefined,
+        project_id: activeProject?.id || undefined,
+        sentiment: filters.sentiment || undefined,
+        source_type: filters.source_type || undefined,
+        min_risk_score: filters.min_risk_score || undefined,
+        min_influence_score: filters.min_influence_score || undefined,
+        date_from: dateRange !== 'all' ? fromDate.toISOString() : undefined,
+        date_to: dateRange !== 'all' ? toDate.toISOString() : undefined,
+      };
+
+      const res = await mentionsApi.charts(params);
       if (res && res.items) {
-        const mappedData = res.items.map((item: any) => {
-          return {
-            date: item.date,
-            mentions: item.total_mentions,
-            reach: item.total_mentions * 10 // Placeholder for reach
-          };
-        });
-        setChartData(mappedData);
+        setChartData(res.items);
       } else {
         setChartData([]);
       }
@@ -930,9 +989,9 @@ function MentionsPageContent() {
   };
 
   const handleVisit = async (mention: MentionItem) => {
-    const safeUrl = getSafeUrl(mention.canonical_url || mention.url);
+    const safeUrl = getSafeUrl(mention.canonical_url || mention.original_url || mention.permalink || mention.source_url || mention.url);
     if (!safeUrl) {
-      toast.error(mention.visit_url_invalid_reason || 'Khong co link bai goc hop le');
+      toast.error(mention.visit_url_invalid_reason || 'Không có link bài gốc hợp lệ');
       return;
     }
 
@@ -1302,12 +1361,33 @@ function MentionsPageContent() {
                     <span>{selectedIds.size} đã chọn</span>
                   </div>
                   <div className="flex items-center gap-2">
+                    <select
+                      className="px-2 py-1.5 text-xs font-bold text-gray-700 bg-white border border-gray-300 rounded-lg"
+                      onChange={(e) => {
+                         if (e.target.value) {
+                           handleBulkSentiment(e.target.value);
+                           e.target.value = "";
+                         }
+                      }}
+                    >
+                      <option value="">-- Cảm xúc --</option>
+                      <option value="positive">Tích cực</option>
+                      <option value="neutral">Trung lập</option>
+                      <option value="negative">Tiêu cực</option>
+                    </select>
+                    <button
+                      onClick={() => handleBulkReview(true)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100 transition-colors"
+                    >
+                      <CheckSquare className="w-3.5 h-3.5" />
+                      Đánh dấu Review
+                    </button>
                     <button
                       onClick={handleBulkDelete}
                       className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-lg hover:bg-red-100 dark:hover:bg-red-500/20 transition-colors"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
-                      Xóa đã chọn
+                      Xóa
                     </button>
                     <button
                       onClick={() => setSelectedIds(new Set())}
@@ -1360,7 +1440,7 @@ return (
                     <div className="flex flex-col">
                       <div className="flex items-center gap-1.5">
                         <span className="text-sm font-semibold text-slate-900 dark:text-white tracking-wide">
-                          {mention.domain && mention.domain.toLowerCase() !== 'unknown' ? mention.domain : extractDomain(mention.canonical_url || mention.url) || 'Nguồn chưa xác định'}
+                          {getMentionSourceLabel(mention)}
                         </span>
                         {/* Trust Badges */}
                         {(() => {
@@ -1465,7 +1545,21 @@ return (
                     </h3>
 
                     <p className="text-sm text-slate-600 dark:text-zinc-300 mt-2 line-clamp-3 leading-relaxed">
-                      {highlightText(mention.snippet || mention.content?.substring(0, 300) || '', searchTerm)}
+                      {(() => {
+                         const contentStr = mention.snippet || mention.content || '';
+                         if (!contentStr) return <span className="italic">Không có mô tả từ nguồn gốc.</span>;
+                         
+                         // Deduplicate if content starts with title
+                         let displayStr = contentStr;
+                         if (mention.title && displayStr.toLowerCase().startsWith(mention.title.toLowerCase())) {
+                             displayStr = displayStr.substring(mention.title.length).trim();
+                             if (displayStr.startsWith('-') || displayStr.startsWith(':')) {
+                                 displayStr = displayStr.substring(1).trim();
+                             }
+                         }
+                         if (!displayStr) return <span className="italic">Không có mô tả từ nguồn gốc.</span>;
+                         return highlightText(displayStr.length > 300 ? displayStr.substring(0, 300) + '...' : displayStr, searchTerm);
+                      })()}
                     </p>
 
                     {/* Metadata Bottom row */}
@@ -1524,7 +1618,7 @@ return (
                      {(() => {
                         const integrityLevel = mention.source_integrity_level;
                         const isLowIntegrity = integrityLevel === 'low' || integrityLevel === 'unavailable';
-                        const visitStatus = getVisitUrlStatus(mention.canonical_url || mention.url);
+                        const visitStatus = getVisitUrlStatus(mention.canonical_url || mention.original_url || mention.permalink || mention.source_url || mention.url);
                         const safeUrl = visitStatus.url;
                         const integrityBadge = getSourceIntegrityLabel(integrityLevel);
 
@@ -1533,10 +1627,10 @@ return (
                             ? mention.visit_url_invalid_reason
                             : isLowIntegrity
                             ? (integrityLevel === 'low' ? 'Độ tin cậy thấp' : 'Không xác minh được nguồn')
-                            : 'Không có link an toàn';
+                            : 'Không có link gốc';
                           return (
-                            <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500 dark:text-gray-400 cursor-not-allowed group/tooltip relative" title={tooltipText}>
-                             <Link2Off className="w-3.5 h-3.5" /> Không thể Visit
+                            <div className="flex items-center gap-1.5 text-[11px] font-bold text-amber-600 dark:text-amber-500 cursor-not-allowed group/tooltip relative" title={tooltipText}>
+                             <Link2Off className="w-3.5 h-3.5" /> Thiếu URL gốc
                              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover/tooltip:block px-2 py-1 bg-gray-800 text-slate-900 dark:text-white text-[10px] rounded whitespace-nowrap z-10">{tooltipText}</div>
                            </div>
                           );
@@ -1544,7 +1638,7 @@ return (
                         return (
                           <>
                             <button onClick={() => handleVisit(mention)} className="flex items-center gap-1.5 text-[11px] font-bold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-2.5 py-1.5 rounded-lg border border-indigo-200 dark:border-indigo-500/30 transition-colors shadow-sm">
-                              <ExternalLink className="w-3.5 h-3.5" /> Visit Nguồn
+                              <ExternalLink className="w-3.5 h-3.5" /> Mở bài gốc
                             </button>
                             {integrityBadge && (
                               <span

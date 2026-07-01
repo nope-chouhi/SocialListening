@@ -13,7 +13,12 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = "development"
     DEBUG: bool = False
     LOG_LEVEL: str = "INFO"
-    
+
+    # Admin seed: if set, the user with this email will be promoted to super_admin on startup.
+    # Leave empty (the default) to disable auto-promotion.
+    # Never hard-code an email here; configure via environment variable instead.
+    ADMIN_SEED_EMAIL: Optional[str] = None
+
     # Frontend URL for CORS
     FRONTEND_URL: str = "http://localhost:3000"
     

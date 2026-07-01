@@ -1,21 +1,52 @@
 import os
 import logging
 import traceback
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 
 from app.core.config import settings
 from app.core.database import engine, Base, SessionLocal
+from app.core.security import get_current_superuser
+from app.models.user import User
 from app.api import (
     collectors,
-    auth, keywords, sources, mentions, alerts,
-    incidents, reports, dashboard, crawl, takedown, services, admin, users, settings as settings_api,
-    roles, api_keys, branding, audit, monitor, system, ai, evidence, ai_chat, competitors, influencers,
-    reputation, discovery, integrations, realtime, saved_filters,
-    organizations, billing
+    auth,
+    keywords,
+    sources,
+    mentions,
+    alerts,
+    incidents,
+    reports,
+    dashboard,
+    crawl,
+    takedown,
+    services,
+    admin,
+    users,
+    settings as settings_api,
+    roles,
+    api_keys,
+    branding,
+    audit,
+    monitor,
+    system,
+    ai,
+    ai_config,
+    evidence,
+    ai_chat,
+    competitors,
+    influencers,
+    reputation,
+    discovery,
+    integrations,
+    realtime,
+    saved_filters,
+    organizations,
+    billing,
 )
+
 from app.api import service_requests, webinar
 
 logging.basicConfig(level=logging.INFO)
@@ -63,18 +94,35 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning(f"create_all skipped (tables may already exist via alembic): {e}")
 
-    try:
-        # FORCE PROMOTE ADMIN ON STARTUP
+    # ── Optional admin seed: promote an existing user to super_admin once ──────
+    # Set ADMIN_SEED_EMAIL in your environment to enable this.
+    # The target user must already exist in the database.
+    # If already a super_admin the UPDATE is a no-op.
+    admin_seed_email = (settings.ADMIN_SEED_EMAIL or "").strip()
+    if admin_seed_email:
         db = SessionLocal()
         try:
             from sqlalchemy import text
-            db.execute(text("UPDATE users SET is_superuser = true, is_active = true, role = 'super_admin' WHERE email = 'honguyenhung2010@gmail.com'"))
+            result = db.execute(
+                text(
+                    "UPDATE users "
+                    "SET is_superuser = true, is_active = true, role = 'super_admin' "
+                    "WHERE email = :email"
+                ),
+                {"email": admin_seed_email},
+            )
             db.commit()
-            logger.info("Successfully granted admin privileges to honguyenhung2010@gmail.com")
+            if result.rowcount > 0:
+                logger.info("Admin seed: granted super_admin to configured ADMIN_SEED_EMAIL account.")
+            else:
+                logger.warning(
+                    "Admin seed: ADMIN_SEED_EMAIL is set but no matching user was found. "
+                    "Create the user first, then restart."
+                )
+        except Exception as e:
+            logger.error(f"Admin seed failed: {e}")
         finally:
             db.close()
-    except Exception as e:
-        logger.error(f"Failed to grant admin privileges: {e}")
 
     try:
         from app.models.webinar import WebinarRegistration
@@ -145,24 +193,35 @@ app.add_middleware(
 from fastapi.exceptions import HTTPException
 
 # ─── Global exception handler — ensures 500s return JSON + CORS ───────────────
+def _add_cors_headers(request: Request, response: JSONResponse) -> JSONResponse:
+    origin = request.headers.get("origin")
+    if origin and origin in settings.cors_origins:
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+    elif "*" in settings.cors_origins:
+        response.headers["Access-Control-Allow-Origin"] = "*"
+    return response
+
 @app.exception_handler(HTTPException)
 async def custom_http_exception_handler(request: Request, exc: HTTPException):
     # Temporarily expose full detail in production for debugging
     if exc.status_code >= 500:
         logger.error(f"HTTPException 500 on {request.method} {request.url}: {exc.detail}")
-    return JSONResponse(
+    response = JSONResponse(
         status_code=exc.status_code,
         content={"detail": exc.detail},
     )
+    return _add_cors_headers(request, response)
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     logger.error(f"Unhandled exception on {request.method} {request.url}: {traceback.format_exc()}")
     
-    return JSONResponse(
+    response = JSONResponse(
         status_code=500,
         content={"detail": f"Internal server error: {str(exc)}"},
     )
+    return _add_cors_headers(request, response)
 
 
 # ─── Health ───────────────────────────────────────────────────────────────────
@@ -227,6 +286,7 @@ app.include_router(system.router,           prefix="/api/system",            tag
 app.include_router(webinar.router,          prefix="/api/webinar",           tags=["Webinar"])
 app.include_router(ai.router,               prefix="/api/ai",                tags=["AI"])
 app.include_router(ai_chat.router,          prefix="/api/ai",                tags=["AI Chat"])
+app.include_router(ai_config.router,               prefix="/api/ai",                tags=["AI Config"])
 app.include_router(evidence.router,         prefix="/api/evidence",          tags=["Evidence Locker"])
 app.include_router(competitors.router,      prefix="/api/competitors",       tags=["Competitors"])
 app.include_router(influencers.router,      prefix="/api/influencers",       tags=["Influencers"])
@@ -335,21 +395,25 @@ def run_visit_migration(db: Session = Depends(get_db)):
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
-@app.get("/api/debug/migrate")
-def debug_migrate():
+# ─── Debug migration trigger (super-admin only) ───────────────────────────────
+@app.get("/api/debug/migrate", tags=["Debug"])
+def debug_migrate(
+    current_user: User = Depends(get_current_superuser),
+):
+    """Trigger Alembic upgrade to head. Requires super-admin authentication."""
     import traceback
     import alembic.config
     import alembic.command
     import os
+    original_cwd = os.getcwd()
     try:
         base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        original_cwd = os.getcwd()
         os.chdir(base_dir)
         alembic_cfg = alembic.config.Config("alembic.ini")
         alembic.command.upgrade(alembic_cfg, "head")
-        os.chdir(original_cwd)
         return {"status": "success"}
     except Exception as e:
-        os.chdir(original_cwd)
         return {"status": "error", "message": str(e), "traceback": traceback.format_exc()}
+    finally:
+        os.chdir(original_cwd)
 

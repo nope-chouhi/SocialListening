@@ -2,13 +2,18 @@ from sqlalchemy.sql import Select
 from app.core.security import can_access_admin
 from app.models.user import User
 
-def apply_tenant_filter(query: Select, model, current_user: User, user_col: str = "user_id") -> Select:
+def apply_tenant_filter(query: Select, model, current_user: User, user_col: str = "user_id", include_unverifiable: bool = False) -> Select:
     """
     Applies a tenant filter to a SQLAlchemy query based on organization_id.
     If the current_user is a super admin, returns the original query (sees all data).
     If the current_user has a current_organization_id, filters by that organization.
     """
     from app.core.security import can_access_admin
+    
+    # Apply verifiable filter for Mention model if needed
+    if model.__name__ == 'Mention' and not include_unverifiable:
+        query = query.where(model.verifiable_filter())
+        
     if can_access_admin(current_user):
         return query
     

@@ -185,3 +185,56 @@ This setup task is explicitly allowed to create/update:
 - .agents/rules/pr-workflow.md
 
 Do not create extra docs beyond those files.
+
+# Hermes Operating Rules for SocialListening
+
+## Project Identity
+This repository is the Nope Social Listening Platform.
+Goal: build a real AI Social Listening / Brand Monitoring platform, not a fake demo.
+
+Frontend:
+- Next.js / React / Tailwind CSS
+
+Backend:
+- FastAPI / SQLAlchemy / PostgreSQL / Alembic
+
+Deployment:
+- Frontend: Vercel
+- Backend: Render
+- Database: Render Managed PostgreSQL
+
+## Core Product Rules
+- Data Quality > Data Quantity.
+- Trust > Fancy AI.
+- Source Coherence > UI Beauty.
+- Correctness > Demo Speed.
+- Never fake data, fake APIs, fake exports, fake reports, or dummy UI behavior.
+
+## Git Workflow
+- Never commit directly to main.
+- Always pull latest main before starting work.
+- Create a separate branch for every task.
+- Commit only relevant files.
+- Push the branch.
+- Do not create PR or merge automatically after coding.
+- After implementation and tests, stop and ask the user for confirmation.
+- Only create PR and merge if the user explicitly agrees and tests pass.
+
+## Deployment Rules
+- Do not run deploy.bat, deploy scripts, production migrations, or production restarts unless explicitly requested.
+- Assume Render/Vercel auto-deploy after merge unless the user asks for manual deployment verification.
+
+## Safety Rules
+- Preserve stable completed modules.
+- Do not delete untracked setup/tooling files without asking.
+- If root-level package.json/package-lock.json or Playwright/tooling files appear, inspect and explain first.
+- Keep files maintainable; prefer splitting very large files when practical.
+
+## Required Completion Report
+For every coding task, report:
+- Summary of changes
+- Files changed
+- Tests run
+- Risks or notes
+- Whether it is ready for PR
+- Ask for user confirmation before PR/merge

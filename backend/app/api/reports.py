@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, BackgroundTasks, UploadFile, File
 import uuid
+import json
 from sqlalchemy.orm import Session
 from sqlalchemy import select, func, and_
-from datetime import datetime
-from typing import List, Optional
+from datetime import datetime, timedelta
+from typing import List, Optional, Dict, Any
 from math import ceil
 from fastapi.responses import StreamingResponse, Response, FileResponse
 import os
@@ -36,23 +37,64 @@ def get_reports_summary(
     Get aggregated data for the Reports module.
     """
     now = datetime.utcnow()
-    # Simple summary for the frontend
-    
+
     total_mentions = db.execute(apply_tenant_filter(select(func.count(Mention.id)), Mention, current_user)).scalar() or 0
     total_analyzed = db.execute(
         select(func.count(AIAnalysis.id))
     ).scalar() or 0
-    
+
     positive = db.execute(
         select(func.count(AIAnalysis.id))
         .where(AIAnalysis.sentiment == 'positive')
     ).scalar() or 0
-    
+
     negative = db.execute(
         select(func.count(AIAnalysis.id))
         .where(AIAnalysis.sentiment.in_(['negative']))
     ).scalar() or 0
-    
+
+    # ── Real top_sources from DB: GROUP BY source_type, tenant-filtered ──────
+    source_rows = db.execute(
+        apply_tenant_filter(
+            select(Mention.source_type, func.count(Mention.id).label("cnt")),
+            Mention,
+            current_user,
+        )
+        .where(Mention.is_deleted == False)
+        .where(Mention.is_muted == False)
+        .group_by(Mention.source_type)
+        .order_by(func.count(Mention.id).desc())
+    ).all()
+
+    # Normalise raw source_type to display names (same convention as mentions.py)
+    _SOURCE_DISPLAY: dict = {
+        "news": "News", "newspaper": "News", "article_news": "News",
+        "video": "Video", "videos": "Video", "youtube": "YouTube",
+        "yt": "YouTube", "youtube_video": "YouTube", "youtube_channel": "YouTube",
+        "blog": "Blog/Forum", "forum": "Blog/Forum",
+        "blogs_forums": "Blog/Forum", "blogs/forums": "Blog/Forum",
+        "rss": "RSS", "feed": "RSS", "rss_feed": "RSS",
+        "facebook": "Facebook", "facebook_page": "Facebook",
+        "facebook_group": "Facebook", "facebook_profile": "Facebook",
+        "instagram": "Instagram", "instagram_business": "Instagram",
+        "tiktok": "TikTok",
+        "web": "Web", "website": "Web", "web_search": "Web",
+        "article": "Web", "global_search": "Web",
+    }
+
+    aggregated: dict[str, int] = {}
+    for raw_type, count in source_rows:
+        raw = (raw_type or "").lower().strip()
+        display = _SOURCE_DISPLAY.get(raw) or (
+            raw.replace("_", " ").title() if raw else "Web"
+        )
+        aggregated[display] = aggregated.get(display, 0) + count
+
+    top_sources = [
+        {"name": name, "count": count}
+        for name, count in sorted(aggregated.items(), key=lambda x: x[1], reverse=True)
+    ]
+
     return {
         "report_period": "All Time",
         "generated_at": now.isoformat(),
@@ -65,11 +107,7 @@ def get_reports_summary(
                 "neutral": total_analyzed - positive - negative if total_analyzed > 0 else 0
             }
         },
-        "top_sources": [
-            {"name": "Facebook", "count": int(total_mentions * 0.5)},
-            {"name": "News", "count": int(total_mentions * 0.3)},
-            {"name": "TikTok", "count": int(total_mentions * 0.2)}
-        ]
+        "top_sources": top_sources,
     }
 
 @router.get("/summary-data")
@@ -397,6 +435,52 @@ def create_report(
     return ReportResponse.from_orm(report)
 
 
+@router.get("/email-schedules")
+def get_email_schedules(db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
+    """Get the current global email report schedule settings (Admin only recommended)"""
+    from app.models.system_settings import SystemNotificationSettings
+    import os
+    from app.core.config import settings
+    
+    # Just checking superuser, though this could be any active user depending on rules.
+    # The requirement says "global/admin-level scheduled email report setup"
+    if not current_user.is_superuser:
+        raise HTTPException(status_code=403, detail="Only admins can manage global email report settings.")
+        
+    sys_settings = db.execute(select(SystemNotificationSettings)).scalars().first()
+    if not sys_settings:
+        sys_settings = SystemNotificationSettings()
+        db.add(sys_settings)
+        db.commit()
+        db.refresh(sys_settings)
+        
+    smtp_configured = settings.SMTP_ENABLED or bool(os.getenv("RESEND_API_KEY"))
+    
+    return {
+        "daily_report_enabled": sys_settings.daily_report_enabled,
+        "daily_report_time": sys_settings.daily_report_time,
+        "weekly_report_enabled": sys_settings.weekly_report_enabled,
+        "weekly_report_day": sys_settings.weekly_report_day,
+        "weekly_report_time": sys_settings.weekly_report_time,
+        "report_email_recipients": sys_settings.report_email_recipients,
+        "email_provider_configured": smtp_configured
+    }
+
+@router.post("/email-schedules/send-now")
+def send_email_report_now(report_type: str = "daily", db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
+    """Send an immediate test report based on current settings (Admin only)"""
+    if not current_user.is_superuser:
+        raise HTTPException(status_code=403, detail="Only admins can send global email reports.")
+        
+    from app.services.email_report_service import send_scheduled_report_email
+    
+    result = send_scheduled_report_email(db, report_type)
+    if not result.get("success"):
+        raise HTTPException(status_code=400, detail=result.get("message", "Failed to send email report"))
+        
+    return result
+
+
 @router.get("/{report_id}", response_model=ReportResponse)
 def get_report(
     report_id: int,
@@ -538,8 +622,8 @@ def export_project_summary(
         "date_from": date_from,
         "date_to": date_to
     }
-    
-    content = ExportService.export_project_summary_xlsx(db, current_user, filters)
+    export_data = ExportService.get_export_data(db, current_user, filters)
+    content = ExportService.export_project_summary_xlsx(export_data)
     
     return Response(
         content=content,
@@ -560,12 +644,16 @@ def request_async_export(
     if report_type not in ["pdf", "excel", "xlsx"]:
         raise HTTPException(status_code=400, detail="Invalid report type")
         
+    builder_config_payload = None
+    if builder_config:
+        builder_config_payload = json.loads(builder_config.json())
+        
     export_job = ReportExport(
         report_type=report_type,
         project_id=project_id,
         requested_by=current_user.id,
         status=ExportStatus.PENDING,
-        builder_config=builder_config.dict() if builder_config else None,
+        builder_config=builder_config_payload,
         created_at=datetime.utcnow()
     )
     db.add(export_job)
@@ -580,11 +668,14 @@ def request_async_export(
 def list_exports(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
+    type: Optional[str] = Query(None, description="Filter by export type, e.g. 'pdf' or 'excel'"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
     """List asynchronous export history for the user"""
     query = select(ReportExport)
+    if type:
+        query = query.where(ReportExport.report_type == type)
     if not current_user.is_superuser:
         query = query.where(ReportExport.requested_by == current_user.id)
         
@@ -643,11 +734,28 @@ def download_export(
     if not os.path.exists(export_job.file_path):
         raise HTTPException(status_code=404, detail="Export file has been removed or does not exist")
         
-    filename = os.path.basename(export_job.file_path)
+    EXPORT_FILE_EXTENSIONS = {
+        "excel": "xlsx",
+        "xlsx": "xlsx",
+        "csv": "csv",
+        "pdf": "pdf",
+    }
+    
+    ext = EXPORT_FILE_EXTENSIONS.get(export_job.report_type.lower(), export_job.report_type.lower())
+    dl_filename = f"Nope_Export_{export_job.id}.{ext}"
+    
+    media_type = "application/octet-stream"
+    if ext == "xlsx":
+        media_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    elif ext == "csv":
+        media_type = "text/csv"
+    elif ext == "pdf":
+        media_type = "application/pdf"
+        
     return FileResponse(
         path=export_job.file_path,
-        filename=filename,
-        media_type="application/octet-stream"
+        filename=dl_filename,
+        media_type=media_type
     )
 
 @router.post("/pdf/logo")

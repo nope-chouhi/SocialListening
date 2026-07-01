@@ -639,8 +639,9 @@ def start_scheduler(is_embedded: bool = False):
         # Sync existing ScanSchedules from DB
         try:
             sync_scan_schedules()
+            sync_email_report_schedules()
         except Exception as e:
-            logger.error(f"Error syncing scan schedules on startup: {e}")
+            logger.error(f"Error syncing schedules on startup: {e}")
 
         mode_str = "embedded" if is_embedded else "standalone"
         logger.info(f"✅ Background scheduler ({mode_str}) started (interval: {interval_minutes} min)")
@@ -898,6 +899,89 @@ def sync_scan_schedules():
                     
         logger.info(f"🔄 Synced {len(active_schedules)} active ScanSchedules to APScheduler.")
     except Exception as e:
-        logger.error(f"❌ Error in sync_scan_schedules: {e}")
+        logger.error(f"Error syncing scan schedules: {e}")
+    finally:
+        db.close()
+
+
+def send_daily_report_job():
+    """Execute the daily email report."""
+    db = get_db()
+    try:
+        from app.services.email_report_service import send_scheduled_report_email
+        send_scheduled_report_email(db, "daily")
+    except Exception as e:
+        logger.error(f"Error executing daily email report job: {e}")
+    finally:
+        db.close()
+
+def send_weekly_report_job():
+    """Execute the weekly email report."""
+    db = get_db()
+    try:
+        from app.services.email_report_service import send_scheduled_report_email
+        send_scheduled_report_email(db, "weekly")
+    except Exception as e:
+        logger.error(f"Error executing weekly email report job: {e}")
+    finally:
+        db.close()
+
+def sync_email_report_schedules():
+    """Sync email report schedules from SystemNotificationSettings to APScheduler."""
+    global scheduler_started
+    if not scheduler_started:
+        return
+        
+    db = get_db()
+    try:
+        from app.models.system_settings import SystemNotificationSettings
+        
+        sys_settings = db.execute(select(SystemNotificationSettings)).scalars().first()
+        
+        # Daily job
+        daily_job_id = "scheduled_email_report_daily"
+        if sys_settings and sys_settings.daily_report_enabled and sys_settings.report_email_recipients:
+            time_str = sys_settings.daily_report_time or "09:00"
+            try:
+                hour, minute = map(int, time_str.split(':'))
+            except Exception:
+                hour, minute = 9, 0
+                
+            scheduler.add_job(
+                send_daily_report_job,
+                CronTrigger(hour=hour, minute=minute, timezone='Asia/Ho_Chi_Minh'),
+                id=daily_job_id,
+                name="Daily Email Report",
+                replace_existing=True
+            )
+        else:
+            if scheduler.get_job(daily_job_id):
+                scheduler.remove_job(daily_job_id)
+                
+        # Weekly job
+        weekly_job_id = "scheduled_email_report_weekly"
+        if sys_settings and sys_settings.weekly_report_enabled and sys_settings.report_email_recipients:
+            time_str = sys_settings.weekly_report_time or "09:00"
+            day_of_week = sys_settings.weekly_report_day or 0  # 0=Monday, 6=Sunday
+            # APScheduler CronTrigger day_of_week: 0-6 or mon-sun
+            try:
+                hour, minute = map(int, time_str.split(':'))
+            except Exception:
+                hour, minute = 9, 0
+                
+            scheduler.add_job(
+                send_weekly_report_job,
+                CronTrigger(day_of_week=day_of_week, hour=hour, minute=minute, timezone='Asia/Ho_Chi_Minh'),
+                id=weekly_job_id,
+                name="Weekly Email Report",
+                replace_existing=True
+            )
+        else:
+            if scheduler.get_job(weekly_job_id):
+                scheduler.remove_job(weekly_job_id)
+                
+        logger.info("🔄 Synced email report schedules to APScheduler.")
+    except Exception as e:
+        logger.error(f"Error syncing email report schedules: {e}")
     finally:
         db.close()

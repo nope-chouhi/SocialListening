@@ -34,6 +34,9 @@ class MentionBase(BaseModel):
     is_deleted: Optional[bool] = False
     extraction_source: Optional[str] = None
     confidence: Optional[str] = None
+    source_name: Optional[str] = None
+    has_original_url: Optional[bool] = None
+    source_display: Optional[str] = None
 
 
 class MentionCreate(MentionBase):
@@ -128,3 +131,44 @@ class MentionListResponse(BaseModel):
     page_size: int
     total_pages: int
 
+
+class BulkMentionsRequest(BaseModel):
+    mention_ids: List[int]
+
+
+class BulkReviewRequest(BulkMentionsRequest):
+    is_reviewed: bool
+
+
+class BulkSentimentRequest(BulkMentionsRequest):
+    sentiment: str
+
+
+class ChartDataPoint(BaseModel):
+    date: str
+    total_mentions: int
+    reach: int
+    sentiment_positive: int
+    sentiment_neutral: int
+    sentiment_negative: int
+
+
+class ChartResponse(BaseModel):
+    items: List[ChartDataPoint]
+    granularity: str
+
+
+class BulkDeleteRequest(BaseModel):
+    mention_ids: List[int]
+
+class BulkReviewRequest(BaseModel):
+    mention_ids: List[int]
+    is_reviewed: bool
+
+class BulkSentimentRequest(BaseModel):
+    mention_ids: List[int]
+    sentiment: str
+
+class ChartResponse(BaseModel):
+    granularity: str
+    items: List[dict]

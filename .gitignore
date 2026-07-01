@@ -82,3 +82,16 @@ quick_*.py
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+# Playwright browser session data (generated at runtime — never commit)
+.playwright_github_session/
+# Frontend Playwright test artifacts
+frontend/test-results/
+
+.vercel/
+
+# Backend runtime-generated data (not source code — ephemeral on Render)
+backend/data/exports/
+backend/data/uploads/
+
+# Root-level scratch/PR scripts (not application code)
+create_pr*.mjs

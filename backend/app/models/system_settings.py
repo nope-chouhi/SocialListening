@@ -60,6 +60,7 @@ class SystemNotificationSettings(Base):
     weekly_report_enabled = Column(Boolean, default=False, nullable=False)
     weekly_report_day = Column(Integer, default=0)  # 0=Monday, 6=Sunday
     weekly_report_time = Column(String(10), default='09:00')
+    report_email_recipients = Column(Text, nullable=True)  # Comma-separated emails
     
     # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
