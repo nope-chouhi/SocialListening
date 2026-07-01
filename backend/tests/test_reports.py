@@ -367,6 +367,22 @@ def test_email_schedules_route_priority_regression():
     assert "weekly_report_enabled" in data
     assert "report_email_recipients" in data
 
+def test_email_schedules_schema_error_graceful_fallback():
+    from sqlalchemy.exc import SQLAlchemyError
+    mock_db = MagicMock()
+    mock_db.execute.side_effect = SQLAlchemyError("Simulated missing column")
+    
+    app.dependency_overrides[get_db] = lambda: mock_db
+    try:
+        response = client.get("/api/reports/email-schedules")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["daily_report_enabled"] is False
+        assert data["report_email_recipients"] == ""
+        mock_db.rollback.assert_called_once()
+    finally:
+        app.dependency_overrides[get_db] = override_get_db
+
 
 def test_email_schedules_send_now_route_priority_regression():
     # Same for POST /email-schedules/send-now

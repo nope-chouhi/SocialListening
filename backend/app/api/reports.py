@@ -3,6 +3,7 @@ import uuid
 import json
 from sqlalchemy.orm import Session
 from sqlalchemy import select, func, and_
+from sqlalchemy.exc import SQLAlchemyError
 from datetime import datetime, timedelta
 from typing import List, Optional, Dict, Any
 from math import ceil
@@ -454,8 +455,10 @@ def get_email_schedules(db: Session = Depends(get_db), current_user: User = Depe
             db.add(sys_settings)
             db.commit()
             db.refresh(sys_settings)
-    except Exception as e:
+    except SQLAlchemyError as e:
         db.rollback()
+        import logging
+        logging.getLogger(__name__).warning(f"Database schema mismatch for SystemNotificationSettings: {e}. Fallback applied.")
         sys_settings = None
         
     smtp_configured = settings.SMTP_ENABLED or bool(os.getenv("RESEND_API_KEY"))
