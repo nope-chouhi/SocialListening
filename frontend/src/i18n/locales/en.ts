@@ -1,4 +1,66 @@
 export const en = {
+  summary: {
+    page: {
+        title: "Analysis Summary",
+        subtitle: "In-depth analysis of Social Listening data",
+        refresh: "Refresh",
+        loading: "Loading analysis data...",
+        totalMentions: "Total Mentions",
+        positive: "Positive",
+        negative: "Negative",
+        neutral: "Neutral",
+        aiTitle: "AI Executive Summary",
+        aiButton: "Generate AI Summary",
+        aiLoading: "Generating...",
+        noData: "No mentions to summarize. Run a scan to collect data first.",
+        aiPrompt: "Click 'Generate AI Summary' to analyze",
+        aiPromptSuffix: "mentions using AI.",
+        sentimentTitle: "Sentiment Breakdown",
+        noDataShort: "No data",
+        trendTitle: "Trend (from {start} to {end})",
+        trendDefault: "Last 7 days trend",
+        sourcesTitle: "Source Distribution",
+        noSourceData: "No source data",
+        errFetch: "Error loading analysis data",
+        errSelectProject: "Please select a project first",
+        errNoMentions: "No mentions to summarize",
+        errNoResult: "No results",
+        errAiFail: "Failed to generate AI summary at this time",
+        aiOverview: "OVERVIEW:",
+        aiEvaluation: "SITUATION EVALUATION:",
+        aiTopics: "KEY TOPICS:",
+        aiRisks: "RISKS:",
+        aiActions: "RECOMMENDED ACTIONS:",
+        aiDataNotes: "DATA NOTES:",
+        aiAnalyzed: "(Analyzed",
+        aiAt: "mentions at"
+    }
+},
+
+  comparison: {
+    page: {
+        title: "Comparison",
+        subtitle: "Compare mentions and sentiment across projects.",
+        errSelect: "Please select 2 projects to compare",
+        errSame: "Please select 2 different projects",
+        errFetch: "Error loading comparison data",
+        selectTitle: "Select 2 Projects to Compare",
+        needMoreProjects: "This feature requires at least 2 projects. You currently have",
+        needMoreProjectsSuffix: "projects.",
+        selectA: "-- Select Project A --",
+        selectB: "-- Select Project B --",
+        compareButton: "Compare",
+        totalMentions: "Total Mentions",
+        posMentions: "Positive Mentions",
+        negMentions: "Negative Mentions",
+        trendTitle: "Daily Trend",
+        trendNoData: "Not enough data to compare. Run a scan or background collection.",
+        sourceSuffix: "— Source",
+        sourceNoData: "No data",
+        guide: "Select 2 projects and click 'Compare' to see results."
+    }
+},
+
   nav: {
     dashboard: 'Dashboard',
     mentions: 'Mentions',

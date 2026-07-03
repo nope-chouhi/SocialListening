@@ -28,6 +28,7 @@ import { MentionActionMenu } from '@/components/mentions/MentionActionMenu';
 import { MentionEmptyResults } from '@/components/mentions/MentionEmptyResults';
 import { AntiNoiseNotice } from '@/components/mentions/AntiNoiseNotice';
 import { MentionFilterErrorState } from '@/components/mentions/MentionFilterErrorState';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 /* ═══════════════════════════════════════════════════════════════════════════
    TYPE DEFINITIONS
@@ -103,36 +104,36 @@ interface Filters {
    ═══════════════════════════════════════════════════════════════════════════ */
 
 const SENTIMENT_OPTIONS = [
-  { value: 'positive', label: 'Tích cực', dot: 'bg-emerald-500', bg: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' },
-  { value: 'neutral', label: 'Trung lập', dot: 'bg-gray-400', bg: 'bg-gray-500/10 border-gray-500/20 text-slate-500 dark:text-gray-400' },
-  { value: 'negative', label: 'Tiêu cực', dot: 'bg-rose-500', bg: 'bg-rose-500/10 border-rose-500/20 text-rose-400' },
+  { value: 'positive', label: 'Tích cực', labelKey: 'mentions.sentiment.positive', dot: 'bg-emerald-500', bg: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' },
+  { value: 'neutral', label: 'Trung lập', labelKey: 'mentions.sentiment.neutral', dot: 'bg-gray-400', bg: 'bg-gray-500/10 border-gray-500/20 text-slate-500 dark:text-gray-400' },
+  { value: 'negative', label: 'Tiêu cực', labelKey: 'mentions.sentiment.negative', dot: 'bg-rose-500', bg: 'bg-rose-500/10 border-rose-500/20 text-rose-400' },
 ];
 
 const SOURCE_TYPE_OPTIONS = [
-  { value: 'web', label: 'Web', icon: Globe, color: 'text-blue-400', disabled: false },
-  { value: 'news', label: 'News', icon: FileText, color: 'text-slate-500 dark:text-gray-400', disabled: false },
-  { value: 'blog', label: 'Blogs/Forums', icon: FileText, color: 'text-green-400', disabled: false },
-  { value: 'video', label: 'YouTube', icon: Youtube, color: 'text-red-400', disabled: false },
-  { value: 'rss', label: 'RSS', icon: Rss, color: 'text-orange-400', disabled: false },
-  { value: 'facebook_page', label: 'Facebook', icon: Facebook, color: 'text-blue-500', disabled: true, msg: 'Kết nối' },
-  { value: 'instagram', label: 'Instagram', icon: Instagram, color: 'text-fuchsia-500', disabled: true, msg: 'Kết nối' },
-  { value: 'twitter', label: 'X/Twitter', icon: Twitter, color: 'text-sky-400', disabled: true, msg: 'Sắp hỗ trợ' },
-  { value: 'reddit', label: 'Reddit', icon: Globe, color: 'text-orange-400', disabled: true, msg: 'Sắp hỗ trợ' },
-  { value: 'tiktok', label: 'TikTok', icon: Video, color: 'text-pink-400', disabled: true, msg: 'Kết nối' },
-  { value: 'podcast', label: 'Podcasts', icon: Mic, color: 'text-purple-400', disabled: true, msg: 'Sắp hỗ trợ' },
+  { value: 'web', label: 'Web', labelKey: 'mentions.sourceType.web', icon: Globe, color: 'text-blue-400', disabled: false },
+  { value: 'news', label: 'News', labelKey: 'mentions.sourceType.news', icon: FileText, color: 'text-slate-500 dark:text-gray-400', disabled: false },
+  { value: 'blog', label: 'Blogs/Forums', labelKey: 'mentions.sourceType.blog', icon: FileText, color: 'text-green-400', disabled: false },
+  { value: 'video', label: 'YouTube', labelKey: 'mentions.sourceType.video', icon: Youtube, color: 'text-red-400', disabled: false },
+  { value: 'rss', label: 'RSS', labelKey: 'mentions.sourceType.rss', icon: Rss, color: 'text-orange-400', disabled: false },
+  { value: 'facebook_page', label: 'Facebook', labelKey: 'mentions.sourceType.facebook_page', icon: Facebook, color: 'text-blue-500', disabled: true, msg: 'Kết nối', msgKey: 'mentions.sourceType.msg.connect' },
+  { value: 'instagram', label: 'Instagram', labelKey: 'mentions.sourceType.instagram', icon: Instagram, color: 'text-fuchsia-500', disabled: true, msg: 'Kết nối', msgKey: 'mentions.sourceType.msg.connect' },
+  { value: 'twitter', label: 'X/Twitter', labelKey: 'mentions.sourceType.twitter', icon: Twitter, color: 'text-sky-400', disabled: true, msg: 'Sắp hỗ trợ', msgKey: 'mentions.sourceType.msg.comingSoon' },
+  { value: 'reddit', label: 'Reddit', labelKey: 'mentions.sourceType.reddit', icon: Globe, color: 'text-orange-400', disabled: true, msg: 'Sắp hỗ trợ', msgKey: 'mentions.sourceType.msg.comingSoon' },
+  { value: 'tiktok', label: 'TikTok', labelKey: 'mentions.sourceType.tiktok', icon: Video, color: 'text-pink-400', disabled: true, msg: 'Kết nối', msgKey: 'mentions.sourceType.msg.connect' },
+  { value: 'podcast', label: 'Podcasts', labelKey: 'mentions.sourceType.podcast', icon: Mic, color: 'text-purple-400', disabled: true, msg: 'Sắp hỗ trợ', msgKey: 'mentions.sourceType.msg.comingSoon' },
 ];
 
 const SORT_OPTIONS = [
-  { value: 'newest', label: 'Mới nhất' },
-  { value: 'oldest', label: 'Cũ nhất' },
-  { value: 'risk_high', label: 'Risk cao → thấp' },
-  { value: 'risk_low', label: 'Risk thấp → cao' },
-  { value: 'influence_high', label: 'Ảnh hưởng cao' },
-  { value: 'engagement_high', label: 'Tương tác cao' },
+  { value: 'newest', label: 'Mới nhất', labelKey: 'mentions.sort.newest' },
+  { value: 'oldest', label: 'Cũ nhất', labelKey: 'mentions.sort.oldest' },
+  { value: 'risk_high', label: 'Risk cao → thấp', labelKey: 'mentions.sort.risk_high' },
+  { value: 'risk_low', label: 'Risk thấp → cao', labelKey: 'mentions.sort.risk_low' },
+  { value: 'influence_high', label: 'Ảnh hưởng cao', labelKey: 'mentions.sort.influence_high' },
+  { value: 'engagement_high', label: 'Tương tác cao', labelKey: 'mentions.sort.engagement_high' },
 ];
 
 const RISK_PRESETS = [
-  { value: null, label: 'Tất cả' },
+  { value: null, label: 'Tất cả', labelKey: 'mentions.risk.all' },
   { value: 40, label: '≥ 40' },
   { value: 60, label: '≥ 60' },
   { value: 80, label: '≥ 80' },
@@ -173,18 +174,18 @@ function SentimentDot({ sentiment }: { sentiment: string | null }) {
   return <span className={`w-2 h-2 rounded-full ${opt.dot} inline-block`} />;
 }
 
-function formatRelativeTime(dateStr: string | null) {
+function formatRelativeTime(dateStr: string | null, t?: any) {
   if (!dateStr) return '';
   const d = new Date(dateStr);
   const now = new Date();
   const diffMs = now.getTime() - d.getTime();
   const diffMin = Math.floor(diffMs / 60000);
-  if (diffMin < 1) return 'Vừa xong';
-  if (diffMin < 60) return `${diffMin} phút trước`;
+  if (diffMin < 1) return t ? t('mentions.time.justNow') : 'Vừa xong';
+  if (diffMin < 60) return `${diffMin} ${t ? t('mentions.time.minutesAgo') : 'phút trước'}`;
   const diffHours = Math.floor(diffMin / 60);
-  if (diffHours < 24) return `${diffHours} giờ trước`;
+  if (diffHours < 24) return `${diffHours} ${t ? t('mentions.time.hoursAgo') : 'giờ trước'}`;
   const diffDays = Math.floor(diffHours / 24);
-  if (diffDays < 7) return `${diffDays} ngày trước`;
+  if (diffDays < 7) return `${diffDays} ${t ? t('mentions.time.daysAgo') : 'ngày trước'}`;
   return d.toLocaleDateString('vi-VN');
 }
 
@@ -225,12 +226,12 @@ function getSafeUrl(url: string | null | undefined): string | null {
   return getSafeVisitUrl(url) || null;
 }
 
-function getSourceIntegrityLabel(level: string | null | undefined): { label: string; color: string; title: string } | null {
+function getSourceIntegrityLabel(level: string | null | undefined, t?: any): { label: string; color: string; title: string } | null {
   switch (level) {
     case 'high': return null; // No badge for high confidence — expected baseline
-    case 'medium': return { label: '\u25cf', color: 'text-yellow-400', title: 'Nguồn: độ tin cậy trung bình' };
-    case 'low': return { label: '\u25cf', color: 'text-orange-500', title: 'Nguồn: độ tin cậy thấp — link có thể không chính xác' };
-    case 'unavailable': return { label: '\u25cf', color: 'text-gray-500', title: 'Nguồn: không xác minh được' };
+    case 'medium': return { label: '\u25cf', color: 'text-yellow-400', title: t ? t('mentions.trust.medium') : 'Nguồn: độ tin cậy trung bình' };
+    case 'low': return { label: '\u25cf', color: 'text-orange-500', title: t ? t('mentions.trust.low') : 'Nguồn: độ tin cậy thấp — link có thể không chính xác' };
+    case 'unavailable': return { label: '\u25cf', color: 'text-gray-500', title: t ? t('mentions.trust.unavailable') : 'Nguồn: không xác minh được' };
     default: return null;
   }
 }
@@ -254,12 +255,24 @@ import { getMentionSourceLabel } from '@/lib/utils/mentions';
    ═══════════════════════════════════════════════════════════════════════════ */
 
 function MentionsPageContent() {
+  const { t } = useLanguage();
   const searchParams = useSearchParams();
   const router = useRouter();
   const initialJobId = searchParams?.get('job_id');
   const initialSearch = searchParams?.get('q') || searchParams?.get('keyword');
 
   const initialProjectId = searchParams?.get('project_id');
+
+  const translatedSortOptions = React.useMemo(() => SORT_OPTIONS.map(opt => ({
+    ...opt,
+    label: opt.labelKey ? t(opt.labelKey) : opt.label
+  })), [t]);
+
+  const translatedSourceTypeOptions = React.useMemo(() => SOURCE_TYPE_OPTIONS.map(opt => ({
+    ...opt,
+    label: opt.labelKey ? t(opt.labelKey) : opt.label,
+    msg: opt.msgKey ? t(opt.msgKey) : opt.msg
+  })), [t]);
 
   // Data
   const [mentionsList, setMentionsList] = useState<MentionItem[]>([]);
@@ -1096,7 +1109,7 @@ function MentionsPageContent() {
           hasActiveFilters={!!hasActiveFilters}
           sortValue={filters.sort_by}
           onSortChange={(val) => { setFilters({ ...filters, sort_by: val }); setPage(1); }}
-          sortOptions={SORT_OPTIONS}
+          sortOptions={translatedSortOptions}
           sortOpen={sortOpen}
           setSortOpen={setSortOpen}
         />
@@ -1118,27 +1131,27 @@ function MentionsPageContent() {
           <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600 dark:text-slate-500 dark:text-gray-400">
             {searchTerm && (
               <span className="font-medium bg-white dark:bg-[#050A15] border border-gray-200 dark:border-white/10 px-3 py-1.5 rounded-lg shadow-sm">
-                Tìm thấy <span className="font-bold text-slate-900 dark:text-white">{totalMentions}</span> kết quả cho <span className="text-blue-600 font-bold">'{searchTerm}'</span>
+                Tìm thấy <span className="font-bold text-slate-900 dark:text-white">{totalMentions}</span> {t('mentions.page.resultsFor')} <span className="text-blue-600 font-bold">'{searchTerm}'</span>
               </span>
             )}
 
             {activeScanJobId && (
               <span className="flex items-center gap-1.5 text-blue-600 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/50 px-3 py-1.5 rounded-lg shadow-sm">
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                Đang quét thêm nguồn mới để mở rộng kết quả...
+                {t('mentions.page.scanningNew')}
               </span>
             )}
 
             {!activeScanJobId && scanJobStatus && scanJobStatus.status === 'COMPLETED' && (
               <span className="flex items-center gap-1.5 text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800/50 px-3 py-1.5 rounded-lg shadow-sm">
                 <CheckCircle2 className="w-3.5 h-3.5" />
-                Quét xong: tìm thấy {scanJobStatus.meta_data?.actual_raw_results_count || 0}, thêm mới {scanJobStatus.meta_data?.created_mentions_count || 0}, bỏ qua {scanJobStatus.meta_data?.duplicate_mentions_count || 0} trùng lặp.
+                {t('mentions.page.scanComplete')} {scanJobStatus.meta_data?.actual_raw_results_count || 0}, {t('mentions.page.scanNew')} {scanJobStatus.meta_data?.created_mentions_count || 0}, {t('mentions.page.scanSkip')} {scanJobStatus.meta_data?.duplicate_mentions_count || 0} {t('mentions.page.scanDuplicate')}.
               </span>
             )}
             {!activeScanJobId && scanJobStatus && scanJobStatus.status === 'PARTIAL_FAILED' && (
               <span className="flex items-center gap-1.5 text-orange-600 bg-orange-50 dark:bg-orange-900/20 border border-orange-100 dark:border-orange-800/50 px-3 py-1.5 rounded-lg shadow-sm">
                 <AlertTriangle className="w-3.5 h-3.5" />
-                Quét xong (có lỗi 1 phần): tìm thấy {scanJobStatus.meta_data?.actual_raw_results_count || 0}, thêm mới {scanJobStatus.meta_data?.created_mentions_count || 0}.
+                {t('mentions.page.scanPartialFail')} {scanJobStatus.meta_data?.actual_raw_results_count || 0}, thêm mới {scanJobStatus.meta_data?.created_mentions_count || 0}.
               </span>
             )}
           </div>
@@ -1243,9 +1256,9 @@ function MentionsPageContent() {
                </>
              ) : (
                <>
-                 <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-sm bg-emerald-500"></span><span className="text-xs font-bold text-emerald-600">Tích cực</span></div>
-                 <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-sm bg-gray-400"></span><span className="text-xs font-bold text-gray-500">Trung lập</span></div>
-                 <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-sm bg-rose-500"></span><span className="text-xs font-bold text-rose-600">Tiêu cực</span></div>
+                 <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-sm bg-emerald-500"></span><span className="text-xs font-bold text-emerald-600">{t('mentions.sentiment.positive')}</span></div>
+                 <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-sm bg-gray-400"></span><span className="text-xs font-bold text-gray-500">{t('mentions.sentiment.neutral')}</span></div>
+                 <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-sm bg-rose-500"></span><span className="text-xs font-bold text-rose-600">{t('mentions.sentiment.negative')}</span></div>
                </>
              )}
           </div>
@@ -1314,19 +1327,19 @@ function MentionsPageContent() {
               {loading && mentionsList.length > 0 && (
                 <div className="sticky top-0 z-10 flex items-center justify-center py-2 text-blue-600 bg-blue-50/90 dark:bg-blue-900/40 backdrop-blur-sm border border-blue-100 dark:border-blue-800/50 text-sm font-medium gap-2 rounded-lg shadow-sm">
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  {searchTerm ? `Đang cập nhật kết quả cho "${searchTerm}"...` : 'Đang cập nhật danh sách...'}
+                  {searchTerm ? `${t('mentions.page.updatingResultsFor')} "${searchTerm}"...` : t('mentions.page.updatingList')}
                 </div>
               )}
               {searchState === 'TYPING' && !loading && mentionsList.length > 0 && (
                 <div className="sticky top-0 z-10 flex items-center justify-center py-2 text-gray-500 bg-gray-50/90 dark:bg-gray-800/40 backdrop-blur-sm border border-gray-100 dark:border-slate-300 dark:border-gray-700 text-sm font-medium gap-2 rounded-lg shadow-sm">
-                  <Loader2 className="w-4 h-4 animate-spin" /> Đang nhập từ khóa...
+                  <Loader2 className="w-4 h-4 animate-spin" /> {t('mentions.page.typing')}
                 </div>
               )}
               {['AUTO_SCAN_STARTING', 'AUTO_SCAN_RUNNING'].includes(searchState) && (
                 <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/50 rounded-lg p-3 mb-4 flex items-center gap-3">
                   <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />
                   <span className="text-sm text-blue-800 dark:text-blue-300 font-medium">
-                    Hệ thống đang tự động quét thêm kết quả mới cho '{searchTerm}' ở chế độ nền...
+                    {t('mentions.page.autoScanningBg')} '{searchTerm}' {t('mentions.page.autoScanningSuffix')}
                   </span>
                 </div>
               )}
@@ -1336,16 +1349,16 @@ function MentionsPageContent() {
                     <div className="flex items-center gap-2">
                       <Sparkles className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                       <span className="text-sm text-emerald-800 dark:text-emerald-300 font-bold">
-                        Quét hoàn tất (Job #{scanJobStatus.job_id})
+                        {t('mentions.page.scanDone')} (Job #{scanJobStatus.job_id})
                       </span>
                     </div>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 text-sm text-emerald-800 dark:text-emerald-200/80">
-                    <div><span className="font-semibold text-emerald-900 dark:text-emerald-100">Query gốc:</span> {scanJobStatus.meta_data?.query || searchTerm}</div>
-                    <div><span className="font-semibold text-emerald-900 dark:text-emerald-100">Nguồn quét:</span> {scanJobStatus.summary?.adapters_ready?.join(', ') || 'Tất cả'}</div>
-                    <div><span className="font-semibold text-emerald-900 dark:text-emerald-100">Kết quả (Raw):</span> {scanJobStatus.summary?.serpapi_result_count || 0}</div>
-                    <div><span className="font-semibold text-emerald-900 dark:text-emerald-100">Tạo mới:</span> <span className="font-bold text-emerald-600 dark:text-emerald-400">{scanJobStatus.summary?.new_mentions_created || 0} mentions</span></div>
-                    <div><span className="font-semibold text-emerald-900 dark:text-emerald-100">Bỏ qua (Duplicate):</span> {scanJobStatus.summary?.duplicates_skipped || 0}</div>
+                    <div><span className="font-semibold text-emerald-900 dark:text-emerald-100">{t('mentions.page.originalQuery')}</span> {scanJobStatus.meta_data?.query || searchTerm}</div>
+                    <div><span className="font-semibold text-emerald-900 dark:text-emerald-100">{t('mentions.page.scanSource')}</span> {scanJobStatus.summary?.adapters_ready?.join(', ') || 'Tất cả'}</div>
+                    <div><span className="font-semibold text-emerald-900 dark:text-emerald-100">{t('mentions.page.rawResults')}</span> {scanJobStatus.summary?.serpapi_result_count || 0}</div>
+                    <div><span className="font-semibold text-emerald-900 dark:text-emerald-100">{t('mentions.page.newCreated')}</span> <span className="font-bold text-emerald-600 dark:text-emerald-400">{scanJobStatus.summary?.new_mentions_created || 0} mentions</span></div>
+                    <div><span className="font-semibold text-emerald-900 dark:text-emerald-100">{t('mentions.page.skipDuplicate')}</span> {scanJobStatus.summary?.duplicates_skipped || 0}</div>
                   </div>
                 </div>
               )}
@@ -1371,7 +1384,7 @@ function MentionsPageContent() {
                          }
                       }}
                     >
-                      <option value="">-- Cảm xúc --</option>
+                      <option value="">-- {t('mentions.page.sentimentTitle')} --</option>
                       <option value="positive">Tích cực</option>
                       <option value="neutral">Trung lập</option>
                       <option value="negative">Tiêu cực</option>
@@ -1403,7 +1416,7 @@ function MentionsPageContent() {
 const getMentionSourceLabel = (mention: any) => {
   if (mention.source_name && mention.source_name.trim() !== '') return mention.source_name;
   if (mention.domain && mention.domain.trim() !== '') return mention.domain;
-  return mention.source_type || 'Unknown Source';
+  return mention.source_type || t('mentions.page.unknownSource');
 };
 
 const extractDomain = (url: string | null | undefined) => {
@@ -1418,8 +1431,8 @@ const extractDomain = (url: string | null | undefined) => {
 
 const getSourceIntegrityLabel = (level: string | null | undefined) => {
   switch (level) {
-    case 'high': return { label: 'Trusted', color: 'bg-emerald-50 text-emerald-600 border-emerald-200 px-1.5 py-0.5 rounded border font-bold', title: 'Nguồn được xác thực an toàn' };
-    case 'low': return { label: 'Low Trust', color: 'bg-amber-50 text-amber-600 border-amber-200 px-1.5 py-0.5 rounded border font-bold', title: 'Nguồn có độ tin cậy thấp' };
+    case 'high': return { label: t('mentions.trust.high'), color: 'bg-emerald-50 text-emerald-600 border-emerald-200 px-1.5 py-0.5 rounded border font-bold', title: t('mentions.trust.safe') };
+    case 'low': return { label: t('mentions.trust.low'), color: 'bg-amber-50 text-amber-600 border-amber-200 px-1.5 py-0.5 rounded border font-bold', title: t('mentions.trust.low') };
     default: return null;
   }
 };
@@ -1447,15 +1460,15 @@ return (
                         {(() => {
                           const isLowConfidence = mention.source_confidence === 'low' || (typeof mention.source_confidence === 'number' && mention.source_confidence < 0.5);
                           if (typeof mention.source_confidence !== 'undefined' && !isLowConfidence) {
-                             return <span className="text-[10px] bg-emerald-50 text-emerald-600 border border-emerald-200 px-1.5 py-0.5 rounded font-bold" title="Độ tin cậy cao">Trusted</span>;
+                             return <span className="text-[10px] bg-emerald-50 text-emerald-600 border border-emerald-200 px-1.5 py-0.5 rounded font-bold" title={t('mentions.trust.safe')}>{t('mentions.trust.high')}</span>;
                           }
                           if (isLowConfidence) {
-                             return <span className="text-[10px] bg-amber-50 text-amber-600 border border-amber-200 px-1.5 py-0.5 rounded font-bold" title="Độ tin cậy thấp">Low Trust</span>;
+                             return <span className="text-[10px] bg-amber-50 text-amber-600 border border-amber-200 px-1.5 py-0.5 rounded font-bold" title={t('mentions.trust.low')}>{t('mentions.trust.low')}</span>;
                           }
                           return null;
                         })()}
                         {activeScanJobId && mention.job_id === activeScanJobId && (
-                           <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-[10px] uppercase font-extrabold px-1.5 py-0.5 rounded-sm shrink-0 border border-blue-200 dark:border-blue-800">New</span>
+                           <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-[10px] uppercase font-extrabold px-1.5 py-0.5 rounded-sm shrink-0 border border-blue-200 dark:border-blue-800">{t('mentions.page.newBadge')}</span>
                         )}
                       </div>
                       <span className="text-[11px] text-slate-500 dark:text-zinc-400 font-medium tracking-wider uppercase">
@@ -1542,13 +1555,13 @@ return (
 
                   <div className="flex-1 min-w-0">
                     <h3 className="text-base font-bold text-slate-900 dark:text-white line-clamp-2 leading-tight" title={mention.title || mention.author || 'Unknown Author'}>
-                       {mention.title ? highlightText(mention.title, searchTerm) : <span className="text-slate-400 italic">Không có tiêu đề</span>}
+                       {mention.title ? highlightText(mention.title, searchTerm) : <span className="text-slate-400 italic">{t('mentions.page.noTitle')}</span>}
                     </h3>
 
                     <p className="text-sm text-slate-600 dark:text-zinc-300 mt-2 line-clamp-3 leading-relaxed">
                       {(() => {
                          const contentStr = mention.snippet || mention.content || '';
-                         if (!contentStr) return <span className="italic">Không có mô tả từ nguồn gốc.</span>;
+                         if (!contentStr) return <span className="italic">{t('mentions.page.noDescription')}</span>;
                          
                          // Deduplicate if content starts with title
                          let displayStr = contentStr;
@@ -1558,7 +1571,7 @@ return (
                                  displayStr = displayStr.substring(1).trim();
                              }
                          }
-                         if (!displayStr) return <span className="italic">Không có mô tả từ nguồn gốc.</span>;
+                         if (!displayStr) return <span className="italic">{t('mentions.page.noDescription')}</span>;
                          return highlightText(displayStr.length > 300 ? displayStr.substring(0, 300) + '...' : displayStr, searchTerm);
                       })()}
                     </p>
@@ -1744,15 +1757,15 @@ return (
         <div className="bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10 p-4">
            <div className="flex items-center gap-2 mb-3">
              <Calendar className="w-4 h-4 text-slate-500 dark:text-gray-400" />
-             <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100">Thời gian</h3>
+             <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100">{t('mentions.page.timeRange')}</h3>
            </div>
            <div className="flex flex-wrap gap-1.5">
              {[
-               { value: '1d', label: 'Hôm nay' },
-               { value: '7d', label: '7N' },
-               { value: '30d', label: '30N' },
-               { value: '90d', label: '90N' },
-               { value: 'all', label: 'Tất cả' },
+               { value: '1d', label: t('mentions.page.today') },
+               { value: '7d', label: t('mentions.page.7d') },
+               { value: '30d', label: t('mentions.page.30d') },
+               { value: '90d', label: t('mentions.page.90d') },
+               { value: 'all', label: t('mentions.page.all') },
              ].map((opt) => (
                <button
                  key={opt.value}
@@ -1786,7 +1799,7 @@ return (
            </div>
            {/* Active Sources — vertical list */}
            <div className="flex flex-col gap-1.5">
-             {SOURCE_TYPE_OPTIONS.filter(s => !s.disabled).map((src) => {
+             {translatedSourceTypeOptions.filter(s => !s.disabled).map((src) => {
                const currentSources = filters.source_type ? filters.source_type.split(',') : [];
                const isSelected = currentSources.includes(src.value);
                const count = sourceCounts[src.value] || 0;
@@ -1820,8 +1833,8 @@ return (
            </div>
            {/* Unavailable / Connector Sources */}
            <div className="mt-4 pt-3 border-t border-gray-100 dark:border-white/5 flex flex-col gap-1.5">
-             <div className="text-[11px] text-slate-500 dark:text-gray-400 dark:text-gray-500 font-bold uppercase tracking-wider mb-1 px-1">Nguồn kết nối</div>
-             {SOURCE_TYPE_OPTIONS.filter(s => s.disabled).map((src) => (
+             <div className="text-[11px] text-slate-500 dark:text-gray-400 dark:text-gray-500 font-bold uppercase tracking-wider mb-1 px-1">{t('mentions.page.connectorSources')}</div>
+             {translatedSourceTypeOptions.filter(s => s.disabled).map((src) => (
                  <div
                    key={src.value}
                    className="flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium border border-transparent bg-gray-50 dark:bg-[#0a0f1c] text-slate-500 dark:text-gray-400 dark:text-gray-500"

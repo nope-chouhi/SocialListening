@@ -1,4 +1,66 @@
 export const vi = {
+  summary: {
+    page: {
+        title: "Analysis Summary",
+        subtitle: "Phân tích chuyên sâu về dữ liệu Social Listening",
+        refresh: "Làm mới",
+        loading: "Đang tải dữ liệu phân tích...",
+        totalMentions: "Tổng Mentions",
+        positive: "Tích cực",
+        negative: "Tiêu cực",
+        neutral: "Trung lập",
+        aiTitle: "AI Executive Summary",
+        aiButton: "Tạo AI Summary",
+        aiLoading: "Đang tạo...",
+        noData: "Chưa có mentions để tóm tắt. Hãy chạy scan để thu thập dữ liệu trước.",
+        aiPrompt: "Nhấn 'Tạo AI Summary' để phân tích",
+        aiPromptSuffix: "mentions bằng AI.",
+        sentimentTitle: "Sentiment Breakdown",
+        noDataShort: "Chưa có dữ liệu",
+        trendTitle: "Trend (từ {start} đến {end})",
+        trendDefault: "Trend 7 ngày qua",
+        sourcesTitle: "Phân bố nguồn",
+        noSourceData: "Chưa có dữ liệu nguồn",
+        errFetch: "Lỗi tải dữ liệu phân tích",
+        errSelectProject: "Vui lòng chọn project trước",
+        errNoMentions: "Không có mentions để tóm tắt",
+        errNoResult: "Không có kết quả",
+        errAiFail: "Không tạo được tóm tắt AI lúc này",
+        aiOverview: "TỔNG QUAN:",
+        aiEvaluation: "ĐÁNH GIÁ TÌNH HÌNH:",
+        aiTopics: "CHỦ ĐỀ NỔI BẬT:",
+        aiRisks: "RỦI RO:",
+        aiActions: "HÀNH ĐỘNG ĐỀ XUẤT:",
+        aiDataNotes: "GHI CHÚ DỮ LIỆU:",
+        aiAnalyzed: "(Đã phân tích",
+        aiAt: "mentions vào lúc"
+    }
+},
+
+  comparison: {
+    page: {
+        title: "Comparison",
+        subtitle: "So sánh mentions, sentiment giữa các projects.",
+        errSelect: "Vui lòng chọn 2 project để so sánh",
+        errSame: "Hãy chọn 2 project khác nhau",
+        errFetch: "Lỗi khi tải dữ liệu so sánh",
+        selectTitle: "Chọn 2 Projects để So sánh",
+        needMoreProjects: "Tính năng này yêu cầu ít nhất 2 dự án. Hiện tại bạn mới có",
+        needMoreProjectsSuffix: "dự án.",
+        selectA: "-- Chọn Project A --",
+        selectB: "-- Chọn Project B --",
+        compareButton: "So sánh",
+        totalMentions: "Tổng Mentions",
+        posMentions: "Mentions Tích cực",
+        negMentions: "Mentions Tiêu cực",
+        trendTitle: "Trend theo ngày",
+        trendNoData: "Không đủ dữ liệu để so sánh. Hãy chạy scan hoặc background collection.",
+        sourceSuffix: "— Nguồn",
+        sourceNoData: "Chưa có dữ liệu",
+        guide: "Chọn 2 projects và nhấn 'So sánh' để xem kết quả."
+    }
+},
+
   nav: {
     dashboard: 'Dashboard',
     mentions: 'Mentions',

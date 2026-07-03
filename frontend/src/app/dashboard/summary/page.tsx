@@ -4,9 +4,11 @@ import { useState, useEffect } from 'react';
 import { PieChart, BarChart3, TrendingUp, TrendingDown, Sparkles, RefreshCcw, Globe } from 'lucide-react';
 import { mentions as mentionsApi } from '@/lib/api';
 import { useProject } from '@/contexts/ProjectContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import toast from 'react-hot-toast';
 
 export default function AnalysisPage() {
+  const { t } = useLanguage();
   const { activeProject } = useProject();
   const [summary, setSummary] = useState<any>(null);
   const [aiText, setAiText] = useState<string | null>(null);
@@ -23,7 +25,7 @@ export default function AnalysisPage() {
       const data = await mentionsApi.summary(activeProject?.id);
       setSummary(data);
     } catch (error) {
-      toast.error('Lỗi tải dữ liệu phân tích');
+      toast.error(t('summary.page.errFetch'));
     } finally {
       setLoading(false);
     }
@@ -31,32 +33,32 @@ export default function AnalysisPage() {
 
   const handleAiSummary = async () => {
     if (!activeProject?.id) {
-      toast.error('Vui lòng chọn project trước');
+      toast.error(t('summary.page.errSelectProject'));
       return;
     }
     if (!summary || summary.total === 0) {
-      toast.error('Không có mentions để tóm tắt');
+      toast.error(t('summary.page.errNoMentions'));
       return;
     }
     try {
       setAiLoading(true);
       const res = await mentionsApi.summarize({ project_id: activeProject.id });
       if (res && typeof res === 'object' && res.summary) {
-        let text = `TỔNG QUAN:\n${res.summary}\n\n`;
-        if (res.sentiment_insights) text += `ĐÁNH GIÁ TÌNH HÌNH:\n${res.sentiment_insights}\n\n`;
-        if (res.top_topics?.length) text += `CHỦ ĐỀ NỔI BẬT:\n- ${res.top_topics.join('\n- ')}\n\n`;
-        if (res.risks?.length) text += `RỦI RO:\n${res.risks.map((r: any) => `- [${(r.level || '').toUpperCase()}] ${r.title}: ${r.reason}`).join('\n')}\n\n`;
-        if (res.recommended_actions?.length) text += `HÀNH ĐỘNG ĐỀ XUẤT:\n- ${res.recommended_actions.join('\n- ')}\n\n`;
-        if (res.data_quality_notes) text += `GHI CHÚ DỮ LIỆU:\n${res.data_quality_notes}\n\n`;
-        text += `(Đã phân tích ${res.mentions_analyzed || 0} mentions vào lúc ${res.generated_at || new Date().toLocaleString()})`;
+        let text = `${t('summary.page.aiOverview')}\n${res.summary}\n\n`;
+        if (res.sentiment_insights) text += `${t('summary.page.aiEvaluation')}\n${res.sentiment_insights}\n\n`;
+        if (res.top_topics?.length) text += `${t('summary.page.aiTopics')}\n- ${res.top_topics.join('\n- ')}\n\n`;
+        if (res.risks?.length) text += `${t('summary.page.aiRisks')}\n${res.risks.map((r: any) => `- [${(r.level || '').toUpperCase()}] ${r.title}: ${r.reason}`).join('\n')}\n\n`;
+        if (res.recommended_actions?.length) text += `${t('summary.page.aiActions')}\n- ${res.recommended_actions.join('\n- ')}\n\n`;
+        if (res.data_quality_notes) text += `${t('summary.page.aiDataNotes')}\n${res.data_quality_notes}\n\n`;
+        text += `${t('summary.page.aiAnalyzed')} ${res.mentions_analyzed || 0} ${t('summary.page.aiAt')} ${res.generated_at || new Date().toLocaleString()})`;
         setAiText(text);
       } else {
-        setAiText(res.summary || res.result || 'Không có kết quả');
+        setAiText(res.summary || res.result || t('summary.page.errNoResult'));
       }
     } catch (error: any) {
       console.error('[API Error] POST /api/mentions/summarize ->', error?.response?.status || error.message);
       const detail = error?.response?.data?.detail || '';
-      toast.error(detail || 'Không tạo được tóm tắt AI lúc này');
+      toast.error(detail || t('summary.page.errAiFail'));
     } finally {
       setAiLoading(false);
     }
@@ -84,10 +86,10 @@ export default function AnalysisPage() {
         <div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-wide flex items-center gap-2">
             <PieChart className="w-6 h-6 text-indigo-500" />
-            Analysis Summary
+            {t('summary.page.title')}
           </h1>
           <p className="text-sm text-gray-600 dark:text-slate-500 dark:text-gray-400 mt-1">
-            Phân tích chuyên sâu về dữ liệu Social Listening
+            {t('summary.page.subtitle')}
             {activeProject ? ` — ${activeProject.name}` : ''}.
           </p>
         </div>
@@ -97,23 +99,23 @@ export default function AnalysisPage() {
           className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50"
         >
           <RefreshCcw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          Làm mới
+          {t('summary.page.refresh')}
         </button>
       </div>
 
       {loading ? (
         <div className="flex items-center justify-center h-64 text-gray-500">
-          <RefreshCcw className="w-5 h-5 mr-2 animate-spin" /> Đang tải dữ liệu phân tích...
+          <RefreshCcw className="w-5 h-5 mr-2 animate-spin" /> {t('summary.page.loading')}
         </div>
       ) : (
         <>
           {/* KPI row */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {[
-              { label: 'Tổng Mentions', value: total, color: 'text-indigo-600', bg: 'bg-indigo-50 dark:bg-indigo-500/10', icon: BarChart3 },
-              { label: 'Tích cực', value: positive, color: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-500/10', icon: TrendingUp },
-              { label: 'Tiêu cực', value: negative, color: 'text-rose-600', bg: 'bg-rose-50 dark:bg-rose-500/10', icon: TrendingDown },
-              { label: 'Trung lập', value: neutral, color: 'text-gray-600', bg: 'bg-gray-50 dark:bg-gray-500/10', icon: BarChart3 },
+              { label: t('summary.page.totalMentions'), value: total, color: 'text-indigo-600', bg: 'bg-indigo-50 dark:bg-indigo-500/10', icon: BarChart3 },
+              { label: t('summary.page.positive'), value: positive, color: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-500/10', icon: TrendingUp },
+              { label: t('summary.page.negative'), value: negative, color: 'text-rose-600', bg: 'bg-rose-50 dark:bg-rose-500/10', icon: TrendingDown },
+              { label: t('summary.page.neutral'), value: neutral, color: 'text-gray-600', bg: 'bg-gray-50 dark:bg-gray-500/10', icon: BarChart3 },
             ].map((kpi) => (
               <div key={kpi.label} className={`${kpi.bg} rounded-xl p-4 border border-gray-200 dark:border-white/10`}>
                 <div className="flex items-center gap-2 mb-2">
@@ -133,7 +135,7 @@ export default function AnalysisPage() {
                   <div className="p-2 bg-indigo-500/20 rounded-lg border border-indigo-500/30">
                     <Sparkles className="w-5 h-5 text-indigo-500" />
                   </div>
-                  <h2 className="text-lg font-bold text-indigo-700 dark:text-indigo-300">AI Executive Summary</h2>
+                  <h2 className="text-lg font-bold text-indigo-700 dark:text-indigo-300">{t('summary.page.aiTitle')}</h2>
                 </div>
                 <button
                   onClick={handleAiSummary}
@@ -141,7 +143,7 @@ export default function AnalysisPage() {
                   className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-lg disabled:opacity-50 transition-colors"
                 >
                   {aiLoading ? <RefreshCcw className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-                  {aiLoading ? 'Đang tạo...' : 'Tạo AI Summary'}
+                  {aiLoading ? t('summary.page.aiLoading') : t('summary.page.aiButton')}
                 </button>
               </div>
               {aiText ? (
@@ -149,17 +151,17 @@ export default function AnalysisPage() {
                   {aiText}
                 </div>
               ) : total === 0 ? (
-                <p className="text-gray-600 dark:text-slate-500 dark:text-gray-400 text-sm">Chưa có mentions để tóm tắt. Hãy chạy scan để thu thập dữ liệu trước.</p>
+                <p className="text-gray-600 dark:text-slate-500 dark:text-gray-400 text-sm">{t('summary.page.noData')}</p>
               ) : (
-                <p className="text-gray-600 dark:text-slate-500 dark:text-gray-400 text-sm">Nhấn "Tạo AI Summary" để phân tích {total} mentions bằng AI.</p>
+                <p className="text-gray-600 dark:text-slate-500 dark:text-gray-400 text-sm">{t('summary.page.aiPrompt')} {total} {t('summary.page.aiPromptSuffix')}</p>
               )}
             </div>
 
             {/* Sentiment Donut */}
             <div className="bg-white dark:bg-[#050A15] rounded-2xl shadow-sm border border-gray-100 dark:border-white/10 p-6">
-              <h2 className="text-base font-bold text-slate-900 dark:text-white mb-4">Sentiment Breakdown</h2>
+              <h2 className="text-base font-bold text-slate-900 dark:text-white mb-4">{t('summary.page.sentimentTitle')}</h2>
               {total === 0 ? (
-                <p className="text-slate-500 dark:text-gray-400 text-sm text-center py-8">Chưa có dữ liệu</p>
+                <p className="text-slate-500 dark:text-gray-400 text-sm text-center py-8">{t('summary.page.noDataShort')}</p>
               ) : (
                 <>
                   <div className="relative h-40 flex items-center justify-center mb-4">
@@ -188,9 +190,9 @@ export default function AnalysisPage() {
                   </div>
                   <div className="space-y-2 text-sm">
                     {[
-                      { label: 'Tích cực', pct: sentimentPct.pos, count: positive, color: 'bg-emerald-500' },
-                      { label: 'Tiêu cực', pct: sentimentPct.neg, count: negative, color: 'bg-rose-500' },
-                      { label: 'Trung lập', pct: sentimentPct.neu, count: neutral, color: 'bg-slate-400' },
+                      { label: t('summary.page.positive'), pct: sentimentPct.pos, count: positive, color: 'bg-emerald-500' },
+                      { label: t('summary.page.negative'), pct: sentimentPct.neg, count: negative, color: 'bg-rose-500' },
+                      { label: t('summary.page.neutral'), pct: sentimentPct.neu, count: neutral, color: 'bg-slate-400' },
                     ].map(s => (
                       <div key={s.label} className="flex items-center gap-2">
                         <div className={`w-2.5 h-2.5 rounded-full ${s.color}`} />
@@ -212,12 +214,12 @@ export default function AnalysisPage() {
                 <TrendingUp className="w-4 h-4 text-slate-500" />
                 <h2 className="text-base font-bold text-slate-900 dark:text-white">
                   {summary?.trend_start && summary?.trend_end 
-                    ? `Trend (từ ${summary.trend_start} đến ${summary.trend_end})` 
-                    : 'Trend 7 ngày qua'}
+                    ? t('summary.page.trendTitle').replace('{start}', summary.trend_start).replace('{end}', summary.trend_end)
+                    : t('summary.page.trendDefault')}
                 </h2>
               </div>
               {byDay.length === 0 ? (
-                <p className="text-slate-500 dark:text-gray-400 text-sm text-center py-8">Chưa có dữ liệu</p>
+                <p className="text-slate-500 dark:text-gray-400 text-sm text-center py-8">{t('summary.page.noDataShort')}</p>
               ) : (
                 <div className="flex items-end gap-2 h-40">
                   {byDay.map((d, i) => (
@@ -238,10 +240,10 @@ export default function AnalysisPage() {
             <div className="bg-white dark:bg-[#050A15] rounded-2xl shadow-sm border border-gray-100 dark:border-white/10 p-6">
               <h2 className="text-base font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
                 <Globe className="w-4 h-4 text-indigo-500" />
-                Phân bố nguồn
+                {t('summary.page.sourcesTitle')}
               </h2>
               {Object.keys(bySource).length === 0 ? (
-                <p className="text-slate-500 dark:text-gray-400 text-sm text-center py-8">Chưa có dữ liệu nguồn</p>
+                <p className="text-slate-500 dark:text-gray-400 text-sm text-center py-8">{t('summary.page.noSourceData')}</p>
               ) : (
                 <div className="space-y-3">
                   {Object.entries(bySource || {})
