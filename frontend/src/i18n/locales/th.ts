@@ -31,5 +31,18 @@ export const th = {
     save: 'บันทึก',
     delete: 'ลบ',
     confirm: 'ยืนยัน',
+    ok: 'ตกลง',
+    forbiddenTitle: 'ปฏิเสธการเข้าถึง',
+    forbiddenMessage: 'คุณไม่ได้รับอนุญาตให้เข้าถึงฟังก์ชันนี้',
+    backToDashboard: 'กลับสู่แดชบอร์ด',
+    initializing: 'กำลังเริ่มต้นระบบ...',
+    loadingWorkspace: 'กำลังโหลดข้อมูลและเตรียมพื้นที่ทำงานของคุณ...',
+    loadingData: 'กำลังโหลดข้อมูล...',
+    loading: 'กำลังโหลด...',
+    search: 'ค้นหา...',
+    noData: 'ไม่มีข้อมูล',
+    all: 'ทั้งหมด',
+    add: 'เพิ่ม',
+    update: 'อัปเดต',
   }
 };

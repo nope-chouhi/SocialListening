@@ -31,5 +31,18 @@ export const en = {
     save: 'Save',
     delete: 'Delete',
     confirm: 'Confirm',
+    ok: 'OK',
+    forbiddenTitle: 'Access Denied',
+    forbiddenMessage: 'You do not have permission to access this feature.',
+    backToDashboard: 'Back to Dashboard',
+    initializing: 'Initializing system...',
+    loadingWorkspace: 'Loading data and preparing your workspace...',
+    loadingData: 'Loading data...',
+    loading: 'Loading...',
+    search: 'Search...',
+    noData: 'No data available',
+    all: 'All',
+    add: 'Add',
+    update: 'Update',
   }
 };

@@ -31,5 +31,18 @@ export const ko = {
     save: '저장',
     delete: '삭제',
     confirm: '확인',
+    ok: 'OK',
+    forbiddenTitle: '접근 거부됨',
+    forbiddenMessage: '이 기능에 접근할 권한이 없습니다.',
+    backToDashboard: '대시보드로 돌아가기',
+    initializing: '시스템 초기화 중...',
+    loadingWorkspace: '데이터를 로드하고 작업 공간을 준비하는 중...',
+    loadingData: '데이터를 로드하는 중...',
+    loading: '로딩 중...',
+    search: '검색...',
+    noData: '데이터 없음',
+    all: '전체',
+    add: '추가',
+    update: '업데이트',
   }
 };

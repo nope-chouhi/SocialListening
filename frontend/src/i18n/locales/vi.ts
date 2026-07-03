@@ -31,5 +31,18 @@ export const vi = {
     save: 'Lưu',
     delete: 'Xóa',
     confirm: 'Xác nhận',
+    ok: 'OK',
+    forbiddenTitle: 'Truy cập bị từ chối',
+    forbiddenMessage: 'Bạn không có quyền truy cập chức năng này.',
+    backToDashboard: 'Quay về Dashboard',
+    initializing: 'Khởi tạo hệ thống...',
+    loadingWorkspace: 'Đang tải dữ liệu và chuẩn bị không gian làm việc của bạn...',
+    loadingData: 'Đang tải dữ liệu...',
+    loading: 'Đang tải...',
+    search: 'Tìm kiếm...',
+    noData: 'Không có dữ liệu',
+    all: 'Tất cả',
+    add: 'Thêm',
+    update: 'Cập nhật',
   }
 };

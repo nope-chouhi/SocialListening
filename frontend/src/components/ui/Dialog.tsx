@@ -2,6 +2,7 @@
 
 import React, { useState, useCallback, createContext, useContext, ReactNode, useEffect, useRef } from 'react';
 import { AlertTriangle, Trash2, Tag, Mail, CheckCircle2, X, Info, AlertCircle } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -110,6 +111,7 @@ function DialogOverlay({ children, onClose }: { children: ReactNode; onClose?: (
 function ConfirmDialog({
   opts, onConfirm, onCancel,
 }: { opts: ConfirmOptions; onConfirm: () => void; onCancel: () => void }) {
+  const { t } = useLanguage();
   const variant = opts.variant || 'danger';
   const cfg = variantConfig[variant];
 
@@ -135,13 +137,13 @@ function ConfirmDialog({
             onClick={onCancel}
             className="px-4 py-2 text-sm font-medium text-slate-500 dark:text-gray-400 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all"
           >
-            {opts.cancelText || 'Hủy'}
+            {opts.cancelText || t('common.cancel')}
           </button>
           <button
             onClick={onConfirm}
             className={`px-4 py-2 text-sm font-semibold text-white rounded-xl transition-all shadow-lg ${cfg.confirmBtn}`}
           >
-            {opts.confirmText || 'Xác nhận'}
+            {opts.confirmText || t('common.confirm')}
           </button>
         </div>
       </div>
@@ -154,6 +156,7 @@ function ConfirmDialog({
 function PromptDialog({
   opts, onConfirm, onCancel,
 }: { opts: PromptOptions; onConfirm: (val: string) => void; onCancel: () => void }) {
+  const { t } = useLanguage();
   const [value, setValue] = useState(opts.defaultValue || '');
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -196,13 +199,13 @@ function PromptDialog({
             onClick={onCancel}
             className="px-4 py-2 text-sm font-medium text-slate-500 dark:text-gray-400 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all"
           >
-            {opts.cancelText || 'Hủy'}
+            {opts.cancelText || t('common.cancel')}
           </button>
           <button
             onClick={() => onConfirm(value)}
             className="px-4 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-all shadow-lg shadow-indigo-900/30"
           >
-            {opts.confirmText || 'Xác nhận'}
+            {opts.confirmText || t('common.confirm')}
           </button>
         </div>
       </div>
@@ -215,6 +218,7 @@ function PromptDialog({
 function AlertDialog({
   opts, onClose,
 }: { opts: AlertOptions; onClose: () => void }) {
+  const { t } = useLanguage();
   const variant = opts.variant || 'info';
   const cfg = variantConfig[variant];
 
@@ -240,7 +244,7 @@ function AlertDialog({
             onClick={onClose}
             className={`px-5 py-2 text-sm font-semibold text-white rounded-xl transition-all shadow-lg ${cfg.confirmBtn}`}
           >
-            {opts.confirmText || 'OK'}
+            {opts.confirmText || t('common.ok')}
           </button>
         </div>
       </div>

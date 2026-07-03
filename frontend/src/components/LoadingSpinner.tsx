@@ -1,4 +1,5 @@
 'use client';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function LoadingSpinner({ 
   message = "Khởi tạo hệ thống...", 
@@ -7,6 +8,9 @@ export default function LoadingSpinner({
   message?: string;
   submessage?: string;
 }) {
+  const { t } = useLanguage();
+  const displayMessage = message || t('common.initializing');
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-[#F4F5F7] dark:bg-[#000511] overflow-hidden relative">
       {/* Background glow effects */}
@@ -30,7 +34,7 @@ export default function LoadingSpinner({
         {/* Text content with glassmorphism backing */}
         <div className="text-center bg-white/50 dark:bg-[#0a0f1c]/50 backdrop-blur-md px-8 py-6 rounded-2xl border border-white/40 dark:border-white/10 shadow-xl">
           <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-400 mb-3 tracking-tight">
-            {message}
+            {displayMessage}
           </h2>
           
           {submessage ? (
@@ -39,7 +43,7 @@ export default function LoadingSpinner({
             </p>
           ) : (
             <p className="text-sm text-gray-600 dark:text-slate-500 dark:text-gray-400 max-w-sm mx-auto leading-relaxed">
-              Đang tải dữ liệu và chuẩn bị không gian làm việc của bạn...
+              {t('common.loadingWorkspace')}
             </p>
           )}
 

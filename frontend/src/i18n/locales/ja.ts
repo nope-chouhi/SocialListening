@@ -31,5 +31,18 @@ export const ja = {
     save: '保存',
     delete: '削除',
     confirm: '確認',
+    ok: 'OK',
+    forbiddenTitle: 'アクセス拒否',
+    forbiddenMessage: 'この機能にアクセスする権限がありません。',
+    backToDashboard: 'ダッシュボードに戻る',
+    initializing: 'システムを初期化しています...',
+    loadingWorkspace: 'データを読み込み、ワークスペースを準備しています...',
+    loadingData: 'データを読み込んでいます...',
+    loading: '読み込み中...',
+    search: '検索...',
+    noData: 'データがありません',
+    all: 'すべて',
+    add: '追加',
+    update: '更新',
   }
 };

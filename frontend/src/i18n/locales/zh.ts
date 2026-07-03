@@ -31,5 +31,18 @@ export const zh = {
     save: '保存',
     delete: '删除',
     confirm: '确认',
+    ok: '确定',
+    forbiddenTitle: '拒绝访问',
+    forbiddenMessage: '您没有权限访问此功能。',
+    backToDashboard: '返回仪表板',
+    initializing: '正在初始化系统...',
+    loadingWorkspace: '正在加载数据并准备您的工作区...',
+    loadingData: '正在加载数据...',
+    loading: '加载中...',
+    search: '搜索...',
+    noData: '暂无数据',
+    all: '全部',
+    add: '添加',
+    update: '更新',
   }
 };

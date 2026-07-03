@@ -1,5 +1,6 @@
 import React from 'react';
 import { Loader2 } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface LoadingStateProps {
   message?: string;
@@ -7,9 +8,12 @@ interface LoadingStateProps {
 }
 
 export const LoadingState: React.FC<LoadingStateProps> = ({
-  message = 'Đang tải dữ liệu...',
+  message,
   variant = 'spinner',
 }) => {
+  const { t } = useLanguage();
+  const displayMessage = message || t('common.loadingData');
+
   if (variant === 'skeleton') {
     return (
       <div className="space-y-4 w-full p-2">
@@ -41,7 +45,7 @@ export const LoadingState: React.FC<LoadingStateProps> = ({
     <div className="flex flex-col items-center justify-center p-8 min-h-[250px] w-full">
       <Loader2 className="w-8 h-8 text-primary animate-spin mb-3" />
       <p className="text-xs font-semibold text-slate-500 dark:text-gray-400 tracking-wide uppercase">
-        {message}
+        {displayMessage}
       </p>
     </div>
   );
