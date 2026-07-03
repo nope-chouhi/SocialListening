@@ -67,6 +67,7 @@ export const th = {
     influencers: 'ผู้มีอิทธิพล & แหล่งที่มา',
     integrations: 'การรวมระบบ',
     projectSettings: 'การตั้งค่าโครงการ',
+    workspace: 'พื้นที่ทำงาน',
     reportsTitle: 'รายงาน',
     emailReports: 'รายงานทางอีเมล',
     pdfReport: 'รายงาน PDF',
@@ -135,7 +136,35 @@ export const th = {
       '30d': "30 วันที่ผ่านมา",
       '90d': "90 วันที่ผ่านมา",
       all: "ทั้งหมด",
-      connectorSources: "แหล่งที่มาตัวเชื่อมต่อ"
+      connectorSources: "แหล่งที่มาตัวเชื่อมต่อ",
+        mentionsAndReach: "การพูดถึงและการเข้าถึง",
+        sentimentChart: "แผนภูมิความรู้สึก",
+        chartNote: "หมายเหตุ: การวิเคราะห์ความรู้สึกประเมินจากข้อความเท่านั้น",
+        noChartData: "ไม่มีข้อมูลแผนภูมิ",
+        days: "วัน",
+        weeks: "สัปดาห์",
+        months: "เดือน",
+        loading: "กำลังโหลด...",
+        noProject: "ไม่มีโครงการ",
+        selectProject: "กรุณาเลือกโครงการ",
+        newProject: "โครงการใหม่"
+    },
+    sourceType: {
+      web: "Web",
+      news: "News",
+      blog: "Blog",
+      video: "Video",
+      rss: "RSS",
+      facebook_page: "Facebook Page",
+      instagram: "Instagram",
+      twitter: "Twitter/X",
+      reddit: "Reddit",
+      tiktok: "TikTok",
+      podcast: "Podcast",
+      msg: {
+        connect: "เชื่อมต่อ",
+        comingSoon: "เร็วๆ นี้"
+      }
     },
     time: {
       justNow: "เมื่อสักครู่",
@@ -150,6 +179,7 @@ export const th = {
       low: "ความน่าเชื่อถือต่ำ",
       unavailable: "ไม่สามารถยืนยันได้"
     },
+    searchPlaceholder: 'ค้นหา...',
     antiNoiseTitle: 'Anti-Noise',
     activeFeatures: 'คุณสมบัติที่ใช้งานอยู่:',
     filterByFeatures: 'กรองตามความรู้สึก, แหล่งที่มา, ความน่าเชื่อถือ',

@@ -69,6 +69,7 @@ export const en = {
     influencers: 'Influencers & Sources',
     integrations: 'Integrations',
     projectSettings: 'Project Settings',
+    workspace: 'Workspace',
     reportsTitle: 'REPORTS',
     emailReports: 'Email reports',
     pdfReport: 'PDF report',

@@ -67,6 +67,7 @@ export const ko = {
     influencers: '인플루언서 및 출처',
     integrations: '통합',
     projectSettings: '프로젝트 설정',
+    workspace: '작업 공간',
     reportsTitle: '보고서',
     emailReports: '이메일 보고서',
     pdfReport: 'PDF 보고서',
@@ -135,7 +136,35 @@ export const ko = {
       '30d': "최근 30일",
       '90d': "최근 90일",
       all: "전체",
-      connectorSources: "커넥터 소스"
+      connectorSources: "커넥터 소스",
+        mentionsAndReach: "언급 및 도달",
+        sentimentChart: "감정 차트",
+        chartNote: "참고: 감정 분석은 텍스트만으로 평가됩니다.",
+        noChartData: "차트 데이터 없음",
+        days: "일",
+        weeks: "주",
+        months: "월",
+        loading: "로딩 중...",
+        noProject: "프로젝트 없음",
+        selectProject: "프로젝트를 선택하세요",
+        newProject: "새 프로젝트"
+    },
+    sourceType: {
+      web: "Web",
+      news: "News",
+      blog: "Blog",
+      video: "Video",
+      rss: "RSS",
+      facebook_page: "Facebook Page",
+      instagram: "Instagram",
+      twitter: "Twitter/X",
+      reddit: "Reddit",
+      tiktok: "TikTok",
+      podcast: "Podcast",
+      msg: {
+        connect: "연결",
+        comingSoon: "곧 출시 예정"
+      }
     },
     time: {
       justNow: "방금 전",
@@ -150,6 +179,7 @@ export const ko = {
       low: "낮은 신뢰도",
       unavailable: "확인 불가"
     },
+    searchPlaceholder: '검색...',
     antiNoiseTitle: 'Anti-Noise',
     activeFeatures: '활성 기능:',
     filterByFeatures: '감정, 출처, 신뢰성으로 필터링',

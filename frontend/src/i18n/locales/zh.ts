@@ -67,6 +67,7 @@ export const zh = {
     influencers: '影响者与来源',
     integrations: '集成',
     projectSettings: '项目设置',
+    workspace: '工作区',
     reportsTitle: '报告',
     emailReports: '电子邮件报告',
     pdfReport: 'PDF 报告',
@@ -135,7 +136,35 @@ export const zh = {
       '30d': "过去30天",
       '90d': "过去90天",
       all: "全部",
-      connectorSources: "连接器来源"
+      connectorSources: "连接器来源",
+        mentionsAndReach: "提及与触达",
+        sentimentChart: "情绪图表",
+        chartNote: "注：情绪分析仅基于文本。",
+        noChartData: "无图表数据",
+        days: "天",
+        weeks: "周",
+        months: "月",
+        loading: "加载中...",
+        noProject: "无项目",
+        selectProject: "请选择项目",
+        newProject: "新项目"
+    },
+    sourceType: {
+      web: "Web",
+      news: "News",
+      blog: "Blog",
+      video: "Video",
+      rss: "RSS",
+      facebook_page: "Facebook Page",
+      instagram: "Instagram",
+      twitter: "Twitter/X",
+      reddit: "Reddit",
+      tiktok: "TikTok",
+      podcast: "Podcast",
+      msg: {
+        connect: "连接",
+        comingSoon: "即将推出"
+      }
     },
     time: {
       justNow: "刚刚",
@@ -150,6 +179,7 @@ export const zh = {
       low: "低信任度",
       unavailable: "未验证"
     },
+    searchPlaceholder: '搜索...',
     antiNoiseTitle: 'Anti-Noise',
     activeFeatures: '激活的功能:',
     filterByFeatures: '按情感、来源、可信度过滤',
