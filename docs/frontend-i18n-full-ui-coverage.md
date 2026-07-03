@@ -16,8 +16,8 @@ Due to the sheer volume of files (30-40) containing static labels, the translati
 
 Common UI dictionaries (like `cancel`, `save`, `delete`, `confirm`, `loading`, etc.) were added to `vi.ts`, `en.ts`, `th.ts`, `ja.ts`, `ko.ts`, and `zh.ts`.
 
-### Phase B: Mentions & Data Pages (Remaining)
-**Areas to Audit & Translate:**
+### Phase B: Mentions & Data Pages (Completed)
+**Areas Audited & Translated:**
 - `/dashboard/mentions/*` (Mentions list, search, active filters, empty results)
 - `/dashboard/summary/*`
 - `/dashboard/comparison/*`
