@@ -171,12 +171,12 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges, setIsWebi
           /* Collapsed: Logo and Toggle button */
           <>
             <div className="w-9 h-9 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-[0_0_15px_rgba(99,102,241,0.4)] border border-white/20">
-              <span className="text-slate-900 dark:text-white font-black text-base leading-none">N</span>
+              <span className="text-white font-black text-base leading-none">N</span>
             </div>
             <button
               onClick={toggleCollapse}
               title="Mở rộng sidebar"
-              className="group relative w-8 h-8 rounded-lg text-zinc-400 hover:text-slate-900 dark:text-white hover:bg-white/10 flex items-center justify-center transition-colors"
+              className="group relative w-8 h-8 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 flex items-center justify-center transition-colors"
             >
               <ChevronRight className="w-4 h-4" />
               <span className="pointer-events-none absolute left-full ml-3 px-2.5 py-1.5 bg-slate-50 dark:bg-[#0F172A] border border-white/10 text-slate-900 dark:text-white text-xs font-medium rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-all z-50 shadow-xl">
@@ -188,7 +188,7 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges, setIsWebi
           <>
             <div className="flex items-center gap-2.5">
               <div className="w-9 h-9 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-[0_0_15px_rgba(99,102,241,0.4)] border border-white/20 shrink-0">
-                <span className="text-slate-900 dark:text-white font-black text-base leading-none">N</span>
+                <span className="text-white font-black text-base leading-none">N</span>
               </div>
               <h1 className="text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-zinc-400 tracking-tight">Nope</h1>
             </div>
@@ -196,7 +196,7 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges, setIsWebi
               {/* Close on mobile */}
               <button
                 onClick={() => setSidebarOpen(false)}
-                className="lg:hidden p-1.5 text-zinc-500 hover:text-slate-900 dark:text-white hover:bg-white/10 rounded-lg transition-colors"
+                className="lg:hidden p-1.5 text-zinc-500 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -204,7 +204,7 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges, setIsWebi
               <button
                 onClick={toggleCollapse}
                 title="Thu gọn sidebar"
-                className="hidden lg:flex items-center justify-center w-7 h-7 rounded-lg text-zinc-500 hover:text-slate-900 dark:text-white hover:bg-white/10 transition-colors"
+                className="hidden lg:flex items-center justify-center w-7 h-7 rounded-lg text-zinc-500 hover:text-white hover:bg-white/10 transition-colors"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
@@ -220,8 +220,8 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges, setIsWebi
         <div className={`mb-1 ${sidebarCollapsed ? 'px-2' : 'px-3'}`}>
           {!sidebarCollapsed && (
             <div className="flex items-center justify-between px-2 mb-1">
-              <span className="text-[10px] font-bold tracking-widest text-zinc-600 uppercase">Projects</span>
-              <Link href="/dashboard/projects/new" title="New Project" className="text-zinc-600 hover:text-emerald-400 transition-colors" prefetch={false}>
+              <span className="text-[10px] font-bold tracking-widest text-slate-400 uppercase">Projects</span>
+              <Link href="/dashboard/projects/new" title="New Project" className="text-zinc-400 hover:text-emerald-400 transition-colors" prefetch={false}>
                 <Plus className="w-3.5 h-3.5" />
               </Link>
             </div>
@@ -238,7 +238,7 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges, setIsWebi
                 title={activeProject?.name || 'Select Project'}
                 className="group relative w-10 h-10 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center border border-white/[0.06] transition-all"
               >
-                <span className="text-slate-900 dark:text-white font-bold text-xs">
+                <span className="text-white font-bold text-xs">
                   {activeProject?.name?.charAt(0).toUpperCase() || '?'}
                 </span>
                 {/* Active dot */}
@@ -270,11 +270,11 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges, setIsWebi
                 className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-white/5 transition-colors group"
               >
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center text-slate-900 dark:text-white font-bold text-xs shrink-0">
+                  <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center text-white font-bold text-xs shrink-0">
                     {activeProject?.name?.charAt(0).toUpperCase() || '?'}
                   </div>
                   <div className="min-w-0 text-left">
-                    <p className="text-sm font-semibold text-slate-900 dark:text-white truncate leading-none">
+                    <p className="text-sm font-semibold text-white truncate leading-none">
                       {projectsLoading ? 'Loading...' : activeProject?.name || 'Select Project'}
                     </p>
                     <p className="text-[11px] text-zinc-500 mt-0.5 truncate flex items-center gap-1">
@@ -284,7 +284,7 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges, setIsWebi
                   </div>
                 </div>
                 <div className="flex items-center gap-2 text-zinc-500 shrink-0">
-                  <Settings className="w-3.5 h-3.5 hover:text-slate-900 dark:text-white transition-colors" onClick={(e) => { e.stopPropagation(); router.push('/dashboard/project-settings'); }} />
+                  <Settings className="w-3.5 h-3.5 hover:text-white transition-colors" onClick={(e) => { e.stopPropagation(); router.push('/dashboard/project-settings'); }} />
                   <ChevronDown className={`w-3.5 h-3.5 transition-transform ${projectDropdownOpen ? 'rotate-180' : ''}`} />
                 </div>
               </button>
@@ -313,7 +313,7 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges, setIsWebi
         {/* Project Nav */}
         <div className={`space-y-0.5 ${sidebarCollapsed ? 'px-2' : 'px-3'}`}>
           {!sidebarCollapsed && (
-            <p className="px-2 mb-1.5 text-[10px] font-bold tracking-widest text-zinc-600 uppercase">Workspace</p>
+            <p className="px-2 mb-1.5 text-[10px] font-bold tracking-widest text-slate-400 uppercase">Workspace</p>
           )}
           {projectNav.map((item) => (
             <NavItem key={item.name} item={item} isActive={pathname === item.href} />
@@ -326,7 +326,7 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges, setIsWebi
         {/* Reports Nav */}
         <div className={`space-y-0.5 ${sidebarCollapsed ? 'px-2' : 'px-3'}`}>
           {!sidebarCollapsed && (
-            <p className="px-2 mb-1.5 text-[10px] font-bold tracking-widest text-zinc-600 uppercase">Reports</p>
+            <p className="px-2 mb-1.5 text-[10px] font-bold tracking-widest text-slate-400 uppercase">Reports</p>
           )}
           {reportsNav.map((item) => (
             <NavItem key={item.name} item={item} isActive={pathname === item.href} />
@@ -339,7 +339,7 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges, setIsWebi
         {/* System Nav */}
         <div className={`space-y-0.5 ${sidebarCollapsed ? 'px-2' : 'px-3'}`}>
           {!sidebarCollapsed && (
-            <p className="px-2 mb-1.5 text-[10px] font-bold tracking-widest text-zinc-600 uppercase">System</p>
+            <p className="px-2 mb-1.5 text-[10px] font-bold tracking-widest text-slate-400 uppercase">System</p>
           )}
           {systemNav.map((item) => (
             <NavItem key={item.name} item={item} isActive={pathname.startsWith(item.href)} />
