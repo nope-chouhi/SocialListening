@@ -1424,10 +1424,10 @@ const getSourceIntegrityLabel = (level: string | null | undefined) => {
   }
 };
 return (
-              <div key={mention.id} className="bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10 overflow-hidden group hover:border-gray-300 transition-colors">
+              <div key={mention.id} className="bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10 group hover:border-gray-300 transition-colors">
                 
                 {/* Source & Provenance Header */}
-                <div className="px-5 py-3 bg-slate-50 dark:bg-white/5 border-b border-gray-100 dark:border-white/5 flex flex-wrap items-center justify-between gap-2">
+                <div className="px-5 py-3 bg-slate-50 dark:bg-white/5 border-b border-gray-100 dark:border-white/5 flex flex-wrap items-center justify-between gap-2 rounded-t-xl">
                   <div className="flex items-center gap-3">
                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 shadow-sm border border-gray-200 dark:border-white/10 ${
                       mention.source_type?.startsWith('facebook') ? 'bg-blue-50 text-blue-600' :
@@ -1614,7 +1614,7 @@ return (
                 </div>
 
                  {/* Actions Footer */}
-                <div className="bg-slate-50 dark:bg-[#0a0f1c]/50 px-5 py-3 border-t border-gray-100 dark:border-white/5 flex flex-wrap items-center justify-between gap-3">
+                <div className="bg-slate-50 dark:bg-[#0a0f1c]/50 px-5 py-3 border-t border-gray-100 dark:border-white/5 flex flex-wrap items-center justify-between gap-3 rounded-b-xl">
                    <div className="flex flex-wrap items-center gap-3">
                      {(() => {
                         const integrityLevel = mention.source_integrity_level;
