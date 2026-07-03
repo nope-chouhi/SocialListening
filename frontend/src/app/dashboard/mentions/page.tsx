@@ -24,6 +24,7 @@ import {
 import { getSafeVisitUrl, getVisitUrlStatus } from '@/lib/visit-url';
 import { MentionFilterBar } from '@/components/mentions/MentionFilterBar';
 import { MentionActiveFilterChips } from '@/components/mentions/MentionActiveFilterChips';
+import { MentionActionMenu } from '@/components/mentions/MentionActionMenu';
 import { MentionEmptyResults } from '@/components/mentions/MentionEmptyResults';
 import { AntiNoiseNotice } from '@/components/mentions/AntiNoiseNotice';
 import { MentionFilterErrorState } from '@/components/mentions/MentionFilterErrorState';
@@ -1423,10 +1424,10 @@ const getSourceIntegrityLabel = (level: string | null | undefined) => {
   }
 };
 return (
-              <div key={mention.id} className="bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10 overflow-hidden group hover:border-gray-300 transition-colors">
+              <div key={mention.id} className="bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10 group hover:border-gray-300 transition-colors">
                 
                 {/* Source & Provenance Header */}
-                <div className="px-5 py-3 bg-slate-50 dark:bg-white/5 border-b border-gray-100 dark:border-white/5 flex flex-wrap items-center justify-between gap-2">
+                <div className="px-5 py-3 bg-slate-50 dark:bg-white/5 border-b border-gray-100 dark:border-white/5 flex flex-wrap items-center justify-between gap-2 rounded-t-xl">
                   <div className="flex items-center gap-3">
                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 shadow-sm border border-gray-200 dark:border-white/10 ${
                       mention.source_type?.startsWith('facebook') ? 'bg-blue-50 text-blue-600' :
@@ -1613,7 +1614,7 @@ return (
                 </div>
 
                  {/* Actions Footer */}
-                <div className="bg-slate-50 dark:bg-[#0a0f1c]/50 px-5 py-3 border-t border-gray-100 dark:border-white/5 flex flex-wrap items-center justify-between gap-3">
+                <div className="bg-slate-50 dark:bg-[#0a0f1c]/50 px-5 py-3 border-t border-gray-100 dark:border-white/5 flex flex-wrap items-center justify-between gap-3 rounded-b-xl">
                    <div className="flex flex-wrap items-center gap-3">
                      {(() => {
                         const integrityLevel = mention.source_integrity_level;
@@ -1659,17 +1660,6 @@ return (
                        </div>
                      )}
 
-                     <button
-                       onClick={() => handleAction(mention.id, 'review', () => mentionsApi.markReviewed(mention.id), 'Đã đánh dấu xem')}
-                       className={`flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1.5 rounded-lg transition-colors border shadow-sm ${
-                         mention.is_reviewed
-                           ? 'text-emerald-700 bg-emerald-50 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800'
-                           : 'text-slate-600 bg-white border-slate-200 hover:bg-slate-50 dark:bg-white/5 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/10'
-                       }`}
-                       title="Đánh dấu đã xem nội bộ"
-                     >
-                       <CheckCircle2 className="w-3.5 h-3.5" /> Review
-                     </button>
                      {(!mention.sentiment || !mention.risk_score) && (
                        <button
                          onClick={() => handleAction(mention.id, 'analyze', () => mentionsApi.analyze(mention.id), 'Đã phân tích xong')}
@@ -1689,45 +1679,28 @@ return (
                        </button>
                      )}
                      <div className="h-4 border-l border-slate-300 dark:border-slate-700 mx-1"></div>
-                     <button
-                       onClick={async () => {
-                         const currentTags = mention.tags ? (Array.isArray(mention.tags) ? mention.tags.join(', ') : mention.tags) : '';
-                         const input = await prompt({
-                           title: 'Cập nhật tags',
-                           message: 'Nhập các tags, cách nhau bằng dấu phẩy.',
-                           placeholder: 'tag1, tag2, tag3...',
-                           defaultValue: currentTags,
-                           confirmText: 'Lưu tags',
-                         });
-                         if (input !== null) {
-                           const newTags = input.split(',').map((t) => t.trim()).filter(Boolean);
-                           handleAction(mention.id, 'tags', () => mentionsApi.updateTags(mention.id, newTags), 'Đã cập nhật tags');
-                         }
-                       }}
-                       className="flex items-center gap-1.5 text-[11px] font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-                     >
-                       <Tag className="w-3.5 h-3.5" /> Tags
-                     </button>
-                     <button onClick={() => handleToggleAddToReport(mention.id, mention.add_to_report)} className={`flex items-center gap-1.5 text-[11px] font-medium ${mention.add_to_report ? 'text-indigo-600' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}>
-                       <FileText className="w-3.5 h-3.5" /> {mention.add_to_report ? 'Remove PDF' : 'Add PDF'}
-                     </button>
-                     <button
-                       disabled={!mention.author}
-                       onClick={() => handleAction(mention.id, 'mute_author', () => mentionsApi.muteAuthor(mention.author!, activeProject!.id), `Đã ẩn tác giả ${mention.author}`)}
-                       className="flex items-center gap-1.5 text-[11px] font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white disabled:opacity-50"
-                     >
-                       <Eye className="w-3.5 h-3.5" /> Mute author
-                     </button>
-                     <button
-                       disabled={!mention.domain}
-                       onClick={() => handleAction(mention.id, 'mute_domain', () => mentionsApi.muteDomain(mention.domain!, activeProject!.id), `Đã ẩn nguồn ${mention.domain}`)}
-                       className="flex items-center gap-1.5 text-[11px] font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white disabled:opacity-50"
-                     >
-                       <Eye className="w-3.5 h-3.5" /> Mute site
-                     </button>
-                     <button onClick={() => setDeleteConfirm({ isOpen: true, mentionId: mention.id, mentionTitle: mention.title || '' })} className="flex items-center gap-1.5 text-[11px] font-medium text-slate-600 dark:text-slate-400 hover:text-rose-600">
-                       <Trash2 className="w-3.5 h-3.5" /> Delete
-                     </button>
+                     <MentionActionMenu
+                        mention={mention}
+                        onReview={() => handleAction(mention.id, 'review', () => mentionsApi.markReviewed(mention.id), 'Đã đánh dấu xem')}
+                        onTags={async () => {
+                          const currentTags = mention.tags ? (Array.isArray(mention.tags) ? mention.tags.join(', ') : mention.tags) : '';
+                          const input = await prompt({
+                            title: 'Cập nhật tags',
+                            message: 'Nhập các tags, cách nhau bằng dấu phẩy.',
+                            placeholder: 'tag1, tag2, tag3...',
+                            defaultValue: currentTags,
+                            confirmText: 'Lưu tags',
+                          });
+                          if (input !== null) {
+                            const newTags = input.split(',').map((t) => t.trim()).filter(Boolean);
+                            handleAction(mention.id, 'tags', () => mentionsApi.updateTags(mention.id, newTags), 'Đã cập nhật tags');
+                          }
+                        }}
+                        onToggleReport={() => handleToggleAddToReport(mention.id, mention.add_to_report)}
+                        onMuteAuthor={() => handleAction(mention.id, 'mute_author', () => mentionsApi.muteAuthor(mention.author!, activeProject!.id), `Đã ẩn tác giả ${mention.author}`)}
+                        onMuteDomain={() => handleAction(mention.id, 'mute_domain', () => mentionsApi.muteDomain(mention.domain!, activeProject!.id), `Đã ẩn nguồn ${mention.domain}`)}
+                        onDelete={() => setDeleteConfirm({ isOpen: true, mentionId: mention.id, mentionTitle: mention.title || '' })}
+                     />
                    </div>
                    <input
                       type="checkbox"
