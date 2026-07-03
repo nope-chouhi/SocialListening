@@ -137,7 +137,35 @@ export const en = {
       '30d': "Last 30 days",
       '90d': "Last 90 days",
       all: "All time",
-      connectorSources: "Connector Sources"
+      connectorSources: "Connector Sources",
+      mentionsAndReach: "Mentions & Reach",
+      sentimentChart: "Sentiment",
+      chartNote: "Trend in project (Independent of current filter)",
+      noChartData: "No chart data",
+      days: "Days",
+      weeks: "Weeks",
+      months: "Months",
+      loading: "Loading...",
+      noProject: "No Project",
+      selectProject: "Select Project",
+      newProject: "New Project"
+    },
+    sourceType: {
+      web: "Web",
+      news: "News",
+      blog: "Blog",
+      video: "Video",
+      rss: "RSS",
+      facebook_page: "Facebook Page",
+      instagram: "Instagram",
+      twitter: "Twitter/X",
+      reddit: "Reddit",
+      tiktok: "TikTok",
+      podcast: "Podcast",
+      msg: {
+        connect: "Connect",
+        comingSoon: "Coming soon"
+      }
     },
     time: {
       justNow: "Just now",

@@ -296,6 +296,8 @@ function MentionsPageContent() {
   const [chartTimeRange, setChartTimeRange] = useState<'days' | 'weeks' | 'months'>('days');
 
   const currentFetchIdRef = useRef<number>(0);
+  const chartFetchIdRef = useRef<number>(0);
+  const sourceFetchIdRef = useRef<number>(0);
   const scannedKeywordsRef = useRef<Set<string>>(new Set());
 
   const [searchState, setSearchState] = useState<'IDLE' | 'TYPING' | 'SEARCHING_DB' | 'LOCAL_RESULTS_FOUND' | 'NO_LOCAL_RESULTS' | 'AUTO_SCAN_STARTING' | 'AUTO_SCAN_RUNNING' | 'AUTO_SCAN_COMPLETED' | 'AUTO_SCAN_NO_RESULTS' | 'AUTO_SCAN_FAILED'>('IDLE');
@@ -691,15 +693,18 @@ function MentionsPageContent() {
         else setSearchState('IDLE');
       }
     } catch (error: any) {
+      if (fetchId !== currentFetchIdRef.current) return;
       console.error('Error fetching mentions:', error);
       const errMsg = error.response?.data?.detail || error.message || 'Lỗi khi tải mentions';
       setFetchError(errMsg);
       toast.error(errMsg);
       setSearchState('NO_LOCAL_RESULTS');
     } finally {
-      setLoading(false);
+      if (fetchId === currentFetchIdRef.current) {
+        setLoading(false);
+      }
     }
-  }, [page, filters, initialJobId, searchTerm, activeProject, dateRange]);
+  }, [page, filters, initialJobId, searchTerm, activeProject?.id, dateRange]);
 
   const fetchMentionsRef = useRef(fetchMentions);
   useEffect(() => {
@@ -734,8 +739,9 @@ function MentionsPageContent() {
     }
   }, [activeProject, searchTerm, filters, dateRange]);
 
-  const fetchChartData = async () => {
-    setChartLoading(true);
+  const fetchChartData = useCallback(async () => {
+    const fetchId = ++chartFetchIdRef.current;
+    if (fetchId === chartFetchIdRef.current) setChartLoading(true);
     try {
       let granularity = 'daily';
       if (chartTimeRange === 'days') {
@@ -768,20 +774,25 @@ function MentionsPageContent() {
       };
 
       const res = await mentionsApi.charts(params);
+      if (fetchId !== chartFetchIdRef.current) return;
       if (res && res.items) {
         setChartData(res.items);
       } else {
         setChartData([]);
       }
     } catch (err) {
+      if (fetchId !== chartFetchIdRef.current) return;
       console.error('Failed to fetch chart data', err);
       setChartData([]);
     } finally {
-      setChartLoading(false);
+      if (fetchId === chartFetchIdRef.current) {
+        setChartLoading(false);
+      }
     }
-  };
+  }, [activeProject?.id, chartTimeRange, searchTerm, filters.sentiment, filters.source_type, filters.min_risk_score, filters.min_influence_score, dateRange]);
 
   const fetchSourceCounts = useCallback(async () => {
+    const fetchId = ++sourceFetchIdRef.current;
     if (!activeProject && !searchTerm && !initialJobId) return;
     try {
       const params: any = {};
@@ -806,15 +817,17 @@ function MentionsPageContent() {
       }
       if (activeProject) params.project_id = activeProject.id;
       const counts = await mentionsApi.sourceCounts(params);
+      if (fetchId !== sourceFetchIdRef.current) return;
       setSourceCounts(counts);
     } catch (error) {
+      if (fetchId !== sourceFetchIdRef.current) return;
       console.error('Error fetching source counts:', error);
     }
-  }, [filters.sentiment, filters.min_risk_score, filters.min_influence_score, initialJobId, searchTerm, activeProject, dateRange]);
+  }, [filters.sentiment, filters.min_risk_score, filters.min_influence_score, initialJobId, searchTerm, activeProject?.id, dateRange]);
 
   useEffect(() => {
     fetchMentions();
-  }, [fetchMentions, activeProject]);
+  }, [fetchMentions]);
 
   useEffect(() => {
     fetchSourceCounts();
@@ -822,7 +835,7 @@ function MentionsPageContent() {
 
   useEffect(() => {
     fetchChartData();
-  }, [activeProject?.id, chartTimeRange]);
+  }, [fetchChartData]);
 
   useEffect(() => {
     // Reset state on project change to prevent stale data
@@ -834,11 +847,7 @@ function MentionsPageContent() {
       newParams.delete('job_id');
       router.replace(`/dashboard/mentions?${newParams.toString()}`);
     }
-
-    // Explicitly call fetchMentions here to ensure it loads immediately on project switch
-    fetchMentions();
-    fetchChartData();
-  }, [activeProject?.id]); // DO NOT add searchParams to deps of this effect
+  }, [activeProject?.id, router, searchParams]);
 
 
   /* ─── SCAN NOW LOGIC ────────────────────────────────────────────────── */
