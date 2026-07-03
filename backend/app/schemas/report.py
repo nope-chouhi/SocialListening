@@ -27,6 +27,8 @@ class ReportBuilderConfig(BaseModel):
     font_style: Optional[str] = "font-sans"
     font_color: Optional[str] = "#1e293b"
     theme: Optional[str] = "light"
+    aspect_ratio: Optional[str] = "vertical"
+    language: Optional[str] = "english"
     logo_path: Optional[str] = None
 
 class ReportExportListResponse(BaseModel):

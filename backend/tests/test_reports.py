@@ -388,3 +388,59 @@ def test_email_schedules_send_now_route_priority_regression():
     # Same for POST /email-schedules/send-now
     response = client.post("/api/reports/email-schedules/send-now")
     assert response.status_code != 422
+import pytest
+from datetime import datetime, timedelta
+from app.models.report import ReportExport, ExportStatus
+from app.api.reports import router
+from app.services.export_service import ExportService
+from app.services.pdf_generator import PDFGenerator
+
+def test_pdf_export_accepts_custom_config():
+    config = {
+        "sections": [{"id": "summary", "enabled": True}, {"id": "top_mentions", "enabled": False}],
+        "theme": "dark",
+        "accent_color": "#ff0000",
+        "font_color": "#ffffff",
+        "font_style": "Courier",
+        "aspect_ratio": "horizontal",
+        "language": "vietnamese"
+    }
+    export = ReportExport(
+        project_id=1,
+        requested_by=1,
+        report_type='pdf',
+        status=ExportStatus.PENDING,
+        builder_config=config
+    )
+    
+    assert export.builder_config["theme"] == "dark"
+    assert export.builder_config["accent_color"] == "#ff0000"
+    assert export.builder_config["aspect_ratio"] == "horizontal"
+    assert export.builder_config["language"] == "vietnamese"
+    assert len(export.builder_config["sections"]) == 2
+
+def test_pdf_generator_respects_custom_config():
+    data = {
+        "metrics": {"total_mentions": 10},
+        "comparison": {},
+        "sources_list": [],
+        "tags_list": [],
+        "top_mentions": [],
+        "raw_mentions": [],
+        "exec_summary": "Test summary"
+    }
+    config = {
+        "sections": [{"id": "executive_summary", "enabled": True}],
+        "theme": "dark"
+    }
+    pdf_bytes = PDFGenerator.generate_project_summary(data, config)
+    assert isinstance(pdf_bytes, bytes)
+    assert len(pdf_bytes) > 0
+    
+def test_summary_data_returns_structured_fields():
+    client = TestClient(app)
+    res = client.get("/api/reports/summary-data")
+    assert res.status_code == 200
+    data = res.json()
+    assert "comparison" in data
+    assert "raw_mentions" in data

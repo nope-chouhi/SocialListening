@@ -165,6 +165,7 @@ def get_reports_summary_data(
     trend_dict = {}
 
     selected_mentions = []
+    raw_mentions = []
 
     for m in mentions:
         # Sentiment
@@ -190,23 +191,30 @@ def get_reports_summary_data(
         # Trend by date
         date_str = m.published_at.date().isoformat() if m.published_at else datetime.utcnow().date().isoformat()
         if date_str not in trend_dict:
-            trend_dict[date_str] = {"date": date_str, "mentions": 0, "positive": 0, "negative": 0, "neutral": 0}
+            trend_dict[date_str] = {"date": date_str, "mentions": 0, "positive": 0, "negative": 0, "neutral": 0, "reach": 0}
         trend_dict[date_str]["mentions"] += 1
+        trend_dict[date_str]["reach"] += m.reach_estimate or 0
         if sent_val in trend_dict[date_str]:
             trend_dict[date_str][sent_val] += 1
 
         # Selected Mentions (add_to_report)
+        mention_data = {
+            "id": m.id,
+            "title": m.title,
+            "content": m.content,
+            "snippet": m.snippet,
+            "url": m.url,
+            "domain": m.domain,
+            "sentiment": sent_val,
+            "reach": m.reach_estimate or 0,
+            "published_at": m.published_at.isoformat() if m.published_at else None,
+            "date": date_str
+        }
+        
+        raw_mentions.append(mention_data)
+        
         if m.add_to_report:
-            selected_mentions.append({
-                "id": m.id,
-                "title": m.title,
-                "content": m.content,
-                "snippet": m.snippet,
-                "url": m.url,
-                "domain": m.domain,
-                "sentiment": sent_val,
-                "published_at": m.published_at.isoformat() if m.published_at else None
-            })
+            selected_mentions.append(mention_data)
 
     sources_list = [{"name": k.capitalize(), "count": v} for k, v in source_distribution.items()]
     sources_list.sort(key=lambda x: x["count"], reverse=True)
@@ -221,6 +229,45 @@ def get_reports_summary_data(
     total_alerts = db.execute(select(func.count()).select_from(alerts_query.subquery())).scalar() or 0
     total_incidents = db.execute(select(func.count()).select_from(incidents_query.subquery())).scalar() or 0
 
+    # Previous Period Comparison
+    comparison = None
+    if date_from and date_to:
+        delta = date_to - date_from
+        prev_to = date_from
+        prev_from = date_from - delta
+        
+        prev_mentions_query = apply_tenant_filter(select(Mention), Mention, current_user)
+        if project_id:
+            prev_mentions_query = prev_mentions_query.where(Mention.project_id == project_id)
+        prev_mentions_query = prev_mentions_query.where(Mention.published_at >= prev_from)
+        prev_mentions_query = prev_mentions_query.where(Mention.published_at <= prev_to)
+        
+        prev_mentions = db.execute(prev_mentions_query).scalars().all()
+        prev_ids = [m.id for m in prev_mentions]
+        
+        prev_analyses_list = db.execute(
+            select(AIAnalysis).where(AIAnalysis.mention_id.in_(prev_ids))
+        ).scalars().all() if prev_ids else []
+        prev_analyses = {a.mention_id: a for a in prev_analyses_list}
+        
+        prev_positive = sum(1 for m in prev_mentions if prev_analyses.get(m.id) and (prev_analyses[m.id].sentiment.value if hasattr(prev_analyses[m.id].sentiment, 'value') else prev_analyses[m.id].sentiment) == 'positive')
+        prev_negative = sum(1 for m in prev_mentions if prev_analyses.get(m.id) and (prev_analyses[m.id].sentiment.value if hasattr(prev_analyses[m.id].sentiment, 'value') else prev_analyses[m.id].sentiment) in ['negative', 'negative_medium'])
+        
+        prev_reach = sum(m.reach_estimate or 0 for m in prev_mentions)
+        current_reach = sum(m.reach_estimate or 0 for m in mentions)
+        
+        def pct_change(curr, prev):
+            if prev == 0: return "+100%" if curr > 0 else "0%"
+            change = ((curr - prev) / prev) * 100
+            return f"+{change:.1f}%" if change > 0 else f"{change:.1f}%"
+            
+        comparison = {
+            "mentions_change": pct_change(len(mentions), len(prev_mentions)),
+            "reach_change": pct_change(current_reach, prev_reach),
+            "positive_change": pct_change(sentiment_counts.get("positive", 0), prev_positive),
+            "negative_change": pct_change(sentiment_counts.get("negative", 0), prev_negative)
+        }
+
     return {
         "project_name": project_name,
         "date_from": date_from.isoformat() if date_from else None,
@@ -228,14 +275,18 @@ def get_reports_summary_data(
         "generated_at": datetime.utcnow().isoformat(),
         "metrics": {
             "total_mentions": len(mentions),
+            "total_reach": sum(m.reach_estimate or 0 for m in mentions),
             "sentiment": sentiment_counts,
             "total_alerts": total_alerts,
-            "total_incidents": total_incidents
+            "total_incidents": total_incidents,
+            "daily_trend": trend_dict
         },
+        "comparison": comparison,
         "trend": trend_list,
         "top_sources": sources_list,
         "top_influencers": influencers_list[:10],
-        "selected_mentions": selected_mentions
+        "selected_mentions": selected_mentions,
+        "raw_mentions": raw_mentions
     }
 
 def _generate_report_inline(report: Report, db: Session, current_user: User = None):

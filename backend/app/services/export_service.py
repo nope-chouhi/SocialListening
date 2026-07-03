@@ -463,7 +463,7 @@ class ExportService:
                 with open(file_path, "wb") as f:
                     f.write(content)
             elif export_job.report_type == 'pdf':
-                content = PDFGenerator.generate_project_summary(export_data)
+                content = PDFGenerator.generate_project_summary(export_data, builder_config)
                 with open(file_path, "wb") as f:
                     f.write(content)
             else:
