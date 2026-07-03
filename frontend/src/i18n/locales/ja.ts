@@ -67,6 +67,7 @@ export const ja = {
     influencers: 'インフルエンサーとソース',
     integrations: '統合',
     projectSettings: 'プロジェクト設定',
+    workspace: 'ワークスペース',
     reportsTitle: 'レポート',
     emailReports: 'Eメールレポート',
     pdfReport: 'PDFレポート',
@@ -135,7 +136,35 @@ export const ja = {
       '30d': "過去30日間",
       '90d': "過去90日間",
       all: "すべて",
-      connectorSources: "コネクタソース"
+      connectorSources: "コネクタソース",
+        mentionsAndReach: "メンションとリーチ",
+        sentimentChart: "感情チャート",
+        chartNote: "注：感情分析はテキストのみで評価されます。",
+        noChartData: "チャートデータがありません",
+        days: "日",
+        weeks: "週",
+        months: "月",
+        loading: "読み込み中...",
+        noProject: "プロジェクトなし",
+        selectProject: "プロジェクトを選択してください",
+        newProject: "新しいプロジェクト"
+    },
+    sourceType: {
+      web: "ウェブ",
+      news: "ニュース",
+      blog: "ブログ",
+      video: "動画",
+      rss: "RSS",
+      facebook_page: "Facebook Page",
+      instagram: "Instagram",
+      twitter: "Twitter/X",
+      reddit: "Reddit",
+      tiktok: "TikTok",
+      podcast: "ポッドキャスト",
+      msg: {
+        connect: "接続",
+        comingSoon: "近日公開"
+      }
     },
     time: {
       justNow: "たった今",
@@ -150,6 +179,7 @@ export const ja = {
       low: "低信頼性",
       unavailable: "未確認"
     },
+    searchPlaceholder: '検索...',
     antiNoiseTitle: 'Anti-Noise',
     activeFeatures: 'アクティブな機能:',
     filterByFeatures: '感情、ソース、信頼性でフィルタリング',
