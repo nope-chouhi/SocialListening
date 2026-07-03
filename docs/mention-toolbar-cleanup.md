@@ -13,6 +13,8 @@ The mention item toolbar in the SocialListening dashboard was refactored to redu
   - Mute site
   - Delete
 - **Destructive Actions**: The `Delete` button is visually distinguished within the dropdown menu using red (`rose-600`) text to prevent accidental clicks.
+- **Improved UX**: The dropdown supports closing via clicking outside or pressing the `Escape` key.
+- **Robust Layout**: Removed `overflow-hidden` from the parent mention card to prevent the dropdown from being clipped when expanding upwards. Rounded corners on the card header and footer were safely preserved.
 
 ## API Behavior
 - **No API Changes**: This was purely a frontend UI refactor. All underlying API behaviors, endpoints, and action handlers remain completely unchanged. The original functional callbacks are simply passed as props to the new `MentionActionMenu` component.
