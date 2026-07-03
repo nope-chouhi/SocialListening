@@ -1,7 +1,7 @@
 'use client';
 
 import { Suspense, useEffect, useState } from 'react';
-import { useRouter, usePathname, useSearchParams } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { auth, crawl } from '@/lib/api';
 import LoadingSpinner from '@/components/LoadingSpinner';
@@ -40,7 +40,6 @@ import {
   FileSpreadsheet,
   Image as ImageIcon,
   Award,
-  Search,
   HelpCircle,
   Zap,
   Sparkles
@@ -370,42 +369,6 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges, setIsWebi
   );
 }
 
-function SearchBar() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const q = searchParams.get('q') || '';
-
-  return (
-    <div className="flex-1 max-w-xl relative group">
-      <div className="flex items-center relative">
-        <Search className="w-4 h-4 text-slate-500 dark:text-gray-400 absolute left-3" />
-        <input 
-          name="q"
-          type="text"
-          defaultValue={q}
-          onChange={(e) => {
-            const val = e.target.value;
-            window.dispatchEvent(new CustomEvent('topbar_search_typing'));
-            if ((window as any).searchTimeout) clearTimeout((window as any).searchTimeout);
-            (window as any).searchTimeout = setTimeout(() => {
-              if (val) {
-                router.push(`/dashboard/mentions?q=${encodeURIComponent(val)}`);
-              } else {
-                router.push('/dashboard/mentions');
-              }
-            }, 1000);
-          }}
-          placeholder="Tìm từ khóa và tự động quét nếu chưa có dữ liệu..."
-          className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg text-sm text-gray-700 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm"
-        />
-      </div>
-      <div className="absolute top-full left-0 mt-1 hidden group-hover:block w-full bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 text-[11px] px-3 py-1.5 rounded-md border border-blue-100 dark:border-blue-800/50 shadow-sm z-50">
-        Nhập từ khóa, hệ thống sẽ tìm trong DB trước. Nếu chưa có dữ liệu, Nope sẽ tự quét internet.
-      </div>
-    </div>
-  );
-}
-
 function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { user, isLoading: authLoading } = useAuth();
@@ -475,10 +438,6 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
           <button onClick={() => setSidebarOpen(true)} className="lg:hidden p-2 -ml-2 text-gray-500 hover:text-gray-900 mr-2">
             <Menu className="w-5 h-5" />
           </button>
-
-          <Suspense fallback={<div className="flex-1 max-w-xl animate-pulse bg-gray-100 dark:bg-gray-800 h-10 rounded-lg" />}>
-            <SearchBar />
-          </Suspense>
 
           <div className="ml-auto flex items-center space-x-4">
             <WorkerStatusBadge />
