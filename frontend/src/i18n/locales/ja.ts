@@ -1,0 +1,35 @@
+export const ja = {
+  nav: {
+    dashboard: 'ダッシュボード',
+    mentions: 'メンション',
+    analysis: '分析',
+    comparison: '比較',
+    influencers: 'インフルエンサーとソース',
+    integrations: '統合',
+    projectSettings: 'プロジェクト設定',
+    reportsTitle: 'レポート',
+    emailReports: 'Eメールレポート',
+    pdfReport: 'PDFレポート',
+    excelReport: 'Excelレポート',
+    infographic: 'インフォグラフィック',
+    systemTitle: 'システム',
+    aiAssistant: 'AIアシスタント',
+    services: 'サービス',
+    logout: 'ログアウト',
+    webinar: 'ウェビナー',
+    webinarDesc: 'Nopeでソーシャルリスニング証明書を取得する',
+    signUp: 'サインアップ',
+  },
+  header: {
+    workerOnline: 'ワーカーオンライン',
+    workerOffline: 'ワーカーオフライン',
+    workerOff: 'ワーカーオフ',
+    upgrade: 'アップグレード',
+  },
+  common: {
+    cancel: 'キャンセル',
+    save: '保存',
+    delete: '削除',
+    confirm: '確認',
+  }
+};
