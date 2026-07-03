@@ -221,10 +221,10 @@ GEMINI_API_KEY=AIzaSyxxxxxxxxxxxxx
 ```
 
 #### 2. ✅ Automated Scanning Implemented (Phase 4 COMPLETE)
-- **Status**: ✅ **FIXED** - Scheduled scanning is implemented and controlled by env flags.
+- **Status**: ✅ **FIXED** - Scheduled scanning is implemented and test-backed (requires live Scheduler verification and production activation/configuration).
 
 #### 3. ✅ Real Notifications Implemented (Phase 5 COMPLETE)
-- **Status**: ✅ **FIXED** - Notification infrastructure is implemented (requires production env/smoke verification).
+- **Status**: ✅ **FIXED** - Notification infrastructure is implemented and test-backed (requires live SMTP/Webhook verification).
 
 ### ⏳ Current Production Blockers
 
@@ -247,8 +247,8 @@ GEMINI_API_KEY=AIzaSyxxxxxxxxxxxxx
 | # | Bug | Severity | Status | Fix |
 |---|-----|----------|--------|-----|
 | 1 | ~~AI analysis uses dummy data~~ | 🔴 CRITICAL | **✅ FIXED** | Phase 6 complete - Real AI integrated |
-| 2 | ~~No automated scanning~~ | 🔴 CRITICAL | **✅ FIXED** | Phase 4 complete - Scheduler added |
-| 3 | ~~No email/webhook notifications~~ | 🔴 CRITICAL | **✅ FIXED** | Phase 5 complete - SMTP/Webhook added |
+| 2 | ~~No automated scanning~~ | 🔴 CRITICAL | **✅ FIXED** | Phase 4 complete - Scheduler added (requires production activation/configuration) |
+| 3 | ~~No email/webhook notifications~~ | 🔴 CRITICAL | **✅ FIXED** | Phase 5 complete - SMTP/Webhook added (requires live SMTP/Webhook verification) |
 | 3.1 | Production migration stability | 🔴 CRITICAL | Open | Verify and stabilize migrations |
 | 3.2 | AI config persistence verification | 🔴 CRITICAL | Open | Validate backend state persistence |
 | 3.3 | Frontend admin/service UI | 🔴 CRITICAL | Open | Finish remaining React UI screens |

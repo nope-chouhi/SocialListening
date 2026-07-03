@@ -69,8 +69,8 @@ Located in `scripts/` folder:
   - Service management
   - Service request workflow
   - Dashboard metrics
-- **Phase 4**: Automated background scanning (controlled by env flags)
-- **Phase 5**: Real Notifications (SMTP/Webhook) & Delivery Logs + Retries (requires production env/smoke verification)
+- **Phase 4**: Automated background scanning (implemented and test-backed, requires production activation/configuration)
+- **Phase 5**: Real Notifications (SMTP/Webhook) & Delivery Logs + Retries (implemented and test-backed, requires live SMTP/Webhook verification)
 - **Phase 6**: Real PDF/Excel exports
 
 ### ⏳ Current Production Blockers
