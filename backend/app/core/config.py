@@ -26,7 +26,9 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "postgresql://postgres:postgres@localhost:5432/social_listening"
     
     # Redis (optional)
+    REDIS_ENABLED: bool = False
     REDIS_URL: str = "redis://localhost:6379/0"
+    CACHE_TTL_SECONDS: int = 60
     
     # Meilisearch (optional)
     MEILISEARCH_URL: str = "http://localhost:7700"

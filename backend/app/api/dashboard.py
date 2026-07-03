@@ -17,12 +17,46 @@ from app.models.keyword import Keyword, KeywordGroup
 router = APIRouter()
 
 
+from fastapi.concurrency import run_in_threadpool
+from app.services.cache_service import cache_service
+
 @router.get("/summary")
-def get_dashboard_summary(
+async def get_dashboard_summary(
     time_range: str = Query("30d", alias="range", pattern="^(today|7d|30d)$"),
     project_id: Optional[int] = Query(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
+):
+    """Get dashboard summary metrics (cached)"""
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    cache_key = f"dashboard:summary:user:{current_user.id}:project:{project_id or 'all'}:range:{time_range}"
+    
+    # Try getting from cache
+    try:
+        cached_data = await cache_service.get(cache_key)
+        if cached_data:
+            return cached_data
+    except Exception as e:
+        logger.warning(f"Cache get error: {e}")
+        
+    # Execute sync code in threadpool to avoid blocking event loop
+    result = await run_in_threadpool(_get_dashboard_summary_sync, time_range, project_id, db, current_user)
+    
+    # Save to cache asynchronously without blocking
+    try:
+        await cache_service.set(cache_key, result)
+    except Exception as e:
+        logger.warning(f"Cache set error: {e}")
+        
+    return result
+
+def _get_dashboard_summary_sync(
+    time_range: str,
+    project_id: Optional[int],
+    db: Session,
+    current_user: User
 ):
     """Get dashboard summary metrics"""
     import logging
