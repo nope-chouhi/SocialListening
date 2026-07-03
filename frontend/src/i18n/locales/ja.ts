@@ -150,17 +150,17 @@ export const ja = {
         newProject: "新しいプロジェクト"
     },
     sourceType: {
-      web: "Web",
-      news: "News",
-      blog: "Blog",
-      video: "Video",
+      web: "ウェブ",
+      news: "ニュース",
+      blog: "ブログ",
+      video: "動画",
       rss: "RSS",
       facebook_page: "Facebook Page",
       instagram: "Instagram",
       twitter: "Twitter/X",
       reddit: "Reddit",
       tiktok: "TikTok",
-      podcast: "Podcast",
+      podcast: "ポッドキャスト",
       msg: {
         connect: "接続",
         comingSoon: "近日公開"

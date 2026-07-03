@@ -150,17 +150,17 @@ export const zh = {
         newProject: "新项目"
     },
     sourceType: {
-      web: "Web",
-      news: "News",
-      blog: "Blog",
-      video: "Video",
+      web: "网页",
+      news: "新闻",
+      blog: "博客",
+      video: "视频",
       rss: "RSS",
       facebook_page: "Facebook Page",
       instagram: "Instagram",
       twitter: "Twitter/X",
       reddit: "Reddit",
       tiktok: "TikTok",
-      podcast: "Podcast",
+      podcast: "播客",
       msg: {
         connect: "连接",
         comingSoon: "即将推出"

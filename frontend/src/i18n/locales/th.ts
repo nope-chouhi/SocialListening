@@ -150,17 +150,17 @@ export const th = {
         newProject: "โครงการใหม่"
     },
     sourceType: {
-      web: "Web",
-      news: "News",
-      blog: "Blog",
-      video: "Video",
+      web: "เว็บ",
+      news: "ข่าว",
+      blog: "บล็อก",
+      video: "วิดีโอ",
       rss: "RSS",
       facebook_page: "Facebook Page",
       instagram: "Instagram",
       twitter: "Twitter/X",
       reddit: "Reddit",
       tiktok: "TikTok",
-      podcast: "Podcast",
+      podcast: "พอดแคสต์",
       msg: {
         connect: "เชื่อมต่อ",
         comingSoon: "เร็วๆ นี้"

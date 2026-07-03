@@ -150,17 +150,17 @@ export const ko = {
         newProject: "새 프로젝트"
     },
     sourceType: {
-      web: "Web",
-      news: "News",
-      blog: "Blog",
-      video: "Video",
+      web: "웹",
+      news: "뉴스",
+      blog: "블로그",
+      video: "동영상",
       rss: "RSS",
       facebook_page: "Facebook Page",
       instagram: "Instagram",
       twitter: "Twitter/X",
       reddit: "Reddit",
       tiktok: "TikTok",
-      podcast: "Podcast",
+      podcast: "팟캐스트",
       msg: {
         connect: "연결",
         comingSoon: "곧 출시 예정"

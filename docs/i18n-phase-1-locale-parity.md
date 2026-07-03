@@ -16,15 +16,16 @@ A safe TypeScript-based check script was added to ensure ongoing parity.
 
 ### How to run:
 ```bash
-cd frontend
-node scripts/check-i18n-keys.mjs
+cd frontend && node scripts/check-i18n-keys.mjs
 ```
 *Note: This script requires Node.js and the project's TypeScript dependencies to parse the locale `.ts` files.*
 
 ## Intentionally Untranslated Terms
-As per guidelines, the following product names, technical identifiers, and sources were left as-is (untranslated) across all locales:
-- `Web`, `News`, `Blog`, `Video`, `RSS`
-- `Facebook Page`, `Instagram`, `Twitter/X`, `Reddit`, `TikTok`, `Podcast`
+As per guidelines, the following product names, technical identifiers, and sources were left as-is (untranslated) across all locales to preserve brand and technical integrity:
+- `Facebook Page`, `Instagram`, `Twitter/X`, `Reddit`, `TikTok`, `RSS`
+- `API`, `URL`, `PDF`, `Excel`, `CSV`
+
+*Note: General UI source types such as `Web`, `News`, `Blog`, `Video`, and `Podcast` have been fully translated into native languages.*
 
 ## Checks Run
 - `npm run type-check`: Completed. Exited non-zero strictly due to the known pre-existing Jest globals issue in `src/lib/utils/mentions.test.ts`. No new i18n or syntax errors were introduced.
