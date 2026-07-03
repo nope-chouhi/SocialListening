@@ -1,0 +1,35 @@
+export const zh = {
+  nav: {
+    dashboard: '仪表板',
+    mentions: '提及',
+    analysis: '分析',
+    comparison: '比较',
+    influencers: '影响者与来源',
+    integrations: '集成',
+    projectSettings: '项目设置',
+    reportsTitle: '报告',
+    emailReports: '电子邮件报告',
+    pdfReport: 'PDF 报告',
+    excelReport: 'Excel 报告',
+    infographic: '信息图表',
+    systemTitle: '系统',
+    aiAssistant: 'AI 助手',
+    services: '服务',
+    logout: '登出',
+    webinar: '网络研讨会',
+    webinarDesc: '获取 Nope 社交聆听证书',
+    signUp: '注册',
+  },
+  header: {
+    workerOnline: '工作在线',
+    workerOffline: '工作离线',
+    workerOff: '工作关闭',
+    upgrade: '升级',
+  },
+  common: {
+    cancel: '取消',
+    save: '保存',
+    delete: '删除',
+    confirm: '确认',
+  }
+};

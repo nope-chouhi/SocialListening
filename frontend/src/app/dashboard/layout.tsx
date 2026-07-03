@@ -12,6 +12,8 @@ import { ProjectProvider, useProject } from '@/contexts/ProjectContext';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import toast, { Toaster } from 'react-hot-toast';
 import { withTimeout } from '@/lib/utils/timeout';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import WebinarRegistrationModal from '@/components/dashboard/WebinarRegistrationModal';
 import WebinarSuccessModal from '@/components/dashboard/WebinarSuccessModal';
 import { 
@@ -46,6 +48,7 @@ import {
 } from 'lucide-react';
 
 function WorkerStatusBadge() {
+  const { t } = useLanguage();
   const [status, setStatus] = useState<any>(null);
 
   useEffect(() => {
@@ -69,7 +72,7 @@ function WorkerStatusBadge() {
     return (
       <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 bg-gray-100 dark:bg-gray-800 text-gray-500 text-[10px] font-bold rounded-full border border-gray-200 dark:border-slate-300 dark:border-gray-700" title="Worker is disabled">
         <div className="w-2 h-2 rounded-full bg-gray-400"></div>
-        WORKER OFF
+        {t('header.workerOff')}
       </div>
     );
   }
@@ -80,37 +83,38 @@ function WorkerStatusBadge() {
       title={isRunning ? `Worker Online. Running Jobs: ${status.running_jobs}. Due: ${status.due_sources}` : `Worker Offline! ${status.last_error || ''}`}
     >
       <div className={`w-2 h-2 rounded-full ${isRunning ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`}></div>
-      {isRunning ? 'WORKER ONLINE' : 'WORKER OFFLINE'}
+      {isRunning ? t('header.workerOnline') : t('header.workerOffline')}
     </div>
   );
 }
 
 function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges, setIsWebinarModalOpen, sidebarCollapsed, setSidebarCollapsed }: any) {
+  const { t } = useLanguage();
   const pathname = usePathname();
   const router = useRouter();
   const { projects, activeProject, setActiveProject, loading: projectsLoading } = useProject();
   const [projectDropdownOpen, setProjectDropdownOpen] = useState(false);
 
   const projectNav = [
-    { name: 'Dashboard', href: '/dashboard/overview', icon: LayoutDashboard },
-    { name: 'Mentions', href: '/dashboard/mentions', icon: MessageSquareText },
-    { name: 'Analysis', href: '/dashboard/summary', icon: PieChart },
-    { name: 'Comparison', href: '/dashboard/comparison', icon: Scale },
-    { name: 'Influencers & Sources', href: '/dashboard/influencers', icon: Users },
-    { name: 'Integrations', href: '/dashboard/integrations', icon: Link2 },
-    { name: 'Project Settings', href: '/dashboard/project-settings', icon: SearchCode },
+    { name: t('nav.dashboard'), href: '/dashboard/overview', icon: LayoutDashboard },
+    { name: t('nav.mentions'), href: '/dashboard/mentions', icon: MessageSquareText },
+    { name: t('nav.analysis'), href: '/dashboard/summary', icon: PieChart },
+    { name: t('nav.comparison'), href: '/dashboard/comparison', icon: Scale },
+    { name: t('nav.influencers'), href: '/dashboard/influencers', icon: Users },
+    { name: t('nav.integrations'), href: '/dashboard/integrations', icon: Link2 },
+    { name: t('nav.projectSettings'), href: '/dashboard/project-settings', icon: SearchCode },
   ];
 
   const reportsNav = [
-    { name: 'Email reports', href: '/dashboard/reports/email', icon: Mail },
-    { name: 'PDF report', href: '/dashboard/reports', icon: FileText },
-    { name: 'Excel report', href: '/dashboard/reports/excel', icon: FileSpreadsheet },
-    { name: 'Infographic', href: '/dashboard/reports/infographic', icon: ImageIcon },
+    { name: t('nav.emailReports'), href: '/dashboard/reports/email', icon: Mail },
+    { name: t('nav.pdfReport'), href: '/dashboard/reports', icon: FileText },
+    { name: t('nav.excelReport'), href: '/dashboard/reports/excel', icon: FileSpreadsheet },
+    { name: t('nav.infographic'), href: '/dashboard/reports/infographic', icon: ImageIcon },
   ];
 
   const systemNav = [
-    { name: 'AI Assistant', href: '/dashboard/assistant', icon: Sparkles },
-    { name: 'Services', href: '/dashboard/services', icon: Briefcase },
+    { name: t('nav.aiAssistant'), href: '/dashboard/assistant', icon: Sparkles },
+    { name: t('nav.services'), href: '/dashboard/services', icon: Briefcase },
   ];
 
   const handleLogout = () => {
@@ -325,7 +329,7 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges, setIsWebi
         {/* Reports Nav */}
         <div className={`space-y-0.5 ${sidebarCollapsed ? 'px-2' : 'px-3'}`}>
           {!sidebarCollapsed && (
-            <p className="px-2 mb-1.5 text-[10px] font-bold tracking-widest text-slate-400 uppercase">Reports</p>
+            <p className="px-2 mb-1.5 text-[10px] font-bold tracking-widest text-slate-400 uppercase">{t('nav.reportsTitle')}</p>
           )}
           {reportsNav.map((item) => (
             <NavItem key={item.name} item={item} isActive={pathname === item.href} />
@@ -338,7 +342,7 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges, setIsWebi
         {/* System Nav */}
         <div className={`space-y-0.5 ${sidebarCollapsed ? 'px-2' : 'px-3'}`}>
           {!sidebarCollapsed && (
-            <p className="px-2 mb-1.5 text-[10px] font-bold tracking-widest text-slate-400 uppercase">System</p>
+            <p className="px-2 mb-1.5 text-[10px] font-bold tracking-widest text-slate-400 uppercase">{t('nav.systemTitle')}</p>
           )}
           {systemNav.map((item) => (
             <NavItem key={item.name} item={item} isActive={pathname.startsWith(item.href)} />
@@ -348,11 +352,11 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges, setIsWebi
         {/* Webinar Banner (expanded only) */}
         {!sidebarCollapsed && (
           <div className="mx-3 mt-4 p-3 rounded-xl bg-gradient-to-br from-indigo-900/40 to-purple-900/40 border border-indigo-500/20">
-            <p className="text-[10px] font-bold tracking-widest text-indigo-400 uppercase mb-1">Webinar</p>
-            <p className="text-xs text-zinc-300 leading-relaxed mb-2">Get a Social Listening certificate with Nope</p>
+            <p className="text-[10px] font-bold tracking-widest text-indigo-400 uppercase mb-1">{t('nav.webinar')}</p>
+            <p className="text-xs text-zinc-300 leading-relaxed mb-2">{t('nav.webinarDesc')}</p>
             <button onClick={() => setIsWebinarModalOpen(true)} className="flex items-center gap-1.5 text-xs font-semibold text-indigo-400 hover:text-indigo-300 transition-colors">
               <Award className="w-3.5 h-3.5" />
-              Sign up
+              {t('nav.signUp')}
             </button>
           </div>
         )}
@@ -362,7 +366,7 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges, setIsWebi
       <div className={`shrink-0 border-t border-white/[0.06] flex items-center ${sidebarCollapsed ? 'justify-center py-3' : 'justify-between px-4 py-3'}`}>
         <button onClick={handleLogout} className={`flex items-center gap-2 text-xs text-zinc-500 hover:text-red-400 transition-colors font-medium ${sidebarCollapsed ? 'justify-center w-10 h-10 rounded-xl hover:bg-white/5' : ''}`}>
           <LogOut className="w-4 h-4" />
-          {!sidebarCollapsed && 'Log out'}
+          {!sidebarCollapsed && t('nav.logout')}
         </button>
       </div>
     </div>
@@ -370,6 +374,7 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges, setIsWebi
 }
 
 function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
+  const { t } = useLanguage();
   const router = useRouter();
   const { user, isLoading: authLoading } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -442,7 +447,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
           <div className="ml-auto flex items-center space-x-4">
             <WorkerStatusBadge />
             <button onClick={() => toast('Billing/Upgrade coming soon', { icon: '⏳' })} className="hidden sm:flex items-center px-4 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-full transition-colors tracking-wide shadow-sm">
-              UPGRADE
+              {t('header.upgrade')}
             </button>
             <div className="h-6 w-px bg-gray-200 mx-2 hidden sm:block"></div>
             <button onClick={() => toast.success('Vui lòng gửi email hỗ trợ đến support@nope.com')} title="Help Center" className="text-slate-500 dark:text-gray-400 hover:text-gray-600">
@@ -451,6 +456,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
             <button disabled title="Quick Actions (Coming soon)" className="text-slate-500 dark:text-gray-400 opacity-50 cursor-not-allowed hidden sm:block">
               <Zap className="w-5 h-5" />
             </button>
+            <LanguageSwitcher />
             <ThemeToggle />
             
             <div className="relative group">
@@ -464,10 +470,10 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
                 </div>
                 <div className="py-1">
                   <Link href="/dashboard/settings" className="block px-4 py-2 text-sm text-slate-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800" prefetch={false}>
-                    System Settings
+                    {t('nav.projectSettings')}
                   </Link>
                   <button onClick={() => { auth.logout(); router.push('/login'); }} className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50 dark:hover:bg-gray-800 font-medium">
-                    Log out
+                    {t('nav.logout')}
                   </button>
                 </div>
               </div>

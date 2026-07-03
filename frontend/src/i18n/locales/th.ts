@@ -1,0 +1,35 @@
+export const th = {
+  nav: {
+    dashboard: 'แผงควบคุม',
+    mentions: 'การกล่าวถึง',
+    analysis: 'การวิเคราะห์',
+    comparison: 'การเปรียบเทียบ',
+    influencers: 'ผู้มีอิทธิพล & แหล่งที่มา',
+    integrations: 'การรวมระบบ',
+    projectSettings: 'การตั้งค่าโครงการ',
+    reportsTitle: 'รายงาน',
+    emailReports: 'รายงานทางอีเมล',
+    pdfReport: 'รายงาน PDF',
+    excelReport: 'รายงาน Excel',
+    infographic: 'อินโฟกราฟิก',
+    systemTitle: 'ระบบ',
+    aiAssistant: 'ผู้ช่วย AI',
+    services: 'บริการ',
+    logout: 'ออกจากระบบ',
+    webinar: 'สัมมนาผ่านเว็บ',
+    webinarDesc: 'รับใบรับรอง Social Listening กับ Nope',
+    signUp: 'ลงทะเบียน',
+  },
+  header: {
+    workerOnline: 'คนงานออนไลน์',
+    workerOffline: 'คนงานออฟไลน์',
+    workerOff: 'คนงานปิด',
+    upgrade: 'อัพเกรด',
+  },
+  common: {
+    cancel: 'ยกเลิก',
+    save: 'บันทึก',
+    delete: 'ลบ',
+    confirm: 'ยืนยัน',
+  }
+};

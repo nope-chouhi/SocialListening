@@ -1,0 +1,35 @@
+export const en = {
+  nav: {
+    dashboard: 'Dashboard',
+    mentions: 'Mentions',
+    analysis: 'Analysis',
+    comparison: 'Comparison',
+    influencers: 'Influencers & Sources',
+    integrations: 'Integrations',
+    projectSettings: 'Project Settings',
+    reportsTitle: 'REPORTS',
+    emailReports: 'Email reports',
+    pdfReport: 'PDF report',
+    excelReport: 'Excel report',
+    infographic: 'Infographic',
+    systemTitle: 'SYSTEM',
+    aiAssistant: 'AI Assistant',
+    services: 'Services',
+    logout: 'Log out',
+    webinar: 'Webinar',
+    webinarDesc: 'Get a Social Listening certificate with Nope',
+    signUp: 'Sign up',
+  },
+  header: {
+    workerOnline: 'WORKER ONLINE',
+    workerOffline: 'WORKER OFFLINE',
+    workerOff: 'WORKER OFF',
+    upgrade: 'UPGRADE',
+  },
+  common: {
+    cancel: 'Cancel',
+    save: 'Save',
+    delete: 'Delete',
+    confirm: 'Confirm',
+  }
+};

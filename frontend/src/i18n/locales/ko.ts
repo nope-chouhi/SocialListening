@@ -1,0 +1,35 @@
+export const ko = {
+  nav: {
+    dashboard: '대시보드',
+    mentions: '멘션',
+    analysis: '분석',
+    comparison: '비교',
+    influencers: '인플루언서 및 출처',
+    integrations: '통합',
+    projectSettings: '프로젝트 설정',
+    reportsTitle: '보고서',
+    emailReports: '이메일 보고서',
+    pdfReport: 'PDF 보고서',
+    excelReport: 'Excel 보고서',
+    infographic: '인포그래픽',
+    systemTitle: '시스템',
+    aiAssistant: 'AI 어시스턴트',
+    services: '서비스',
+    logout: '로그아웃',
+    webinar: '웨비나',
+    webinarDesc: 'Nope과 함께 소셜 리스닝 자격증을 취득하세요',
+    signUp: '가입하기',
+  },
+  header: {
+    workerOnline: '워커 온라인',
+    workerOffline: '워커 오프라인',
+    workerOff: '워커 오프',
+    upgrade: '업그레이드',
+  },
+  common: {
+    cancel: '취소',
+    save: '저장',
+    delete: '삭제',
+    confirm: '확인',
+  }
+};
