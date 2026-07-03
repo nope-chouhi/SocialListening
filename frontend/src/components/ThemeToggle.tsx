@@ -22,11 +22,11 @@ export function ThemeToggle() {
         {theme === 'dark' ? <Moon className="w-4 h-4" /> : theme === 'light' ? <Sun className="w-4 h-4" /> : <Monitor className="w-4 h-4" />}
       </button>
       
-      <div className="absolute right-0 top-full mt-2 w-32 bg-white dark:bg-[#1E293B] border border-gray-200 dark:border-slate-300 dark:border-gray-700 rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 py-1">
+      <div className="absolute right-0 top-full mt-2 w-32 bg-white dark:bg-[#1E293B] border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 py-1">
         <button
           onClick={() => setTheme('light')}
           className={`flex items-center gap-2 w-full px-4 py-2 text-sm font-medium transition-colors ${
-            theme === 'light' ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-slate-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
+            theme === 'light' ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
           }`}
         >
           <Sun className="w-4 h-4" /> Light
@@ -34,7 +34,7 @@ export function ThemeToggle() {
         <button
           onClick={() => setTheme('dark')}
           className={`flex items-center gap-2 w-full px-4 py-2 text-sm font-medium transition-colors ${
-            theme === 'dark' ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-slate-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
+            theme === 'dark' ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
           }`}
         >
           <Moon className="w-4 h-4" /> Dark
@@ -42,7 +42,7 @@ export function ThemeToggle() {
         <button
           onClick={() => setTheme('system')}
           className={`flex items-center gap-2 w-full px-4 py-2 text-sm font-medium transition-colors ${
-            theme === 'system' ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-slate-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
+            theme === 'system' ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
           }`}
         >
           <Monitor className="w-4 h-4" /> System
