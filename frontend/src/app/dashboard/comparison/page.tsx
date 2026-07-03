@@ -4,9 +4,11 @@ import { useState, useEffect } from 'react';
 import { Scale, BarChart3, TrendingUp, RefreshCcw, PieChart } from 'lucide-react';
 import { mentions as mentionsApi } from '@/lib/api';
 import { useProject } from '@/contexts/ProjectContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import toast from 'react-hot-toast';
 
 export default function ComparisonPage() {
+  const { t } = useLanguage();
   const { projects } = useProject();
   const [projectA, setProjectA] = useState<number | null>(null);
   const [projectB, setProjectB] = useState<number | null>(null);
@@ -16,11 +18,11 @@ export default function ComparisonPage() {
 
   const handleCompare = async () => {
     if (!projectA || !projectB) {
-      toast.error('Vui lòng chọn 2 project để so sánh');
+      toast.error(t('comparison.page.errSelect'));
       return;
     }
     if (projectA === projectB) {
-      toast.error('Hãy chọn 2 project khác nhau');
+      toast.error(t('comparison.page.errSame'));
       return;
     }
     try {
@@ -32,7 +34,7 @@ export default function ComparisonPage() {
       setDataA(resA);
       setDataB(resB);
     } catch (error) {
-      toast.error('Lỗi khi tải dữ liệu so sánh');
+      toast.error(t('comparison.page.errFetch'));
     } finally {
       setLoading(false);
     }
@@ -68,18 +70,18 @@ export default function ComparisonPage() {
         <div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-wide flex items-center gap-2">
             <Scale className="w-6 h-6 text-emerald-500" />
-            Comparison
+            {t('comparison.page.title')}
           </h1>
-          <p className="text-sm text-gray-600 dark:text-slate-500 dark:text-gray-400 mt-1">So sánh mentions, sentiment giữa các projects.</p>
+          <p className="text-sm text-gray-600 dark:text-slate-500 dark:text-gray-400 mt-1">{t('comparison.page.subtitle')}</p>
         </div>
       </div>
 
       {/* Project selector */}
       <div className="bg-white dark:bg-[#050A15] rounded-2xl shadow-sm border border-gray-100 dark:border-white/10 p-6">
-        <h2 className="text-base font-bold text-slate-900 dark:text-white mb-4">Chọn 2 Projects để So sánh</h2>
+        <h2 className="text-base font-bold text-slate-900 dark:text-white mb-4">{t('comparison.page.selectTitle')}</h2>
         {projects.length < 2 ? (
           <div className="bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 text-amber-800 dark:text-amber-300 px-4 py-3 rounded-lg text-sm">
-            Tính năng này yêu cầu ít nhất 2 dự án. Hiện tại bạn mới có {projects.length} dự án.
+            {t('comparison.page.needMoreProjects')} {projects.length} {t('comparison.page.needMoreProjectsSuffix')}
           </div>
         ) : (
           <div className="flex flex-col sm:flex-row gap-4 items-end">
@@ -91,7 +93,7 @@ export default function ComparisonPage() {
                 onChange={e => setProjectA(Number(e.target.value) || null)}
                 className="w-full appearance-none bg-gray-50 dark:bg-[#0a0f1c] border border-gray-200 dark:border-white/10 rounded-lg pl-4 pr-10 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
               >
-                <option value="">-- Chọn Project A --</option>
+                <option value="">{t('comparison.page.selectA')}</option>
                 {projects.map(p => (
                   <option key={p.id} value={p.id}>{p.name}</option>
                 ))}
@@ -111,7 +113,7 @@ export default function ComparisonPage() {
                 onChange={e => setProjectB(Number(e.target.value) || null)}
                 className="w-full appearance-none bg-gray-50 dark:bg-[#0a0f1c] border border-gray-200 dark:border-white/10 rounded-lg pl-4 pr-10 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
               >
-                <option value="">-- Chọn Project B --</option>
+                <option value="">{t('comparison.page.selectB')}</option>
                 {projects.map(p => (
                   <option key={p.id} value={p.id}>{p.name}</option>
                 ))}
@@ -129,7 +131,7 @@ export default function ComparisonPage() {
             className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold transition-colors disabled:opacity-50 flex items-center gap-2"
           >
             {loading ? <RefreshCcw className="w-4 h-4 animate-spin" /> : <Scale className="w-4 h-4" />}
-            So sánh
+            {t('comparison.page.compareButton')}
           </button>
         </div>
         )}
@@ -153,9 +155,9 @@ export default function ComparisonPage() {
           {/* KPIs */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {[
-              { label: 'Tổng Mentions', a: dataA.total || 0, b: dataB.total || 0 },
-              { label: 'Mentions Tích cực', a: dataA.positive || 0, b: dataB.positive || 0 },
-              { label: 'Mentions Tiêu cực', a: dataA.negative || 0, b: dataB.negative || 0 },
+              { label: t('comparison.page.totalMentions'), a: dataA.total || 0, b: dataB.total || 0 },
+              { label: t('comparison.page.posMentions'), a: dataA.positive || 0, b: dataB.positive || 0 },
+              { label: t('comparison.page.negMentions'), a: dataA.negative || 0, b: dataB.negative || 0 },
             ].map(({ label, a, b }) => (
               <div key={label} className="bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-100 dark:border-white/10 p-4">
                 <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">{label}</p>
@@ -180,10 +182,10 @@ export default function ComparisonPage() {
           <div className="bg-white dark:bg-[#050A15] rounded-2xl shadow-sm border border-gray-100 dark:border-white/10 p-6">
             <h2 className="text-base font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
               <TrendingUp className="w-4 h-4 text-indigo-500" />
-              Trend theo ngày
+              {t('comparison.page.trendTitle')}
             </h2>
             {(dataA.by_day || []).length === 0 ? (
-              <p className="text-slate-500 dark:text-gray-400 text-sm">Không đủ dữ liệu để so sánh. Hãy chạy scan hoặc background collection.</p>
+              <p className="text-slate-500 dark:text-gray-400 text-sm">{t('comparison.page.trendNoData')}</p>
             ) : (
               <div className="space-y-3">
                 {(dataA.by_day || []).map((d: any, i: number) => {
@@ -205,10 +207,10 @@ export default function ComparisonPage() {
               return (
                 <div key={name} className="bg-white dark:bg-[#050A15] rounded-2xl shadow-sm border border-gray-100 dark:border-white/10 p-6">
                   <h3 className="font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-                    <PieChart className="w-4 h-4" /> {name} — Nguồn
+                    <PieChart className="w-4 h-4" /> {name} {t('comparison.page.sourceSuffix')}
                   </h3>
                   {entries.length === 0 ? (
-                    <p className="text-slate-500 dark:text-gray-400 text-sm">Chưa có dữ liệu</p>
+                    <p className="text-slate-500 dark:text-gray-400 text-sm">{t('comparison.page.sourceNoData')}</p>
                   ) : (
                     <div className="space-y-2">
                       {entries.map(([src, cnt]) => {
@@ -234,7 +236,7 @@ export default function ComparisonPage() {
         <div className="bg-white dark:bg-[#050A15] rounded-2xl shadow-sm border border-gray-100 dark:border-white/10 p-12 text-center">
           <Scale className="w-12 h-12 text-slate-500 dark:text-gray-400 mx-auto mb-4" />
           <p className="text-gray-600 dark:text-slate-500 dark:text-gray-400 text-sm">
-            Chọn 2 projects và nhấn "So sánh" để xem kết quả.
+            {t('comparison.page.guide')}
           </p>
         </div>
       )}

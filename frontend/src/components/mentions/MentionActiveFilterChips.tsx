@@ -1,5 +1,6 @@
 import React from 'react';
 import { X } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface ActiveFilterChipsProps {
   filters: {
@@ -21,28 +22,29 @@ export function MentionActiveFilterChips({
   onRemoveFilter,
   onClearAll
 }: ActiveFilterChipsProps) {
+  const { t } = useLanguage();
   const activeChips = [];
 
   if (searchTerm) {
-    activeChips.push({ key: 'search', label: `Tìm kiếm: ${searchTerm}` });
+    activeChips.push({ key: 'search', label: `${t('mentions.chips.search')} ${searchTerm}` });
   }
   if (filters.sentiment) {
-    const sentimentLabels: Record<string, string> = { positive: 'Tích cực', neutral: 'Trung lập', negative: 'Tiêu cực' };
-    activeChips.push({ key: 'sentiment', label: `Cảm xúc: ${sentimentLabels[filters.sentiment] || filters.sentiment}` });
+    const sentimentLabels: Record<string, string> = { positive: t('mentions.sentiment.positive'), neutral: t('mentions.sentiment.neutral'), negative: t('mentions.sentiment.negative') };
+    activeChips.push({ key: 'sentiment', label: `${t('mentions.chips.sentiment')} ${sentimentLabels[filters.sentiment] || filters.sentiment}` });
   }
   if (filters.source_type) {
     const sources = filters.source_type.split(',').join(', ');
-    activeChips.push({ key: 'source_type', label: `Nguồn: ${sources}` });
+    activeChips.push({ key: 'source_type', label: `${t('mentions.chips.source')} ${sources}` });
   }
   if (filters.min_risk_score !== null) {
-    activeChips.push({ key: 'min_risk_score', label: `Rủi ro ≥ ${filters.min_risk_score}` });
+    activeChips.push({ key: 'min_risk_score', label: `${t('mentions.chips.risk')} ${filters.min_risk_score}` });
   }
   if (filters.min_influence_score !== null) {
-    activeChips.push({ key: 'min_influence_score', label: `Ảnh hưởng ≥ ${filters.min_influence_score}` });
+    activeChips.push({ key: 'min_influence_score', label: `${t('mentions.chips.influence')} ${filters.min_influence_score}` });
   }
   if (dateRange && dateRange !== 'all') {
-    const dateLabels: Record<string, string> = { '1d': 'Hôm nay', '7d': '7 ngày qua', '30d': '30 ngày qua', '90d': '90 ngày qua' };
-    activeChips.push({ key: 'dateRange', label: `Thời gian: ${dateLabels[dateRange] || dateRange}` });
+    const dateLabels: Record<string, string> = { '1d': t('mentions.chips.today'), '7d': t('mentions.chips.last7days'), '30d': t('mentions.chips.last30days'), '90d': t('mentions.chips.last90days') };
+    activeChips.push({ key: 'dateRange', label: `${t('mentions.chips.time')} ${dateLabels[dateRange] || dateRange}` });
   }
 
   if (activeChips.length === 0) return null;
@@ -65,7 +67,7 @@ export function MentionActiveFilterChips({
           onClick={onClearAll}
           className="text-xs font-medium text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 underline ml-2 transition-colors"
         >
-          Xóa tất cả
+          {t('mentions.chips.clearAll')}
         </button>
       )}
     </div>
