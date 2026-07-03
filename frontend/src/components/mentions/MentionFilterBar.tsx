@@ -1,6 +1,7 @@
 import React from 'react';
 import { Search, ChevronDown, RefreshCw, Download, Loader2, SlidersHorizontal } from 'lucide-react';
 import { MentionSearchInput } from './MentionSearchInput';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface MentionFilterBarProps {
   searchInput: string;
@@ -37,6 +38,8 @@ export function MentionFilterBar({
   sortOpen,
   setSortOpen
 }: MentionFilterBarProps) {
+  const { t } = useLanguage();
+
   return (
     <div className="flex flex-col gap-3 bg-white dark:bg-[#050A15] p-4 rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
       {/* Search Bar */}
@@ -52,7 +55,7 @@ export function MentionFilterBar({
           className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl transition-colors flex items-center gap-2 disabled:opacity-50 whitespace-nowrap shadow-sm"
         >
           {isScanning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-          {isScanning ? 'Đang quét...' : 'Scan Now'}
+          {isScanning ? t('mentions.filterBar.scanning') : t('mentions.filterBar.scanNow')}
         </button>
       </div>
 
@@ -64,7 +67,7 @@ export function MentionFilterBar({
               onClick={() => setSortOpen(!sortOpen)}
               className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-gray-800 text-slate-700 dark:text-gray-300 text-sm font-medium rounded-md transition-colors"
             >
-              {sortOptions.find((o) => o.value === sortValue)?.label || 'By relevance'}
+              {sortOptions.find((o) => o.value === sortValue)?.label || t('mentions.filterBar.byRelevance')}
               <ChevronDown className="w-4 h-4" />
             </button>
             {sortOpen && (
@@ -100,7 +103,7 @@ export function MentionFilterBar({
               onClick={onClearFilters}
               className="flex items-center gap-1.5 text-sm text-gray-600 dark:text-slate-500 hover:text-gray-800 dark:hover:text-gray-200 font-medium transition-colors"
             >
-              <RefreshCw className="w-3.5 h-3.5" /> Clear filters
+              <RefreshCw className="w-3.5 h-3.5" /> {t('mentions.filterBar.clearFilters')}
             </button>
           )}
 
@@ -108,7 +111,7 @@ export function MentionFilterBar({
             onClick={onSaveFilterClick}
             className="flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700 font-bold transition-colors"
           >
-            <SlidersHorizontal className="w-3.5 h-3.5" /> Save filters
+            <SlidersHorizontal className="w-3.5 h-3.5" /> {t('mentions.filterBar.saveFilters')}
           </button>
         </div>
 
@@ -117,14 +120,14 @@ export function MentionFilterBar({
           <button
             onClick={onRefreshClick}
             className="p-2 text-slate-500 dark:text-gray-400 hover:text-blue-600 transition-colors"
-            title="Refresh"
+            title={t('mentions.filterBar.refresh')}
           >
             <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
           </button>
           <button
             onClick={onExportClick}
             className="p-2 text-slate-500 dark:text-gray-400 hover:text-blue-600 transition-colors"
-            title="Export CSV"
+            title={t('mentions.filterBar.exportCSV')}
           >
             <Download className="w-4 h-4" />
           </button>
