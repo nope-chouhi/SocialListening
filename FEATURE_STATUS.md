@@ -243,6 +243,7 @@
 - Email notifications (Resend/SMTP)
 - Webhook notifications
 - RBAC (admin vs normal user)
+- Automated scheduled scans (Implemented and test-backed, requires live Scheduler verification)
 
 ### ⚠️ TESTED BUT USES DUMMY DATA / TEMPLATES
 
@@ -250,7 +251,6 @@
 
 ### ❌ NOT TESTED (Not Implemented / Not Running)
 
-- Automated scheduled scans (Implemented, but controlled by env flags)
 - API key management UI
 - Branding UI
 - Audit log UI

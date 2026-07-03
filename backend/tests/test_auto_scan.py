@@ -53,12 +53,14 @@ class TestAutoScanScheduler:
         # We know we used kwargs: trigger=IntervalTrigger(minutes=30)
         # Just verifying it was added is good enough for now
 
+    @patch('app.jobs.scan_jobs.scheduler_lock')
     @patch('app.jobs.scan_jobs.SessionLocal')
     @patch('app.jobs.scan_jobs.execute_scan')
     @patch('app.jobs.scan_jobs.settings')
-    def test_run_automated_scans_prevents_overlap(self, mock_settings, mock_execute_scan, mock_session_local):
+    def test_run_automated_scans_prevents_overlap(self, mock_settings, mock_execute_scan, mock_session_local, mock_scheduler_lock):
         """Test run_automated_scans checks CrawlJob status to prevent overlap."""
         mock_settings.AUTO_SCAN_ENABLED = True
+        mock_scheduler_lock.return_value.__enter__.return_value = True
         
         # Setup mock DB session
         mock_db = MagicMock()
@@ -99,12 +101,14 @@ class TestAutoScanScheduler:
         mock_execute_scan.assert_not_called()
         mock_db.close.assert_called_once()
         
+    @patch('app.jobs.scan_jobs.scheduler_lock')
     @patch('app.jobs.scan_jobs.SessionLocal')
     @patch('app.jobs.scan_jobs.execute_scan')
     @patch('app.jobs.scan_jobs.settings')
-    def test_run_automated_scans_executes(self, mock_settings, mock_execute_scan, mock_session_local):
+    def test_run_automated_scans_executes(self, mock_settings, mock_execute_scan, mock_session_local, mock_scheduler_lock):
         """Test run_automated_scans runs execute_scan if no overlap."""
         mock_settings.AUTO_SCAN_ENABLED = True
+        mock_scheduler_lock.return_value.__enter__.return_value = True
         
         mock_db = MagicMock()
         mock_session_local.return_value = mock_db
