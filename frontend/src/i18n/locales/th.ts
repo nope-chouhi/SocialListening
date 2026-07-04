@@ -78,7 +78,7 @@ export const th = {
     services: 'บริการ',
     logout: 'ออกจากระบบ',
     webinar: 'สัมมนาผ่านเว็บ',
-    webinarDesc: 'รับใบรับรอง Social Listening กับ Nope',
+    webinarDesc: 'รับใบรับรอง Social Listening กับ Nope24',
     signUp: 'สมัครสมาชิก',
     projectsTitle: 'โครงการ',
   },
