@@ -80,6 +80,7 @@ export const ja = {
     webinar: 'ウェビナー',
     webinarDesc: 'Nopeでソーシャルリスニング証明書を取得する',
     signUp: 'サインアップ',
+    projectsTitle: 'プロジェクト',
   },
   header: {
     workerOnline: 'ワーカーオンライン',
@@ -105,6 +106,14 @@ export const ja = {
     all: 'すべて',
     add: '追加',
     update: '更新',
+    active: 'アクティブ',
+    expand: '展開',
+    collapse: '折りたたむ',
+    uploading: 'アップロード中...',
+    uploadLogo: 'ここにロゴをクリックまたはドラッグ',
+  },
+  reports: {
+    noReportData: 'レポートデータがありません',
   },
   mentions: {
     page: {
@@ -257,7 +266,7 @@ export const ja = {
       scanningMore: '検索結果が少ないため、さらにスキャン中',
     },
     filterBar: {
-      scanNow: 'Scan Now',
+      scanNow: 'スキャン',
       scanning: 'スキャン中...',
       byRelevance: '関連性で並べ替え',
       clearFilters: 'フィルターをクリア',

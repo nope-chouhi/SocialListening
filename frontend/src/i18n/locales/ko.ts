@@ -78,8 +78,9 @@ export const ko = {
     services: '서비스',
     logout: '로그아웃',
     webinar: '웨비나',
-    webinarDesc: 'Nope과 함께 소셜 리스닝 자격증을 취득하세요',
+    webinarDesc: 'Nope과 함께 소셜 리스닝 자격증 받기',
     signUp: '가입하기',
+    projectsTitle: '프로젝트',
   },
   header: {
     workerOnline: '워커 온라인',
@@ -102,9 +103,17 @@ export const ko = {
     loading: '로딩 중...',
     search: '검색...',
     noData: '데이터 없음',
-    all: '전체',
+    all: '모두',
     add: '추가',
     update: '업데이트',
+    active: '활성',
+    expand: '확장',
+    collapse: '축소',
+    uploading: '업로드 중...',
+    uploadLogo: '여기를 클릭하거나 로고를 드래그하세요',
+  },
+  reports: {
+    noReportData: '보고서 데이터가 없습니다',
   },
   mentions: {
     page: {
@@ -257,7 +266,7 @@ export const ko = {
       scanningMore: '결과가 적어 추가 스캔 중',
     },
     filterBar: {
-      scanNow: 'Scan Now',
+      scanNow: '스캔',
       scanning: '스캔 중...',
       byRelevance: '관련성 기준',
       clearFilters: '필터 지우기',

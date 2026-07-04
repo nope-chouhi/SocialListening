@@ -33,7 +33,11 @@ export function MentionActiveFilterChips({
     activeChips.push({ key: 'sentiment', label: `${t('mentions.chips.sentiment')} ${sentimentLabels[filters.sentiment] || filters.sentiment}` });
   }
   if (filters.source_type) {
-    const sources = filters.source_type.split(',').join(', ');
+    const sources = filters.source_type.split(',').map(s => {
+      const key = `mentions.sourceType.${s.trim()}`;
+      const trans = t(key);
+      return trans !== key ? trans : s.trim();
+    }).join(', ');
     activeChips.push({ key: 'source_type', label: `${t('mentions.chips.source')} ${sources}` });
   }
   if (filters.min_risk_score !== null) {

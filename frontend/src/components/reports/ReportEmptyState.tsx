@@ -1,5 +1,6 @@
 import React from 'react';
 import { BarChart2, FileText } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface ReportEmptyStateProps {
   /** Whether there's no active project selected. */
@@ -18,6 +19,7 @@ interface ReportEmptyStateProps {
  * Does NOT fake any data or provide a "placeholder" report.
  */
 export function ReportEmptyState({ noProject, message }: ReportEmptyStateProps) {
+  const { t } = useLanguage();
   return (
     <div className="flex flex-col items-center justify-center py-20 text-center bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
       <div className="w-16 h-16 bg-slate-100 dark:bg-white/5 rounded-full flex items-center justify-center mb-4">
@@ -28,7 +30,7 @@ export function ReportEmptyState({ noProject, message }: ReportEmptyStateProps) 
         )}
       </div>
       <h3 className="text-lg font-bold text-slate-800 dark:text-gray-100 mb-2">
-        {noProject ? 'No project selected' : 'No report data available'}
+        {noProject ? t('mentions.page.selectProject') : t('reports.noReportData')}
       </h3>
       <p className="text-slate-500 dark:text-gray-400 max-w-sm text-sm">
         {message || (

@@ -79,7 +79,8 @@ export const th = {
     logout: 'ออกจากระบบ',
     webinar: 'สัมมนาผ่านเว็บ',
     webinarDesc: 'รับใบรับรอง Social Listening กับ Nope',
-    signUp: 'ลงทะเบียน',
+    signUp: 'สมัครสมาชิก',
+    projectsTitle: 'โครงการ',
   },
   header: {
     workerOnline: 'คนงานออนไลน์',
@@ -105,6 +106,14 @@ export const th = {
     all: 'ทั้งหมด',
     add: 'เพิ่ม',
     update: 'อัปเดต',
+    active: 'ใช้งานอยู่',
+    expand: 'ขยาย',
+    collapse: 'ยุบ',
+    uploading: 'กำลังอัปโหลด...',
+    uploadLogo: 'คลิกหรือลากโลโก้ที่นี่',
+  },
+  reports: {
+    noReportData: 'ไม่มีข้อมูลรายงาน',
   },
   mentions: {
     page: {
@@ -257,7 +266,7 @@ export const th = {
       scanningMore: 'กำลังสแกนเพิ่มเติมเนื่องจากมีผลลัพธ์น้อย',
     },
     filterBar: {
-      scanNow: 'Scan Now',
+      scanNow: 'สแกน',
       scanning: 'กำลังสแกน...',
       byRelevance: 'ตามความเกี่ยวข้อง',
       clearFilters: 'ล้างตัวกรอง',

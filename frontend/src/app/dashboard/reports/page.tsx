@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { reports, mentions as mentionsApi } from '@/lib/api';
 import { useProject } from '@/contexts/ProjectContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
 import { ReportDataScopeNotice } from '@/components/reports/ReportDataScopeNotice';
@@ -26,7 +27,8 @@ type Section = {
 };
 
 export default function ReportsPage() {
-  const { activeProject } = useProject();
+  const { activeProject, loading: projectLoading } = useProject();
+  const { t } = useLanguage();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
@@ -347,7 +349,9 @@ export default function ReportsPage() {
                   ) : (
                     <>
                       <ImageIcon className={cn("w-8 h-8 mb-2", uploadingLogo ? "text-emerald-500 animate-pulse" : "text-gray-400")} />
-                      <p className="text-sm text-gray-500 font-medium">{uploadingLogo ? 'Uploading...' : 'Click or drag logo here'}</p>
+                      <span className="text-sm text-gray-500 font-medium">
+                        {uploadingLogo ? t('common.uploading') : t('common.uploadLogo')}
+                      </span>
                       <p className="text-xs text-gray-400 mt-1">JPEG or PNG, max 5MB</p>
                     </>
                   )}

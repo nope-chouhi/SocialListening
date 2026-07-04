@@ -183,7 +183,7 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges, setIsWebi
             >
               <ChevronRight className="w-4 h-4" />
               <span className="pointer-events-none absolute left-full ml-3 px-2.5 py-1.5 bg-slate-50 dark:bg-[#0F172A] border border-white/10 text-slate-900 dark:text-white text-xs font-medium rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-all z-50 shadow-xl">
-                Expand
+                {t('common.expand')}
               </span>
             </button>
           </>
@@ -206,7 +206,7 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges, setIsWebi
               {/* Collapse on desktop */}
               <button
                 onClick={toggleCollapse}
-                title="Thu gọn sidebar"
+                title={t('common.collapse')}
                 className="hidden lg:flex items-center justify-center w-7 h-7 rounded-lg text-zinc-500 hover:text-white hover:bg-white/10 transition-colors"
               >
                 <ChevronLeft className="w-4 h-4" />
@@ -223,7 +223,7 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges, setIsWebi
         <div className={`mb-1 ${sidebarCollapsed ? 'px-2' : 'px-3'}`}>
           {!sidebarCollapsed && (
             <div className="flex items-center justify-between px-2 mb-1">
-              <span className="text-[10px] font-bold tracking-widest text-slate-400 uppercase">Projects</span>
+              <span className="text-[10px] font-bold tracking-widest text-slate-400 uppercase">{t('nav.projectsTitle')}</span>
               <Link href="/dashboard/projects/new" title="New Project" className="text-zinc-400 hover:text-emerald-400 transition-colors" prefetch={false}>
                 <Plus className="w-3.5 h-3.5" />
               </Link>
@@ -238,7 +238,7 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges, setIsWebi
               </Link>
               <button
                 onClick={() => setProjectDropdownOpen(!projectDropdownOpen)}
-                title={activeProject?.name || 'Select Project'}
+                title={activeProject?.name || t('mentions.page.selectProject')}
                 className="group relative w-10 h-10 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center border border-white/[0.06] transition-all"
               >
                 <span className="text-white font-bold text-xs">
@@ -248,7 +248,7 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges, setIsWebi
                 <span className="absolute bottom-1 right-1 w-2 h-2 rounded-full bg-emerald-400 border-2 border-[#0D1117]" />
                 {/* Tooltip */}
                 <span className="pointer-events-none absolute left-full ml-3 px-2.5 py-1.5 bg-slate-50 dark:bg-[#0F172A] border border-white/10 text-slate-900 dark:text-white text-xs font-medium rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-all duration-150 z-50 shadow-xl">
-                  {activeProject?.name || 'Select Project'}
+                  {activeProject?.name || t('mentions.page.selectProject')}
                 </span>
               </button>
               {projectDropdownOpen && (
@@ -278,11 +278,11 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges, setIsWebi
                   </div>
                   <div className="min-w-0 text-left">
                     <p className="text-sm font-semibold text-white truncate leading-none">
-                      {projectsLoading ? 'Loading...' : activeProject?.name || 'Select Project'}
+                      {projectsLoading ? t('common.loading') : activeProject?.name || t('mentions.page.selectProject')}
                     </p>
                     <p className="text-[11px] text-zinc-500 mt-0.5 truncate flex items-center gap-1">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
-                      {activeProject ? 'Active' : 'No project'}
+                      {activeProject ? t('common.active') : t('mentions.page.noProject')}
                     </p>
                   </div>
                 </div>
@@ -316,7 +316,7 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges, setIsWebi
         {/* Project Nav */}
         <div className={`space-y-0.5 ${sidebarCollapsed ? 'px-2' : 'px-3'}`}>
           {!sidebarCollapsed && (
-            <p className="px-2 mb-1.5 text-[10px] font-bold tracking-widest text-slate-400 uppercase">Workspace</p>
+            <p className="px-2 mb-1.5 text-[10px] font-bold tracking-widest text-slate-400 uppercase">{t('nav.workspace')}</p>
           )}
           {projectNav.map((item) => (
             <NavItem key={item.name} item={item} isActive={pathname === item.href} />

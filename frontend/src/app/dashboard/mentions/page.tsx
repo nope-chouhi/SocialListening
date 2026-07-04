@@ -1191,15 +1191,15 @@ function MentionsPageContent() {
                  <button
                    onClick={() => setChartTimeRange('days')}
                    className={`px-3 py-1 text-xs font-medium rounded shadow-sm ${chartTimeRange === 'days' ? 'bg-white dark:bg-[#050A15] text-gray-800 dark:text-gray-100' : 'text-gray-600 dark:text-slate-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-slate-700 dark:text-gray-300'}`}
-                 >Days</button>
+                 >{t('mentions.page.days')}</button>
                  <button
                    onClick={() => setChartTimeRange('weeks')}
                    className={`px-3 py-1 text-xs font-medium rounded shadow-sm ${chartTimeRange === 'weeks' ? 'bg-white dark:bg-[#050A15] text-gray-800 dark:text-gray-100' : 'text-gray-600 dark:text-slate-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-slate-700 dark:text-gray-300'}`}
-                 >Weeks</button>
+                 >{t('mentions.page.weeks')}</button>
                  <button
                    onClick={() => setChartTimeRange('months')}
                    className={`px-3 py-1 text-xs font-medium rounded shadow-sm ${chartTimeRange === 'months' ? 'bg-white dark:bg-[#050A15] text-gray-800 dark:text-gray-100' : 'text-gray-600 dark:text-slate-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-slate-700 dark:text-gray-300'}`}
-                 >Months</button>
+                 >{t('mentions.page.months')}</button>
                </div>
             </div>
           </div>

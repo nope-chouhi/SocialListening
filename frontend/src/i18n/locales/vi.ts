@@ -82,6 +82,7 @@ export const vi = {
     webinarDesc: 'Nhận chứng chỉ Social Listening cùng Nope',
     signUp: 'Đăng ký',
     workspace: 'Không gian làm việc',
+    projectsTitle: 'Dự án',
   },
   header: {
     workerOnline: 'WORKER ONLINE',
@@ -107,6 +108,14 @@ export const vi = {
     all: 'Tất cả',
     add: 'Thêm',
     update: 'Cập nhật',
+    active: 'Hoạt động',
+    expand: 'Mở rộng',
+    collapse: 'Thu gọn',
+    uploading: 'Đang tải lên...',
+    uploadLogo: 'Nhấp hoặc kéo logo vào đây',
+  },
+  reports: {
+    noReportData: 'Chưa có dữ liệu báo cáo',
   },
   mentions: {
     page: {
