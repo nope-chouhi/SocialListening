@@ -48,7 +48,7 @@ export default function WebinarPage() {
         </span>
 
         <h1 className="text-4xl md:text-5xl font-black text-slate-900 dark:text-white tracking-tight mb-6 relative z-10 max-w-3xl leading-tight">
-          Get a Social Listening Certificate with <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300">Nope24</span>
+          Get a Social Listening Certificate with <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300">Nope360</span>
         </h1>
 
         <p className="text-lg text-blue-200/70 max-w-2xl mb-10 relative z-10">

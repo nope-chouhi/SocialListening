@@ -79,7 +79,7 @@ export const vi = {
     services: 'Dịch vụ',
     logout: 'Đăng xuất',
     webinar: 'Webinar',
-    webinarDesc: 'Nhận chứng chỉ Social Listening cùng Nope24',
+    webinarDesc: 'Nhận chứng chỉ Social Listening cùng Nope360',
     signUp: 'Đăng ký',
     workspace: 'Không gian làm việc',
     projectsTitle: 'Dự án',

@@ -193,7 +193,7 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges, setIsWebi
               <div className="w-9 h-9 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-[0_0_15px_rgba(99,102,241,0.4)] border border-white/20 shrink-0">
                 <span className="text-white font-black text-base leading-none">N</span>
               </div>
-              <h1 className="text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-zinc-400 tracking-tight">Nope24</h1>
+              <h1 className="text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-zinc-400 tracking-tight">Nope360</h1>
             </div>
             <div className="flex items-center gap-1">
               {/* Close on mobile */}
@@ -491,7 +491,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
                 <Link href="#" className="hover:text-gray-700 dark:hover:text-slate-700 dark:text-gray-300 transition-colors">Legal Information</Link>
                 <Link href="#" className="hover:text-gray-700 dark:hover:text-slate-700 dark:text-gray-300 transition-colors">Customize cookie</Link>
               </div>
-              <p className="text-center sm:text-right">Copyrights © 2026 Nope24, Inc. All rights reserved.</p>
+              <p className="text-center sm:text-right">Copyrights © 2026 Nope360, Inc. All rights reserved.</p>
             </div>
           </footer>
         </main>

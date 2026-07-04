@@ -182,7 +182,7 @@ function LoginContent() {
     <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-[#000511]">
       <div className="w-full max-w-md p-8 space-y-6 bg-white dark:bg-[#0D1526] rounded-lg shadow-lg border border-gray-100 dark:border-white/10">
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Đăng nhập Nope24</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Đăng nhập Nope360</h1>
           <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">Đăng nhập vào hệ thống</p>
 
           {/* Server warm-up indicator */}

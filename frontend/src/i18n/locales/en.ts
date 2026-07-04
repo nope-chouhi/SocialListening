@@ -80,7 +80,7 @@ export const en = {
     services: 'Services',
     logout: 'Log out',
     webinar: 'Webinar',
-    webinarDesc: 'Get a Social Listening certificate with Nope24',
+    webinarDesc: 'Get a Social Listening certificate with Nope360',
     signUp: 'Sign up',
     projectsTitle: 'Projects',
   },
