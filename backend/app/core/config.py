@@ -9,7 +9,7 @@ import os
 
 class Settings(BaseSettings):
     # App
-    APP_NAME: str = "Nope24"
+    APP_NAME: str = "Nope360"
     ENVIRONMENT: str = "development"
     DEBUG: bool = False
     LOG_LEVEL: str = "INFO"

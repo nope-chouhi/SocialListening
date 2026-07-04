@@ -213,7 +213,7 @@ export default function EmailSettings() {
               value={settings.fromName}
               onChange={(e) => setSettings({ ...settings, fromName: e.target.value })}
               className="w-full px-4 py-2.5 bg-white dark:bg-[#1E293B] border border-slate-300 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-white placeholder-gray-500 transition-shadow"
-              placeholder="Nope24"
+              placeholder="Nope360"
             />
           </div>
         </div>

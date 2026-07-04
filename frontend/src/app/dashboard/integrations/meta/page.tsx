@@ -163,7 +163,7 @@ export default function MetaIntegrationPage() {
           </div>
           <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2 tracking-tight">Kết nối Facebook & Instagram</h1>
           <p className="text-slate-700 dark:text-gray-300 max-w-2xl leading-relaxed">
-            Nope24 sử dụng Meta OAuth chính thức để kết nối Facebook Page và Instagram Business/Creator. 
+            Nope360 sử dụng Meta OAuth chính thức để kết nối Facebook Page và Instagram Business/Creator. 
             Hệ thống <strong>không yêu cầu mật khẩu</strong> và chỉ thu thập dữ liệu trong phạm vi quyền bạn cấp.
           </p>
         </div>

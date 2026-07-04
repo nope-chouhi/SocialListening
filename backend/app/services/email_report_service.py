@@ -74,7 +74,7 @@ def _generate_report_html(report_type: str, data: dict) -> str:
         </div>
         
         <div style="margin-top: 30px; font-size: 12px; color: #94a3b8; text-align: center;">
-            <p>This is an automatically generated report from Nope24 Social Listening Platform.</p>
+            <p>This is an automatically generated report from Nope360 Social Listening Platform.</p>
         </div>
     </div>
     """

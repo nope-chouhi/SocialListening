@@ -167,7 +167,7 @@ export default function DashboardPage() {
       {!activeProject ? (
         <EmptyState
           icon={<Activity className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />}
-          title="Chào mừng đến với Nope24"
+          title="Chào mừng đến với Nope360"
           description={
             projects && projects.length > 0 
               ? "Vui lòng chọn một dự án từ menu bên trái để xem tổng quan giám sát."

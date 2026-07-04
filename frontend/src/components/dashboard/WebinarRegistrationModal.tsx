@@ -43,7 +43,7 @@ export default function WebinarRegistrationModal({ isOpen, onClose, onSuccess }:
       await webinar.register({
         email,
         name,
-        webinar_title: "Get a Social Listening certificate with Nope24",
+        webinar_title: "Get a Social Listening certificate with Nope360",
         webinar_time: `Wednesday, June 10, 2026 ${time}`,
         timezone: "Asia/Bangkok"
       });
@@ -98,7 +98,7 @@ export default function WebinarRegistrationModal({ isOpen, onClose, onSuccess }:
 
           <p className="text-gray-500 text-sm font-medium mb-1">Upcoming webinar:</p>
           <h2 className="text-xl font-bold text-gray-900 text-center mb-6 px-4">
-            Get a Social Listening certificate with Nope24
+            Get a Social Listening certificate with Nope360
           </h2>
 
           <div className="flex items-center text-blue-600 font-bold mb-8">

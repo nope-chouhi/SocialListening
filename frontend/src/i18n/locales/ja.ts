@@ -78,7 +78,7 @@ export const ja = {
     services: 'サービス',
     logout: 'ログアウト',
     webinar: 'ウェビナー',
-    webinarDesc: 'Nope24でソーシャルリスニング証明書を取得する',
+    webinarDesc: 'Nope360でソーシャルリスニング証明書を取得する',
     signUp: 'サインアップ',
     projectsTitle: 'プロジェクト',
   },
