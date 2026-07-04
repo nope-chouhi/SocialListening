@@ -526,7 +526,7 @@ export default function ReportsPage() {
                               <div className="text-4xl font-black text-rose-500">{data?.metrics?.sentiment?.negative || 0}</div>
                             </div>
                             <div>
-                              <div className="text-xs font-bold uppercase tracking-widest mb-2 opacity-60">Neutral</div>
+                              <div className="text-xs font-bold uppercase tracking-widest mb-2 opacity-60">{t('mentions.sentiment.neutral') || 'Neutral'}</div>
                               <div className="text-4xl font-black text-gray-500">{data?.metrics?.sentiment?.neutral || 0}</div>
                             </div>
                           </div>

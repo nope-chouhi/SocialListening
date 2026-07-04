@@ -1276,7 +1276,7 @@ function MentionsPageContent() {
         {/* Pagination Bar Top */}
         <div className="flex items-center justify-between bg-white dark:bg-[#050A15] px-4 py-3 rounded-xl shadow-sm border border-gray-200 dark:border-white/10">
            <div className="text-sm font-medium text-gray-600 dark:text-slate-500 dark:text-gray-400">
-             {loading && !mentionsList.length ? 'Đang tải...' : totalMentions >= 0 ? `${totalMentions.toLocaleString()} kết quả ${searchTerm ? `cho '${searchTerm}'` : ''}` : 'Đang tải...'}
+             {loading && !mentionsList.length ? t('common.loading') : totalMentions >= 0 ? `${totalMentions.toLocaleString()} ${t('common.results')} ${searchTerm ? `${t('common.for')} '${searchTerm}'` : ''}` : t('common.loading')}
            </div>
 
            {totalPages > 1 && (
@@ -1481,7 +1481,7 @@ return (
                         )}
                       </div>
                       <span className="text-[11px] text-slate-500 dark:text-zinc-400 font-medium tracking-wider uppercase">
-                        {mention.source_type || 'Unknown Source'} • {mention.published_at ? new Date(mention.published_at).toLocaleString('vi-VN') : new Date(mention.collected_at!).toLocaleString('vi-VN')}
+                        {mention.source_type ? t(`mentions.sourceType.${mention.source_type}`) || mention.source_type : (t('common.unknownSource') || 'Unknown Source')} • {mention.published_at ? new Date(mention.published_at).toLocaleString('vi-VN') : new Date(mention.collected_at!).toLocaleString('vi-VN')}
                       </span>
                     </div>
                   </div>
@@ -1509,7 +1509,7 @@ return (
                          className="bg-transparent border-none outline-none font-bold cursor-pointer appearance-none pr-3"
                        >
                          <option value="positive" className="text-emerald-600 font-bold">Positive</option>
-                         <option value="neutral" className="text-gray-600 font-bold">Neutral</option>
+                         <option value="neutral" className="text-gray-600 font-bold">{t('mentions.sentiment.neutral') || 'Neutral'}</option>
                          <option value="negative" className="text-rose-600 font-bold">Negative</option>
                        </select>
                        <ChevronDown className="w-3 h-3 pointer-events-none -ml-2" />
@@ -1563,7 +1563,7 @@ return (
                   })()}
 
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-base font-bold text-slate-900 dark:text-white line-clamp-2 leading-tight" title={mention.title || mention.author || 'Unknown Author'}>
+                    <h3 className="text-base font-bold text-slate-900 dark:text-white line-clamp-2 leading-tight" title={mention.title || mention.author || (t('common.unknownAuthor') || 'Unknown Author')}>
                        {mention.title ? highlightText(mention.title, searchTerm) : <span className="text-slate-400 italic">{t('mentions.page.noTitle')}</span>}
                     </h3>
 
@@ -1623,12 +1623,12 @@ return (
                        {/* Influence & Risk */}
                        {mention.influence_score !== undefined && (
                          <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 border-l border-gray-300 pl-3">
-                           Ảnh hưởng: <strong>{mention.influence_score}/10</strong>
+                           {t('mentions.card.influence') || 'Ảnh hưởng'}: <strong>{mention.influence_score}/10</strong>
                          </span>
                        )}
                        {mention.risk_score !== undefined && (
                          <span className={`text-[11px] font-medium border-l border-gray-300 pl-3 ${mention.risk_score >= 80 ? 'text-rose-600 font-bold' : 'text-slate-500'}`}>
-                           Rủi ro: <strong>{mention.risk_score}</strong>
+                           {t('mentions.card.risk') || 'Rủi ro'}: <strong>{mention.risk_score}</strong>
                          </span>
                        )}
                     </div>
@@ -1653,7 +1653,7 @@ return (
                             : 'Không có link gốc';
                           return (
                             <div className="flex items-center gap-1.5 text-[11px] font-bold text-amber-600 dark:text-amber-500 cursor-not-allowed group/tooltip relative" title={tooltipText}>
-                             <Link2Off className="w-3.5 h-3.5" /> Thiếu URL gốc
+                             <Link2Off className="w-3.5 h-3.5" /> {t('mentions.missingUrl') || 'Thiếu URL gốc'}
                              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover/tooltip:block px-2 py-1 bg-gray-800 text-slate-900 dark:text-white text-[10px] rounded whitespace-nowrap z-10">{tooltipText}</div>
                            </div>
                           );
@@ -1661,7 +1661,7 @@ return (
                         return (
                           <>
                             <button onClick={() => handleVisit(mention)} className="flex items-center gap-1.5 text-[11px] font-bold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-2.5 py-1.5 rounded-lg border border-indigo-200 dark:border-indigo-500/30 transition-colors shadow-sm">
-                              <ExternalLink className="w-3.5 h-3.5" /> Mở bài gốc
+                              <ExternalLink className="w-3.5 h-3.5" /> {t('mentions.openOriginal') || 'Mở bài gốc'}
                             </button>
                             {integrityBadge && (
                               <span
@@ -1677,7 +1677,7 @@ return (
 
                      {mention.is_visited && (
                        <div className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 px-2 py-1.5 rounded-lg border border-emerald-200 dark:border-emerald-500/20 shadow-sm">
-                         <CheckCircle2 className="w-3.5 h-3.5" /> Đã xem
+                         <CheckCircle2 className="w-3.5 h-3.5" /> {t('common.seen') || 'Đã xem'}
                          {(mention.visit_count ?? 0) > 0 && <span className="text-emerald-500 ml-0.5">({mention.visit_count})</span>}
                        </div>
                      )}
@@ -1686,16 +1686,16 @@ return (
                        <button
                          onClick={() => handleAction(mention.id, 'analyze', () => mentionsApi.analyze(mention.id), 'Đã phân tích xong')}
                          className="flex items-center gap-1.5 text-[11px] font-bold text-purple-700 bg-purple-50 border-purple-200 px-2.5 py-1.5 rounded-lg hover:bg-purple-100 transition-colors shadow-sm dark:bg-purple-900/30 dark:border-purple-800 dark:text-purple-400"
-                         title="Phân tích AI"
+                         title={t('mentions.card.analyzeAi') || 'Phân tích AI'}
                        >
-                         <BrainCircuit className="w-3.5 h-3.5" /> Phân tích AI
+                         <BrainCircuit className="w-3.5 h-3.5" /> {t('mentions.card.analyzeAi') || 'Phân tích AI'}
                        </button>
                      )}
                      {(mention.risk_score !== undefined && mention.risk_score >= 50) && (
                        <button
                          onClick={() => handleAction(mention.id, 'alert', () => mentionsApi.createAlert(mention.id), 'Đã tạo cảnh báo rủi ro')}
                          className="flex items-center gap-1.5 text-[11px] font-bold text-rose-700 bg-rose-50 border-rose-200 px-2.5 py-1.5 rounded-lg hover:bg-rose-100 transition-colors shadow-sm dark:bg-rose-900/30 dark:border-rose-800 dark:text-rose-400"
-                         title="Tạo cảnh báo"
+                         title={t('mentions.card.alert') || 'Tạo cảnh báo'}
                        >
                          <AlertTriangle className="w-3.5 h-3.5" /> Cảnh báo
                        </button>
@@ -1795,14 +1795,14 @@ return (
         <div className="bg-white dark:bg-[#050A15] rounded-xl shadow-sm border border-gray-200 dark:border-white/10 p-4">
            <div className="flex items-center justify-between mb-4">
              <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100 flex items-center gap-1.5">
-               Nguồn
+               {t('mentions.sidebar.sources')}
              </h3>
              {filters.source_type && (
                <button
                  onClick={() => { setFilters({ ...filters, source_type: null }); setPage(1); }}
                  className="text-[11px] font-bold text-gray-500 hover:text-gray-700 bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded transition-colors"
                >
-                 Xóa lọc
+                 {t('common.clearFilter') || 'Xóa lọc'}
                </button>
              )}
            </div>
@@ -1895,7 +1895,7 @@ return (
                   }}
                   className="rounded border-gray-300 text-gray-600 dark:text-slate-500 dark:text-gray-400 focus:ring-gray-500"
                />
-               <span className="text-xs font-medium text-gray-600 dark:text-slate-500 dark:text-gray-400">Neutral</span>
+               <span className="text-xs font-medium text-gray-600 dark:text-slate-500 dark:text-gray-400">{t('mentions.sentiment.neutral') || 'Neutral'}</span>
              </label>
              <label className="flex items-center gap-2 cursor-pointer">
                <input
