@@ -1,4 +1,41 @@
 export const th = {
+  dashboard: {
+    title: "แดชบอร์ด",
+    subtitle: "ภาพรวมของการตรวจสอบสื่อ การกล่าวถึง และการแจ้งเตือนความเสี่ยง",
+    anomalyActive: "เครื่องมือตรวจสอบความผิดปกติ AI ทำงาน",
+    timeRange: {
+      today: "วันนี้",
+      '7d': "7 วัน",
+      '30d': "30 วัน"
+    },
+    emptyState: {
+      title: "ยินดีต้อนรับสู่ Nope",
+      descNoProjects: "คุณยังไม่มีโครงการ โปรดติดต่อผู้ดูแลระบบเพื่อขอสิทธิ์หรือสร้างโครงการใหม่",
+      descSelectProject: "โปรดเลือกโครงการจากเมนูด้านซ้ายเพื่อดูภาพรวมการตรวจสอบ"
+    },
+    historicalOverview: "ภาพรวมย้อนหลัง",
+    realtimeMonitor: "การตรวจสอบแบบเรียลไทม์",
+    metrics: {
+      totalMentions: "การกล่าวถึงทั้งหมด",
+      reach: "การเข้าถึง",
+      interactions: "การโต้ตอบ",
+      sentimentScore: "คะแนนความรู้สึก"
+    },
+    charts: {
+      mentionVolume: "ปริมาณการกล่าวถึง (5 นาที)",
+      sentimentBreakdown: "การแจกแจงความรู้สึก",
+      reachAndInteractions: "การเข้าถึงและการโต้ตอบ",
+      noSentimentData: "ไม่มีข้อมูลความรู้สึก"
+    },
+    panels: {
+      hotKeywords: "Hot Keywords",
+      recentMentions: "Recent Mentions",
+      noRecentMentions: "No recent mentions.",
+      waitForData: "Wait for new data or check filters.",
+      riskAlerts: "Risk Alerts",
+      noActiveAlerts: "No active alerts."
+    }
+  },
   summary: {
     page: {
       title: "บทสรุปการวิเคราะห์",

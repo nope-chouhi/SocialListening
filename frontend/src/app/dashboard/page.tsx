@@ -14,11 +14,13 @@ import HotKeywordsCard from '@/components/dashboard/HotKeywordsCard';
 import RecentMentionsPanel from '@/components/dashboard/RecentMentionsPanel';
 import RiskAlertsPanel from '@/components/dashboard/RiskAlertsPanel';
 
+import { useLanguage } from '@/contexts/LanguageContext';
 import { useProject } from '@/contexts/ProjectContext';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { EmptyState } from '@/components/ui/EmptyState';
 
 export default function DashboardPage() {
+  const { t } = useLanguage();
   const { activeProject, projects } = useProject();
   const [metrics, setMetrics] = useState<any>(null);
   const [trends, setTrends] = useState<any>(null);
@@ -128,12 +130,12 @@ export default function DashboardPage() {
       
       {/* Header */}
       <PageHeader
-        title="Dashboard"
-        subtitle="Tổng quan giám sát truyền thông, mentions và cảnh báo rủi ro."
+        title={t('dashboard.title')}
+        subtitle={t('dashboard.subtitle')}
         badge={
           <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 rounded-md">
             <Activity className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-            <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">AI Anomaly Monitor Active</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">{t('dashboard.anomalyActive')}</span>
           </div>
         }
         actions={
@@ -149,7 +151,7 @@ export default function DashboardPage() {
                       : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50 dark:text-zinc-500 dark:hover:text-zinc-300 dark:hover:bg-white/5'
                   }`}
                 >
-                  {range === 'today' ? 'Hôm nay' : range === '7d' ? '7 ngày' : '30 ngày'}
+                  {range === 'today' ? t('dashboard.timeRange.today') : range === '7d' ? t('dashboard.timeRange.7d') : t('dashboard.timeRange.30d')}
                 </button>
               ))}
             </div>
@@ -167,11 +169,11 @@ export default function DashboardPage() {
       {!activeProject ? (
         <EmptyState
           icon={<Activity className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />}
-          title="Chào mừng đến với Nope"
+          title={t('dashboard.emptyState.title')}
           description={
             projects && projects.length > 0 
-              ? "Vui lòng chọn một dự án từ menu bên trái để xem tổng quan giám sát."
-              : "Bạn chưa có dự án nào. Vui lòng liên hệ Admin để được cấp quyền hoặc tạo dự án mới."
+              ? t('dashboard.emptyState.descSelectProject')
+              : t('dashboard.emptyState.descNoProjects')
           }
         />
       ) : (
@@ -183,7 +185,7 @@ export default function DashboardPage() {
           <div className="pt-4 space-y-6">
             <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
               <span className="w-1.5 h-6 bg-indigo-500 rounded-full"></span>
-              Historical Overview ({timeRange === 'today' ? 'Hôm nay' : timeRange === '7d' ? '7 ngày' : '30 ngày'})
+              {t('dashboard.historicalOverview')} ({timeRange === 'today' ? t('dashboard.timeRange.today') : timeRange === '7d' ? t('dashboard.timeRange.7d') : t('dashboard.timeRange.30d')})
             </h2>
             
             <DashboardMetricGrid metrics={metrics} isLoading={loadingMetrics} />

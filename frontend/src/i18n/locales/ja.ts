@@ -1,4 +1,41 @@
 export const ja = {
+  dashboard: {
+    title: "ダッシュボード",
+    subtitle: "メディア監視、メンション、リスクアラートの概要。",
+    anomalyActive: "AI異常監視アクティブ",
+    timeRange: {
+      today: "今日",
+      '7d': "7日間",
+      '30d': "30日間"
+    },
+    emptyState: {
+      title: "Nopeへようこそ",
+      descNoProjects: "まだプロジェクトがありません。管理者に連絡して権限をリクエストするか、新しいプロジェクトを作成してください。",
+      descSelectProject: "左側のメニューからプロジェクトを選択して、監視の概要を表示してください。"
+    },
+    historicalOverview: "過去の概要",
+    realtimeMonitor: "リアルタイム監視",
+    metrics: {
+      totalMentions: "合計メンション",
+      reach: "リーチ",
+      interactions: "インタラクション",
+      sentimentScore: "センチメントスコア"
+    },
+    charts: {
+      mentionVolume: "メンション量 (5分)",
+      sentimentBreakdown: "センチメントの内訳",
+      reachAndInteractions: "リーチとインタラクション",
+      noSentimentData: "センチメントデータなし"
+    },
+    panels: {
+      hotKeywords: "注目のキーワード",
+      recentMentions: "最近のメンション",
+      noRecentMentions: "最近のメンションはありません。",
+      waitForData: "新しいデータを待つかフィルターを確認してください。",
+      riskAlerts: "リスクアラート",
+      noActiveAlerts: "アクティブなアラートはありません。"
+    }
+  },
   summary: {
     page: {
       title: "分析サマリー",

@@ -2,8 +2,10 @@ import React from 'react';
 import { AppCard } from '@/components/ui/AppCard';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import SentimentDonutChart from './SentimentDonutChart';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function SentimentOverviewCard({ sentiment, isLoading }: { sentiment: any, isLoading: boolean }) {
+  const { t } = useLanguage();
   // If API returns breakdown inside 'breakdown' or directly
   const data = sentiment?.breakdown || sentiment || null;
   
@@ -11,7 +13,7 @@ export default function SentimentOverviewCard({ sentiment, isLoading }: { sentim
     <AppCard
       header={
         <SectionHeader
-          title="Sentiment Distribution"
+          title={t('dashboard.charts.sentimentBreakdown')}
         />
       }
     >

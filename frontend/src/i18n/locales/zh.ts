@@ -1,4 +1,41 @@
 export const zh = {
+  dashboard: {
+    title: "仪表板",
+    subtitle: "媒体监控、提及和风险警报的概述。",
+    anomalyActive: "AI 异常监控激活",
+    timeRange: {
+      today: "今天",
+      '7d': "7天",
+      '30d': "30天"
+    },
+    emptyState: {
+      title: "欢迎来到 Nope",
+      descNoProjects: "您还没有任何项目。请联系管理员申请权限或创建一个新项目。",
+      descSelectProject: "请从左侧菜单中选择一个项目以查看监控概述。"
+    },
+    historicalOverview: "历史概述",
+    realtimeMonitor: "实时监控",
+    metrics: {
+      totalMentions: "总提及次数",
+      reach: "覆盖面",
+      interactions: "互动",
+      sentimentScore: "情感得分"
+    },
+    charts: {
+      mentionVolume: "提及量 (5分钟)",
+      sentimentBreakdown: "情感细分",
+      reachAndInteractions: "覆盖面与互动",
+      noSentimentData: "无情感数据"
+    },
+    panels: {
+      hotKeywords: "热门关键字",
+      recentMentions: "最近的提及",
+      noRecentMentions: "没有最近的提及。",
+      waitForData: "等待新数据或检查过滤器。",
+      riskAlerts: "风险警报",
+      noActiveAlerts: "没有活动的警报。"
+    }
+  },
   summary: {
     page: {
       title: "分析摘要",

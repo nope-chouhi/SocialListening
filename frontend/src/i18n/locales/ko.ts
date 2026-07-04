@@ -1,4 +1,41 @@
 export const ko = {
+  dashboard: {
+    title: "대시보드",
+    subtitle: "미디어 모니터링, 멘션 및 위험 알림의 개요입니다.",
+    anomalyActive: "AI 이상 징후 모니터링 활성",
+    timeRange: {
+      today: "오늘",
+      '7d': "7일",
+      '30d': "30일"
+    },
+    emptyState: {
+      title: "Nope에 오신 것을 환영합니다",
+      descNoProjects: "아직 프로젝트가 없습니다. 관리자에게 권한을 요청하거나 새 프로젝트를 만드세요.",
+      descSelectProject: "왼쪽 메뉴에서 프로젝트를 선택하여 모니터링 개요를 확인하세요."
+    },
+    historicalOverview: "과거 개요",
+    realtimeMonitor: "실시간 모니터링",
+    metrics: {
+      totalMentions: "총 멘션",
+      reach: "도달 범위",
+      interactions: "상호작용",
+      sentimentScore: "감성 점수"
+    },
+    charts: {
+      mentionVolume: "멘션 볼륨 (5분)",
+      sentimentBreakdown: "감성 분석",
+      reachAndInteractions: "도달 및 상호작용",
+      noSentimentData: "감성 데이터 없음"
+    },
+    panels: {
+      hotKeywords: "인기 키워드",
+      recentMentions: "최근 멘션",
+      noRecentMentions: "최근 멘션이 없습니다.",
+      waitForData: "새로운 데이터를 기다리거나 필터를 확인하세요.",
+      riskAlerts: "위험 알림",
+      noActiveAlerts: "활성화된 알림이 없습니다."
+    }
+  },
   summary: {
     page: {
       title: "분석 요약",

@@ -1,4 +1,41 @@
 export const vi = {
+  dashboard: {
+    title: "Dashboard",
+    subtitle: "Tổng quan giám sát truyền thông, mentions và cảnh báo rủi ro.",
+    anomalyActive: "AI Anomaly Monitor Active",
+    timeRange: {
+      today: "Hôm nay",
+      '7d': "7 ngày",
+      '30d': "30 ngày"
+    },
+    emptyState: {
+      title: "Chào mừng đến với Nope",
+      descNoProjects: "Bạn chưa có dự án nào. Vui lòng liên hệ Admin để được cấp quyền hoặc tạo dự án mới.",
+      descSelectProject: "Vui lòng chọn một dự án từ menu bên trái để xem tổng quan giám sát."
+    },
+    historicalOverview: "Historical Overview",
+    realtimeMonitor: "Real-time Monitor",
+    metrics: {
+      totalMentions: "Total Mentions",
+      reach: "Reach",
+      interactions: "Interactions",
+      sentimentScore: "Sentiment Score"
+    },
+    charts: {
+      mentionVolume: "Mention volume (5 phút)",
+      sentimentBreakdown: "Sentiment breakdown",
+      reachAndInteractions: "Reach & interactions",
+      noSentimentData: "Chưa có dữ liệu sắc thái"
+    },
+    panels: {
+      hotKeywords: "Từ khóa nổi bật",
+      recentMentions: "Mentions gần đây",
+      noRecentMentions: "Không có mentions gần đây.",
+      waitForData: "Đợi dữ liệu mới hoặc kiểm tra lại bộ lọc.",
+      riskAlerts: "Cảnh báo rủi ro",
+      noActiveAlerts: "Không có cảnh báo hoạt động."
+    }
+  },
   summary: {
     page: {
         title: "Analysis Summary",

@@ -2,6 +2,7 @@ import React from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { AppCard } from '@/components/ui/AppCard';
 import AlertCard from './AlertCard';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function RiskAlertsPanel({ 
   alerts, 
@@ -14,12 +15,13 @@ export default function RiskAlertsPanel({
   userRole: string;
   onActionComplete: () => void;
 }) {
+  const { t } = useLanguage();
   return (
     <AppCard
       className="flex flex-col h-[600px]"
       header={
         <div className="flex justify-between items-center">
-          <h2 className="text-base font-bold text-slate-900 dark:text-white tracking-wide">Risk Alerts</h2>
+          <h2 className="text-base font-bold text-slate-900 dark:text-white tracking-wide">{t('dashboard.panels.riskAlerts')}</h2>
           <span className="text-[10px] font-black tracking-[0.1em] uppercase bg-rose-50 border border-rose-200 text-rose-600 dark:bg-rose-500/20 dark:border-rose-500/30 dark:text-rose-300 px-3 py-1.5 rounded-lg shadow-sm animate-pulse">Top 10</span>
         </div>
       }
@@ -45,7 +47,7 @@ export default function RiskAlertsPanel({
             <div className="w-16 h-16 mb-4 rounded-2xl bg-slate-50 dark:bg-white/5 flex items-center justify-center border border-slate-100 dark:border-white/10 shadow-sm">
               <AlertTriangle className="w-8 h-8 text-slate-400 dark:text-zinc-500" />
             </div>
-            <p className="text-sm text-slate-600 dark:text-zinc-300">No active alerts.</p>
+            <p className="text-sm text-slate-600 dark:text-zinc-300">{t('dashboard.panels.noActiveAlerts')}</p>
           </div>
         ) : (
           alerts.map((alert: any) => (
