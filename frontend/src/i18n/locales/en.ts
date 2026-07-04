@@ -9,8 +9,8 @@ export const en = {
       '30d': "30 days"
     },
     emptyState: {
-      title: "Welcome to Nope",
-      descNoProjects: "You don't have any projects yet. Please contact Admin for permission or create a new project.",
+      title: "Welcome to Nope360",
+      descNoProjects: "You do not have any projects yet. Please contact the Admin to request access or create a new project.",
       descSelectProject: "Please select a project from the left menu to view the monitoring overview."
     },
     historicalOverview: "Historical Overview",
@@ -117,7 +117,7 @@ export const en = {
     services: 'Services',
     logout: 'Log out',
     webinar: 'Webinar',
-    webinarDesc: 'Get a Social Listening certificate with Nope',
+    webinarDesc: 'Get a Social Listening certificate with Nope360',
     signUp: 'Sign up',
     projectsTitle: 'Projects',
   },

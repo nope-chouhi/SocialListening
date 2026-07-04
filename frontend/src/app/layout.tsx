@@ -9,10 +9,10 @@ import { LanguageProvider } from '@/contexts/LanguageContext'
 const inter = Inter({ subsets: ['latin', 'vietnamese'] })
 
 export const metadata: Metadata = {
-  title: 'Nope',
+  title: 'Nope360',
   description: 'Nền tảng giám sát truyền thông, thu thập mentions, phân tích sắc thái và cảnh báo rủi ro.',
-  applicationName: 'Nope',
-  creator: 'Nope',
+  applicationName: 'Nope360',
+  creator: 'Nope360',
   manifest: '/manifest.json',
   icons: {
     icon: '/favicon.svg',

@@ -246,7 +246,7 @@ export default function InfographicPage() {
 
           <div className="py-6 mt-10 border-t border-white/10 text-center bg-black/20">
             <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.2em] mb-1">Powered by</div>
-            <div className="font-black tracking-widest text-sm text-pink-500">NOPE INTELLIGENCE</div>
+            <div className="font-black tracking-widest text-sm text-pink-500">NOPE360 INTELLIGENCE</div>
           </div>
 
         </div>

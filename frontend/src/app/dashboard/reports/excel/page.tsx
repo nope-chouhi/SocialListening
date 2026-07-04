@@ -75,7 +75,7 @@ export default function ExcelReportPage() {
       } else {
         // Raw mentions CSV still synchronous
         const blob = await mentionsApi.exportCsv(params);
-        const filename = `Nope_Mentions_Export_${new Date().toISOString().slice(0, 10)}.csv`;
+        const filename = `Nope360_Mentions_Export_${new Date().toISOString().slice(0, 10)}.csv`;
         if (!blob || blob.size === 0) {
           toast.error('Không có dữ liệu để xuất với bộ lọc hiện tại');
           return;

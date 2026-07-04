@@ -9,7 +9,7 @@ export const zh = {
       '30d': "30天"
     },
     emptyState: {
-      title: "欢迎来到 Nope",
+      title: "欢迎来到 Nope360",
       descNoProjects: "您还没有任何项目。请联系管理员申请权限或创建一个新项目。",
       descSelectProject: "请从左侧菜单中选择一个项目以查看监控概述。"
     },
@@ -115,7 +115,7 @@ export const zh = {
     services: '服务',
     logout: '登出',
     webinar: '网络研讨会',
-    webinarDesc: '在 Nope 获取 Social Listening 证书',
+    webinarDesc: '在 Nope360 获取 Social Listening 证书',
     signUp: '注册',
     projectsTitle: '项目',
   },

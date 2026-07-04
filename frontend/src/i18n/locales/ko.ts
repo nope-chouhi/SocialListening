@@ -9,7 +9,7 @@ export const ko = {
       '30d': "30일"
     },
     emptyState: {
-      title: "Nope에 오신 것을 환영합니다",
+      title: "Nope360에 오신 것을 환영합니다",
       descNoProjects: "아직 프로젝트가 없습니다. 관리자에게 권한을 요청하거나 새 프로젝트를 만드세요.",
       descSelectProject: "왼쪽 메뉴에서 프로젝트를 선택하여 모니터링 개요를 확인하세요."
     },
@@ -115,7 +115,7 @@ export const ko = {
     services: '서비스',
     logout: '로그아웃',
     webinar: '웨비나',
-    webinarDesc: 'Nope과 함께 소셜 리스닝 자격증 받기',
+    webinarDesc: 'Nope360과 함께 소셜 리스닝 자격증 받기',
     signUp: '가입하기',
     projectsTitle: '프로젝트',
   },

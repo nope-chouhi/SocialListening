@@ -9,7 +9,7 @@ export const ja = {
       '30d': "30日間"
     },
     emptyState: {
-      title: "Nopeへようこそ",
+      title: "Nope360へようこそ",
       descNoProjects: "まだプロジェクトがありません。管理者に連絡して権限をリクエストするか、新しいプロジェクトを作成してください。",
       descSelectProject: "左側のメニューからプロジェクトを選択して、監視の概要を表示してください。"
     },
@@ -115,7 +115,7 @@ export const ja = {
     services: 'サービス',
     logout: 'ログアウト',
     webinar: 'ウェビナー',
-    webinarDesc: 'Nopeでソーシャルリスニング証明書を取得する',
+    webinarDesc: 'Nope360でソーシャルリスニング証明書を取得する',
     signUp: 'サインアップ',
     projectsTitle: 'プロジェクト',
   },

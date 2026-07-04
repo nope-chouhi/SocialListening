@@ -9,7 +9,7 @@ export const th = {
       '30d': "30 วัน"
     },
     emptyState: {
-      title: "ยินดีต้อนรับสู่ Nope",
+      title: "ยินดีต้อนรับสู่ Nope360",
       descNoProjects: "คุณยังไม่มีโครงการ โปรดติดต่อผู้ดูแลระบบเพื่อขอสิทธิ์หรือสร้างโครงการใหม่",
       descSelectProject: "โปรดเลือกโครงการจากเมนูด้านซ้ายเพื่อดูภาพรวมการตรวจสอบ"
     },
@@ -115,7 +115,7 @@ export const th = {
     services: 'บริการ',
     logout: 'ออกจากระบบ',
     webinar: 'สัมมนาผ่านเว็บ',
-    webinarDesc: 'รับใบรับรอง Social Listening กับ Nope',
+    webinarDesc: 'รับใบรับรอง Social Listening กับ Nope360',
     signUp: 'สมัครสมาชิก',
     projectsTitle: 'โครงการ',
   },

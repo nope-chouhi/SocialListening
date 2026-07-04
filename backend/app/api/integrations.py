@@ -133,7 +133,7 @@ def get_meta_status(db: Session = Depends(get_db), current_user: User = Depends(
     
     status = "limited" if missing else "active"
     label = "Đã kết nối — dữ liệu bị giới hạn theo quyền" if missing else "Hoạt động"
-    limitations = "Meta không cho phép quét tự do toàn bộ Facebook/Instagram công khai. Nope chỉ thu thập dữ liệu trong phạm vi tài khoản, Page hoặc Instagram Business được kết nối và các quyền được cấp."
+    limitations = "Meta không cho phép quét tự do toàn bộ Facebook/Instagram công khai. Nope360 chỉ thu thập dữ liệu trong phạm vi tài khoản, Page hoặc Instagram Business được kết nối và các quyền được cấp."
 
     if not has_selected and status != "limited":
         status = "oauth_required"

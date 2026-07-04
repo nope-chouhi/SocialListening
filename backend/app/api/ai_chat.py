@@ -47,7 +47,7 @@ def _build_system_prompt(db: Session, current_user: User, config: Optional[AIMod
     if config and getattr(config, 'system_prompt', None):
         custom_prompt = config.system_prompt + "\n\n"
 
-    default_prompt = f"""Bạn là AI Brand Assistant của hệ thống Social Listening "Nope".
+    default_prompt = f"""Bạn là AI Brand Assistant của hệ thống Social Listening "Nope360".
 Bạn giúp phân tích dữ liệu thương hiệu, mentions, cảnh báo, đối thủ và influencer.
 Trả lời bằng tiếng Việt. Trả lời chuyên nghiệp, ngắn gọn, có số liệu nếu có.
 

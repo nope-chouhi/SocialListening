@@ -9,7 +9,7 @@ export const vi = {
       '30d': "30 ngày"
     },
     emptyState: {
-      title: "Chào mừng đến với Nope",
+      title: "Chào mừng đến với Nope360",
       descNoProjects: "Bạn chưa có dự án nào. Vui lòng liên hệ Admin để được cấp quyền hoặc tạo dự án mới.",
       descSelectProject: "Vui lòng chọn một dự án từ menu bên trái để xem tổng quan giám sát."
     },
@@ -116,7 +116,7 @@ export const vi = {
     services: 'Dịch vụ',
     logout: 'Đăng xuất',
     webinar: 'Webinar',
-    webinarDesc: 'Nhận chứng chỉ Social Listening cùng Nope',
+    webinarDesc: 'Nhận chứng chỉ Social Listening cùng Nope360',
     signUp: 'Đăng ký',
     workspace: 'Không gian làm việc',
     projectsTitle: 'Dự án',
