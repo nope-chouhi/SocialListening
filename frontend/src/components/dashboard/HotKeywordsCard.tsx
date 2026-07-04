@@ -2,13 +2,15 @@ import React from 'react';
 import { AppCard } from '@/components/ui/AppCard';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import HotKeywordsWidget from './HotKeywordsWidget';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function HotKeywordsCard({ keywords, isLoading }: { keywords: any, isLoading: boolean }) {
+  const { t } = useLanguage();
   return (
     <AppCard
       header={
         <SectionHeader
-          title="Hot Keywords"
+          title={t('dashboard.panels.hotKeywords')}
         />
       }
     >

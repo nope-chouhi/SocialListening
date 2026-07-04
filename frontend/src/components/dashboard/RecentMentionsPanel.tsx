@@ -2,6 +2,7 @@ import React from 'react';
 import { FileText } from 'lucide-react';
 import { AppCard } from '@/components/ui/AppCard';
 import MentionCard from './MentionCard';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function RecentMentionsPanel({ 
   mentions, 
@@ -14,12 +15,13 @@ export default function RecentMentionsPanel({
   userRole: string;
   onActionComplete: () => void;
 }) {
+  const { t } = useLanguage();
   return (
     <AppCard
       className="flex flex-col h-[600px]"
       header={
         <div className="flex justify-between items-center">
-          <h2 className="text-base font-bold text-slate-900 dark:text-white tracking-wide">Recent Mentions</h2>
+          <h2 className="text-base font-bold text-slate-900 dark:text-white tracking-wide">{t('dashboard.panels.recentMentions')}</h2>
           <span className="text-[10px] font-black tracking-[0.1em] uppercase bg-indigo-50 border border-indigo-200 text-indigo-600 dark:bg-indigo-500/20 dark:border-indigo-500/30 dark:text-indigo-300 px-3 py-1.5 rounded-lg shadow-sm">Top 10</span>
         </div>
       }
@@ -45,8 +47,8 @@ export default function RecentMentionsPanel({
             <div className="w-16 h-16 mb-4 rounded-2xl bg-slate-50 dark:bg-white/5 flex items-center justify-center border border-slate-100 dark:border-white/10 shadow-sm">
               <FileText className="w-8 h-8 text-slate-400 dark:text-zinc-500" />
             </div>
-            <p className="text-sm text-slate-600 dark:text-zinc-300">No recent mentions.</p>
-            <p className="text-xs mt-1.5 text-slate-400 dark:text-zinc-500">Wait for new data or check filters.</p>
+            <p className="text-sm text-slate-600 dark:text-zinc-300">{t('dashboard.panels.noRecentMentions')}</p>
+            <p className="text-xs mt-1.5 text-slate-400 dark:text-zinc-500">{t('dashboard.panels.waitForData')}</p>
           </div>
         ) : (
           mentions.map((mention: any) => (

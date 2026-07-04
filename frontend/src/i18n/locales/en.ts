@@ -1,4 +1,41 @@
 export const en = {
+  dashboard: {
+    title: "Dashboard",
+    subtitle: "Overview of media monitoring, mentions, and risk alerts.",
+    anomalyActive: "AI Anomaly Monitor Active",
+    timeRange: {
+      today: "Today",
+      '7d': "7 days",
+      '30d': "30 days"
+    },
+    emptyState: {
+      title: "Welcome to Nope360",
+      descNoProjects: "You do not have any projects yet. Please contact the Admin to request access or create a new project.",
+      descSelectProject: "Please select a project from the left menu to view the monitoring overview."
+    },
+    historicalOverview: "Historical Overview",
+    realtimeMonitor: "Real-time Monitor",
+    metrics: {
+      totalMentions: "Total Mentions",
+      reach: "Reach",
+      interactions: "Interactions",
+      sentimentScore: "Sentiment Score"
+    },
+    charts: {
+      mentionVolume: "Mention volume (5 mins)",
+      sentimentBreakdown: "Sentiment breakdown",
+      reachAndInteractions: "Reach & interactions",
+      noSentimentData: "No sentiment data"
+    },
+    panels: {
+      hotKeywords: "Hot Keywords",
+      recentMentions: "Recent Mentions",
+      noRecentMentions: "No recent mentions.",
+      waitForData: "Wait for new data or check filters.",
+      riskAlerts: "Risk Alerts",
+      noActiveAlerts: "No active alerts."
+    }
+  },
   summary: {
     page: {
         title: "Analysis Summary",

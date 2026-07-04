@@ -9,6 +9,7 @@ import { withTimeout } from '@/lib/utils/timeout';
 import RealtimeVolumeChart from './RealtimeVolumeChart';
 import ReachInteractionsChart from './ReachInteractionsChart';
 import SentimentDonutChart from './SentimentDonutChart';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 type RealtimeMetrics = {
   total_mentions: number;
@@ -58,6 +59,7 @@ function StatCard({
 }
 
 export default function RealtimeStatsSection({ projectId }: { projectId?: number | null }) {
+  const { t } = useLanguage();
   const [metrics, setMetrics] = useState<RealtimeMetrics | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -101,7 +103,7 @@ export default function RealtimeStatsSection({ projectId }: { projectId?: number
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Radio className="w-4 h-4 text-emerald-400 animate-pulse" />
-          <h2 className="text-lg font-bold text-slate-900 dark:text-white">Real-time Monitor</h2>
+          <h2 className="text-lg font-bold text-slate-900 dark:text-white">{t('dashboard.realtimeMonitor')}</h2>
           <span className="text-[10px] uppercase tracking-wider text-zinc-500 bg-white/5 px-2 py-0.5 rounded">
             refresh 5s
           </span>
@@ -111,25 +113,25 @@ export default function RealtimeStatsSection({ projectId }: { projectId?: number
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          title="Total Mentions"
+          title={t('dashboard.metrics.totalMentions')}
           value={(metrics?.total_mentions ?? 0).toLocaleString()}
           icon={TrendingUp}
           accent="bg-brand-blue/20 text-blue-300"
         />
         <StatCard
-          title="Reach"
+          title={t('dashboard.metrics.reach')}
           value={(metrics?.reach ?? 0).toLocaleString()}
           icon={Users}
           accent="bg-brand-purple/20 text-violet-300"
         />
         <StatCard
-          title="Interactions"
+          title={t('dashboard.metrics.interactions')}
           value={(metrics?.interactions ?? 0).toLocaleString()}
           icon={MessageCircle}
           accent="bg-brand-green/20 text-emerald-300"
         />
         <StatCard
-          title="Sentiment Score"
+          title={t('dashboard.metrics.sentimentScore')}
           value={`${metrics?.sentiment_score_pct ?? 0}%`}
           icon={Smile}
           accent="bg-brand-green/20 text-emerald-400"
@@ -138,25 +140,25 @@ export default function RealtimeStatsSection({ projectId }: { projectId?: number
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <div className="xl:col-span-2 glass-card rounded-xl p-5">
-          <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-3">Mention volume (5 phút)</h3>
+          <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-3">{t('dashboard.charts.mentionVolume')}</h3>
           <RealtimeVolumeChart data={metrics?.volume ?? []} isLoading={loading} />
         </div>
         <div className="glass-card rounded-xl p-5">
-          <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-3">Sentiment breakdown</h3>
+          <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-3">{t('dashboard.charts.sentimentBreakdown')}</h3>
           <SentimentDonutChart data={sentimentChartData} isLoading={loading} />
           {breakdown && (
             <div className="mt-3 grid grid-cols-3 gap-2 text-center text-xs">
               <div>
                 <span className="text-emerald-400 font-bold">{breakdown.positive_pct}%</span>
-                <p className="text-zinc-500">Positive</p>
+                <p className="text-zinc-500">{t('mentions.sentiment.positive')}</p>
               </div>
               <div>
                 <span className="text-zinc-400 font-bold">{breakdown.neutral_pct}%</span>
-                <p className="text-zinc-500">Neutral</p>
+                <p className="text-zinc-500">{t('mentions.sentiment.neutral')}</p>
               </div>
               <div>
                 <span className="text-rose-400 font-bold">{breakdown.negative_pct}%</span>
-                <p className="text-zinc-500">Negative</p>
+                <p className="text-zinc-500">{t('mentions.sentiment.negative')}</p>
               </div>
             </div>
           )}
@@ -164,7 +166,7 @@ export default function RealtimeStatsSection({ projectId }: { projectId?: number
       </div>
 
       <div className="glass-card rounded-xl p-5">
-        <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-3">Reach &amp; interactions</h3>
+        <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-3">{t('dashboard.charts.reachAndInteractions')}</h3>
         <ReachInteractionsChart data={metrics?.volume ?? []} isLoading={loading} />
       </div>
     </section>
