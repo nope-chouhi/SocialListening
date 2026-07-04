@@ -78,8 +78,9 @@ export const zh = {
     services: '服务',
     logout: '登出',
     webinar: '网络研讨会',
-    webinarDesc: '获取 Nope 社交聆听证书',
+    webinarDesc: '在 Nope 获取 Social Listening 证书',
     signUp: '注册',
+    projectsTitle: '项目',
   },
   header: {
     workerOnline: '工作在线',
@@ -105,6 +106,14 @@ export const zh = {
     all: '全部',
     add: '添加',
     update: '更新',
+    active: '活跃',
+    expand: '展开',
+    collapse: '折叠',
+    uploading: '上传中...',
+    uploadLogo: '点击或拖拽Logo至此',
+  },
+  reports: {
+    noReportData: '没有报告数据',
   },
   mentions: {
     page: {
@@ -257,8 +266,8 @@ export const zh = {
       scanningMore: '由于结果较少，正在进行更多扫描',
     },
     filterBar: {
-      scanNow: 'Scan Now',
-      scanning: '正在扫描...',
+      scanNow: '扫描',
+      scanning: '扫描中...',
       byRelevance: '按相关性',
       clearFilters: '清除过滤器',
       saveFilters: '保存过滤器',

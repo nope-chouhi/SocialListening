@@ -82,6 +82,7 @@ export const en = {
     webinar: 'Webinar',
     webinarDesc: 'Get a Social Listening certificate with Nope',
     signUp: 'Sign up',
+    projectsTitle: 'Projects',
   },
   header: {
     workerOnline: 'WORKER ONLINE',
@@ -107,6 +108,14 @@ export const en = {
     all: 'All',
     add: 'Add',
     update: 'Update',
+    active: 'Active',
+    expand: 'Expand',
+    collapse: 'Collapse',
+    uploading: 'Uploading...',
+    uploadLogo: 'Click or drag logo here',
+  },
+  reports: {
+    noReportData: 'No report data available',
   },
   mentions: {
     page: {
