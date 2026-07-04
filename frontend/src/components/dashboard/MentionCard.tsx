@@ -9,6 +9,7 @@ import { AppCard } from '@/components/ui/AppCard';
 import { mentions } from '@/lib/api';
 import { getSafeVisitUrl } from '@/lib/visit-url';
 import toast from 'react-hot-toast';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface MentionCardProps {
   mention: any;
@@ -50,6 +51,7 @@ function isValidImageUrl(url: any): boolean {
 }
 
 export default function MentionCard({ mention, onActionComplete, userRole }: MentionCardProps) {
+  const { t } = useLanguage();
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
 
   const canAnalyze = ['analyst', 'manager', 'admin', 'super_admin'].includes(userRole || '');
@@ -88,9 +90,7 @@ export default function MentionCard({ mention, onActionComplete, userRole }: Men
   const keywordLabels = keywordTexts(mention.matched_keywords);
   
   const derivedDomain = extractDomain(bestUrl);
-  const sourceDomain = mention.domain && mention.domain.toLowerCase() !== 'unknown' 
-    ? mention.domain 
-    : derivedDomain || 'Nguồn chưa xác định';
+  const sourceDomain = derivedDomain || t('common.unknownSource') || 'Nguồn chưa xác định';
 
   const imageUrl = isValidImageUrl(mention.image_url) ? mention.image_url : null;
 
@@ -101,10 +101,10 @@ export default function MentionCard({ mention, onActionComplete, userRole }: Men
   
   const disableVisit = isLowConfidence || isUrlInvalid || isBlocked || !bestUrl;
   let visitWarning = null;
-  if (!bestUrl) visitWarning = "Không có URL";
-  else if (isBlocked) visitWarning = "Nguồn bị chặn (Blocked)";
-  else if (isUrlInvalid) visitWarning = "URL không hợp lệ hoặc đã chết";
-  else if (isLowConfidence) visitWarning = "Độ tin cậy của nguồn thấp";
+  if (!bestUrl) visitWarning = t('mentions.noUrl') || "Không có URL";
+  else if (isBlocked) visitWarning = t('mentions.trust.blocked') || "Nguồn bị chặn (Blocked)";
+  else if (isUrlInvalid) visitWarning = t('mentions.invalidUrl') || "URL không hợp lệ hoặc đã chết";
+  else if (isLowConfidence) visitWarning = t('mentions.trust.low') || "Độ tin cậy của nguồn thấp";
 
   return (
     <AppCard hoverable className="overflow-hidden border border-slate-200 dark:border-white/10">
@@ -127,7 +127,7 @@ export default function MentionCard({ mention, onActionComplete, userRole }: Men
               )}
             </div>
             <span className="text-[10px] text-slate-500 dark:text-zinc-400 font-medium tracking-wider uppercase">
-              {mention.source_type || 'Unknown Source'} • {new Date(mention.collected_at || mention.published_at).toLocaleString('vi-VN')}
+              {mention.source_type ? t(`mentions.sourceType.${mention.source_type}`) || mention.source_type : (t('common.unknownSource') || 'Unknown Source')} • {new Date(mention.collected_at || mention.published_at).toLocaleString('vi-VN')}
             </span>
           </div>
         </div>
@@ -163,10 +163,10 @@ export default function MentionCard({ mention, onActionComplete, userRole }: Men
         
         <div className="flex-1 min-w-0 space-y-2">
           <h3 className="font-bold text-base text-slate-900 dark:text-white leading-tight line-clamp-2">
-            {mention.title || <span className="text-slate-400 italic font-normal">Không có tiêu đề</span>}
+            {mention.title || <span className="text-slate-400 italic font-normal">{t('mentions.noTitle') || "Không có tiêu đề"}</span>}
           </h3>
           <p className="text-sm text-slate-600 dark:text-zinc-300 leading-relaxed line-clamp-3">
-            {mention.content || <span className="text-slate-400 italic">Không có nội dung trích xuất.</span>}
+            {mention.content || <span className="text-slate-400 italic">{t('mentions.noContent') || "Không có nội dung trích xuất."}</span>}
           </p>
           
           {/* Metadata badges */}
@@ -187,26 +187,26 @@ export default function MentionCard({ mention, onActionComplete, userRole }: Men
       <div className="px-4 py-3 bg-slate-50/50 dark:bg-black/10 border-t border-slate-100 dark:border-white/5 flex flex-wrap items-center justify-between gap-3">
         <div className="flex space-x-2">
           <DashboardQuickActionButton
-            label="Đã xem"
+            label={t('common.seen') || "Đã xem"}
             icon={CheckCircle2}
-            onClick={() => handleAction('review', () => mentions.markReviewed(mention.id), 'Đã đánh dấu xem')}
+            onClick={() => handleAction('review', () => mentions.markReviewed(mention.id), t('mentions.actions.markedReviewed') || 'Đã đánh dấu xem')}
             isLoading={loadingAction === 'review'}
             variant="ghost"
           />
           {(!mention.sentiment || typeof mention.risk_score === 'undefined') && canAnalyze && (
             <DashboardQuickActionButton
-              label="Phân tích AI"
+              label={t('mentions.actions.analyze') || "Phân tích AI"}
               icon={BrainCircuit}
-              onClick={() => handleAction('analyze', () => mentions.analyze(mention.id), 'Đã yêu cầu phân tích')}
+              onClick={() => handleAction('analyze', () => mentions.analyze(mention.id), t('mentions.actions.requestedAnalyze') || 'Đã yêu cầu phân tích')}
               isLoading={loadingAction === 'analyze'}
               variant="secondary"
             />
           )}
           {canEscalate && mention.risk_score >= 50 && (
             <DashboardQuickActionButton
-              label="Tạo cảnh báo"
+              label={t('mentions.actions.alert') || "Tạo cảnh báo"}
               icon={AlertTriangle}
-              onClick={() => handleAction('alert', () => mentions.createAlert(mention.id), 'Đã tạo cảnh báo')}
+              onClick={() => handleAction('alert', () => mentions.createAlert(mention.id), t('mentions.actions.createdAlert') || 'Đã tạo cảnh báo')}
               isLoading={loadingAction === 'alert'}
               variant="danger"
             />
@@ -224,10 +224,10 @@ export default function MentionCard({ mention, onActionComplete, userRole }: Men
             <button
               disabled
               className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 text-slate-400 dark:text-zinc-500 cursor-not-allowed"
-              title={visitWarning || "Cannot visit link"}
+              title={visitWarning || t('mentions.cannotVisit') || "Cannot visit link"}
             >
               <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
-              Truy cập an toàn
+              {t('mentions.safeVisit') || "Truy cập an toàn"}
             </button>
           ) : (
             <a
@@ -235,10 +235,10 @@ export default function MentionCard({ mention, onActionComplete, userRole }: Men
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg border border-indigo-200 dark:border-indigo-500/30 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 transition-colors shadow-sm"
-              title={`Truy cập nguồn: ${sourceDomain}`}
+              title={`${t('mentions.visitSource') || "Truy cập nguồn"}: ${sourceDomain}`}
             >
               <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
-              Truy cập an toàn
+              {t('mentions.safeVisit') || "Truy cập an toàn"}
             </a>
           )}
         </div>

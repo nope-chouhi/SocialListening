@@ -202,7 +202,7 @@ export const en = {
     comingSoon: 'Coming soon',
     typingKeyword: 'Typing keyword...',
     searchingFor: 'Searching for',
-    noResultsToday: 'No results for today.',
+    noResultsToday: 'No results today.',
     noResultsFor: 'No results found for',
     noDataYet: 'No data yet.',
     extend7Days: 'Extend 7 days',
