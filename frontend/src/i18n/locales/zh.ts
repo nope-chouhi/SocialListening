@@ -78,7 +78,7 @@ export const zh = {
     services: '服务',
     logout: '登出',
     webinar: '网络研讨会',
-    webinarDesc: '在 Nope 获取 Social Listening 证书',
+    webinarDesc: '在 Nope24 获取 Social Listening 证书',
     signUp: '注册',
     projectsTitle: '项目',
   },

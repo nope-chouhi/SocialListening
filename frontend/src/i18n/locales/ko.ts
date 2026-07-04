@@ -78,7 +78,7 @@ export const ko = {
     services: '서비스',
     logout: '로그아웃',
     webinar: '웨비나',
-    webinarDesc: 'Nope과 함께 소셜 리스닝 자격증 받기',
+    webinarDesc: 'Nope24와 함께 소셜 리스닝 자격증 받기',
     signUp: '가입하기',
     projectsTitle: '프로젝트',
   },
