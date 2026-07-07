@@ -173,114 +173,168 @@ def manual_scan(
     """
     Manual scan: Live pipeline for API adapters.
     """
-    keyword_texts = []
+    import logging
+    _logger = logging.getLogger("app.api.crawl.manual_scan")
 
-    from app.services.scan_service import expand_scan_keyword
-
-    provider_used = "deferred" if body.expand_keywords else "none"
-    if body.query:
-        query_kw = body.query.strip().lower()
-        if query_kw:
-            keyword_texts.append(query_kw)
-
-    if body.keywords:
-        for kw in body.keywords:
-            kw_lower = kw.lower().strip()
-            if kw_lower and kw_lower not in keyword_texts:
-                keyword_texts.append(kw_lower)
-
-    if not keyword_texts:
-        raise HTTPException(status_code=400, detail="Vui lòng cung cấp ít nhất một từ khóa (qua query hoặc keywords)")
-
-    mode = getattr(body, "mode", "HYBRID") or "HYBRID"
-    project_id = body.project_id
-    query_key = (body.query or "").strip().lower() or "|".join(sorted(keyword_texts))
-
-    import os
-    env_max = os.getenv("CRAWL_MAX_RESULTS_PER_SOURCE")
     try:
-        default_max = int(env_max) if env_max else 50
-    except ValueError:
-        default_max = 50
+        keyword_texts = []
 
-    # Cap max_results at 100 to avoid overload
-    req_max = body.max_results or default_max
-    max_results = min(req_max, 100)
+        from app.services.scan_service import expand_scan_keyword
 
-    from datetime import timedelta
-    # Check pending/running in last 15 min
-    recent_limit_active = datetime.now(timezone.utc) - timedelta(minutes=15)
-    # Check completed in last 5 min
-    recent_limit_completed = datetime.now(timezone.utc) - timedelta(minutes=5)
+        provider_used = "deferred" if body.expand_keywords else "none"
+        if body.query:
+            query_kw = body.query.strip().lower()
+            if query_kw:
+                keyword_texts.append(query_kw)
 
-    existing_jobs = db.execute(
-        select(CrawlJob).where(
-            or_(
-                and_(CrawlJob.status.in_([CrawlJobStatus.PENDING, CrawlJobStatus.RUNNING]), CrawlJob.created_at > recent_limit_active),
-                and_(CrawlJob.status == CrawlJobStatus.COMPLETED, CrawlJob.completed_at > recent_limit_completed)
+        if body.keywords:
+            for kw in body.keywords:
+                kw_lower = kw.lower().strip()
+                if kw_lower and kw_lower not in keyword_texts:
+                    keyword_texts.append(kw_lower)
+
+        if not keyword_texts:
+            raise HTTPException(status_code=400, detail="Vui lòng cung cấp ít nhất một từ khóa (qua query hoặc keywords)")
+
+        mode = getattr(body, "mode", "HYBRID") or "HYBRID"
+        project_id = body.project_id
+        query_key = (body.query or "").strip().lower() or "|".join(sorted(keyword_texts))
+
+        import os
+        env_max = os.getenv("CRAWL_MAX_RESULTS_PER_SOURCE")
+        try:
+            default_max = int(env_max) if env_max else 50
+        except ValueError:
+            default_max = 50
+
+        # Cap max_results at 100 to avoid overload
+        req_max = body.max_results or default_max
+        max_results = min(req_max, 100)
+
+        from datetime import timedelta
+        # Check pending/running in last 15 min
+        recent_limit_active = datetime.now(timezone.utc) - timedelta(minutes=15)
+        # Check completed in last 5 min
+        recent_limit_completed = datetime.now(timezone.utc) - timedelta(minutes=5)
+
+        # Duplicate-check query: select only the columns we actually need.
+        # This avoids OperationalError if user_id / scan_schedule_id columns
+        # are missing from the production DB (schema not yet migrated).
+        try:
+            existing_jobs = db.execute(
+                select(
+                    CrawlJob.id, CrawlJob.status, CrawlJob.job_type,
+                    CrawlJob.created_at, CrawlJob.completed_at, CrawlJob.meta_data
+                ).where(
+                    or_(
+                        and_(CrawlJob.status.in_([CrawlJobStatus.PENDING, CrawlJobStatus.RUNNING]), CrawlJob.created_at > recent_limit_active),
+                        and_(CrawlJob.status.in_([CrawlJobStatus.COMPLETED, CrawlJobStatus.COMPLETED_NO_RESULTS]), CrawlJob.completed_at > recent_limit_completed)
+                    )
+                )
+            ).all()
+        except Exception as e:
+            _logger.warning("Duplicate-check query failed (possible schema mismatch): %s", e)
+            db.rollback()
+            existing_jobs = []
+
+        for ej in existing_jobs:
+            meta_raw = ej.meta_data
+            if isinstance(meta_raw, str):
+                import json
+                try:
+                    meta = json.loads(meta_raw)
+                except Exception:
+                    meta = {}
+            elif isinstance(meta_raw, dict):
+                meta = meta_raw
+            else:
+                meta = {}
+            # Only check jobs for the same project
+            if meta.get("project_id") != project_id:
+                continue
+
+            ej_query_key = (meta.get("query_key") or meta.get("query") or "").strip().lower()
+            ej_source_types = set(meta.get("source_types", []))
+            ej_status = ej.status.value if hasattr(ej.status, 'value') else ej.status
+
+            if meta.get("mode", ej.job_type) == mode and ej_query_key == query_key and set(body.source_types or []) == ej_source_types:
+                return {
+                    "job_id": ej.id,
+                    "status": ej_status,
+                    "mode": mode,
+                    "project_id": project_id,
+                    "keywords": meta.get("keywords", []),
+                    "message": "Returned existing recent job to prevent duplicate crawl"
+                }
+
+        # Create new CrawlJob. If DB is missing user_id/scan_schedule_id columns,
+        # the INSERT will fail. Catch and return structured error.
+        try:
+            job = CrawlJob(
+                job_type='manual',
+                status=CrawlJobStatus.PENDING,
+                user_id=current_user.id,
+                total_sources=0,
+                processed_sources=0,
+                mentions_found=0,
+                started_at=datetime.now(timezone.utc),
+                meta_data={
+                    "query": body.query,
+                    "query_key": query_key,
+                    "project_id": project_id,
+                    "mode": mode,
+                    "keywords": keyword_texts,
+                    "provider": provider_used,
+                    "user_id": current_user.id,
+                    "source_ids": body.source_ids or [],
+                    "source_types": body.source_types or [],
+                    "expand_keywords": body.expand_keywords,
+                    "auto_triggered": body.auto_triggered,
+                    "reason": body.reason,
+                    "current_result_count": body.current_result_count
+                }
             )
-        )
-    ).scalars().all()
+            db.add(job)
+            db.commit()
+            db.refresh(job)
+        except Exception as e:
+            db.rollback()
+            err_str = str(e)
+            _logger.error("Failed to create CrawlJob: %s", err_str)
+            # Detect column-missing schema errors (psycopg2 on Postgres, sqlite3 locally)
+            if "column" in err_str.lower() and ("does not exist" in err_str.lower() or "no column named" in err_str.lower() or "UndefinedColumn" in err_str):
+                from fastapi.responses import JSONResponse
+                return JSONResponse(status_code=503, content={
+                    "ok": False,
+                    "error": "Cơ sở dữ liệu chưa được cập nhật schema. Vui lòng liên hệ admin để chạy migration.",
+                    "error_code": "DB_SCHEMA_MISMATCH",
+                    "detail": f"Missing column detected during CrawlJob insert. Migration may not have run: {err_str[:300]}"
+                })
+            raise
 
-    for ej in existing_jobs:
-        meta = ej.meta_data or {}
-        # Only check jobs for the same project
-        if meta.get("project_id") != project_id:
-            continue
+        from app.services.scan_service import execute_scan
+        background_tasks.add_task(execute_scan, job.id, project_id, keyword_texts, mode, max_results, body.source_types or [])
 
-        ej_query_key = (meta.get("query_key") or meta.get("query") or "").strip().lower()
-        ej_source_types = set(meta.get("source_types", []))
-
-        if meta.get("mode", ej.job_type) == mode and ej_query_key == query_key and set(body.source_types or []) == ej_source_types:
-            # If auto-triggered, we don't return an existing completed job to frontend if it's already done (or we could return it as completed so UI doesn't spin)
-            # Actually, if it's completed, we shouldn't trigger a new one, but returning COMPLETED is fine.
-            return {
-                "job_id": ej.id,
-                "status": ej.status.value if hasattr(ej.status, 'value') else ej.status,
-                "mode": mode,
-                "project_id": project_id,
-                "keywords": meta.get("keywords", []),
-                "message": "Returned existing recent job to prevent duplicate crawl"
-            }
-
-    job = CrawlJob(
-        job_type='manual',
-        status=CrawlJobStatus.PENDING,
-        user_id=current_user.id,
-        total_sources=0,
-        processed_sources=0,
-        mentions_found=0,
-        started_at=datetime.now(timezone.utc),
-        meta_data={
-            "query": body.query,
-            "query_key": query_key,
-            "project_id": project_id,
+        return {
+            "job_id": job.id,
+            "status": "QUEUED",
             "mode": mode,
-            "keywords": keyword_texts,
-            "provider": provider_used,
-            "user_id": current_user.id,
-            "source_ids": body.source_ids or [],
-            "source_types": body.source_types or [],
-            "expand_keywords": body.expand_keywords,
-            "auto_triggered": body.auto_triggered,
-            "reason": body.reason,
-            "current_result_count": body.current_result_count
+            "project_id": project_id,
+            "keywords": keyword_texts
         }
-    )
-    db.add(job)
-    db.commit()
-    db.refresh(job)
 
-    from app.services.scan_service import execute_scan
-    background_tasks.add_task(execute_scan, job.id, project_id, keyword_texts, mode, max_results, body.source_types or [])
-
-    return {
-        "job_id": job.id,
-        "status": "QUEUED",
-        "mode": mode,
-        "project_id": project_id,
-        "keywords": keyword_texts
-    }
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        _logger.exception("Unhandled error in manual_scan: %s", e)
+        from fastapi.responses import JSONResponse
+        return JSONResponse(status_code=500, content={
+            "ok": False,
+            "error": "Lỗi hệ thống khi tạo scan job. Vui lòng thử lại sau.",
+            "error_code": "INTERNAL_ERROR",
+            "detail": str(e)[:500]
+        })
 
 
 def run_manual_scan_task(job_id: int, project_id: int, keyword_texts: List[str], mode: str, max_results: int, source_types: List[str] = None):

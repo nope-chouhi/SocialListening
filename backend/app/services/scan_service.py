@@ -243,9 +243,12 @@ def execute_scan(job_id: int, project_id: int, keyword_texts: List[str], mode: s
             return (time.time() - start_time) > 120
 
         # ── PARALLEL ADAPTER EXECUTION ────────────────────────────────────────
-        # Adapters fetch data concurrently (no DB writes inside threads).
-        # All DB writes happen after threads complete, in one atomic block.
+        # Adapters fetch data concurrently. DB writes inside threads use local sessions.
+        # All result merging and main DB writes happen after threads complete.
         from concurrent.futures import ThreadPoolExecutor, as_completed
+        from threading import Lock
+        
+        summary_lock = Lock()
 
         def run_web_adapter():
             if not web_ready:
@@ -260,9 +263,10 @@ def execute_scan(job_id: int, project_id: int, keyword_texts: List[str], mode: s
                 )
                 return [("web", r) for r in results]
             except Exception as e:
-                summary["errors"].append(f"WebSearch: {e}")
-                summary["web"]["error"] = str(e)
-                summary["web"]["status"] = "ERROR"
+                with summary_lock:
+                    summary["errors"].append(f"WebSearch: {e}")
+                    summary["web"]["error"] = str(e)
+                    summary["web"]["status"] = "ERROR"
                 return []
 
         def run_youtube_adapter():
@@ -278,9 +282,10 @@ def execute_scan(job_id: int, project_id: int, keyword_texts: List[str], mode: s
                 results = yt.search_keywords(keywords=keyword_texts, max_results=max_results)
                 return [("youtube", r) for r in results]
             except Exception as e:
-                summary["errors"].append(f"YouTube: {e}")
-                summary["youtube"]["error"] = str(e)
-                summary["youtube"]["status"] = "ERROR"
+                with summary_lock:
+                    summary["errors"].append(f"YouTube: {e}")
+                    summary["youtube"]["error"] = str(e)
+                    summary["youtube"]["status"] = "ERROR"
                 return []
 
         def run_social_adapter():
@@ -302,9 +307,10 @@ def execute_scan(job_id: int, project_id: int, keyword_texts: List[str], mode: s
                     loop.close()
                 return [("social", r) for r in results]
             except Exception as e:
-                summary["errors"].append(f"Social: {e}")
-                summary["social"]["error"] = str(e)
-                summary["social"]["status"] = "ERROR"
+                with summary_lock:
+                    summary["errors"].append(f"Social: {e}")
+                    summary["social"]["error"] = str(e)
+                    summary["social"]["status"] = "ERROR"
                 return []
 
         # Mark adapters as running before launching threads
@@ -358,25 +364,27 @@ def execute_scan(job_id: int, project_id: int, keyword_texts: List[str], mode: s
                             ad_hoc_keywords=keyword_texts,
                             ad_hoc_project_id=project_id
                         )
-                        summary["rss"]["raw_results_count"] = res.get("items_seen", 0)
-                        summary["rss"]["mentions_created"] = res.get("mentions_created", 0)
-                        summary["rss"]["duplicates_skipped"] = res.get("duplicates_skipped", 0)
-                        summary["new_mentions_created"] += res.get("mentions_created", 0)
-                        summary["duplicates_skipped"] += res.get("duplicates_skipped", 0)
+                        with summary_lock:
+                            summary["rss"]["raw_results_count"] = res.get("items_seen", 0)
+                            summary["rss"]["mentions_created"] = res.get("mentions_created", 0)
+                            summary["rss"]["duplicates_skipped"] = res.get("duplicates_skipped", 0)
+                            summary["new_mentions_created"] += res.get("mentions_created", 0)
+                            summary["duplicates_skipped"] += res.get("duplicates_skipped", 0)
                         return []
                     finally:
                         local_db.close()
                 except Exception as e:
-                    summary["errors"].append(f"RSS: {e}")
-                    summary["rss"]["error"] = str(e)
-                    summary["rss"]["status"] = "ERROR"
+                    with summary_lock:
+                        summary["errors"].append(f"RSS: {e}")
+                        summary["rss"]["error"] = str(e)
+                        summary["rss"]["status"] = "ERROR"
                     return []
 
             def run_search_chain_adapter():
-                """Run Serper -> Tavily -> RSS provider chain for new-style search results."""
+                if source_types and "search_chain" not in source_types and "web" not in source_types:
+                    return []
                 try:
                     from app.services.search_providers import run_provider_chain
-                    from app.core.database import SessionLocal
                     chain_results, chain_summaries = run_provider_chain(
                         keywords=keyword_texts,
                         project_id=project_id,
@@ -384,19 +392,21 @@ def execute_scan(job_id: int, project_id: int, keyword_texts: List[str], mode: s
                         max_results=settings.SEARCH_PROVIDER_MAX_RESULTS,
                         timeout_s=settings.SEARCH_PROVIDER_TIMEOUT_SECONDS,
                     )
-                    summary["search_chain"]["providers"] = chain_summaries
-                    summary["search_chain"]["status"] = "COMPLETED"
-                    summary["search_chain"]["raw_results_count"] = sum(s.get("raw_results", 0) for s in chain_summaries.values())
-                    summary["search_chain"]["duplicates_skipped"] = sum(s.get("duplicate_skipped", 0) for s in chain_summaries.values())
-                    summary["search_chain"]["invalid_links_skipped"] = sum(s.get("invalid_url_skipped", 0) for s in chain_summaries.values())
+                    with summary_lock:
+                        summary["search_chain"]["providers"] = chain_summaries
+                        summary["search_chain"]["status"] = "COMPLETED"
+                        summary["search_chain"]["raw_results_count"] = sum(s.get("raw_results", 0) for s in chain_summaries.values())
+                        summary["search_chain"]["duplicates_skipped"] = sum(s.get("duplicate_skipped", 0) for s in chain_summaries.values())
+                        summary["search_chain"]["invalid_links_skipped"] = sum(s.get("invalid_url_skipped", 0) for s in chain_summaries.values())
                     # mentions_created is tracked below in the DB insert loop
 
                     # Wrap results with adapter tag for downstream processing
                     return [("search_chain", r) for r in chain_results]
                 except Exception as e:
-                    summary["errors"].append(f"SearchChain: {e}")
-                    summary["search_chain"]["error"] = str(e)
-                    summary["search_chain"]["status"] = "ERROR"
+                    with summary_lock:
+                        summary["errors"].append(f"SearchChain: {e}")
+                        summary["search_chain"]["error"] = str(e)
+                        summary["search_chain"]["status"] = "ERROR"
                     return []
 
             futures = {
@@ -411,13 +421,15 @@ def execute_scan(job_id: int, project_id: int, keyword_texts: List[str], mode: s
                 try:
                     results = future.result(timeout=110)
                     all_raw_results.extend(results)
-                    if name not in ("rss", "search_chain") and not summary[name].get("error"):
-                        summary[name]["status"] = "COMPLETED"
+                    with summary_lock:
+                        if name not in ("rss", "search_chain") and not summary[name].get("error"):
+                            summary[name]["status"] = "COMPLETED"
                 except Exception as e:
-                    summary["errors"].append(f"{name}: {e}")
-                    if name in summary:
-                        summary[name]["error"] = str(e)
-                        summary[name]["status"] = "ERROR"
+                    with summary_lock:
+                        summary["errors"].append(f"{name}: {e}")
+                        if name in summary:
+                            summary[name]["error"] = str(e)
+                            summary[name]["status"] = "ERROR"
 
 
         # ── WRITE ALL RESULTS TO DB (single-threaded, safe) ──────────────────
