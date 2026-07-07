@@ -145,6 +145,8 @@ class Settings(BaseSettings):
             "http://localhost:3000",
             "http://127.0.0.1:3000",
             "https://social-listening-azure.vercel.app",  # Vercel frontend
+            "https://yennhie.cyou",
+            "https://www.yennhie.cyou",
         ]
         if self.FRONTEND_URL:
             # Strip trailing slash from FRONTEND_URL to match browser Origin headers exactly
