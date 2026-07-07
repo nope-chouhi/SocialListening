@@ -875,7 +875,8 @@ function MentionsPageContent() {
       setScanJobStatus({ status: 'QUEUED' });
       setScanConfirm({ isOpen: false, keyword: '' });
     } catch (err: any) {
-      toast.error('Lỗi khi bắt đầu quét');
+      const errMsg = err.response?.data?.error || err.response?.data?.detail || err.message || 'Lỗi khi bắt đầu quét';
+      toast.error(`Lỗi: ${errMsg}`);
     }
   };
 
