@@ -18,3 +18,13 @@ Created an Alembic repair migration (`a6acc60b770b_add_scan_schedule_id_to_crawl
 
 ## Why this avoids Render Shell
 By relying on Alembic's idempotent runtime schema checks (using `Inspector`), we can deploy the fix via the standard code deployment pipeline. Render's automated startup script (`RUN_MIGRATIONS_ON_STARTUP=true` or similar deployment hooks) will trigger `alembic upgrade head`. The migration will run safely, patch the production schema, and resolve the 500 error without requiring manual SSH access or a Render Shell console session to run manual SQL `ALTER TABLE` commands.
+
+## Update: Force Repair Migration
+The initial `a6acc60b770b` migration (which relied on SQLAlchemy Inspector checks) failed to add the column in some production environments where SQLAlchemy's cache or introspection behavior bypassed the change.
+
+A second repair migration (`ad0726e1745a_force_add_scan_schedule_id_to_crawl_jobs.py`) was introduced to forcefully ensure the column exists using raw PostgreSQL statements that execute directly:
+```sql
+ALTER TABLE crawl_jobs ADD COLUMN IF NOT EXISTS scan_schedule_id INTEGER;
+CREATE INDEX IF NOT EXISTS ix_crawl_jobs_scan_schedule_id ON crawl_jobs (scan_schedule_id);
+```
+This guarantees the change is applied by Postgres itself, completely bypassing any ORM introspection flaws.
