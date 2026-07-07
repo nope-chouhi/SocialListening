@@ -49,6 +49,5 @@ def upgrade() -> None:
     pg_safe_add("reputation_actions", "approved_by_user_id")
     pg_safe_add("reputation_actions", "created_by_user_id")
 
-
 def downgrade() -> None:
     pass
