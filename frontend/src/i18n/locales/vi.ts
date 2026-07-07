@@ -142,6 +142,8 @@ export const vi = {
     loading: 'Đang tải...',
     search: 'Tìm kiếm...',
     noData: 'Không có dữ liệu',
+    results: 'kết quả',
+    for: 'cho',
     all: 'Tất cả',
     add: 'Thêm',
     update: 'Cập nhật',
@@ -155,6 +157,9 @@ export const vi = {
     noReportData: 'Chưa có dữ liệu báo cáo',
   },
   mentions: {
+    sidebar: {
+      sources: 'Nguồn',
+    },
     missingUrl: 'Thiếu URL gốc',
     card: {
       analyzeAi: 'Phân tích AI',

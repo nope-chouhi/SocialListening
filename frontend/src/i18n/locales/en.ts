@@ -142,6 +142,8 @@ export const en = {
     loading: 'Loading...',
     search: 'Search...',
     noData: 'No data available',
+    results: 'results',
+    for: 'for',
     all: 'All',
     add: 'Add',
     update: 'Update',
@@ -155,6 +157,9 @@ export const en = {
     noReportData: 'No report data available',
   },
   mentions: {
+    sidebar: {
+      sources: 'Sources',
+    },
     missingUrl: 'Missing original URL',
     card: {
       analyzeAi: 'Analyze AI',
