@@ -19,7 +19,7 @@ depends_on = None
 def upgrade() -> None:
     tables_with_user_id = [
         "keyword_groups", "alerts", "crawl_jobs", "scan_schedules",
-        "incidents", "incident_logs", "sources", "source_items", "integration_accounts"
+        "incidents", "incident_logs", "sources"
     ]
     for table in tables_with_user_id:
         op.execute(f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS user_id INTEGER;")
