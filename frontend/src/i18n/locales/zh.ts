@@ -153,8 +153,13 @@ export const zh = {
     noReportData: '没有报告数据',
   },
   mentions: {
+    missingUrl: '缺少原始网址',
+    card: {
+      analyzeAi: 'AI 分析',
+      influence: '影响力',
+    },
     page: {
-      resultsFor: "的搜索结果",
+      resultsFor: "的结果",
       scanningNew: "正在扫描新提及...",
       scanComplete: "扫描完成。找到",
       scanNew: "个新提及",

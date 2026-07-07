@@ -153,6 +153,11 @@ export const th = {
     noReportData: 'ไม่มีข้อมูลรายงาน',
   },
   mentions: {
+    missingUrl: 'ไม่มี URL ต้นฉบับ',
+    card: {
+      analyzeAi: 'วิเคราะห์ด้วย AI',
+      influence: 'อิทธิพล',
+    },
     page: {
       resultsFor: "ผลลัพธ์สำหรับ",
       scanningNew: "กำลังสแกนหาการกล่าวถึงใหม่...",
