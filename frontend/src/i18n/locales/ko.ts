@@ -153,6 +153,11 @@ export const ko = {
     noReportData: '보고서 데이터가 없습니다',
   },
   mentions: {
+    missingUrl: '원본 URL 누락',
+    card: {
+      analyzeAi: 'AI 분석',
+      influence: '영향력',
+    },
     page: {
       resultsFor: "에 대한 결과",
       scanningNew: "새로운 멘션 스캔 중...",

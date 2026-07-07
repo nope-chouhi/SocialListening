@@ -155,6 +155,11 @@ export const en = {
     noReportData: 'No report data available',
   },
   mentions: {
+    missingUrl: 'Missing original URL',
+    card: {
+      analyzeAi: 'Analyze AI',
+      influence: 'Influence',
+    },
     page: {
       resultsFor: "results for",
       scanningNew: "Scanning for new mentions...",

@@ -153,8 +153,13 @@ export const ja = {
     noReportData: 'レポートデータがありません',
   },
   mentions: {
+    missingUrl: '元のURLがありません',
+    card: {
+      analyzeAi: 'AI分析',
+      influence: '影響力',
+    },
     page: {
-      resultsFor: "件の結果",
+      resultsFor: "の検索結果",
       scanningNew: "新しいメンションをスキャン中...",
       scanComplete: "スキャン完了。見つかった件数:",
       scanNew: "新規",

@@ -155,6 +155,11 @@ export const vi = {
     noReportData: 'Chưa có dữ liệu báo cáo',
   },
   mentions: {
+    missingUrl: 'Thiếu URL gốc',
+    card: {
+      analyzeAi: 'Phân tích AI',
+      influence: 'Ảnh hưởng',
+    },
     page: {
       resultsFor: "kết quả cho",
       scanningNew: "Đang quét mentions mới...",
