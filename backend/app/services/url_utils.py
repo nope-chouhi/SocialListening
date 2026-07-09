@@ -455,6 +455,34 @@ def extract_google_news_embedded_url(url: Optional[str]) -> Optional[str]:
     return None
 
 
+def resolve_visit_url_candidate(url: Optional[str]) -> Optional[str]:
+    """Resolve a stored mention URL into a safe Visit/Open publisher URL.
+
+    Offline/deterministic only:
+    1) already-clean final URL
+    2) google.com redirect recovery (/url, /log, ...)
+    3) Google News RSS/article wrapper embedded publisher URL
+    Returns None when no safe publisher URL can be derived (caller keeps fallback).
+    """
+    candidate = _trim_url(url)
+    if not candidate:
+        return None
+
+    direct = clean_final_url(candidate)
+    if direct and not is_utility_page_url(direct):
+        return direct
+
+    recovered = recover_google_redirect_url(candidate)
+    if recovered and not is_utility_page_url(recovered):
+        return recovered
+
+    embedded = extract_google_news_embedded_url(candidate)
+    if embedded and not is_utility_page_url(embedded):
+        return embedded
+
+    return None
+
+
 # ---------------------------------------------------------------------------
 # Article eligibility helpers
 # ---------------------------------------------------------------------------
