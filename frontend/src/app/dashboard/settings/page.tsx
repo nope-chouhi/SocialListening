@@ -6,6 +6,7 @@ import { Users, Shield, Building, Mail, Bell, Globe, Palette, FileText, User as 
 import { auth } from '@/lib/api';
 import { canAccessAdmin, type User } from '@/lib/permissions';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import { useLanguage } from '@/contexts/LanguageContext';
 import PersonalProfile from './PersonalProfile';
 import SecuritySettings from './SecuritySettings';
 import PersonalNotifications from './PersonalNotifications';
@@ -33,6 +34,7 @@ interface Tab {
 
 export default function SettingsPage() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<TabId>('profile');
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -68,28 +70,28 @@ export default function SettingsPage() {
   }, [activeTab, isAdmin, loading]);
 
   if (loading) {
-    return <LoadingSpinner message="Đang tải cài đặt..." />;
+    return <LoadingSpinner message={t('settings.loading')} />;
   }
 
   // Personal settings tabs - available to all users
   const personalTabs: Tab[] = [
-    { id: 'profile', name: 'Hồ sơ cá nhân', icon: UserIcon, description: 'Thông tin cá nhân' },
-    { id: 'security', name: 'Bảo mật', icon: Lock, description: 'Mật khẩu và bảo mật' },
-    { id: 'personal-notifications', name: 'Thông báo', icon: Bell, description: 'Thông báo cá nhân' },
+    { id: 'profile', name: t('settings.tabs.profile'), icon: UserIcon, description: t('settings.tabs.profileDesc') },
+    { id: 'security', name: t('settings.tabs.security'), icon: Lock, description: t('settings.tabs.securityDesc') },
+    { id: 'personal-notifications', name: t('settings.tabs.personalNotifications'), icon: Bell, description: t('settings.tabs.personalNotificationsDesc') },
   ];
 
   // Admin settings tabs - only for admin/super_admin
   const adminTabs: Tab[] = [
-    { id: 'users', name: 'Quản lý người dùng', icon: Users, description: 'Thêm, sửa, xóa người dùng', adminOnly: true },
-    { id: 'permissions', name: 'Quản lý quyền', icon: Shield, description: 'Phân quyền và vai trò', adminOnly: true },
-    { id: 'organization', name: 'Thông tin tổ chức', icon: Building, description: 'Cấu hình công ty', adminOnly: true },
-    { id: 'email', name: 'Cấu hình Email', icon: Mail, description: 'SMTP và templates', adminOnly: true },
-    { id: 'system-notifications', name: 'Thông báo hệ thống', icon: Bell, description: 'Cài đặt thông báo', adminOnly: true },
-    { id: 'delivery-logs', name: 'Lịch sử gửi', icon: Mail, description: 'Lịch sử thông báo', adminOnly: true },
-    { id: 'api', name: 'API & Webhooks', icon: Globe, description: 'API keys và webhooks', adminOnly: true },
-    { id: 'branding', name: 'Giao diện hệ thống', icon: Palette, description: 'Logo và màu sắc', adminOnly: true },
-    { id: 'logs', name: 'Audit Logs', icon: FileText, description: 'Lịch sử hoạt động', adminOnly: true },
-    { id: 'ai-model', name: 'Cấu hình AI', icon: Sparkles, description: 'Model AI và API keys', adminOnly: true },
+    { id: 'users', name: t('settings.tabs.users'), icon: Users, description: t('settings.tabs.usersDesc'), adminOnly: true },
+    { id: 'permissions', name: t('settings.tabs.permissions'), icon: Shield, description: t('settings.tabs.permissionsDesc'), adminOnly: true },
+    { id: 'organization', name: t('settings.tabs.organization'), icon: Building, description: t('settings.tabs.organizationDesc'), adminOnly: true },
+    { id: 'email', name: t('settings.tabs.email'), icon: Mail, description: t('settings.tabs.emailDesc'), adminOnly: true },
+    { id: 'system-notifications', name: t('settings.tabs.systemNotifications'), icon: Bell, description: t('settings.tabs.systemNotificationsDesc'), adminOnly: true },
+    { id: 'delivery-logs', name: t('settings.tabs.deliveryLogs'), icon: Mail, description: t('settings.tabs.deliveryLogsDesc'), adminOnly: true },
+    { id: 'api', name: t('settings.tabs.api'), icon: Globe, description: t('settings.tabs.apiDesc'), adminOnly: true },
+    { id: 'branding', name: t('settings.tabs.branding'), icon: Palette, description: t('settings.tabs.brandingDesc'), adminOnly: true },
+    { id: 'logs', name: t('settings.tabs.logs'), icon: FileText, description: t('settings.tabs.logsDesc'), adminOnly: true },
+    { id: 'ai-model', name: t('settings.tabs.aiModel'), icon: Sparkles, description: t('settings.tabs.aiModelDesc'), adminOnly: true },
   ];
 
   // Combine tabs based on role
@@ -102,8 +104,8 @@ export default function SettingsPage() {
       return (
         <div className="bg-rose-500/10 border border-rose-500/20 rounded-xl p-8 text-center">
           <Shield className="w-12 h-12 mx-auto mb-4 text-rose-400" />
-          <h3 className="text-lg font-semibold text-rose-300 mb-2">Không có quyền truy cập</h3>
-          <p className="text-rose-400/80">Bạn không có quyền truy cập chức năng quản trị này.</p>
+          <h3 className="text-lg font-semibold text-rose-300 mb-2">{t('settings.noAccessTitle')}</h3>
+          <p className="text-rose-400/80">{t('settings.noAccessDesc')}</p>
         </div>
       );
     }
@@ -154,12 +156,12 @@ export default function SettingsPage() {
             </div>
             <div>
               <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-wide">
-                {isAdmin ? 'Cài đặt' : 'Cài đặt cá nhân'}
+                {isAdmin ? t('settings.title') : t('settings.personalTitle')}
               </h1>
               <p className="mt-2 text-slate-500 dark:text-gray-400">
                 {isAdmin 
-                  ? 'Quản lý cấu hình cá nhân, người dùng và hệ thống'
-                  : 'Quản lý thông tin cá nhân, bảo mật và tùy chọn hiển thị'
+                  ? t('settings.subtitleAdmin')
+                  : t('settings.subtitlePersonal')
                 }
               </p>
             </div>

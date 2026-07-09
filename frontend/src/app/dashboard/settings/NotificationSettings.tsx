@@ -1,11 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Bell, Save, Send } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { api } from '@/lib/api';
 
 export default function NotificationSettings() {
+  const { t } = useLanguage();
   const [settings, setSettings] = useState({
     webhookUrl: '',
     telegramWebhook: '',
@@ -343,7 +345,7 @@ export default function NotificationSettings() {
           className="flex items-center px-6 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed shadow-sm shadow-indigo-500/20 font-medium"
         >
           <Save className="w-4 h-4 mr-2" />
-          {saving ? 'Đang lưu...' : 'Lưu cấu hình'}
+          {saving ? t('common.saving') : t('settings.saveConfig')}
         </button>
       </div>
 
