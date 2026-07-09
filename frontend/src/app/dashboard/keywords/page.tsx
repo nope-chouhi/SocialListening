@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Plus, Trash2, Search, ChevronDown, ChevronRight, Edit } from 'lucide-react';
 import { keywords as keywordsApi } from '@/lib/api';
 import toast, { Toaster } from 'react-hot-toast';
@@ -26,6 +27,7 @@ interface KeywordGroup {
 }
 
 export default function KeywordsPage() {
+  const { t } = useLanguage();
   const [groups, setGroups] = useState<KeywordGroup[]>([]);
   const [expandedGroups, setExpandedGroups] = useState<Set<number>>(new Set());
   const [groupKeywords, setGroupKeywords] = useState<Record<number, Keyword[]>>({});
@@ -138,7 +140,7 @@ export default function KeywordsPage() {
       
       setShowAddGroupModal(false);
       setNewGroup({ name: '', description: '', priority: 3 });
-      toast.success('Thêm nhóm thành công!');
+      toast.success(t('keywords.addGroupOk'));
       fetchGroups();
     } catch (error: any) {
       console.error('Error adding group:', error);
@@ -162,7 +164,7 @@ export default function KeywordsPage() {
       
       setShowAddKeywordModal(false);
       setNewKeyword({ keyword: '', keyword_type: 'general' });
-      toast.success('Thêm từ khóa thành công!');
+      toast.success(t('keywords.addKeywordOk'));
       
       await fetchKeywordsInGroup(selectedGroupId);
       fetchGroups();
@@ -242,7 +244,7 @@ export default function KeywordsPage() {
 
     try {
       await keywordsApi.deleteKeyword(deleteKeywordConfirm.keywordId);
-      toast.success('Xóa từ khóa thành công!');
+      toast.success(t('keywords.deleteKeywordOk'));
       
       await fetchKeywordsInGroup(deleteKeywordConfirm.groupId);
       fetchGroups();
@@ -270,7 +272,7 @@ export default function KeywordsPage() {
 
     try {
       await keywordsApi.deleteGroup(deleteGroupConfirm.groupId);
-      toast.success('Xóa nhóm thành công!');
+      toast.success(t('keywords.deleteGroupOk'));
       fetchGroups();
     } catch (error: any) {
       console.error('Error deleting group:', error);
@@ -343,7 +345,7 @@ export default function KeywordsPage() {
         <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
         <input
           type="text"
-          placeholder="Tìm kiếm nhóm từ khóa hoặc từ khóa..."
+          placeholder={t('keywords.searchPlaceholder')}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="w-full pl-11 pr-4 py-3 bg-white dark:bg-[#111827] border border-slate-200 dark:border-gray-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-white placeholder-gray-500 shadow-sm transition-shadow"
@@ -422,7 +424,7 @@ export default function KeywordsPage() {
                   <button
                     onClick={() => setDeleteGroupConfirm({ isOpen: true, groupId: group.id, groupName: group.name })}
                     className="p-1.5 text-gray-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors border border-transparent hover:border-rose-500/20"
-                    title="Xóa nhóm"
+                    title={t('common.delete')}
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -461,7 +463,7 @@ export default function KeywordsPage() {
                             <button
                               onClick={() => openEditKeywordModal(keyword)}
                               className="p-1.5 text-slate-500 dark:text-gray-400 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg transition-colors"
-                              title="Sửa từ khóa"
+                              title={t('common.update')}
                             >
                               <Edit className="w-4 h-4" />
                             </button>
@@ -478,7 +480,7 @@ export default function KeywordsPage() {
                             <button
                               onClick={() => setDeleteKeywordConfirm({ isOpen: true, keywordId: keyword.id, keyword: keyword.keyword, groupId: group.id })}
                               className="p-1.5 text-slate-500 dark:text-gray-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
-                              title="Xóa từ khóa"
+                              title={t('common.delete')}
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
@@ -568,10 +570,10 @@ export default function KeywordsPage() {
         isOpen={deleteGroupConfirm.isOpen}
         onClose={() => setDeleteGroupConfirm({ isOpen: false, groupId: null, groupName: '' })}
         onConfirm={handleDeleteGroup}
-        title="Xóa nhóm từ khóa"
+        title={t('keywords.deleteGroupTitle')}
         message={`Bạn có chắc muốn xóa nhóm "${deleteGroupConfirm.groupName}"? Tất cả từ khóa trong nhóm cũng sẽ bị xóa.`}
-        confirmText="Xóa"
-        cancelText="Hủy"
+        confirmText={t('common.delete')}
+        cancelText={t('common.cancel')}
         type="danger"
       />
 
@@ -580,10 +582,10 @@ export default function KeywordsPage() {
         isOpen={deleteKeywordConfirm.isOpen}
         onClose={() => setDeleteKeywordConfirm({ isOpen: false, keywordId: null, keyword: '', groupId: null })}
         onConfirm={handleDeleteKeyword}
-        title="Xóa từ khóa"
+        title={t('common.delete')}
         message={`Bạn có chắc muốn xóa từ khóa "${deleteKeywordConfirm.keyword}"?`}
-        confirmText="Xóa"
-        cancelText="Hủy"
+        confirmText={t('common.delete')}
+        cancelText={t('common.cancel')}
         type="danger"
       />
 

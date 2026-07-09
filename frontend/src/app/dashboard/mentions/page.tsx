@@ -374,19 +374,19 @@ function MentionsPageContent() {
   const handleBulkDelete = async () => {
     if (selectedIds.size === 0) return;
     const ok = await confirm({
-      title: `Xóa ${selectedIds.size} mention?`,
-      message: `Bạn sắp xóa vĩnh viễn ${selectedIds.size} mention đã chọn. Thao tác này không thể hoàn tác.`,
-      confirmText: 'Xóa tất cả',
+      title: t('mentions.page.bulkDeleteTitle').replace('{count}', String(selectedIds.size)),
+      message: t('mentions.page.bulkDeleteMessage').replace('{count}', String(selectedIds.size)),
+      confirmText: t('mentions.page.bulkDeleteConfirm'),
       variant: 'danger',
     });
     if (!ok) return;
     try {
       await mentionsApi.bulkDelete(Array.from(selectedIds));
-      toast.success(`Đã xóa ${selectedIds.size} mentions`);
+      toast.success(t('mentions.page.bulkDeleted').replace('{count}', String(selectedIds.size)));
       setSelectedIds(new Set());
       fetchMentions();
     } catch (e) {
-      toast.error('Lỗi khi xóa mentions');
+      toast.error(t('mentions.page.bulkDeleteError'));
     }
   };
 
@@ -476,7 +476,7 @@ function MentionsPageContent() {
           title: 'Ghi đè bộ lọc',
           message: `Bộ lọc "${saveFilterName}" đã tồn tại. Bạn có muốn ghi đè không?`,
           confirmText: 'Ghi đè',
-          cancelText: 'Hủy',
+          cancelText: t('common.cancel'),
           variant: 'warning',
         });
         if (!ok) {
@@ -533,10 +533,10 @@ function MentionsPageContent() {
 
   const handleDeleteFilter = async (filterId: number) => {
     const ok = await confirm({
-      title: 'Xóa bộ lọc',
-      message: 'Bạn có chắc muốn xóa bộ lọc này? Thao tác này không thể hoàn tác.',
-      confirmText: 'Xóa',
-      cancelText: 'Hủy',
+      title: t('mentions.page.deleteFilterTitle'),
+      message: t('mentions.page.deleteFilterMessage'),
+      confirmText: t('common.delete'),
+      cancelText: t('common.cancel'),
       variant: 'danger'
     });
     if (!ok) return;
@@ -992,10 +992,10 @@ function MentionsPageContent() {
     if (!deleteConfirm.mentionId) return;
     try {
       await mentionsApi.delete(deleteConfirm.mentionId);
-      toast.success('Xóa mention thành công!');
+      toast.success(t('mentions.page.deleteSuccess'));
       fetchMentions();
     } catch (error: any) {
-      toast.error('Lỗi khi xóa mention');
+      toast.error(t('mentions.page.deleteError'));
     }
   };
 
@@ -1712,7 +1712,7 @@ return (
                             message: 'Nhập các tags, cách nhau bằng dấu phẩy.',
                             placeholder: 'tag1, tag2, tag3...',
                             defaultValue: currentTags,
-                            confirmText: 'Lưu tags',
+                            confirmText: t('mentions.page.saveTags'),
                           });
                           if (input !== null) {
                             const newTags = input.split(',').map((t) => t.trim()).filter(Boolean);

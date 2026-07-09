@@ -1,11 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Palette, Save } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { api } from '@/lib/api';
 
 export default function AppearanceSettings() {
+  const { t } = useLanguage();
   const [settings, setSettings] = useState({
     theme: 'system',
     language: 'vi',
@@ -196,7 +198,7 @@ export default function AppearanceSettings() {
             className="flex items-center px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Save className="w-4 h-4 mr-2" />
-            {saving ? 'Đang lưu...' : 'Lưu cài đặt'}
+            {saving ? t('common.saving') : t('settings.saveSettings')}
           </button>
         </div>
       </div>
