@@ -1,12 +1,14 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { User as UserIcon, Save, Upload } from 'lucide-react';
 import { auth, api } from '@/lib/api';
 import { getRoleDisplayName, getRoleBadgeColor } from '@/lib/permissions';
 import toast from 'react-hot-toast';
 
 export default function PersonalProfile() {
+  const { t } = useLanguage();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -165,7 +167,7 @@ export default function PersonalProfile() {
               className="flex items-center px-4 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed shadow-sm shadow-indigo-500/20 font-medium"
             >
               <Upload className="w-4 h-4 mr-2" />
-              {uploading ? 'Đang tải...' : 'Tải ảnh lên'}
+              {uploading ? t('common.loading') : t('common.uploadLogo')}
             </button>
             <p className="text-xs text-gray-500 mt-2 font-medium">JPG, PNG. Tối đa 2MB</p>
           </div>
@@ -246,7 +248,7 @@ export default function PersonalProfile() {
             className="flex items-center px-6 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed shadow-sm shadow-indigo-500/20 font-medium"
           >
             <Save className="w-4 h-4 mr-2" />
-            {saving ? 'Đang lưu...' : 'Lưu thay đổi'}
+            {saving ? t('common.saving') : t('settings.saveChanges')}
           </button>
         </div>
       </div>

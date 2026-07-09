@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Palette, RotateCcw, Save } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useDialog } from '@/components/ui/Dialog';
@@ -20,6 +21,7 @@ interface BrandingData {
 }
 
 export default function BrandingSettings() {
+  const { t } = useLanguage();
   const { confirm } = useDialog();
   const [settings, setSettings] = useState<BrandingData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -277,7 +279,7 @@ export default function BrandingSettings() {
             className="flex items-center px-6 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed shadow-sm shadow-indigo-500/20 font-medium"
           >
             <Save className="w-4 h-4 mr-2" />
-            {saving ? 'Đang lưu...' : 'Lưu cài đặt'}
+            {saving ? t('common.saving') : t('settings.saveSettings')}
           </button>
         </div>
       </form>
