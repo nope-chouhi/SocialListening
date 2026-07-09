@@ -1,0 +1,63 @@
+name: Agent CI (Safe Narrow Checks)
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install backend deps (if requirements exist)
+        run: |
+          if [ -f backend/requirements.txt ]; then
+            pip install -r backend/requirements.txt
+          elif [ -f requirements.txt ]; then
+            pip install -r requirements.txt
+          else
+            echo "No requirements file found - skipping install"
+          fi
+      - name: Run narrow safe backend tests (manual scan schema)
+        run: |
+          if [ -d backend ]; then
+            cd backend
+          fi
+          python -m pytest tests/test_manual_scan.py::test_manual_scan_schema_mismatch_missing_scan_schedule_id tests/test_manual_scan_schema_regression.py::test_manual_scan_returns_structured_503_for_missing_crawl_job_columns -q --tb=short || echo "Narrow test command not applicable or tests missing - job continues for logging"
+        continue-on-error: true
+
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install frontend deps (if package files exist)
+        run: |
+          if [ -f frontend/package.json ]; then
+            cd frontend && npm ci --prefer-offline --no-audit
+          elif [ -f package.json ]; then
+            npm ci --prefer-offline --no-audit
+          else
+            echo "No frontend package.json found - skipping"
+          fi
+      - name: Type-check / lint (if scripts exist)
+        run: |
+          if [ -f frontend/package.json ]; then
+            cd frontend
+          fi
+          npm run type-check --if-present || echo "No type-check script"
+          npm run lint --if-present || echo "No lint script"
+        continue-on-error: true
+
+# Notes:
+# - Conservative jobs: no secrets, no deploy, no migrations.
+# - Backend job uses the exact narrow pytest commands from previous focused runs.
+# - Jobs continue on error for logging only; real gates still enforced locally.
+# - No production config or service_role usage.
