@@ -242,6 +242,80 @@ def test_manual_scan_schema_mismatch():
             pass
 
 
+def test_manual_scan_schema_mismatch_missing_scan_schedule_id():
+    """If crawl_jobs has user_id but misses scan_schedule_id, return 503 not 500."""
+    old_engine = create_engine("sqlite:///test_old_schema_scan_schedule.db", echo=False)
+    with old_engine.connect() as conn:
+        conn.execute(text("DROP TABLE IF EXISTS crawl_jobs"))
+        conn.execute(text("DROP TABLE IF EXISTS users"))
+        conn.execute(text("""
+            CREATE TABLE users (
+                id INTEGER PRIMARY KEY,
+                email VARCHAR NOT NULL,
+                hashed_password VARCHAR NOT NULL DEFAULT 'hash',
+                full_name VARCHAR,
+                is_active BOOLEAN DEFAULT 1,
+                is_superuser BOOLEAN DEFAULT 0,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME
+            )
+        """))
+        conn.execute(text("INSERT INTO users (id, email, full_name, is_active) VALUES (1, 'test@test.com', 'Test', 1)"))
+        conn.execute(text("""
+            CREATE TABLE crawl_jobs (
+                id INTEGER PRIMARY KEY,
+                user_id INTEGER,
+                job_type VARCHAR(50) NOT NULL,
+                source_ids TEXT,
+                keyword_group_ids TEXT,
+                status VARCHAR(50) DEFAULT 'pending',
+                total_sources INTEGER DEFAULT 0,
+                processed_sources INTEGER DEFAULT 0,
+                mentions_found INTEGER DEFAULT 0,
+                error_message TEXT,
+                retry_count INTEGER DEFAULT 0,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                started_at DATETIME,
+                completed_at DATETIME,
+                meta_data TEXT
+            )
+        """))
+        conn.commit()
+
+    OldSession = sessionmaker(bind=old_engine, expire_on_commit=False, autocommit=False, autoflush=False)
+
+    def _override_get_db_old():
+        db = OldSession()
+        try:
+            yield db
+            db.commit()
+        except Exception:
+            db.rollback()
+            raise
+        finally:
+            db.close()
+
+    app.dependency_overrides[get_db] = _override_get_db_old
+
+    try:
+        response = client.post("/api/crawl/manual-scan", json={
+            "query": "schema test scan schedule",
+            "project_id": 1,
+        })
+        assert response.status_code == 503, f"Expected 503, got {response.status_code}: {response.text}"
+        data = response.json()
+        assert data["ok"] is False
+        assert data["error_code"] == "DB_SCHEMA_MISMATCH"
+        assert "scan_schedule_id" in data["detail"]
+    finally:
+        app.dependency_overrides[get_db] = _override_get_db
+        old_engine.dispose()
+        try:
+            os.remove("test_old_schema_scan_schedule.db")
+        except OSError:
+            pass
+
+
 def test_manual_scan_structured_error_on_unexpected_crash():
     """Unexpected exceptions should return structured JSON, not raw 500."""
     # Force a crash by making get_db raise during execution
