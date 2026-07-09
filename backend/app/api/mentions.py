@@ -58,7 +58,11 @@ def _safe_domain(domain: Optional[str]) -> Optional[str]:
 
 
 def _mention_link_fields(mention: Mention):
-    from app.services.url_utils import get_url_blocked_reason, recover_google_redirect_url, clean_final_url, domain_from_url
+    from app.services.url_utils import (
+        get_url_blocked_reason,
+        resolve_visit_url_candidate,
+        domain_from_url,
+    )
 
     visit_url = None
     reason = None
@@ -81,30 +85,26 @@ def _mention_link_fields(mention: Mention):
             candidates.append(mention.canonical_url)
         if mention.url:
             candidates.append(mention.url)
+        if mention.original_url:
+            candidates.append(mention.original_url)
 
         for cand in candidates:
-            if cand:
-                cand_clean = clean_final_url(cand)
-                if not cand_clean:
-                    cand_clean = cand
-                recovered = recover_google_redirect_url(cand_clean)
-                final_cand = recovered if recovered else cand_clean
-
-                blocked_reason = get_url_blocked_reason(final_cand)
-                if not blocked_reason:
-                    if not is_utility_page_url(final_cand):
-                        visit_url = final_cand
-                        break
-                    else:
-                        blocked_reason = "utility_page_url"
+            if not cand:
+                continue
+            final_cand = resolve_visit_url_candidate(cand)
+            if final_cand:
+                visit_url = final_cand
+                break
 
     if not visit_url and not reason:
         raw_url = mention.url or mention.canonical_url or mention.original_url
         if raw_url:
-            recovered = recover_google_redirect_url(raw_url)
-            eval_url = recovered if recovered else raw_url
-            reason = get_url_blocked_reason(eval_url) or "invalid_visit_url"
-            record_provenance_metric("invalid_visit_url_count")
+            resolved = resolve_visit_url_candidate(raw_url)
+            if resolved:
+                visit_url = resolved
+            else:
+                reason = get_url_blocked_reason(raw_url) or "invalid_visit_url"
+                record_provenance_metric("invalid_visit_url_count")
         else:
             reason = "No Visit URL available"
 
