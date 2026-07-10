@@ -49,13 +49,13 @@ export default function ReportsPage() {
   const [uploadingLogo, setUploadingLogo] = useState(false);
 
   const [sections, setSections] = useState<Section[]>([
-    { id: 'summary', name: 'Summary', enabled: true, count: 1, total: 1 },
-    { id: 'analysis', name: 'Analysis & Trends', enabled: true, count: 1, total: 1 },
-    { id: 'sentiment', name: 'Sentiment', enabled: true, count: 1, total: 1 },
-    { id: 'influencers', name: 'Influencers & Sources', enabled: true, count: 1, total: 1 },
-    { id: 'mentions', name: 'Mentions', enabled: true, count: 0, total: 0 },
-    { id: 'alerts', name: 'Alerts', enabled: false, count: 0, total: 0 },
-    { id: 'incidents', name: 'Incidents', enabled: false, count: 0, total: 0 },
+    { id: 'summary', name: t('reports.summary'), enabled: true, count: 1, total: 1 },
+    { id: 'analysis', name: t('reports.analysisTrends'), enabled: true, count: 1, total: 1 },
+    { id: 'sentiment', name: t('reports.sentiment'), enabled: true, count: 1, total: 1 },
+    { id: 'influencers', name: t('reports.influencers'), enabled: true, count: 1, total: 1 },
+    { id: 'mentions', name: t('reports.mentions'), enabled: true, count: 0, total: 0 },
+    { id: 'alerts', name: t('reports.alerts'), enabled: false, count: 0, total: 0 },
+    { id: 'incidents', name: t('reports.incidents'), enabled: false, count: 0, total: 0 },
   ]);
 
   useEffect(() => {
@@ -111,7 +111,7 @@ export default function ReportsPage() {
       }));
 
     } catch (error: any) {
-      const msg = error?.response?.data?.detail || error?.message || 'Failed to load report data';
+      const msg = error?.response?.data?.detail || error?.message || t('reports.failedToLoad');
       setFetchError(msg);
       toast.error(msg);
     } finally {
@@ -127,18 +127,18 @@ export default function ReportsPage() {
     if (!e.target.files || e.target.files.length === 0) return;
     const file = e.target.files[0];
     if (!file.type.startsWith('image/')) {
-      toast.error('Please upload an image file');
+      toast.error(t('reports.uploadImageOnly'));
       return;
     }
     
     setUploadingLogo(true);
-    const toastId = toast.loading('Uploading logo...');
+    const toastId = toast.loading(t('common.uploading'));
     try {
       const res = await reports.uploadLogo(file);
       setLogoPath(res.logo_path);
-      toast.success('Logo uploaded successfully', { id: toastId });
+      toast.success(t('reports.logoUploaded'), { id: toastId });
     } catch (error: any) {
-      toast.error(error?.response?.data?.detail || 'Failed to upload logo', { id: toastId });
+      toast.error(error?.response?.data?.detail || t('reports.logoUploadError'), { id: toastId });
     } finally {
       setUploadingLogo(false);
     }
@@ -146,7 +146,7 @@ export default function ReportsPage() {
 
   const handleExport = async () => {
     setExporting(true);
-    toast.loading('Requesting PDF generation on server...', { id: 'export-pdf' });
+    toast.loading(t('reports.saveAsPdf'), { id: 'export-pdf' });
     try {
       const builderConfig = {
         date_range: dateRange,
@@ -170,10 +170,10 @@ export default function ReportsPage() {
       }
       
       await reports.requestExport('pdf', activeProject?.id, builderConfig);
-      toast.success('PDF export requested! Check the history below.', { id: 'export-pdf' });
+      toast.success(t('reports.pdfRequested'), { id: 'export-pdf' });
       fetchExports();
     } catch (e: any) {
-      toast.error(e?.response?.data?.detail || 'Error requesting PDF export', { id: 'export-pdf' });
+      toast.error(e?.response?.data?.detail || t('reports.pdfRequestError'), { id: 'export-pdf' });
     } finally {
       setExporting(false);
     }
@@ -189,7 +189,7 @@ export default function ReportsPage() {
       a.click();
       URL.revokeObjectURL(url);
     } catch (e) {
-      toast.error('Failed to download file');
+      toast.error(t('reports.downloadFailed'));
     }
   };
 
@@ -200,7 +200,7 @@ export default function ReportsPage() {
       <div className="flex items-center justify-center h-64">
         <div className="text-slate-500 dark:text-gray-400 font-medium tracking-wide flex items-center">
           <RefreshCcw className="w-5 h-5 mr-2 animate-spin text-indigo-400" />
-          Đang tải báo cáo...
+          {t('reports.loadingReport')}
         </div>
       </div>
     );
@@ -219,7 +219,7 @@ export default function ReportsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-[#1E293B] p-4 rounded-xl border border-gray-200 dark:border-gray-800">
         <div>
-          <h1 className="text-xl font-bold text-slate-900 dark:text-white tracking-wide">PDF Reports</h1>
+          <h1 className="text-xl font-bold text-slate-900 dark:text-white tracking-wide">{t('reports.pageTitle')}</h1>
         </div>
         <div className="flex items-center space-x-3">
           <select
@@ -227,10 +227,10 @@ export default function ReportsPage() {
             onChange={e => setDateRange(e.target.value)}
             className="bg-gray-50 dark:bg-[#0f172a] border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
           >
-            <option value="7d">Last 7 days</option>
-            <option value="30d">Last 30 days</option>
-            <option value="90d">Last 90 days</option>
-            <option value="all">All time</option>
+            <option value="7d">{t('reports.date7d')}</option>
+            <option value="30d">{t('reports.date30d')}</option>
+            <option value="90d">{t('reports.date90d')}</option>
+            <option value="all">{t('reports.dateAll')}</option>
           </select>
 
           <button 
@@ -238,7 +238,7 @@ export default function ReportsPage() {
             className="flex items-center justify-center space-x-2 px-4 py-2 bg-white dark:bg-[#0f172a] text-slate-700 dark:text-gray-300 hover:text-emerald-600 border border-slate-300 dark:border-gray-700 hover:border-emerald-500 rounded-lg transition-all font-medium text-sm"
           >
             <Eye className="w-4 h-4" />
-            <span>{previewMode ? 'Edit Builder' : 'Preview'}</span>
+            <span>{previewMode ? t('reports.editBuilder') : t('reports.preview')}</span>
           </button>
           
           <button 
@@ -247,7 +247,7 @@ export default function ReportsPage() {
             className="flex items-center justify-center space-x-2 px-5 py-2 bg-emerald-500 text-white hover:bg-emerald-600 rounded-lg transition-all shadow-sm shadow-emerald-500/20 font-medium text-sm disabled:opacity-50"
           >
             {exporting ? <RefreshCcw className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-            <span>Save as PDF</span>
+            <span>{t('reports.saveAsPdf')}</span>
           </button>
         </div>
       </div>
@@ -268,8 +268,8 @@ export default function ReportsPage() {
           
           {/* Report Content Blocks */}
           <div>
-            <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-1">Report content</h3>
-            <p className="text-sm text-slate-500 dark:text-gray-400 mb-4">Pick your slides and arrange them into the order you want.</p>
+            <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-1">{t('reports.reportContent')}</h3>
+            <p className="text-sm text-slate-500 dark:text-gray-400 mb-4">{t('reports.reportContentHint')}</p>
             
             <div className="bg-white dark:bg-[#1E293B] border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden">
               {sections.map((section, idx) => (
@@ -326,12 +326,12 @@ export default function ReportsPage() {
 
           {/* Customization */}
           <div>
-            <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4">Customize your report</h3>
+            <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4">{t('reports.customizeReport')}</h3>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {/* Logo Upload */}
               <div className="space-y-2">
-                <label className="text-sm font-semibold text-slate-700 dark:text-gray-300">Add your logo</label>
+                <label className="text-sm font-semibold text-slate-700 dark:text-gray-300">{t('reports.addLogo')}</label>
                 <div className="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl p-8 flex flex-col items-center justify-center bg-gray-50 dark:bg-[#0f172a] text-center hover:bg-gray-100 dark:hover:bg-[#1e293b] transition-colors relative">
                   <input 
                     type="file" 
@@ -343,8 +343,8 @@ export default function ReportsPage() {
                   {logoPath ? (
                     <div className="flex flex-col items-center">
                       <CheckCircle className="w-8 h-8 text-emerald-500 mb-2" />
-                      <p className="text-sm text-emerald-600 font-medium">Logo uploaded</p>
-                      <p className="text-xs text-gray-500 mt-1">Click to replace</p>
+                      <p className="text-sm text-emerald-600 font-medium">{t('reports.logoUploaded')}</p>
+                      <p className="text-xs text-gray-500 mt-1">{t('reports.clickToReplace')}</p>
                     </div>
                   ) : (
                     <>
@@ -352,7 +352,7 @@ export default function ReportsPage() {
                       <span className="text-sm text-gray-500 font-medium">
                         {uploadingLogo ? t('common.uploading') : t('common.uploadLogo')}
                       </span>
-                      <p className="text-xs text-gray-400 mt-1">JPEG or PNG, max 5MB</p>
+                      <p className="text-xs text-gray-400 mt-1">{t('reports.logoFormats')}</p>
                     </>
                   )}
                 </div>
@@ -360,7 +360,7 @@ export default function ReportsPage() {
 
               {/* Accent Color */}
               <div className="space-y-2">
-                <label className="text-sm font-semibold text-slate-700 dark:text-gray-300">Pick accent color</label>
+                <label className="text-sm font-semibold text-slate-700 dark:text-gray-300">{t('reports.pickAccentColor')}</label>
                 <div className="flex flex-wrap gap-3 mt-2">
                   {['#10b981', '#3b82f6', '#ef4444', '#8b5cf6', '#ec4899', '#f97316', '#06b6d4'].map(color => (
                     <button
@@ -380,7 +380,7 @@ export default function ReportsPage() {
 
               {/* Font Choice */}
               <div className="space-y-2">
-                <label className="text-sm font-semibold text-slate-700 dark:text-gray-300">Choose font</label>
+                <label className="text-sm font-semibold text-slate-700 dark:text-gray-300">{t('reports.chooseFont')}</label>
                 <div className="flex flex-wrap gap-3 mt-2">
                   {[
                     { id: 'font-sans', name: 'Roboto' },
@@ -404,7 +404,7 @@ export default function ReportsPage() {
 
               {/* Font Color Choice */}
               <div className="space-y-2">
-                <label className="text-sm font-semibold text-slate-700 dark:text-gray-300">Choose font color</label>
+                <label className="text-sm font-semibold text-slate-700 dark:text-gray-300">{t('reports.chooseFontColor')}</label>
                 <div className="flex flex-wrap gap-3 mt-2">
                   {[
                     { id: '#1e293b', name: 'Black' },
@@ -425,7 +425,7 @@ export default function ReportsPage() {
 
               {/* Background Theme Choice */}
               <div className="space-y-2 md:col-span-2">
-                <label className="text-sm font-semibold text-slate-700 dark:text-gray-300">Choose background</label>
+                <label className="text-sm font-semibold text-slate-700 dark:text-gray-300">{t('reports.chooseBackground')}</label>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2">
                   <button
                     onClick={() => setTheme('light')}
@@ -435,7 +435,7 @@ export default function ReportsPage() {
                     )}
                   >
                     <div className="bg-white h-24 rounded-lg flex items-center justify-center text-slate-800 font-bold text-sm shadow-sm border border-gray-100">
-                      Light minimalistic
+                      {t('reports.lightTheme')}
                     </div>
                   </button>
                   
@@ -447,7 +447,7 @@ export default function ReportsPage() {
                     )}
                   >
                     <div className="bg-[#0f172a] h-24 rounded-lg flex items-center justify-center text-white font-bold text-sm shadow-inner border border-gray-800">
-                      Dark expressive
+                      {t('reports.darkTheme')}
                     </div>
                   </button>
                 </div>
@@ -462,8 +462,8 @@ export default function ReportsPage() {
       <div className={cn("mt-12", !previewMode && "fixed -top-[9999px] -left-[9999px] opacity-0 pointer-events-none")}>
         {previewMode && (
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-bold text-slate-800 dark:text-white">Report Preview</h3>
-            <span className="text-sm text-gray-500">Rendered with selected customizations</span>
+            <h3 className="text-lg font-bold text-slate-800 dark:text-white">{t('reports.previewTitle')}</h3>
+            <span className="text-sm text-gray-500">{t('reports.previewHint')}</span>
           </div>
         )}
         <div className="overflow-x-auto pb-8">
@@ -485,7 +485,7 @@ export default function ReportsPage() {
                   </div>
                   <h2 className="text-4xl font-black tracking-tight" style={{ color: theme === 'light' ? fontColor : '#ffffff' }}>REPORT</h2>
                 </div>
-                <p className="mt-2 font-medium tracking-wide opacity-70">Project: {data?.project_name || activeProject?.name || 'All Data'}</p>
+                <p className="mt-2 font-medium tracking-wide opacity-70">{t('reports.infographicProject')}: {data?.project_name || activeProject?.name || t('reports.allProjects')}</p>
               </div>
               <div className="text-right">
                 <div className="text-sm font-black uppercase tracking-[0.2em]" style={{ color: accentColor }}>Nope360 Intelligence</div>
@@ -501,10 +501,10 @@ export default function ReportsPage() {
                 <div key={section.id}>
                   {section.id === 'summary' && (
                     <div>
-                      <h3 className="text-lg font-bold uppercase tracking-widest mb-4 opacity-50 border-b pb-2" style={{ borderColor: `${accentColor}33` }}>Summary</h3>
+                      <h3 className="text-lg font-bold uppercase tracking-widest mb-4 opacity-50 border-b pb-2" style={{ borderColor: `${accentColor}33` }}>{t('reports.summary')}</h3>
                       <div className="grid grid-cols-2 gap-8">
                         <div className="rounded-2xl p-6 border shadow-sm relative overflow-hidden" style={{ borderColor: `${accentColor}33`, backgroundColor: theme === 'light' ? '#f8fafc' : '#0f172a' }}>
-                          <div className="text-xs font-bold uppercase tracking-widest mb-2 opacity-60">Total Mentions</div>
+                          <div className="text-xs font-bold uppercase tracking-widest mb-2 opacity-60">{t('reports.totalMentions')}</div>
                           <div className="text-5xl font-black tracking-tight" style={{ color: accentColor }}>{data?.metrics?.total_mentions?.toLocaleString() || 0}</div>
                         </div>
                       </div>
@@ -513,20 +513,20 @@ export default function ReportsPage() {
 
                   {section.id === 'sentiment' && (
                     <div>
-                      <h3 className="text-lg font-bold uppercase tracking-widest mb-4 opacity-50 border-b pb-2" style={{ borderColor: `${accentColor}33` }}>Sentiment</h3>
+                      <h3 className="text-lg font-bold uppercase tracking-widest mb-4 opacity-50 border-b pb-2" style={{ borderColor: `${accentColor}33` }}>{t('reports.sentiment')}</h3>
                       <div className="grid grid-cols-1 gap-8">
                         <div className="rounded-2xl p-6 border shadow-sm" style={{ borderColor: `${accentColor}33`, backgroundColor: theme === 'light' ? '#f8fafc' : '#0f172a' }}>
                           <div className="flex gap-12">
                             <div>
-                              <div className="text-xs font-bold uppercase tracking-widest mb-2 opacity-60">Positive</div>
+                              <div className="text-xs font-bold uppercase tracking-widest mb-2 opacity-60">{t('reports.positive')}</div>
                               <div className="text-4xl font-black text-emerald-500">{data?.metrics?.sentiment?.positive || 0}</div>
                             </div>
                             <div>
-                              <div className="text-xs font-bold uppercase tracking-widest mb-2 opacity-60">Negative</div>
+                              <div className="text-xs font-bold uppercase tracking-widest mb-2 opacity-60">{t('reports.negative')}</div>
                               <div className="text-4xl font-black text-rose-500">{data?.metrics?.sentiment?.negative || 0}</div>
                             </div>
                             <div>
-                              <div className="text-xs font-bold uppercase tracking-widest mb-2 opacity-60">{t('mentions.sentiment.neutral') || 'Neutral'}</div>
+                              <div className="text-xs font-bold uppercase tracking-widest mb-2 opacity-60">{t('reports.neutral')}</div>
                               <div className="text-4xl font-black text-gray-500">{data?.metrics?.sentiment?.neutral || 0}</div>
                             </div>
                           </div>
@@ -537,9 +537,9 @@ export default function ReportsPage() {
 
                   {section.id === 'analysis' && (
                     <div>
-                      <h3 className="text-lg font-bold uppercase tracking-widest mb-4 opacity-50 border-b pb-2" style={{ borderColor: `${accentColor}33` }}>Analysis & Trends</h3>
+                      <h3 className="text-lg font-bold uppercase tracking-widest mb-4 opacity-50 border-b pb-2" style={{ borderColor: `${accentColor}33` }}>{t('reports.analysisTrends')}</h3>
                       <div className="rounded-2xl p-6 border shadow-sm" style={{ borderColor: `${accentColor}33`, backgroundColor: theme === 'light' ? '#f8fafc' : '#0f172a' }}>
-                        <div className="text-sm font-medium opacity-80 mb-4">Top Sources by Mentions:</div>
+                        <div className="text-sm font-medium opacity-80 mb-4">{t('reports.topSourcesByMentions')}</div>
                         <div className="space-y-3">
                           {Array.isArray(data?.top_sources) && data.top_sources.slice(0, 5).map((s: any, i: number) => (
                             <div key={i} className="flex justify-between items-center">
@@ -548,7 +548,7 @@ export default function ReportsPage() {
                             </div>
                           ))}
                           {(!data?.top_sources || data.top_sources.length === 0) && (
-                            <span className="opacity-50 italic">No sources data available.</span>
+                            <span className="opacity-50 italic">{t('reports.noSourceData')}</span>
                           )}
                         </div>
                       </div>
@@ -557,7 +557,7 @@ export default function ReportsPage() {
 
                   {section.id === 'influencers' && (
                     <div>
-                      <h3 className="text-lg font-bold uppercase tracking-widest mb-4 opacity-50 border-b pb-2" style={{ borderColor: `${accentColor}33` }}>Influencers</h3>
+                      <h3 className="text-lg font-bold uppercase tracking-widest mb-4 opacity-50 border-b pb-2" style={{ borderColor: `${accentColor}33` }}>{t('reports.influencers')}</h3>
                       <div className="rounded-2xl p-6 border shadow-sm grid grid-cols-2 gap-4" style={{ borderColor: `${accentColor}33`, backgroundColor: theme === 'light' ? '#f8fafc' : '#0f172a' }}>
                         {Array.isArray(data?.top_influencers) && data.top_influencers.slice(0, 6).map((inf: any, i: number) => (
                           <div key={i} className="flex items-center gap-3">
@@ -571,7 +571,7 @@ export default function ReportsPage() {
                           </div>
                         ))}
                         {(!data?.top_influencers || data.top_influencers.length === 0) && (
-                          <span className="opacity-50 italic col-span-2">No influencer data available.</span>
+                          <span className="opacity-50 italic col-span-2">{t('reports.noInfluencerData')}</span>
                         )}
                       </div>
                     </div>
@@ -579,7 +579,7 @@ export default function ReportsPage() {
 
                   {section.id === 'mentions' && (
                     <div>
-                      <h3 className="text-lg font-bold uppercase tracking-widest mb-4 opacity-50 border-b pb-2" style={{ borderColor: `${accentColor}33` }}>Selected Mentions</h3>
+                      <h3 className="text-lg font-bold uppercase tracking-widest mb-4 opacity-50 border-b pb-2" style={{ borderColor: `${accentColor}33` }}>{t('reports.mentions')}</h3>
                       <div className="space-y-4">
                         {data?.selected_mentions && data.selected_mentions.length > 0 ? (
                           data.selected_mentions.map((m: any, i: number) => (
@@ -591,7 +591,7 @@ export default function ReportsPage() {
                           ))
                         ) : (
                           <div className="p-6 text-center rounded-xl border opacity-50" style={{ borderColor: `${accentColor}33` }}>
-                            <p className="text-sm">No mentions selected for report.</p>
+                            <p className="text-sm">{t('reports.noMentionsSelected')}</p>
                           </div>
                         )}
                       </div>
@@ -600,9 +600,9 @@ export default function ReportsPage() {
                   
                   {section.id === 'alerts' && (
                     <div>
-                      <h3 className="text-lg font-bold uppercase tracking-widest mb-4 opacity-50 border-b pb-2" style={{ borderColor: `${accentColor}33` }}>Alerts</h3>
+                      <h3 className="text-lg font-bold uppercase tracking-widest mb-4 opacity-50 border-b pb-2" style={{ borderColor: `${accentColor}33` }}>{t('reports.alerts')}</h3>
                       <div className="rounded-2xl p-6 border shadow-sm" style={{ borderColor: `${accentColor}33`, backgroundColor: theme === 'light' ? '#f8fafc' : '#0f172a' }}>
-                        <div className="text-xs font-bold uppercase tracking-widest mb-2 opacity-60">Total Alerts</div>
+                        <div className="text-xs font-bold uppercase tracking-widest mb-2 opacity-60">{t('reports.totalAlerts')}</div>
                         <div className="text-5xl font-black tracking-tight" style={{ color: accentColor }}>{data?.metrics?.total_alerts?.toLocaleString() || 0}</div>
                       </div>
                     </div>
@@ -610,9 +610,9 @@ export default function ReportsPage() {
                   
                   {section.id === 'incidents' && (
                     <div>
-                      <h3 className="text-lg font-bold uppercase tracking-widest mb-4 opacity-50 border-b pb-2" style={{ borderColor: `${accentColor}33` }}>Incidents</h3>
+                      <h3 className="text-lg font-bold uppercase tracking-widest mb-4 opacity-50 border-b pb-2" style={{ borderColor: `${accentColor}33` }}>{t('reports.incidents')}</h3>
                       <div className="rounded-2xl p-6 border shadow-sm" style={{ borderColor: `${accentColor}33`, backgroundColor: theme === 'light' ? '#f8fafc' : '#0f172a' }}>
-                        <div className="text-xs font-bold uppercase tracking-widest mb-2 opacity-60">Total Incidents</div>
+                        <div className="text-xs font-bold uppercase tracking-widest mb-2 opacity-60">{t('reports.incidents')}</div>
                         <div className="text-5xl font-black tracking-tight" style={{ color: accentColor }}>{data?.metrics?.total_incidents?.toLocaleString() || 0}</div>
                       </div>
                     </div>
@@ -623,7 +623,7 @@ export default function ReportsPage() {
 
             {/* Footer */}
             <div className="mt-16 pt-6 border-t text-center opacity-50" style={{ borderColor: `${accentColor}33` }}>
-              <div className="text-[10px] font-bold uppercase tracking-[0.2em] mb-2">Generated by</div>
+              <div className="text-[10px] font-bold uppercase tracking-[0.2em] mb-2">{t('reports.generatedBy')}</div>
               <div className="font-black tracking-widest text-sm">NOPE360 INTELLIGENCE</div>
             </div>
 
@@ -633,7 +633,7 @@ export default function ReportsPage() {
 
       {/* Export History Section */}
       <div className="bg-white dark:bg-[#1E293B] p-6 rounded-xl border border-gray-200 dark:border-gray-800">
-        <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4">Recent Exports</h3>
+        <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4">{t('reports.recentExports')}</h3>
         <ExportHistoryTable
           exports={exportHistory}
           loading={exportHistoryLoading}

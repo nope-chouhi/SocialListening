@@ -35,8 +35,8 @@ export function ReportEmptyState({ noProject, message }: ReportEmptyStateProps) 
       <p className="text-slate-500 dark:text-gray-400 max-w-sm text-sm">
         {message || (
           noProject
-            ? 'Select a project from the project switcher to generate a report.'
-            : 'There is no data for the selected project and date range. Try expanding the time range or scanning for more mentions.'
+            ? t('reports.emptySelectProject')
+            : t('reports.emptyNoData')
         )}
       </p>
     </div>

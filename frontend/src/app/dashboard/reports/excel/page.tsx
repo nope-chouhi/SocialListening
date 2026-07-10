@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { FileSpreadsheet, Download, RefreshCcw, Table, Check } from 'lucide-react';
 import { mentions as mentionsApi, reports as reportsApi } from '@/lib/api';
 import { useProject } from '@/contexts/ProjectContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import toast from 'react-hot-toast';
 import { ReportDataScopeNotice } from '@/components/reports/ReportDataScopeNotice';
 import { ExportHistoryTable } from '@/components/reports/ExportHistoryTable';
@@ -20,6 +21,7 @@ const DATE_RANGE_OPTIONS = [
 
 export default function ExcelReportPage() {
   const { activeProject } = useProject();
+  const { t } = useLanguage();
   const [dateRange, setDateRange] = useState('30d');
   const [loading, setLoading] = useState(false);
   const [exportScope, setExportScope] = useState<'all' | 'mentions'>('all');
@@ -70,14 +72,14 @@ export default function ExcelReportPage() {
       
       if (exportScope === 'all') {
         await reportsApi.requestExport('excel', activeProject?.id);
-        toast.success('Excel export requested! Check the history below.');
+        toast.success(t('reports.excelRequested'));
         fetchExports();
       } else {
         // Raw mentions CSV still synchronous
         const blob = await mentionsApi.exportCsv(params);
         const filename = `Nope360_Mentions_Export_${new Date().toISOString().slice(0, 10)}.csv`;
         if (!blob || blob.size === 0) {
-          toast.error('Không có dữ liệu để xuất với bộ lọc hiện tại');
+          toast.error(t('reports.noFilteredData'));
           return;
         }
         const url = URL.createObjectURL(blob);
@@ -86,10 +88,10 @@ export default function ExcelReportPage() {
         a.download = filename;
         a.click();
         URL.revokeObjectURL(url);
-        toast.success(`CSV file downloaded!`);
+        toast.success(t('reports.csvDownloaded'));
       }
     } catch (error: any) {
-      toast.error(error?.response?.data?.detail || 'Error requesting export');
+      toast.error(error?.response?.data?.detail || t('reports.exportRequestError'));
     } finally {
       setLoading(false);
     }
@@ -105,7 +107,7 @@ export default function ExcelReportPage() {
       a.click();
       URL.revokeObjectURL(url);
     } catch (e) {
-      toast.error('Failed to download file');
+      toast.error(t('reports.downloadFailed'));
     }
   };
 
@@ -126,15 +128,15 @@ export default function ExcelReportPage() {
           <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-500/20 rounded-xl flex items-center justify-center mb-6">
             <FileSpreadsheet className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
           </div>
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Generate Excel file</h2>
-          <p className="text-gray-500 dark:text-gray-400 text-sm">Select scope of Data you want to include in Excel file.</p>
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">{t('reports.excelTitle')}</h2>
+          <p className="text-gray-500 dark:text-gray-400 text-sm">{t('reports.excelSubtitle')}</p>
         </div>
 
         {/* Form Body */}
         <div className="p-8 space-y-8">
           
           <div className="space-y-4">
-            <label className="text-sm font-semibold text-slate-900 dark:text-white">Data Scope</label>
+            <label className="text-sm font-semibold text-slate-900 dark:text-white">{t('reports.dataScope')}</label>
             
             <div 
               className={cn(
@@ -147,8 +149,8 @@ export default function ExcelReportPage() {
                 {exportScope === 'all' && <Check className="w-3.5 h-3.5 text-white" />}
               </div>
               <div>
-                <h4 className="font-bold text-slate-900 dark:text-white mb-1">All data from current Project (.xlsx)</h4>
-                <p className="text-sm text-gray-500">Includes Summary metrics, Top Sources, Influencers, and Mentions with AI Sentiment analysis.</p>
+                <h4 className="font-bold text-slate-900 dark:text-white mb-1">{t('reports.dataScopeAllTitle')}</h4>
+                <p className="text-sm text-gray-500">{t('reports.dataScopeAllDesc')}</p>
               </div>
             </div>
 
@@ -163,21 +165,27 @@ export default function ExcelReportPage() {
                 {exportScope === 'mentions' && <Check className="w-3.5 h-3.5 text-white" />}
               </div>
               <div>
-                <h4 className="font-bold text-slate-900 dark:text-white mb-1">Raw Mentions only (.csv)</h4>
-                <p className="text-sm text-gray-500">Generates a flat CSV file with up to 5000 mentions suitable for importing into BI tools.</p>
+                <h4 className="font-bold text-slate-900 dark:text-white mb-1">{t('reports.dataScopeMentionsTitle')}</h4>
+                <p className="text-sm text-gray-500">{t('reports.dataScopeMentionsDesc')}</p>
               </div>
             </div>
           </div>
 
           <div className="space-y-4">
-            <label className="text-sm font-semibold text-slate-900 dark:text-white">Time Range</label>
+            <label className="text-sm font-semibold text-slate-900 dark:text-white">{t('reports.timeRange')}</label>
             <select
               value={dateRange}
               onChange={e => setDateRange(e.target.value)}
               className="w-full max-w-xs bg-white dark:bg-[#0f172a] border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
             >
               {DATE_RANGE_OPTIONS.map(opt => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
+                <option key={opt.value} value={opt.value}>{
+                  opt.value === '1d' ? t('reports.dateToday') :
+                  opt.value === '7d' ? t('reports.date7d') :
+                  opt.value === '30d' ? t('reports.date30d') :
+                  opt.value === '90d' ? t('reports.date90d') :
+                  t('reports.dateAll')
+                }</option>
               ))}
             </select>
           </div>
@@ -192,7 +200,7 @@ export default function ExcelReportPage() {
             className="px-8 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold flex items-center gap-2 transition-all shadow-sm shadow-emerald-500/20 disabled:opacity-50"
           >
             {loading ? <RefreshCcw className="w-5 h-5 animate-spin" /> : <Table className="w-5 h-5" />}
-            {loading ? 'Generating...' : 'Generate Excel File'}
+            {loading ? t('reports.generating') : t('reports.generateExcel')}
           </button>
         </div>
 
@@ -200,7 +208,7 @@ export default function ExcelReportPage() {
 
       {/* Export History Section */}
       <div className="mt-8 bg-white dark:bg-[#1E293B] p-6 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800">
-        <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4">Recent Exports</h3>
+        <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4">{t('reports.recentExports')}</h3>
         <ExportHistoryTable
           exports={exportHistory}
           loading={exportHistoryLoading}
