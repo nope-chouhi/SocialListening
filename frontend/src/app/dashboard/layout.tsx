@@ -50,20 +50,32 @@ import {
 function WorkerStatusBadge() {
   const { t } = useLanguage();
   const [status, setStatus] = useState<any>(null);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     const fetchStatus = async () => {
       try {
         const data = await crawl.getWorkerStatus();
         setStatus(data);
-      } catch (err) {}
+        setFailed(false);
+      } catch (err) {
+        setFailed(true);
+      }
     };
     fetchStatus();
     const interval = setInterval(fetchStatus, 30000);
     return () => clearInterval(interval);
   }, []);
 
-  if (!status) return null;
+  if (!status) {
+    if (!failed) return null;
+    return (
+      <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 text-[10px] font-bold rounded-full border border-amber-200 dark:border-amber-800/50" title={t('header.workerStatusUnknown')}>
+        <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+        {t('header.workerUnknown')}
+      </div>
+    );
+  }
 
   const isRunning = status.worker_running;
   const isEnabled = status.scheduler_enabled;
@@ -178,7 +190,7 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges, setIsWebi
             </div>
             <button
               onClick={toggleCollapse}
-              title="Mở rộng sidebar"
+              title={t('common.expand')}
               className="group relative w-8 h-8 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 flex items-center justify-center transition-colors"
             >
               <ChevronRight className="w-4 h-4" />
@@ -488,10 +500,10 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
           <footer className="mt-10 pt-4 border-t border-gray-200 dark:border-white/10">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 dark:text-gray-400 dark:text-gray-500">
               <div className="flex items-center gap-4">
-                <Link href="#" className="hover:text-gray-700 dark:hover:text-slate-700 dark:text-gray-300 transition-colors">Legal Information</Link>
-                <Link href="#" className="hover:text-gray-700 dark:hover:text-slate-700 dark:text-gray-300 transition-colors">Customize cookie</Link>
+                <span className="dark:text-gray-300">{t('header.legalInformation')}</span>
+                <span className="dark:text-gray-300">{t('header.cookiePreferences')}</span>
               </div>
-              <p className="text-center sm:text-right">Copyrights © 2026 Nope360, Inc. All rights reserved.</p>
+              <p className="text-center sm:text-right">{t('header.copyright')}</p>
             </div>
           </footer>
         </main>
