@@ -1,5 +1,6 @@
 import React from 'react';
 import { Download, RefreshCcw } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface ExportItem {
   id: number;
@@ -21,6 +22,13 @@ interface ExportHistoryTableProps {
 const cn = (...classes: (string | undefined | null | false)[]) => classes.filter(Boolean).join(' ');
 
 function StatusBadge({ status }: { status: string }) {
+  const { t } = useLanguage();
+  const label =
+    status === 'pending' ? t('reports.statusPending') :
+    status === 'running' ? t('reports.statusRunning') :
+    status === 'success' ? t('reports.statusSuccess') :
+    status === 'failed' ? t('reports.statusFailed') : status;
+
   return (
     <span
       className={cn(
@@ -32,7 +40,7 @@ function StatusBadge({ status }: { status: string }) {
       )}
     >
       {status === 'running' && <RefreshCcw className="inline w-3 h-3 mr-1 animate-spin" />}
-      {status}
+      {label}
     </span>
   );
 }
@@ -43,15 +51,15 @@ function StatusBadge({ status }: { status: string }) {
  * Shared export history component used in both the PDF and Excel report
  * pages. Displays real export history from the backend `/api/reports/exports/history`
  * endpoint. Does not fake any export status or download links.
- *
- * Previously this table was copy-pasted in both report pages.
  */
 export function ExportHistoryTable({ exports, onDownload, loading }: ExportHistoryTableProps) {
+  const { t } = useLanguage();
+
   if (loading) {
     return (
       <div className="py-10 text-center">
         <RefreshCcw className="w-5 h-5 animate-spin text-slate-400 mx-auto mb-2" />
-        <p className="text-sm text-slate-500 dark:text-gray-400">Loading export history…</p>
+        <p className="text-sm text-slate-500 dark:text-gray-400">{t('reports.exportHistoryLoading')}</p>
       </div>
     );
   }
@@ -59,7 +67,7 @@ export function ExportHistoryTable({ exports, onDownload, loading }: ExportHisto
   if (exports.length === 0) {
     return (
       <div className="py-10 text-center text-slate-500 dark:text-gray-400 text-sm">
-        No exports found. Request a PDF or Excel export above.
+        {t('reports.exportHistoryEmpty')}
       </div>
     );
   }
@@ -69,11 +77,11 @@ export function ExportHistoryTable({ exports, onDownload, loading }: ExportHisto
       <table className="w-full text-left text-sm">
         <thead className="bg-gray-50 dark:bg-white/5 text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider">
           <tr>
-            <th className="px-4 py-3 font-semibold">ID</th>
-            <th className="px-4 py-3 font-semibold">Type</th>
-            <th className="px-4 py-3 font-semibold">Status</th>
-            <th className="px-4 py-3 font-semibold">Requested At</th>
-            <th className="px-4 py-3 font-semibold">Actions</th>
+            <th className="px-4 py-3 font-semibold">{t('reports.exportId')}</th>
+            <th className="px-4 py-3 font-semibold">{t('reports.exportType')}</th>
+            <th className="px-4 py-3 font-semibold">{t('reports.exportStatus')}</th>
+            <th className="px-4 py-3 font-semibold">{t('reports.exportRequestedAt')}</th>
+            <th className="px-4 py-3 font-semibold">{t('reports.exportActions')}</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-100 dark:divide-white/5">
@@ -110,17 +118,17 @@ export function ExportHistoryTable({ exports, onDownload, loading }: ExportHisto
                     className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 font-semibold text-sm transition-colors"
                   >
                     <Download className="w-4 h-4" />
-                    Download
+                    {t('reports.download')}
                   </button>
                 )}
                 {(ex.status === 'pending' || ex.status === 'running') && (
                   <span className="text-blue-500 dark:text-blue-400 text-xs font-medium flex items-center gap-1.5">
                     <RefreshCcw className="w-3.5 h-3.5 animate-spin" />
-                    Processing…
+                    {t('reports.processing')}
                   </span>
                 )}
                 {ex.status === 'failed' && (
-                  <span className="text-rose-400 dark:text-rose-500 text-xs font-medium">Failed</span>
+                  <span className="text-rose-400 dark:text-rose-500 text-xs font-medium">{t('reports.failed')}</span>
                 )}
               </td>
             </tr>

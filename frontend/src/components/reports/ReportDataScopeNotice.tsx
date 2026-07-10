@@ -1,5 +1,6 @@
 import React from 'react';
 import { Calendar, FolderOpen } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface ReportDataScopeNoticeProps {
   projectName?: string | null;
@@ -24,15 +25,16 @@ const DATE_RANGE_LABELS: Record<string, string> = {
  * report page to avoid confusion about what data is included.
  */
 export function ReportDataScopeNotice({ projectName, dateRange, dateRangeLabel }: ReportDataScopeNoticeProps) {
+  const { t } = useLanguage();
   const label = dateRangeLabel || DATE_RANGE_LABELS[dateRange] || dateRange;
 
   return (
     <div className="flex flex-wrap items-center gap-3 text-sm text-slate-600 dark:text-gray-400 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3">
-      <span className="font-semibold text-slate-700 dark:text-gray-300">Report scope:</span>
+      <span className="font-semibold text-slate-700 dark:text-gray-300">{t('reports.scopeTitle')}</span>
 
       <span className="flex items-center gap-1.5 bg-white dark:bg-white/10 border border-slate-200 dark:border-white/10 rounded-lg px-2.5 py-1 font-medium">
         <FolderOpen className="w-3.5 h-3.5 text-blue-500" />
-        {projectName || <span className="italic text-slate-400 dark:text-gray-500">All projects</span>}
+        {projectName || <span className="italic text-slate-400 dark:text-gray-500">{t('reports.allProjects')}</span>}
       </span>
 
       <span className="flex items-center gap-1.5 bg-white dark:bg-white/10 border border-slate-200 dark:border-white/10 rounded-lg px-2.5 py-1 font-medium">

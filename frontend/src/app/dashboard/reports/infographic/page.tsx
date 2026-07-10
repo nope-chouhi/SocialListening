@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Image as ImageIcon, RefreshCcw } from 'lucide-react';
 import { reports } from '@/lib/api';
 import { useProject } from '@/contexts/ProjectContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import toast from 'react-hot-toast';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
@@ -15,6 +16,7 @@ import { ReportErrorState } from '@/components/reports/ReportErrorState';
 
 export default function InfographicPage() {
   const { activeProject } = useProject();
+  const { t } = useLanguage();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
@@ -33,7 +35,7 @@ export default function InfographicPage() {
       const res = await reports.summaryData(params);
       setData(res);
     } catch (error: any) {
-      const msg = error?.response?.data?.detail || error?.message || 'Failed to load infographic data';
+      const msg = error?.response?.data?.detail || error?.message || t('reports.failedToLoad');
       setFetchError(msg);
       toast.error(msg);
     } finally {
@@ -49,7 +51,7 @@ export default function InfographicPage() {
       <div className="flex items-center justify-center h-64">
         <div className="text-slate-500 dark:text-gray-400 font-medium flex items-center">
           <RefreshCcw className="w-5 h-5 mr-2 animate-spin text-pink-400" />
-          Đang tải Infographic...
+          {t('reports.loadingInfographic')}
         </div>
       </div>
     );
@@ -81,7 +83,7 @@ export default function InfographicPage() {
         <div>
           <h1 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
             <ImageIcon className="w-5 h-5 text-pink-500" />
-            Infographic Analytics
+            {t('reports.infographicTitle')}
           </h1>
         </div>
         <div>
@@ -94,7 +96,7 @@ export default function InfographicPage() {
       <ReportDataScopeNotice
         projectName={activeProject?.name}
         dateRange="30d"
-        dateRangeLabel="Last 30 days"
+        dateRangeLabel={t('reports.infographicLast30Days')}
       />
 
       <div className="overflow-x-auto pb-8">
@@ -103,13 +105,13 @@ export default function InfographicPage() {
           {/* Header Banner */}
           <div className="bg-gradient-to-r from-pink-600 via-purple-600 to-indigo-700 p-10 relative overflow-hidden">
             <div className="absolute -top-32 -right-32 w-96 h-96 bg-white/20 blur-3xl rounded-full"></div>
-            <h2 className="text-5xl font-black mb-4 relative z-10 tracking-tight">BRAND ANALYTICS</h2>
+            <h2 className="text-5xl font-black mb-4 relative z-10 tracking-tight">{t('reports.infographicBanner')}</h2>
             <div className="flex gap-4 relative z-10">
               <span className="bg-black/30 backdrop-blur-sm px-4 py-1.5 rounded-full text-sm font-medium border border-white/20">
-                Project: {data?.project_name || activeProject?.name || 'All Data'}
+                {t('reports.infographicProject')}: {data?.project_name || activeProject?.name || t('reports.allProjects')}
               </span>
               <span className="bg-black/30 backdrop-blur-sm px-4 py-1.5 rounded-full text-sm font-medium border border-white/20">
-                Last 30 Days
+                {t('reports.infographicLast30Days')}
               </span>
             </div>
           </div>
@@ -119,19 +121,19 @@ export default function InfographicPage() {
             {/* Top Metrics Row */}
             <div className="grid grid-cols-4 gap-6">
               <div className="bg-[#1e293b]/50 border border-white/10 rounded-2xl p-6 text-center">
-                <div className="text-xs uppercase tracking-widest text-slate-400 font-bold mb-2">Total Mentions</div>
+                <div className="text-xs uppercase tracking-widest text-slate-400 font-bold mb-2">{t('reports.totalMentions')}</div>
                 <div className="text-4xl font-black text-pink-400">{data?.metrics?.total_mentions?.toLocaleString() || 0}</div>
               </div>
               <div className="bg-[#1e293b]/50 border border-white/10 rounded-2xl p-6 text-center">
-                <div className="text-xs uppercase tracking-widest text-slate-400 font-bold mb-2">Total Alerts</div>
+                <div className="text-xs uppercase tracking-widest text-slate-400 font-bold mb-2">{t('reports.totalAlerts')}</div>
                 <div className="text-4xl font-black text-amber-400">{data?.metrics?.total_alerts?.toLocaleString() || 0}</div>
               </div>
               <div className="bg-[#1e293b]/50 border border-white/10 rounded-2xl p-6 text-center">
-                <div className="text-xs uppercase tracking-widest text-slate-400 font-bold mb-2">Incidents</div>
+                <div className="text-xs uppercase tracking-widest text-slate-400 font-bold mb-2">{t('reports.incidents')}</div>
                 <div className="text-4xl font-black text-rose-500">{data?.metrics?.total_incidents?.toLocaleString() || 0}</div>
               </div>
               <div className="bg-[#1e293b]/50 border border-white/10 rounded-2xl p-6 text-center">
-                <div className="text-xs uppercase tracking-widest text-slate-400 font-bold mb-2">Positive Ratio</div>
+                <div className="text-xs uppercase tracking-widest text-slate-400 font-bold mb-2">{t('reports.positiveRatio')}</div>
                 <div className="text-4xl font-black text-emerald-400">
                   {data?.metrics?.total_mentions > 0 
                     ? Math.round((data?.metrics?.sentiment?.positive || 0) / data?.metrics?.total_mentions * 100) 
@@ -143,7 +145,7 @@ export default function InfographicPage() {
             {/* Volume Chart */}
             {data?.trend && data.trend.length > 0 && (
               <div className="bg-[#1e293b]/30 border border-white/10 rounded-3xl p-8">
-                <h3 className="text-lg font-bold uppercase tracking-widest text-white mb-6">Volume of Mentions</h3>
+                <h3 className="text-lg font-bold uppercase tracking-widest text-white mb-6">{t('reports.volumeOfMentions')}</h3>
                 <div className="h-72">
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={data.trend}>
@@ -183,7 +185,7 @@ export default function InfographicPage() {
             <div className="grid grid-cols-2 gap-8">
               {/* Sentiment Pie */}
               <div className="bg-[#1e293b]/30 border border-white/10 rounded-3xl p-8 flex flex-col">
-                <h3 className="text-lg font-bold uppercase tracking-widest text-white mb-6 text-center">Sentiment Breakdown</h3>
+                <h3 className="text-lg font-bold uppercase tracking-widest text-white mb-6 text-center">{t('reports.sentimentBreakdown')}</h3>
                 <div className="flex-1 min-h-[300px]">
                   {sentimentData.length > 0 ? (
                     <ResponsiveContainer width="100%" height="100%">
@@ -209,14 +211,14 @@ export default function InfographicPage() {
                       </PieChart>
                     </ResponsiveContainer>
                   ) : (
-                    <div className="flex items-center justify-center h-full text-slate-500 italic">No sentiment data</div>
+                    <div className="flex items-center justify-center h-full text-slate-500 italic">{t('reports.noSentimentData')}</div>
                   )}
                 </div>
               </div>
 
               {/* Sources Bar Chart */}
               <div className="bg-[#1e293b]/30 border border-white/10 rounded-3xl p-8 flex flex-col">
-                <h3 className="text-lg font-bold uppercase tracking-widest text-white mb-6 text-center">Top Sources</h3>
+                <h3 className="text-lg font-bold uppercase tracking-widest text-white mb-6 text-center">{t('reports.topSources')}</h3>
                 <div className="flex-1 min-h-[300px]">
                   {data?.top_sources && data.top_sources.length > 0 ? (
                     <ResponsiveContainer width="100%" height="100%">
@@ -236,7 +238,7 @@ export default function InfographicPage() {
                       </BarChart>
                     </ResponsiveContainer>
                   ) : (
-                    <div className="flex items-center justify-center h-full text-slate-500 italic">No source data</div>
+                    <div className="flex items-center justify-center h-full text-slate-500 italic">{t('reports.noSourceChartData')}</div>
                   )}
                 </div>
               </div>
@@ -245,7 +247,7 @@ export default function InfographicPage() {
           </div>
 
           <div className="py-6 mt-10 border-t border-white/10 text-center bg-black/20">
-            <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.2em] mb-1">Powered by</div>
+            <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.2em] mb-1">{t('reports.poweredBy')}</div>
             <div className="font-black tracking-widest text-sm text-pink-500">NOPE360 INTELLIGENCE</div>
           </div>
 
