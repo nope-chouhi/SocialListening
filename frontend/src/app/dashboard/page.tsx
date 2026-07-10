@@ -123,28 +123,28 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 space-y-7">
       <Toaster position="top-right" />
 
       <PageHeader
         title={t('dashboard.title')}
         subtitle={t('dashboard.subtitle')}
         badge={
-          <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 rounded-md">
+          <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50/90 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 rounded-full shadow-sm">
             <Activity className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
             <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">{t('dashboard.anomalyActive')}</span>
           </div>
         }
         actions={
           <>
-            <div className="inline-flex bg-white dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-lg p-1 shadow-sm dark:shadow-inner backdrop-blur-md">
+            <div className="inline-flex max-w-full flex-wrap rounded-2xl border border-slate-200/80 bg-white/[0.88] p-1 shadow-[0_12px_35px_rgba(15,23,42,0.08)] backdrop-blur-xl dark:border-white/10 dark:bg-black/30 dark:shadow-inner">
               {['today', '7d', '30d'].map((range) => (
                 <button
                   key={range}
                   onClick={() => setTimeRange(range)}
-                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-300 ${
+                  className={`min-w-0 px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-300 ${
                     timeRange === range
-                      ? 'bg-slate-100 text-slate-900 shadow-sm border border-slate-200 dark:bg-white/10 dark:text-white dark:shadow-[0_2px_10px_rgba(255,255,255,0.1)] dark:border-white/10'
+                      ? 'bg-slate-950 text-white shadow-sm border border-slate-900 dark:bg-white/[0.12] dark:text-white dark:shadow-[0_2px_10px_rgba(255,255,255,0.1)] dark:border-white/10'
                       : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50 dark:text-zinc-500 dark:hover:text-zinc-300 dark:hover:bg-white/5'
                   }`}
                 >
@@ -154,7 +154,7 @@ export default function DashboardPage() {
             </div>
             <button
               onClick={handleRefresh}
-              className="p-2.5 text-slate-500 hover:text-slate-900 bg-white hover:bg-slate-50 border border-slate-200 dark:text-zinc-400 dark:hover:text-slate-100 dark:bg-black/40 dark:hover:bg-white/10 dark:border-white/10 rounded-lg shadow-sm transition-all duration-300 active:scale-95 backdrop-blur-md"
+              className="grid h-11 w-11 place-items-center rounded-2xl border border-slate-200/80 bg-white/[0.88] text-slate-500 shadow-[0_12px_30px_rgba(15,23,42,0.08)] transition-all duration-300 hover:-translate-y-0.5 hover:border-slate-300 hover:text-slate-950 active:scale-95 dark:border-white/10 dark:bg-black/30 dark:text-zinc-400 dark:hover:bg-white/10 dark:hover:text-slate-100 motion-reduce:hover:translate-y-0"
               title={t('dashboard.actions.refresh')}
               aria-label={t('dashboard.actions.refresh')}
             >
@@ -174,7 +174,7 @@ export default function DashboardPage() {
         <>
           <RealtimeStatsSection projectId={activeProject.id} />
 
-          <div className="pt-4 space-y-6">
+          <div className="pt-2 space-y-7">
             <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
               <span className="w-1.5 h-6 bg-indigo-500 rounded-full"></span>
               {t('dashboard.historicalOverview')} ({timeRange === 'today' ? t('dashboard.timeRange.today') : timeRange === '7d' ? t('dashboard.timeRange.7d') : t('dashboard.timeRange.30d')})
@@ -182,7 +182,7 @@ export default function DashboardPage() {
 
             <DashboardMetricGrid metrics={metrics} isLoading={loadingMetrics} />
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid min-w-0 grid-cols-1 gap-6 lg:grid-cols-3">
               <div className="lg:col-span-2">
                 <MentionTrendCard trends={trends} isLoading={loadingCharts} />
               </div>
@@ -193,7 +193,7 @@ export default function DashboardPage() {
 
             <HotKeywordsCard keywords={hotKeywords} isLoading={loadingCharts} />
 
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            <div className="grid min-w-0 grid-cols-1 gap-6 xl:grid-cols-2">
               <RecentMentionsPanel
                 mentions={metrics?.latest_mentions || []}
                 isLoading={loadingMetrics}

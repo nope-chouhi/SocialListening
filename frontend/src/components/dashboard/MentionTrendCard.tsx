@@ -8,6 +8,8 @@ export default function MentionTrendCard({ trends, isLoading }: { trends: any, i
   const { t } = useLanguage();
   return (
     <AppCard
+      variant="glass"
+      hoverable
       header={
         <SectionHeader
           title={t('dashboard.charts.mentionVolume')}
