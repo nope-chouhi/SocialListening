@@ -1059,6 +1059,8 @@ function MentionsPageContent() {
       if (activeProject) params.project_id = activeProject.id;
       if (filters.sentiment) params.sentiment = filters.sentiment;
       if (filters.source_type) params.source_type = filters.source_type;
+      if (filters.min_risk_score !== null) params.min_risk_score = filters.min_risk_score;
+      if (filters.min_influence_score !== null) params.min_influence_score = filters.min_influence_score;
       if (searchTerm) params.q = searchTerm;
       if (dateRange && dateRange !== 'all') {
         const now = new Date();
