@@ -34,6 +34,13 @@ export const en = {
       waitForData: "Wait for new data or check filters.",
       riskAlerts: "Risk Alerts",
       noActiveAlerts: "No active alerts."
+    },
+    actions: {
+      refresh: "Refresh dashboard"
+    },
+    errors: {
+      summaryLoadFailed: "Failed to load overview data",
+      dashboardLoadFailed: "Failed to load dashboard data"
     }
   },
   summary: {
@@ -125,7 +132,15 @@ export const en = {
     workerOnline: 'WORKER ONLINE',
     workerOffline: 'WORKER OFFLINE',
     workerOff: 'WORKER OFF',
+    workerUnknown: 'WORKER UNKNOWN',
+    workerStatusUnknown: 'Unable to confirm worker status right now',
     upgrade: 'UPGRADE',
+    upgradeInfo: 'Upgrade details are not available in this workspace yet.',
+    helpCenter: 'Help center',
+    supportInfo: 'Need help? Contact support through your configured support channel.',
+    legalInformation: 'Legal information',
+    cookiePreferences: 'Cookie preferences',
+    copyright: 'Copyright © 2026 Nope360, Inc. All rights reserved.',
   },
   common: {
     cancel: 'Cancel',

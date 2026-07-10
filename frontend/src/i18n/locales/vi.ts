@@ -34,6 +34,13 @@ export const vi = {
       waitForData: "Đợi dữ liệu mới hoặc kiểm tra lại bộ lọc.",
       riskAlerts: "Cảnh báo rủi ro",
       noActiveAlerts: "Không có cảnh báo hoạt động."
+    },
+    actions: {
+      refresh: "Làm mới dashboard"
+    },
+    errors: {
+      summaryLoadFailed: "Không tải được dữ liệu tổng quan",
+      dashboardLoadFailed: "Không tải được dữ liệu dashboard"
     }
   },
   summary: {
@@ -125,7 +132,15 @@ export const vi = {
     workerOnline: 'WORKER ONLINE',
     workerOffline: 'WORKER OFFLINE',
     workerOff: 'WORKER OFF',
+    workerUnknown: 'KHÔNG RÕ WORKER',
+    workerStatusUnknown: 'Hiện chưa xác nhận được trạng thái worker',
     upgrade: 'NÂNG CẤP',
+    upgradeInfo: 'Thông tin nâng cấp chưa khả dụng trong workspace này.',
+    helpCenter: 'Trung tâm trợ giúp',
+    supportInfo: 'Cần hỗ trợ? Hãy liên hệ kênh hỗ trợ đã được cấu hình.',
+    legalInformation: 'Thông tin pháp lý',
+    cookiePreferences: 'Tùy chọn cookie',
+    copyright: 'Bản quyền © 2026 Nope360, Inc. Đã đăng ký mọi quyền.',
   },
   common: {
     cancel: 'Hủy',
