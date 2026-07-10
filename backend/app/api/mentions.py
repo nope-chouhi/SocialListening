@@ -57,6 +57,44 @@ def _safe_domain(domain: Optional[str]) -> Optional[str]:
     return value if is_safe_display_domain(value) else None
 
 
+def _mention_search_condition(term: str):
+    """Free-text mention search is limited to approved textual content fields."""
+    pattern = f"%{term}%"
+    return or_(
+        Mention.title.ilike(pattern),
+        Mention.snippet.ilike(pattern),
+        Mention.content.ilike(pattern),
+    )
+
+
+def _valid_web_url_condition():
+    return and_(
+        Mention.url.isnot(None),
+        Mention.url.notilike('%googleusercontent.com%'),
+        Mention.url.notilike('%corp.google.com%'),
+        Mention.url.notilike('%uberproxy%'),
+        Mention.url.notilike('%/rss%'),
+        Mention.url.notilike('%.xml'),
+    )
+
+
+def _mention_source_type_condition(source_values: List[str]):
+    aliases = [s.strip() for s in source_values if s and s.strip()]
+    mapped_types = set()
+    for alias in aliases:
+        mapped = normalize_source_type_for_mention(alias)
+        if mapped:
+            mapped_types.update(mapped)
+
+    if not mapped_types:
+        return None
+
+    condition = Mention.source_type.in_(list(mapped_types))
+    if any(is_web_type(alias) for alias in aliases):
+        condition = or_(condition, and_(Mention.source_type.is_(None), _valid_web_url_condition()))
+    return condition
+
+
 def _mention_link_fields(mention: Mention):
     from app.services.url_utils import (
         get_url_blocked_reason,
@@ -300,6 +338,7 @@ def get_mentions_source_counts(
     date_to: Optional[datetime] = None,
     sentiment: Optional[str] = None,
     min_influence_score: Optional[int] = None,
+    min_risk_score: Optional[float] = Query(None, ge=0, le=100),
     is_muted: Optional[bool] = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
@@ -338,6 +377,8 @@ def get_mentions_source_counts(
         if is_muted is not None: base = base.where(Mention.is_muted == is_muted)
         else: base = base.where(Mention.is_muted == False)
         if min_influence_score is not None: base = base.where(Mention.influence_score >= min_influence_score)
+        if min_risk_score is not None:
+            base = base.join(AIAnalysis, AIAnalysis.mention_id == Mention.id).where(AIAnalysis.risk_score >= min_risk_score)
         if sentiment:
             sentiments_list = [s.strip() for s in sentiment.split(",")]
             base = base.where(Mention.sentiment.in_(sentiments_list))
@@ -387,7 +428,6 @@ def apply_mention_filters(
     is_reviewed=None,
     min_influence_score=None
 ):
-    from sqlalchemy import or_
     from app.models.mention import AIAnalysis
     from app.models.mention import Mention
 
@@ -398,23 +438,21 @@ def apply_mention_filters(
     if source_id:
         query = query.where(Mention.source_id == source_id)
     if source_type:
-        query = query.where(Mention.source_type == source_type)
+        condition = _mention_source_type_condition(source_type.split(","))
+        if condition is not None:
+            query = query.where(condition)
     if source_types:
-        query = query.where(Mention.source_type.in_(source_types))
+        condition = _mention_source_type_condition(source_types)
+        if condition is not None:
+            query = query.where(condition)
     if keyword:
-        query = query.where(Mention.keyword == keyword)
-    
-    search_term = q or search_query
+        keyword_value = keyword.strip()
+        if keyword_value:
+            query = query.where(Mention.keyword_text.ilike(f"%{keyword_value}%"))
+
+    search_term = (q or search_query or "").strip()
     if search_term:
-        term = f'%{search_term}%'
-        query = query.where(
-            or_(
-                Mention.title.ilike(term),
-                Mention.content.ilike(term),
-                Mention.author.ilike(term),
-                Mention.domain.ilike(term)
-            )
-        )
+        query = query.where(_mention_search_condition(search_term))
         
     if sentiment:
         sentiments_list = [s.strip() for s in sentiment.split(',')]

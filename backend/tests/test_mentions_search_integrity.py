@@ -108,8 +108,10 @@ def test_apply_mention_filters_q_matches_title_content_not_url():
 
     assert "brandx-unique" in sql
     assert "title" in sql
+    assert "snippet" in sql
     assert "content" in sql
-    # apply_mention_filters also allows author/domain (not URL)
+    assert "lower(mentions.author)" not in sql
+    assert "lower(mentions.domain)" not in sql
     assert not _free_text_url_ilike_present(sql)
     assert "original_url" not in sql or "original_url ilike" not in sql.replace(
         "notilike", ""
@@ -142,16 +144,14 @@ def test_apply_mention_filters_q_does_not_use_keyword_field():
     assert "keyword =" not in q_only
 
 
-def test_apply_mention_filters_keyword_attr_mismatch_is_known():
-    """Document helper bug: apply_mention_filters uses Mention.keyword (missing).
-
-    List endpoint correctly filters keyword_text. Helper used by export/tags
-    still references Mention.keyword which does not exist on the model.
-    App source fix is OUT OF SCOPE for this agent — do not edit app code here.
-    """
+def test_apply_mention_filters_keyword_uses_keyword_text():
+    """Helper keyword filter maps to Mention.keyword_text like the list endpoint."""
     base = select(Mention)
-    with pytest.raises(AttributeError, match="keyword"):
-        apply_mention_filters(base, keyword="exact-kw-token")
+    filtered = apply_mention_filters(base, keyword="exact-kw-token")
+    sql = _compile_sql(filtered).lower()
+
+    assert "keyword_text" in sql
+    assert "exact-kw-token" in sql
 
 
 def test_apply_mention_filters_search_query_alias():
@@ -167,7 +167,10 @@ def test_apply_mention_filters_search_query_alias():
 
     assert "alias-sq-term" in via_alias
     assert "title" in via_alias
+    assert "snippet" in via_alias
     assert "content" in via_alias
+    assert "lower(mentions.author)" not in via_alias
+    assert "lower(mentions.domain)" not in via_alias
     assert not _free_text_url_ilike_present(via_alias)
 
     assert "q-wins" in q_wins
@@ -283,6 +286,44 @@ def test_list_keyword_and_q_are_both_applied_distinctly():
     assert "content" in joined
     assert not _free_text_url_ilike_present(joined)
 
+
+
+def test_export_q_and_keyword_follow_search_integrity_rules():
+    """CSV export uses the shared helper without broad URL/domain/author search."""
+    response = client.get(
+        "/api/mentions/export",
+        params={
+            "q": "export-free-q-token",
+            "keyword": "export-kw-token",
+            "source_type": "web",
+            "sentiment": "negative",
+            "project_id": 1,
+        },
+    )
+    assert response.status_code == 200, response.text
+    joined = _joined_sql()
+    assert "export-free-q-token" in joined
+    assert "export-kw-token" in joined
+    assert "keyword_text" in joined
+    assert "title" in joined
+    assert "snippet" in joined
+    assert "content" in joined
+    assert "lower(mentions.author)" not in joined
+    assert "lower(mentions.domain)" not in joined
+    assert not _free_text_url_ilike_present(joined)
+
+
+def test_source_counts_applies_min_risk_score_filter():
+    """Source badge counts must respect risk filter used by the mentions list."""
+    response = client.get(
+        "/api/mentions/source-counts",
+        params={"project_id": 1, "min_risk_score": 70, "q": "risk-count-token"},
+    )
+    assert response.status_code == 200, response.text
+    joined = _joined_sql()
+    assert "ai_analysis" in joined
+    assert "risk_score" in joined
+    assert "70" in joined
 
 def test_list_search_query_alias_matches_text_fields():
     """search_query alias free-text matches title/snippet/content, not URL."""
