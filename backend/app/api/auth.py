@@ -40,9 +40,10 @@ class UserResponse(BaseModel):
     role: str | None = "viewer"  # admin, super_admin, viewer, manager, analyst, communication, legal, customer_care
     created_at: datetime
     updated_at: Optional[datetime] = None
-    
+
     class Config:
         orm_mode = True
+        from_attributes = True
 
 
 class Token(BaseModel):
