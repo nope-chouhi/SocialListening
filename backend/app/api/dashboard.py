@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
-from sqlalchemy import select, func, and_, cast, Date, or_
-from datetime import datetime, timedelta, timezone
+from sqlalchemy import select, func, and_, or_
+from datetime import date, datetime, timedelta, timezone
 from typing import List, Optional
 
 from app.core.database import get_db
@@ -15,6 +15,25 @@ from app.models.source import Source
 from app.models.keyword import Keyword, KeywordGroup
 
 router = APIRouter()
+
+
+def _normalize_trend_bucket_value(value) -> Optional[datetime]:
+    if value is None:
+        return None
+    if isinstance(value, datetime):
+        return value
+    if isinstance(value, date):
+        return datetime.combine(value, datetime.min.time())
+    if isinstance(value, str):
+        normalized = value.replace("Z", "+00:00")
+        try:
+            return datetime.fromisoformat(normalized)
+        except ValueError:
+            try:
+                return datetime.combine(date.fromisoformat(normalized), datetime.min.time())
+            except ValueError as exc:
+                raise ValueError(f"Unsupported trend bucket value: {value!r}") from exc
+    raise ValueError(f"Unsupported trend bucket value type: {type(value).__name__}")
 
 
 from fastapi.concurrency import run_in_threadpool
@@ -461,7 +480,7 @@ def get_dashboard_trends(
 
         # 1. Total mentions by date
         try:
-            date_col = cast(Mention.collected_at, Date)
+            date_col = func.date(Mention.collected_at)
             query = select(date_col.label("d"), func.count(Mention.id))
             query = apply_tenant_filter(query, Mention, current_user)
             query = query.where(Mention.collected_at >= start_date)
@@ -470,11 +489,10 @@ def get_dashboard_trends(
             query = query.group_by(date_col)
             
             for row in db.execute(query):
-                dt = row.d
-                if hasattr(dt, 'strftime'):
-                    key = get_bucket_key(datetime.combine(dt, datetime.min.time()))
-                else:
-                    key = get_bucket_key(datetime.strptime(str(dt), "%Y-%m-%d"))
+                dt = _normalize_trend_bucket_value(row.d)
+                if dt is None:
+                    continue
+                key = get_bucket_key(dt)
                 if key in items_dict:
                     items_dict[key]["total_mentions"] += row[1]
         except Exception as e:
@@ -484,7 +502,7 @@ def get_dashboard_trends(
         # 2. Negative mentions by date
         try:
             from app.models.mention import SentimentScore
-            date_col = cast(AIAnalysis.analyzed_at, Date)
+            date_col = func.date(AIAnalysis.analyzed_at)
             query = select(date_col.label("d"), func.count(AIAnalysis.id)).join(Mention, AIAnalysis.mention_id == Mention.id)
             query = apply_tenant_filter(query, Mention, current_user)
             if project_id:
@@ -498,11 +516,10 @@ def get_dashboard_trends(
             ).group_by(date_col)
             
             for row in db.execute(query):
-                dt = row.d
-                if hasattr(dt, 'strftime'):
-                    key = get_bucket_key(datetime.combine(dt, datetime.min.time()))
-                else:
-                    key = get_bucket_key(datetime.strptime(str(dt), "%Y-%m-%d"))
+                dt = _normalize_trend_bucket_value(row.d)
+                if dt is None:
+                    continue
+                key = get_bucket_key(dt)
                 if key in items_dict:
                     items_dict[key]["negative_mentions"] += row[1]
         except Exception as e:
@@ -511,17 +528,16 @@ def get_dashboard_trends(
 
         # 3. Alerts by date
         try:
-            date_col = cast(Alert.created_at, Date)
+            date_col = func.date(Alert.created_at)
             query = select(date_col.label("d"), func.count(Alert.id))
             query = apply_tenant_filter(query, Alert, current_user)
             query = query.where(Alert.created_at >= start_date).group_by(date_col)
             
             for row in db.execute(query):
-                dt = row.d
-                if hasattr(dt, 'strftime'):
-                    key = get_bucket_key(datetime.combine(dt, datetime.min.time()))
-                else:
-                    key = get_bucket_key(datetime.strptime(str(dt), "%Y-%m-%d"))
+                dt = _normalize_trend_bucket_value(row.d)
+                if dt is None:
+                    continue
+                key = get_bucket_key(dt)
                 if key in items_dict:
                     items_dict[key]["alerts"] += row[1]
         except Exception as e:
@@ -530,17 +546,16 @@ def get_dashboard_trends(
 
         # 4. Incidents by date
         try:
-            date_col = cast(Incident.created_at, Date)
+            date_col = func.date(Incident.created_at)
             query = select(date_col.label("d"), func.count(Incident.id))
             query = apply_tenant_filter(query, Incident, current_user)
             query = query.where(Incident.created_at >= start_date).group_by(date_col)
             
             for row in db.execute(query):
-                dt = row.d
-                if hasattr(dt, 'strftime'):
-                    key = get_bucket_key(datetime.combine(dt, datetime.min.time()))
-                else:
-                    key = get_bucket_key(datetime.strptime(str(dt), "%Y-%m-%d"))
+                dt = _normalize_trend_bucket_value(row.d)
+                if dt is None:
+                    continue
+                key = get_bucket_key(dt)
                 if key in items_dict:
                     items_dict[key]["incidents"] += row[1]
         except Exception as e:
