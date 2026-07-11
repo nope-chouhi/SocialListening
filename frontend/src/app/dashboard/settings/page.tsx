@@ -44,8 +44,9 @@ export default function SettingsPage() {
     const checkAccess = async () => {
       try {
         const token = localStorage.getItem('access_token');
-        if (!token) {
-          router.push('/login');
+        const cachedUser = localStorage.getItem('cached_user');
+        if (!token || !cachedUser) {
+          router.replace('/login');
           return;
         }
 
@@ -54,6 +55,9 @@ export default function SettingsPage() {
         setLoading(false);
       } catch (error) {
         console.error('Failed to get user:', error);
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('cached_user');
+        router.replace('/login?expired=1');
         setLoading(false);
       }
     };
