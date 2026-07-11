@@ -394,23 +394,39 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [hasLocalSession, setHasLocalSession] = useState(false);
   const [badges, setBadges] = useState<{ new_alerts: number, open_incidents: number, unreviewed_mentions: number }>({
-    new_alerts: 0, open_incidents: 0, unreviewed_mentions: 0
+    new_alerts: 0,
+    open_incidents: 0,
+    unreviewed_mentions: 0,
   });
 
-  // Hydration guard: only read localStorage after client mount
   useEffect(() => {
     setMounted(true);
     const token = localStorage.getItem('access_token');
-    if (!token) {
-      router.replace('/login');
+    const cachedUser = localStorage.getItem('cached_user');
+    if (!token || !cachedUser) {
+      setHasLocalSession(false);
+      window.location.replace('/login');
       return;
     }
+    setHasLocalSession(true);
+
     const savedCollapse = localStorage.getItem('sidebar_collapsed');
     if (savedCollapse === 'true') {
       setSidebarCollapsed(true);
     }
-  }, [router]);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted || !hasLocalSession || authLoading || user) {
+      return;
+    }
+
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('cached_user');
+    window.location.replace('/login?expired=1');
+  }, [mounted, hasLocalSession, authLoading, user]);
 
   useEffect(() => {
     if (user) {
@@ -426,32 +442,36 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
     }
   }, [user]);
 
-  return (
-    <div className="premium-depth-shell min-h-screen bg-[#F4F5F7] dark:bg-[#000511]">
-      {sidebarOpen && (
-        <div className="fixed inset-0 z-40 bg-gray-900/50 lg:hidden" onClick={() => setSidebarOpen(false)} />
-      )}
-      
-      <DashboardSidebar 
-        sidebarOpen={sidebarOpen} 
-        setSidebarOpen={setSidebarOpen} 
-        user={user} 
-        badges={badges} 
-        setIsWebinarModalOpen={setIsWebinarModalOpen}
-        sidebarCollapsed={sidebarCollapsed}
-        setSidebarCollapsed={setSidebarCollapsed}
-      />
+  if (!mounted || !hasLocalSession || authLoading || !user) {
+    return <LoadingSpinner message={t('common.loading')} />;
+  }
 
-      <Toaster 
-        position="top-right" 
-        toastOptions={{ 
+  return (
+    <ProjectProvider>
+      <div className="premium-depth-shell min-h-screen bg-[#F4F5F7] dark:bg-[#000511]">
+        {sidebarOpen && (
+          <div className="fixed inset-0 z-40 bg-gray-900/50 lg:hidden" onClick={() => setSidebarOpen(false)} />
+        )}
+
+        <DashboardSidebar
+          sidebarOpen={sidebarOpen}
+          setSidebarOpen={setSidebarOpen}
+          user={user}
+          badges={badges}
+          setIsWebinarModalOpen={setIsWebinarModalOpen}
+          sidebarCollapsed={sidebarCollapsed}
+          setSidebarCollapsed={setSidebarCollapsed}
+        />
+
+      <Toaster
+        position="top-right"
+        toastOptions={{
           duration: 4000,
           className: 'dark:!bg-white dark:bg-[#1E293B] dark:!text-white dark:!border-slate-300 dark:border-gray-700 dark:border shadow-lg'
-        }} 
+        }}
       />
       <div className={`transition-all duration-300 flex flex-col min-h-screen ${mounted ? (sidebarCollapsed ? 'lg:pl-[68px]' : 'lg:pl-64') : 'lg:pl-64'}`}>
         <div className="sticky top-0 z-20 flex min-w-0 items-center h-16 px-3 bg-white/[0.88] dark:bg-[#050A15]/[0.86] border-b border-gray-200/80 dark:border-white/10 sm:px-4 lg:px-8 shadow-[0_10px_35px_rgba(15,23,42,0.06)] backdrop-blur-xl">
-          {/* Mobile hamburger */}
           <button onClick={() => setSidebarOpen(true)} className="lg:hidden p-2 -ml-2 text-gray-500 hover:text-gray-900 mr-2">
             <Menu className="w-5 h-5" />
           </button>
@@ -470,7 +490,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
             </button>
             <LanguageSwitcher />
             <ThemeToggle />
-            
+
             <div className="relative group">
               <div suppressHydrationWarning className="w-8 h-8 rounded-full bg-slate-800 text-slate-900 dark:text-white flex items-center justify-center text-xs font-bold ml-2 cursor-pointer shadow-sm hover:ring-2 hover:ring-indigo-500 transition-all">
                 {authLoading ? '...' : (user?.full_name || user?.email || 'K')[0].toUpperCase()}
@@ -496,7 +516,6 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
           <div className="flex-1">
             {children}
           </div>
-          {/* Footer — legal/copyright, NOT in sidebar */}
           <footer className="mt-10 pt-4 border-t border-gray-200 dark:border-white/10">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 dark:text-gray-400 dark:text-gray-500">
               <div className="flex items-center gap-4">
@@ -509,27 +528,24 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
         </main>
       </div>
 
-      <WebinarRegistrationModal 
-        isOpen={isWebinarModalOpen} 
-        onClose={() => setIsWebinarModalOpen(false)} 
+      <WebinarRegistrationModal
+        isOpen={isWebinarModalOpen}
+        onClose={() => setIsWebinarModalOpen(false)}
         onSuccess={() => {
           setIsWebinarModalOpen(false);
           setIsSuccessModalOpen(true);
-        }} 
+        }}
       />
-      
-      <WebinarSuccessModal 
-        isOpen={isSuccessModalOpen} 
-        onClose={() => setIsSuccessModalOpen(false)} 
+
+      <WebinarSuccessModal
+        isOpen={isSuccessModalOpen}
+        onClose={() => setIsSuccessModalOpen(false)}
       />
-    </div>
+      </div>
+    </ProjectProvider>
   );
 }
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <ProjectProvider>
-      <DashboardLayoutContent>{children}</DashboardLayoutContent>
-    </ProjectProvider>
-  );
+  return <DashboardLayoutContent>{children}</DashboardLayoutContent>;
 }

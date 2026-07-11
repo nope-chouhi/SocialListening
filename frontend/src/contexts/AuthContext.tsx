@@ -101,12 +101,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!token) return null;
     // Check token not expired
     const payload = parseJwt(token);
-    if (payload?.exp && payload.exp * 1000 < Date.now()) {
+    if (!payload || (payload.exp && payload.exp * 1000 < Date.now())) {
       clearInvalidAuthSession();
       return null;
     }
     return getCachedUser();
   });
+
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [permissions, setPermissions] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false); // Never blocks initial render
@@ -180,7 +181,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Check expiry instantly from JWT without network
     const payload = parseJwt(token);
-    if (payload?.exp && payload.exp * 1000 < Date.now()) {
+    if (!payload || (payload.exp && payload.exp * 1000 < Date.now())) {
       clearInvalidAuthSession();
       setUser(null);
       router.replace('/login?expired=1');
