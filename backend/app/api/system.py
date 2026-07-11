@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from datetime import datetime, timezone
 from app.core.database import get_db
@@ -8,65 +8,6 @@ from app.models.system_settings import WorkerStatus
 from app.models.source import Source
 
 router = APIRouter()
-
-@router.get("/migrate")
-def run_migrations():
-    """Run alembic upgrade head programmatically without auth."""
-    try:
-        import os
-        import alembic.config
-        import alembic.command
-        from app.core.config import settings
-
-        # Move to backend directory so alembic can find env.py
-        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-        original_cwd = os.getcwd()
-        os.chdir(base_dir)
-        
-        try:
-            from app.core.database import engine
-            import sqlalchemy as sa
-            
-            # Check current version
-            current_version = None
-            try:
-                with engine.connect() as conn:
-                    result = conn.execute(sa.text("SELECT version_num FROM alembic_version"))
-                    row = result.fetchone()
-                    if row:
-                        current_version = row[0]
-            except sa.exc.ProgrammingError:
-                # Table doesn't exist
-                pass
-                
-            # If empty or missing, stamp it to the revision BEFORE the worker_status enhance
-            if not current_version:
-                with engine.begin() as conn:
-                    conn.execute(sa.text("CREATE TABLE IF NOT EXISTS alembic_version (version_num VARCHAR(32) NOT NULL, PRIMARY KEY (version_num))"))
-                    conn.execute(sa.text("DELETE FROM alembic_version"))
-                    conn.execute(sa.text("INSERT INTO alembic_version (version_num) VALUES ('5fe3f0fbfb82')"))
-            
-            alembic_cfg = alembic.config.Config("alembic.ini")
-            if settings.DATABASE_URL:
-                alembic_cfg.set_main_option("sqlalchemy.url", settings.DATABASE_URL.replace("%", "%%"))
-            alembic.command.upgrade(alembic_cfg, "head")
-        finally:
-            # Restore directory
-            os.chdir(original_cwd)
-
-        from app.core.database import engine
-        from sqlalchemy.engine.reflection import Inspector
-        inspector = Inspector.from_engine(engine)
-        tables = inspector.get_table_names()
-        
-        return {
-            "status": "success",
-            "message": "Database migrations applied successfully.",
-            "tables": tables
-        }
-    except Exception as e:
-        import traceback
-        return {"status": "error", "detail": f"Migration failed: {str(e)}", "traceback": traceback.format_exc()}
 
 @router.get("/worker-status")
 def get_worker_status(
