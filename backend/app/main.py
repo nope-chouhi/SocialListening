@@ -81,12 +81,11 @@ async def lifespan(app: FastAPI):
             os.chdir(base_dir)
             
             alembic_cfg = alembic.config.Config("alembic.ini")
-            from app.core.config import settings
             if settings.DATABASE_URL:
                 alembic_cfg.set_main_option("sqlalchemy.url", settings.DATABASE_URL.replace("%", "%%"))
             alembic.command.upgrade(alembic_cfg, "head")
             logger.info("Database migrations applied successfully.")
-            
+
             # Restore cwd just in case
             os.chdir(original_cwd)
         else:
