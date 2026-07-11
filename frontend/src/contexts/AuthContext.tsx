@@ -24,6 +24,7 @@ interface AuthContextType {
   currentOrganization: Organization | null;
   permissions: string[];
   isLoading: boolean;
+  isHydrating: boolean;
   hasPermission: (permission: string) => boolean;
   switchOrganization: (orgId: number) => Promise<void>;
   refreshContext: () => Promise<void>;
@@ -35,6 +36,7 @@ const AuthContext = createContext<AuthContextType>({
   currentOrganization: null,
   permissions: [],
   isLoading: false,
+  isHydrating: false,
   hasPermission: () => false,
   switchOrganization: async () => {},
   refreshContext: async () => {},
@@ -111,6 +113,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [permissions, setPermissions] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false); // Never blocks initial render
+  const [isHydrating, setIsHydrating] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return !!localStorage.getItem('access_token');
+  });
 
   const router = useRouter();
   const pathname = usePathname();
@@ -121,6 +127,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!token) {
       setUser(null);
       setCachedUser(null);
+      setIsHydrating(false);
       return;
     }
 
@@ -142,6 +149,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (res.status === 401 || res.status === 403) {
         clearInvalidAuthSession();
         setUser(null);
+        setIsHydrating(false);
         if (pathname.startsWith('/dashboard')) {
           window.location.href = '/login?expired=1';
         }
@@ -164,6 +172,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Network error — keep cached user, don't block
       console.warn('[Auth] Background context fetch failed, using cached data');
     } finally {
+      setIsHydrating(false);
       if (showLoader) setIsLoading(false);
     }
   };
@@ -173,6 +182,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!token) {
       // No token — clear everything instantly, no loading
       setUser(null);
+      setIsHydrating(false);
       if (pathname.startsWith('/dashboard')) {
         router.replace('/login');
       }
@@ -184,6 +194,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!payload || (payload.exp && payload.exp * 1000 < Date.now())) {
       clearInvalidAuthSession();
       setUser(null);
+      setIsHydrating(false);
       router.replace('/login?expired=1');
       return;
     }
@@ -214,6 +225,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       currentOrganization,
       permissions,
       isLoading,
+      isHydrating,
       hasPermission,
       switchOrganization,
       refreshContext: () => fetchContext(true),
