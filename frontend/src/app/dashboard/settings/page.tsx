@@ -44,8 +44,7 @@ export default function SettingsPage() {
     const checkAccess = async () => {
       try {
         const token = localStorage.getItem('access_token');
-        const cachedUser = localStorage.getItem('cached_user');
-        if (!token || !cachedUser) {
+        if (!token) {
           router.replace('/login');
           return;
         }

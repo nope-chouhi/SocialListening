@@ -388,7 +388,7 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges, setIsWebi
 function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const { t } = useLanguage();
   const router = useRouter();
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, isLoading: authLoading, isHydrating } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isWebinarModalOpen, setIsWebinarModalOpen] = useState(false);
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
@@ -404,8 +404,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     setMounted(true);
     const token = localStorage.getItem('access_token');
-    const cachedUser = localStorage.getItem('cached_user');
-    if (!token || !cachedUser) {
+    if (!token) {
       setHasLocalSession(false);
       window.location.replace('/login');
       return;
@@ -419,14 +418,14 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (!mounted || !hasLocalSession || authLoading || user) {
+    if (!mounted || !hasLocalSession || authLoading || isHydrating || user) {
       return;
     }
 
     localStorage.removeItem('access_token');
     localStorage.removeItem('cached_user');
     window.location.replace('/login?expired=1');
-  }, [mounted, hasLocalSession, authLoading, user]);
+  }, [mounted, hasLocalSession, authLoading, isHydrating, user]);
 
   useEffect(() => {
     if (user) {
@@ -442,7 +441,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
     }
   }, [user]);
 
-  if (!mounted || !hasLocalSession || authLoading || !user) {
+  if (!mounted || !hasLocalSession || authLoading || isHydrating || !user) {
     return <LoadingSpinner message={t('common.loading')} />;
   }
 
