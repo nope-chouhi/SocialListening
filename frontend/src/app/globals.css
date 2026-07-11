@@ -263,7 +263,6 @@ html:not(.dark) .recharts-tooltip-item {
 }
 
 .premium-edge-light {
-  position: relative;
   overflow: hidden;
 }
 
