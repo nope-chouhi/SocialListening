@@ -530,8 +530,10 @@ function MentionsPageContent() {
       } else {
         newParams.delete('q');
       }
+      newParams.delete('keyword');
       newParams.delete('job_id');
-      router.push(`/dashboard/mentions?${newParams.toString()}`);
+      const queryString = newParams.toString();
+      router.push(queryString ? `/dashboard/mentions?${queryString}` : '/dashboard/mentions');
 
       toast.success('Đã áp dụng bộ lọc');
       setSavedFiltersOpen(false);
