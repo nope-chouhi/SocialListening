@@ -523,6 +523,15 @@ function MentionsPageContent() {
       });
       setSearchTerm(filterJson.search_term || '');
       setSearchInput(filterJson.search_term || '');
+      setPage(1);
+      const newParams = new URLSearchParams(searchParams?.toString() || '');
+      if (filterJson.search_term) {
+        newParams.set('q', filterJson.search_term);
+      } else {
+        newParams.delete('q');
+      }
+      newParams.delete('job_id');
+      router.push(`/dashboard/mentions?${newParams.toString()}`);
 
       toast.success('Đã áp dụng bộ lọc');
       setSavedFiltersOpen(false);
@@ -1137,6 +1146,75 @@ function MentionsPageContent() {
           }}
           onClearAll={clearAllFilters}
         />
+
+        <div ref={savedFiltersRef} className="relative flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white p-3 shadow-sm dark:border-white/10 dark:bg-[#050A15]">
+          <div>
+            <p className="text-sm font-bold text-slate-900 dark:text-white">Bộ lọc đã lưu</p>
+            <p className="text-xs text-slate-500 dark:text-gray-400">
+              {activeProject ? `Project: ${activeProject.name}` : 'Chọn project để dùng bộ lọc đã lưu'}
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setSavedFiltersOpen((open) => !open)}
+              disabled={!activeProject}
+              className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-bold text-blue-700 transition-colors hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-300 dark:hover:bg-blue-500/20"
+            >
+              <SlidersHorizontal className="h-4 w-4" />
+              Danh sách bộ lọc ({savedFiltersList.length})
+              <ChevronDown className={`h-4 w-4 transition-transform ${savedFiltersOpen ? 'rotate-180' : ''}`} />
+            </button>
+            <button
+              type="button"
+              onClick={openSaveFilterModal}
+              disabled={!activeProject}
+              className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-bold text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Lưu bộ lọc hiện tại
+            </button>
+          </div>
+          {savedFiltersOpen && (
+            <div className="absolute left-0 right-0 top-full z-30 mt-2 rounded-xl border border-gray-200 bg-white p-3 shadow-2xl dark:border-white/10 dark:bg-[#07101f]">
+              {savedFiltersList.length === 0 ? (
+                <div className="rounded-lg border border-dashed border-gray-200 p-4 text-sm text-slate-500 dark:border-white/10 dark:text-gray-400">
+                  Chưa có bộ lọc đã lưu cho project này. Hãy cấu hình bộ lọc và chọn “Lưu bộ lọc hiện tại”.
+                </div>
+              ) : (
+                <div className="space-y-2" role="list" aria-label="Danh sách bộ lọc đã lưu">
+                  {savedFiltersList.map((filter: any) => (
+                    <div key={filter.id} role="listitem" className="flex flex-col gap-3 rounded-lg border border-gray-200 p-3 dark:border-white/10 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-bold text-slate-900 dark:text-white">{filter.name}</p>
+                        <p className="text-xs text-slate-500 dark:text-gray-400">
+                          {filter.filter_json?.search_term ? `Từ khóa: ${filter.filter_json.search_term}` : 'Không có từ khóa'}
+                          {filter.filter_json?.sentiment ? ` • Cảm xúc: ${filter.filter_json.sentiment}` : ''}
+                          {filter.filter_json?.source_type ? ` • Nguồn: ${filter.filter_json.source_type}` : ''}
+                        </p>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleApplyFilter(filter.id)}
+                          className="rounded-md bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-300 dark:hover:bg-emerald-500/20"
+                        >
+                          Áp dụng
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteFilter(filter.id)}
+                          className="rounded-md bg-red-50 px-3 py-1.5 text-xs font-bold text-red-600 hover:bg-red-100 dark:bg-red-500/10 dark:text-red-300 dark:hover:bg-red-500/20"
+                        >
+                          Xóa
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
 
         {/* Scan / Search Status */}
         {(searchTerm || activeScanJobId || scanJobStatus) && (
@@ -1943,6 +2021,66 @@ return (
         </div>
 
       </div>
+
+      {/* Save Filter Modal */}
+      {saveFilterModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+          <div role="dialog" aria-modal="true" aria-labelledby="save-filter-title" className="w-full max-w-md overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl dark:border-white/10 dark:bg-[#050A15]">
+            <div className="flex items-center justify-between border-b border-gray-100 p-5 dark:border-white/10">
+              <div>
+                <h2 id="save-filter-title" className="text-lg font-bold text-slate-900 dark:text-white">Lưu bộ lọc</h2>
+                <p className="text-sm text-slate-500 dark:text-gray-400">Lưu cấu hình lọc hiện tại cho project đang chọn.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSaveFilterModalOpen(false)}
+                className="rounded-lg p-2 text-slate-500 transition-colors hover:bg-gray-100 hover:text-slate-700 dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-white"
+                aria-label="Đóng"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="space-y-4 p-5">
+              <div>
+                <label htmlFor="save-filter-name" className="mb-2 block text-sm font-bold text-slate-700 dark:text-gray-200">Tên bộ lọc</label>
+                <input
+                  id="save-filter-name"
+                  type="text"
+                  value={saveFilterName}
+                  onChange={(e) => setSaveFilterName(e.target.value)}
+                  placeholder="Ví dụ: Negative web mentions"
+                  className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-white/10 dark:bg-[#07101f] dark:text-white"
+                  autoFocus
+                />
+              </div>
+              <div className="rounded-lg bg-gray-50 p-3 text-xs text-slate-600 dark:bg-white/5 dark:text-gray-300">
+                <p className="font-bold text-slate-800 dark:text-gray-100">Bộ lọc hiện tại</p>
+                <p>Từ khóa: {searchTerm || 'Không có'}</p>
+                <p>Cảm xúc: {filters.sentiment || 'Tất cả'}</p>
+                <p>Nguồn: {filters.source_type || 'Tất cả'}</p>
+                <p>Sắp xếp: {filters.sort_by}</p>
+              </div>
+              <div className="flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setSaveFilterModalOpen(false)}
+                  className="rounded-lg px-4 py-2 text-sm font-bold text-slate-600 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/10"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveFilter}
+                  disabled={!activeProject || !saveFilterName.trim()}
+                  className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Lưu bộ lọc
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Scan Confirm Modal */}
       {scanConfirm.isOpen && (
