@@ -99,14 +99,14 @@ export default function InfographicPage() {
         dateRangeLabel={t('reports.infographicLast30Days')}
       />
 
-      <div className="overflow-x-auto pb-8">
-        <div id="infographic-content" className="w-[1000px] mx-auto bg-[#0a0f1c] rounded-3xl overflow-hidden border border-white/10 shadow-2xl relative text-white">
+      <div className="pb-8">
+        <div id="infographic-content" className="w-full max-w-5xl mx-auto bg-[#0a0f1c] rounded-3xl overflow-hidden border border-white/10 shadow-2xl relative text-white">
           
           {/* Header Banner */}
-          <div className="bg-gradient-to-r from-pink-600 via-purple-600 to-indigo-700 p-10 relative overflow-hidden">
+          <div className="bg-gradient-to-r from-pink-600 via-purple-600 to-indigo-700 px-4 py-8 sm:p-10 relative overflow-hidden">
             <div className="absolute -top-32 -right-32 w-96 h-96 bg-white/20 blur-3xl rounded-full"></div>
-            <h2 className="text-5xl font-black mb-4 relative z-10 tracking-tight">{t('reports.infographicBanner')}</h2>
-            <div className="flex gap-4 relative z-10">
+            <h2 className="text-3xl sm:text-5xl font-black mb-4 relative z-10 tracking-tight">{t('reports.infographicBanner')}</h2>
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 relative z-10">
               <span className="bg-black/30 backdrop-blur-sm px-4 py-1.5 rounded-full text-sm font-medium border border-white/20">
                 {t('reports.infographicProject')}: {data?.project_name || activeProject?.name || t('reports.allProjects')}
               </span>
@@ -116,25 +116,25 @@ export default function InfographicPage() {
             </div>
           </div>
 
-          <div className="p-10 space-y-10">
+          <div className="p-4 sm:p-10 space-y-6 sm:space-y-10">
             
             {/* Top Metrics Row */}
-            <div className="grid grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6">
               <div className="bg-[#1e293b]/50 border border-white/10 rounded-2xl p-6 text-center">
                 <div className="text-xs uppercase tracking-widest text-slate-400 font-bold mb-2">{t('reports.totalMentions')}</div>
-                <div className="text-4xl font-black text-pink-400">{data?.metrics?.total_mentions?.toLocaleString() || 0}</div>
+                <div className="text-3xl sm:text-4xl font-black text-pink-400 break-words">{data?.metrics?.total_mentions?.toLocaleString() || 0}</div>
               </div>
               <div className="bg-[#1e293b]/50 border border-white/10 rounded-2xl p-6 text-center">
                 <div className="text-xs uppercase tracking-widest text-slate-400 font-bold mb-2">{t('reports.totalAlerts')}</div>
-                <div className="text-4xl font-black text-amber-400">{data?.metrics?.total_alerts?.toLocaleString() || 0}</div>
+                <div className="text-3xl sm:text-4xl font-black text-amber-400 break-words">{data?.metrics?.total_alerts?.toLocaleString() || 0}</div>
               </div>
               <div className="bg-[#1e293b]/50 border border-white/10 rounded-2xl p-6 text-center">
                 <div className="text-xs uppercase tracking-widest text-slate-400 font-bold mb-2">{t('reports.incidents')}</div>
-                <div className="text-4xl font-black text-rose-500">{data?.metrics?.total_incidents?.toLocaleString() || 0}</div>
+                <div className="text-3xl sm:text-4xl font-black text-rose-500 break-words">{data?.metrics?.total_incidents?.toLocaleString() || 0}</div>
               </div>
               <div className="bg-[#1e293b]/50 border border-white/10 rounded-2xl p-6 text-center">
                 <div className="text-xs uppercase tracking-widest text-slate-400 font-bold mb-2">{t('reports.positiveRatio')}</div>
-                <div className="text-4xl font-black text-emerald-400">
+                <div className="text-3xl sm:text-4xl font-black text-emerald-400 break-words">
                   {data?.metrics?.total_mentions > 0 
                     ? Math.round((data?.metrics?.sentiment?.positive || 0) / data?.metrics?.total_mentions * 100) 
                     : 0}%
@@ -144,7 +144,7 @@ export default function InfographicPage() {
 
             {/* Volume Chart */}
             {data?.trend && data.trend.length > 0 && (
-              <div className="bg-[#1e293b]/30 border border-white/10 rounded-3xl p-8">
+              <div className="bg-[#1e293b]/30 border border-white/10 rounded-3xl p-4 sm:p-8">
                 <h3 className="text-lg font-bold uppercase tracking-widest text-white mb-6">{t('reports.volumeOfMentions')}</h3>
                 <div className="h-72">
                   <ResponsiveContainer width="100%" height="100%">
@@ -182,9 +182,9 @@ export default function InfographicPage() {
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 sm:gap-8">
               {/* Sentiment Pie */}
-              <div className="bg-[#1e293b]/30 border border-white/10 rounded-3xl p-8 flex flex-col">
+              <div className="bg-[#1e293b]/30 border border-white/10 rounded-3xl p-4 sm:p-8 flex flex-col">
                 <h3 className="text-lg font-bold uppercase tracking-widest text-white mb-6 text-center">{t('reports.sentimentBreakdown')}</h3>
                 <div className="flex-1 min-h-[300px]">
                   {sentimentData.length > 0 ? (
@@ -217,7 +217,7 @@ export default function InfographicPage() {
               </div>
 
               {/* Sources Bar Chart */}
-              <div className="bg-[#1e293b]/30 border border-white/10 rounded-3xl p-8 flex flex-col">
+              <div className="bg-[#1e293b]/30 border border-white/10 rounded-3xl p-4 sm:p-8 flex flex-col">
                 <h3 className="text-lg font-bold uppercase tracking-widest text-white mb-6 text-center">{t('reports.topSources')}</h3>
                 <div className="flex-1 min-h-[300px]">
                   {data?.top_sources && data.top_sources.length > 0 ? (
