@@ -152,7 +152,7 @@ export default function PremiumLandingPage() {
             <Link href="/login" className="premium-primary-cta inline-flex min-w-0 items-center justify-center rounded-full px-5 py-3.5 text-center text-sm font-bold text-slate-950 focus:outline-none focus:ring-2 focus:ring-teal-200 focus:ring-offset-2 focus:ring-offset-slate-950">
               Đăng nhập để bắt đầu
             </Link>
-            <Link href="/dashboard" className="premium-secondary-cta inline-flex min-w-0 items-center justify-center rounded-full px-5 py-3.5 text-center text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-teal-200 focus:ring-offset-2 focus:ring-offset-slate-950">
+            <Link href="/dashboard" className="premium-primary-cta inline-flex min-w-0 items-center justify-center rounded-full px-5 py-3.5 text-center text-sm font-bold text-slate-950 focus:outline-none focus:ring-2 focus:ring-teal-200 focus:ring-offset-2 focus:ring-offset-slate-950">
               Vào dashboard
             </Link>
           </div>
