@@ -4,19 +4,13 @@
 
 @layer base {
   :root {
-    /* ── Design tokens ─────────────────────────────────────── */
-    --background: 40 33% 97%;          /* warm ivory */
-    --foreground: 222 47% 9%;          /* near-black ink */
-    --surface: 0 0% 100%;              /* white */
-    --surface-elevated: 0 0% 100%;
-    --surface-muted: 210 40% 96%;
-    --surface-glass: 0 0% 100% / 0.88; /* glass base */
-    --text-primary: 222 47% 9%;
-    --text-secondary: 222 20% 35%;
-    --text-muted: 215 16% 45%;
-
-    --primary: 217.2 91.2% 59.8%;      /* Nope360 blue */
-    --primary-hover: 213 94% 68%;
+    --background: 210 40% 98%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 217.2 91.2% 59.8%;
     --primary-foreground: 222.2 47.4% 11.2%;
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
@@ -24,345 +18,133 @@
     --muted-foreground: 215.4 16.3% 46.9%;
     --accent: 210 40% 96.1%;
     --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 72% 48%;
+    --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
-
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-
-    --border: 215 22% 86%;
-    --border-strong: 215 22% 76%;
-    --input: 215 22% 86%;
-    --ring: 217.2 91.2% 59.8%;
-    --focus-ring: 217.2 91.2% 59.8%;
-    --overlay: 0 0% 0% / 0.45;
-
-    --editorial-accent: 30 12% 28%;    /* deep warm charcoal */
-    --sidebar: 0 0% 100%;
-    --sidebar-foreground: 222 47% 9%;
-    --sidebar-muted: 210 40% 96%;
-    --sidebar-item-active: hsl(217.2 91.2% 59.8% / 0.12);
-    --sidebar-item-hover: hsl(210 40% 96%);
-
-    --success: 158 64% 35%;
-    --warning: 35 92% 42%;
-    --danger: 0 72% 48%;
-    --info: 217.2 91.2% 59.8%;
-
-    /* ── Chart palette ─────────────────────────────────────── */
-    --chart-1: 217.2 91.2% 59.8%;
-    --chart-2: 188 70% 36%;
-    --chart-3: 158 64% 35%;
-    --chart-4: 35 92% 42%;
-    --chart-5: 0 72% 48%;
-    --chart-6: 272 55% 52%;
-    --chart-7: 203 72% 42%;
-    --chart-8: 326 58% 48%;
-
-    /* ── Spacing ───────────────────────────────────────────── */
-    --space-xs: 4px;
-    --space-sm: 8px;
-    --space-md: 12px;
-    --space-base: 16px;
-    --space-lg: 24px;
-    --space-xl: 32px;
-    --space-section: 64px;
-
-    /* ── Radius ────────────────────────────────────────────── */
-    --radius-sm: 6px;
-    --radius-md: 8px;
-    --radius-lg: 12px;
-    --radius-xl: 16px;
-    --radius-marketing: 24px;
-    --radius-full: 9999px;
-
-    /* ── Shadows ───────────────────────────────────────────── */
-    --shadow-sm: 0 1px 2px 0 hsl(222 20% 10% / 0.06);
-    --shadow-md: 0 4px 12px -2px hsl(222 20% 10% / 0.08);
-    --shadow-lg: 0 12px 32px -4px hsl(222 20% 10% / 0.10);
-    --shadow-xl: 0 20px 48px -8px hsl(222 20% 10% / 0.12);
-    --shadow-glow: 0 0 20px hsl(217.2 91.2% 59.8% / 0.25);
-
-    /* ── Motion ────────────────────────────────────────────── */
-    --ease-out-expo: cubic-bezier(0.19, 1, 0.22, 1);
-    --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
-    --duration-fast: 120ms;
-    --duration-normal: 180ms;
-    --duration-slow: 260ms;
-    --duration-expressive: 400ms;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 224.3 76.3% 48%;
+    --radius: 0.5rem;
   }
 
   .dark {
-    --background: 224 46% 7%;           /* near-black blue */
-    --foreground: 42 38% 94%;           /* warm cream */
-    --surface: 222 39% 11%;             /* graphite */
-    --surface-elevated: 219 31% 15%;    /* lighter graphite */
-    --surface-muted: 222 30% 14%;
-    --surface-glass: 222 39% 11% / 0.70;
-    --text-primary: 42 38% 94%;
-    --text-secondary: 42 20% 78%;
-    --text-muted: 215 16% 60%;
-
-    --primary: 217.2 91.2% 59.8%;       /* same Nope360 blue */
-    --primary-hover: 213 94% 68%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 199 89% 48%;           /* cyan */
+    --background: 226 48% 8%; /* #0B1020 */
+    --foreground: 210 40% 98%; /* #F8FAFC */
+    --card: 222 47% 11%; /* #0F172A or #111827 */
+    --card-foreground: 210 40% 98%;
+    --popover: 222 47% 11%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 250 89% 65%; /* violet/indigo */
+    --primary-foreground: 210 40% 98%;
+    --secondary: 199 89% 48%; /* cyan/blue */
     --secondary-foreground: 210 40% 98%;
-    --muted: 215 25% 27%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 215 25% 27%; /* #334155 */
+    --muted-foreground: 215 20.2% 65.1%; /* #94A3B8 */
     --accent: 215 25% 27%;
     --accent-foreground: 210 40% 98%;
-    --destructive: 348 83% 47%;         /* rose */
+    --destructive: 348 83% 47%; /* rose */
     --destructive-foreground: 210 40% 98%;
-
-    --card: 222 39% 11%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222 39% 11%;
-    --popover-foreground: 210 40% 98%;
-
-    --border: 0 0% 100% / 0.12;
-    --border-strong: 0 0% 100% / 0.20;
+    --border: 215 25% 20%; /* rgba(148, 163, 184, 0.16) approx */
     --input: 215 25% 27%;
-    --ring: 217.2 91.2% 59.8%;
-    --focus-ring: 217.2 91.2% 59.8%;
-    --overlay: 0 0% 0% / 0.60;
-
-    --editorial-accent: 42 46% 88%;     /* warm cream */
-    --sidebar: 222 39% 11%;
-    --sidebar-foreground: 42 38% 94%;
-    --sidebar-muted: 222 30% 14%;
-    --sidebar-item-active: hsl(217.2 91.2% 59.8% / 0.18);
-    --sidebar-item-hover: hsl(222 30% 14%);
-
-    --success: 158 64% 60%;
-    --warning: 35 92% 60%;
-    --danger: 348 83% 60%;
-    --info: 217.2 91.2% 70%;
-
-    --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.25);
-    --shadow-md: 0 4px 12px -2px hsl(0 0% 0% / 0.35);
-    --shadow-lg: 0 12px 32px -4px hsl(0 0% 0% / 0.45);
-    --shadow-xl: 0 20px 48px -8px hsl(0 0% 0% / 0.55);
-    --shadow-glow: 0 0 20px hsl(217.2 91.2% 59.8% / 0.30);
+    --ring: 250 89% 65%;
   }
+}
 
-  /* ── Base reset ──────────────────────────────────────────── */
+@layer base {
   * {
     @apply border-border;
   }
-
   body {
-    @apply bg-background text-foreground antialiased;
-    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
-  }
-
-  ::selection {
-    background-color: hsl(var(--primary) / 0.30);
-    color: hsl(var(--foreground));
-  }
-
-  /* ── Focus-visible ring ─────────────────────────────────── */
-  *:focus-visible {
-    outline: none;
-  }
-
-  :focus-visible {
-    outline: 2px solid hsl(var(--focus-ring));
-    outline-offset: 2px;
-  }
-
-  /* Override for elements that need box-shadow-based ring */
-  .focus-visible-ring:focus-visible {
-    outline: none;
-    box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(var(--focus-ring));
-  }
-
-  /* ── Reduced motion ─────────────────────────────────────── */
-  @media (prefers-reduced-motion: reduce) {
-    *,
-    *::before,
-    *::after {
-      animation-duration: 0.01ms !important;
-      animation-iteration-count: 1 !important;
-      transition-duration: 0.01ms !important;
-      scroll-behavior: auto !important;
-    }
-
-    .motion-safe-only {
-      display: none;
-    }
-  }
-
-  @media (prefers-reduced-motion: no-preference) {
-    .motion-reduce-only {
-      display: none;
-    }
+    @apply bg-slate-50 text-slate-900 antialiased selection:bg-primary selection:text-white dark:bg-[#0B1020] dark:text-[#F8FAFC];
   }
 }
 
-/* ══════════════════════════════════════════════════════════════
-   GLASS UTILITIES
-   ══════════════════════════════════════════════════════════════ */
 
-@layer components {
-  /* ── glass-panel: broad containers ──────────────────────── */
-  .glass-panel {
-    background: hsla(var(--surface-glass));
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid hsl(var(--border));
-    box-shadow: var(--shadow-md);
-  }
 
-  .dark .glass-panel {
-    border-color: hsl(0 0% 100% / 0.10);
-  }
-
-  /* ── glass-pill: compact badges / nav pills ─────────────── */
-  .glass-pill {
-    background: hsla(var(--surface-glass));
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid hsl(var(--border));
-    border-radius: var(--radius-full);
-    box-shadow: var(--shadow-sm);
-  }
-
-  .dark .glass-pill {
-    border-color: hsl(0 0% 100% / 0.10);
-  }
-
-  /* ── glass-dialog: modal / sheet surfaces ───────────────── */
-  .glass-dialog {
-    background: hsla(var(--surface-glass));
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid hsl(var(--border));
-    box-shadow: var(--shadow-xl);
-  }
-
-  .dark .glass-dialog {
-    border-color: hsl(0 0% 100% / 0.12);
-  }
-
-  /* ── glass-floating-control: floating action / toolbar ──── */
-  .glass-floating-control {
-    background: hsla(var(--surface-glass));
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-    border: 1px solid hsl(var(--border-strong));
-    box-shadow: var(--shadow-lg);
-    border-radius: var(--radius-md);
-  }
-
-  .dark .glass-floating-control {
-    border-color: hsl(0 0% 100% / 0.18);
-  }
-
-  /* ── Opaque fallback for glass (no backdrop support) ────── */
-  @supports not (backdrop-filter: blur(1px)) {
-    .glass-panel,
-    .glass-pill,
-    .glass-dialog,
-    .glass-floating-control {
-      background: hsl(var(--surface));
-      backdrop-filter: none;
-    }
-  }
+/* Glass morphism */
+.glass {
+  background-color: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(16px);
 }
 
-/* ══════════════════════════════════════════════════════════════
-   UTILITY CLASSES
-   ══════════════════════════════════════════════════════════════ */
-
-@layer utilities {
-  /* ── Scrollbar hide ─────────────────────────────────────── */
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
-  }
-
-  .scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-
-  /* ── Gradient text ──────────────────────────────────────── */
-  .gradient-text {
-    background-clip: text;
-    -webkit-background-clip: text;
-    color: transparent;
-    background-image: linear-gradient(to right, hsl(var(--editorial-accent)), hsl(var(--primary)));
-  }
-
-  /* ── Text balance ───────────────────────────────────────── */
-  .text-balance {
-    text-wrap: balance;
-  }
-
-  /* ── Shadow utilities ───────────────────────────────────── */
-  .shadow-card {
-    box-shadow: var(--shadow-md);
-  }
-
-  .shadow-dialog {
-    box-shadow: var(--shadow-xl);
-  }
-
-  .shadow-glow {
-    box-shadow: var(--shadow-glow);
-  }
-
-  /* ── Surface helpers ────────────────────────────────────── */
-  .bg-surface { background-color: hsl(var(--surface)); }
-  .bg-surface-elevated { background-color: hsl(var(--surface-elevated)); }
-  .bg-surface-muted { background-color: hsl(var(--surface-muted)); }
-  .text-editorial { color: hsl(var(--editorial-accent)); }
-
-  /* ── Animation keyframes ────────────────────────────────── */
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(8px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  @keyframes fadeInUp {
-    from { opacity: 0; transform: translateY(16px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  @keyframes scaleIn {
-    from { opacity: 0; transform: scale(0.95); }
-    to { opacity: 1; transform: scale(1); }
-  }
-
-  .animate-fadeIn {
-    animation: fadeIn var(--duration-normal) var(--ease-out-expo);
-  }
-
-  .animate-fadeInUp {
-    animation: fadeInUp var(--duration-slow) var(--ease-out-expo);
-  }
-
-  .animate-scaleIn {
-    animation: scaleIn var(--duration-normal) var(--ease-out-expo);
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .animate-fadeIn,
-    .animate-fadeInUp,
-    .animate-scaleIn {
-      animation: none;
-      opacity: 1;
-      transform: none;
-    }
-  }
+.dark .glass {
+  background-color: rgba(15, 23, 42, 0.6) !important; /* #0F172A with opacity */
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.1);
 }
 
-/* ══════════════════════════════════════════════════════════════
-   SELECT / DROPDOWN CHEVRON
-   ══════════════════════════════════════════════════════════════ */
+/* Premium Card shadows for dark mode */
 
+
+
+/* Scrollbar hide */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Gradient text */
+.gradient-text {
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  background-image: linear-gradient(to right, #8B5CF6, #3B82F6);
+}
+
+/* Premium Active/Hover states */
+.dark .sidebar-item-active {
+  background: linear-gradient(90deg, rgba(139, 92, 246, 0.15) 0%, rgba(139, 92, 246, 0.05) 100%) !important;
+  border-left: 3px solid #8B5CF6;
+  color: #F8FAFC !important;
+}
+
+.dark .sidebar-item-hover:hover {
+  background-color: rgba(30, 41, 59, 0.5) !important;
+}
+
+/* Glassmorphism cards */
+.glass-card {
+  @apply bg-white dark:bg-white/5 backdrop-blur-xl border border-slate-200 dark:border-white/10 shadow-sm dark:shadow-xl;
+}
+
+.light .glass-card,
+html:not(.dark) .glass-card {
+  @apply bg-white border-slate-200 text-slate-900 shadow-sm;
+}
+
+html:not(.dark) body {
+  background-color: #f8fafc;
+  color: #0f172a;
+}
+
+.btn-gradient {
+  @apply bg-gradient-to-r from-brand-blue to-brand-purple text-white font-medium rounded-xl px-4 py-2 shadow-lg hover:opacity-90 transition-opacity;
+}
+
+/* ─── Toast / Hot-toast dark mode ───────────────────────────────────────── */
+/* react-hot-toast containers get explicit dark mode styles */
+.dark [data-hot-toast] {
+  background: #1E293B !important;
+  color: #F8FAFC !important;
+  border: 1px solid rgba(148, 163, 184, 0.18) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45) !important;
+}
+
+/* ─── Select / Dropdown caret fix ───────────────────────────────────────── */
+/* Remove native browser arrow to replace with a custom high-contrast one */
 select {
   appearance: none;
   -webkit-appearance: none;
@@ -371,82 +153,64 @@ select {
   background-repeat: no-repeat;
   background-position: right 0.75rem center;
   background-size: 0.9rem;
+  /* Light mode: dark chevron with good contrast */
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%234B5563' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
   cursor: pointer;
-  transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 select:focus {
   outline: none;
-  box-shadow: 0 0 0 2px hsl(var(--focus-ring) / 0.35);
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.35);
 }
 
 select:hover {
-  border-color: hsl(var(--primary) / 0.5) !important;
+  border-color: rgba(99, 102, 241, 0.5) !important;
 }
 
+/* In dark mode, native select caret: bright visible icon */
 .dark select {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
 }
 
 .dark select:hover {
-  border-color: hsl(var(--ring) / 0.5) !important;
+  border-color: rgba(139, 92, 246, 0.5) !important;
 }
 
 .dark select:focus {
-  box-shadow: 0 0 0 2px hsl(var(--ring) / 0.35) !important;
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.35) !important;
 }
 
-/* ── Disabled checkbox cursor fix ─────────────────────────── */
+/* ─── Disabled checkbox cursor fix ──────────────────────────────────────── */
 input[type='checkbox']:disabled {
   cursor: not-allowed;
 }
 
-/* ══════════════════════════════════════════════════════════════
-   TOAST (react-hot-toast)
-   ══════════════════════════════════════════════════════════════ */
-
-.dark [data-hot-toast] {
-  background: hsl(var(--surface-elevated)) !important;
-  color: hsl(var(--foreground)) !important;
-  border: 1px solid hsl(var(--border)) !important;
-  box-shadow: var(--shadow-lg) !important;
+/* ─── Light mode contrast improvements ──────────────────────────────────── */
+/* Slightly off-white backgrounds for cards in light mode to distinguish layers */
+:root:not(.dark) .bg-white {
+  /* keep white but add a very subtle shadow - handled via Tailwind shadow classes */
 }
 
-/* ══════════════════════════════════════════════════════════════
-   SIDEBAR STATES
-   ══════════════════════════════════════════════════════════════ */
-
-.sidebar-item-active {
-  background: var(--sidebar-item-active);
-  border-left: 3px solid hsl(var(--primary));
-  color: hsl(var(--sidebar-foreground)) !important;
+/* Ensure loading skeleton is visible in light mode */
+.animate-pulse {
+  opacity: 0.7;
 }
 
-.sidebar-item-hover:hover {
-  background-color: var(--sidebar-item-hover) !important;
-}
-
-/* ══════════════════════════════════════════════════════════════
-   RECHARTS THEME OVERRIDES
-   ══════════════════════════════════════════════════════════════ */
-
+/* RECHARTS LIGHT MODE THEME OVERRIDES */
 html:not(.dark) .recharts-cartesian-grid-horizontal line,
 html:not(.dark) .recharts-cartesian-grid-vertical line {
-  stroke: hsl(var(--border));
+  stroke: #e2e8f0;
 }
-
 html:not(.dark) .recharts-text {
-  fill: hsl(var(--muted-foreground));
+  fill: #64748b;
 }
-
 html:not(.dark) .recharts-tooltip-wrapper .recharts-default-tooltip {
-  background-color: hsl(var(--surface)) !important;
-  border-color: hsl(var(--border)) !important;
-  color: hsl(var(--foreground)) !important;
-  box-shadow: var(--shadow-md);
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  color: #0f172a !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
-
 html:not(.dark) .recharts-tooltip-item {
-  color: hsl(var(--foreground)) !important;
+  color: #0f172a !important;
 }

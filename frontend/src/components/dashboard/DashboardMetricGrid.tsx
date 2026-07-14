@@ -6,7 +6,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 export default function DashboardMetricGrid({ metrics, isLoading }: { metrics: any, isLoading: boolean }) {
   const { t } = useLanguage();
   return (
-    <div className="grid min-w-0 grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       <MetricCard
         title={t('dashboard.metrics.totalMentions')}
         value={metrics?.total_mentions?.toLocaleString() ?? 0}
