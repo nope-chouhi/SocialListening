@@ -144,7 +144,7 @@ export default function AssistantPage() {
         {messages.map((msg, idx) => (
           <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} w-full`}>
             <div className={`flex max-w-[85%] sm:max-w-[75%] ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
-
+              
               <div className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center mt-1 ${
                 msg.role === 'user' ? 'bg-indigo-600 ml-3' : 'bg-purple-600 mr-3'
               }`}>
@@ -152,8 +152,8 @@ export default function AssistantPage() {
               </div>
 
               <div className={`px-4 py-3 rounded-2xl text-sm leading-relaxed ${
-                msg.role === 'user'
-                  ? 'bg-indigo-600 text-white rounded-tr-none'
+                msg.role === 'user' 
+                  ? 'bg-indigo-600 text-white rounded-tr-none' 
                   : 'bg-white dark:bg-[#1E293B] text-slate-700 dark:text-gray-200 border border-slate-300 dark:border-gray-700 rounded-tl-none shadow-sm whitespace-pre-wrap'
               }`}>
                 {msg.content}
@@ -184,7 +184,7 @@ export default function AssistantPage() {
         {messages.length === 1 && (
           <div className="mb-4 hidden sm:flex flex-wrap gap-2 justify-center">
             {suggestions.map((s, i) => (
-              <button
+              <button 
                 key={i}
                 onClick={() => handleSuggestion(s)}
                 className="text-xs bg-white dark:bg-[#1E293B] hover:bg-purple-500/10 border border-slate-300 dark:border-gray-700 hover:border-purple-500/30 text-slate-700 dark:text-gray-300 hover:text-purple-300 px-3 py-1.5 rounded-full transition-colors flex items-center"
@@ -194,7 +194,7 @@ export default function AssistantPage() {
             ))}
           </div>
         )}
-
+        
         <form onSubmit={handleSend} className="relative flex items-center">
           <input
             type="text"

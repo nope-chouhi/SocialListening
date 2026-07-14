@@ -45,7 +45,7 @@ function StatCard({
       layout
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      className="glass-card rounded-xl p-5 hover:shadow-lg transition-shadow"
+      className="premium-surface premium-edge-light rounded-2xl p-5 transition-shadow hover:shadow-[0_24px_65px_rgba(15,23,42,0.12)] dark:hover:shadow-[0_28px_90px_rgba(14,165,233,0.10)]"
     >
       <div className="flex items-center justify-between mb-2">
         <span className="text-xs font-medium text-zinc-400 uppercase tracking-wide">{title}</span>
@@ -100,7 +100,7 @@ export default function RealtimeStatsSection({ projectId }: { projectId?: number
 
   return (
     <section className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between rounded-[1.5rem] border border-slate-200/70 bg-white/70 p-4 shadow-sm backdrop-blur dark:border-white/[0.08] dark:bg-white/[0.035]">
         <div className="flex items-center gap-2">
           <Radio className="w-4 h-4 text-emerald-400 animate-pulse" />
           <h2 className="text-lg font-bold text-slate-900 dark:text-white">{t('dashboard.realtimeMonitor')}</h2>
@@ -111,7 +111,7 @@ export default function RealtimeStatsSection({ projectId }: { projectId?: number
         <Activity className="w-4 h-4 text-violet-400" />
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         <StatCard
           title={t('dashboard.metrics.totalMentions')}
           value={(metrics?.total_mentions ?? 0).toLocaleString()}
@@ -139,11 +139,11 @@ export default function RealtimeStatsSection({ projectId }: { projectId?: number
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        <div className="xl:col-span-2 glass-card rounded-xl p-5">
+        <div className="xl:col-span-2 premium-surface premium-edge-light rounded-2xl p-5">
           <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-3">{t('dashboard.charts.mentionVolume')}</h3>
           <RealtimeVolumeChart data={metrics?.volume ?? []} isLoading={loading} />
         </div>
-        <div className="glass-card rounded-xl p-5">
+        <div className="premium-surface premium-edge-light rounded-2xl p-5">
           <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-3">{t('dashboard.charts.sentimentBreakdown')}</h3>
           <SentimentDonutChart data={sentimentChartData} isLoading={loading} />
           {breakdown && (

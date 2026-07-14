@@ -20,14 +20,20 @@ export const AppButton: React.FC<AppButtonProps> = ({
   disabled,
   ...props
 }) => {
-  const baseStyles = 'inline-flex items-center justify-center font-medium rounded-xl transition-all duration-200 active:scale-95 disabled:pointer-events-none disabled:opacity-50';
+  const baseStyles =
+    'inline-flex items-center justify-center font-semibold rounded-xl border border-transparent transition-all duration-150 motion-reduce:active:scale-100 active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:ring-ring';
 
   const variants = {
-    primary: 'bg-primary text-white hover:opacity-95 shadow-md shadow-primary/20 focus:ring-2 focus:ring-primary/20',
-    secondary: 'bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-slate-100 hover:bg-slate-200 dark:hover:bg-slate-700',
-    outline: 'border border-slate-200 dark:border-white/10 text-slate-700 dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-white/5',
-    ghost: 'text-slate-700 dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-white/5',
-    destructive: 'bg-destructive text-white hover:opacity-95 shadow-md shadow-destructive/20 focus:ring-2 focus:ring-destructive/20',
+    primary:
+      'bg-primary text-primary-foreground shadow-[0_14px_30px_-14px_hsl(var(--primary)/0.85)] hover:bg-primary-hover hover:shadow-[0_18px_34px_-14px_hsl(var(--primary)/0.95)]',
+    secondary:
+      'bg-secondary text-secondary-foreground border-border shadow-sm hover:bg-secondary/80',
+    outline:
+      'border border-border bg-background text-foreground hover:bg-accent hover:text-accent-foreground',
+    ghost:
+      'text-foreground hover:bg-accent hover:text-accent-foreground',
+    destructive:
+      'bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-sm',
   };
 
   const sizes = {

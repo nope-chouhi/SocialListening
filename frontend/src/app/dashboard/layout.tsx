@@ -175,7 +175,7 @@ function DashboardSidebar({ sidebarOpen, setSidebarOpen, user, badges, setIsWebi
 
   return (
     <div
-      className={`fixed inset-y-0 left-0 z-50 flex flex-col bg-[#0D1117] border-r border-white/[0.06] shadow-2xl transform transition-all duration-300 ease-in-out lg:translate-x-0 ${
+      className={`fixed inset-y-0 left-0 z-50 flex flex-col premium-edge-light bg-[#07111f]/95 border-r border-white/[0.08] shadow-[18px_0_60px_rgba(0,0,0,0.35)] backdrop-blur-xl transform transition-all duration-300 ease-in-out lg:translate-x-0 ${
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
       } ${sidebarCollapsed ? 'w-[68px]' : 'w-64'}`}
     >
@@ -447,7 +447,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
 
   return (
     <ProjectProvider>
-      <div className="min-h-screen bg-[#F4F5F7] dark:bg-[#000511]">
+      <div className="premium-depth-shell min-h-screen bg-[#F4F5F7] dark:bg-[#000511]">
         {sidebarOpen && (
           <div className="fixed inset-0 z-40 bg-gray-900/50 lg:hidden" onClick={() => setSidebarOpen(false)} />
         )}
@@ -470,7 +470,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
         }}
       />
       <div className={`transition-all duration-300 flex flex-col min-h-screen ${mounted ? (sidebarCollapsed ? 'lg:pl-[68px]' : 'lg:pl-64') : 'lg:pl-64'}`}>
-        <div className="sticky top-0 z-20 flex min-w-0 items-center h-16 px-3 bg-white dark:bg-[#050A15] border-b border-gray-200 dark:border-white/10 sm:px-4 lg:px-8 shadow-sm">
+        <div className="sticky top-0 z-20 flex min-w-0 items-center h-16 px-3 bg-white/[0.88] dark:bg-[#050A15]/[0.86] border-b border-gray-200/80 dark:border-white/10 sm:px-4 lg:px-8 shadow-[0_10px_35px_rgba(15,23,42,0.06)] backdrop-blur-xl">
           <button onClick={() => setSidebarOpen(true)} className="lg:hidden p-2 -ml-2 text-gray-500 hover:text-gray-900 mr-2">
             <Menu className="w-5 h-5" />
           </button>
@@ -511,7 +511,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
             </div>
           </div>
         </div>
-        <main className="flex w-full min-w-0 max-w-[1920px] flex-1 flex-col p-4 lg:mx-auto lg:p-8">
+        <main className="flex w-full min-w-0 max-w-[1920px] flex-1 flex-col p-3 sm:p-4 lg:mx-auto lg:p-8">
           <div className="flex-1">
             {children}
           </div>
