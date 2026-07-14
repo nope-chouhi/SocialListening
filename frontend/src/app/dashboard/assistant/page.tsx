@@ -1,105 +1,69 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { AlertTriangle, ArrowRight, Bot, Loader2, Send, Settings, Sparkles, Trash2, User } from 'lucide-react';
-import Link from 'next/link';
-import toast from 'react-hot-toast';
-
+import { useState, useRef, useEffect } from 'react';
+import { Send, Bot, User, Sparkles, Loader2, ArrowRight, AlertTriangle, Settings, Trash2 } from 'lucide-react';
 import { aiChat } from '@/lib/api';
-import { useLanguage } from '@/contexts/LanguageContext';
+import toast from 'react-hot-toast';
+import Link from 'next/link';
 
 interface ChatConfig {
   is_configured: boolean;
   is_enabled: boolean;
   provider: string | null;
   model_name: string | null;
-  capabilities?: Record<string, unknown>;
-}
-
-interface ChatMessage {
-  id?: number;
-  role: 'user' | 'assistant';
-  content: string;
-  provider?: string | null;
-  model?: string | null;
-  used_tools?: string[];
-  created_at?: string;
 }
 
 export default function AssistantPage() {
-  const { t } = useLanguage();
-  const welcomeMessage: ChatMessage = {
-    role: 'assistant',
-    content: t('assistant.welcomeFull'),
-  };
-  const [messages, setMessages] = useState<ChatMessage[]>([welcomeMessage]);
+  const [messages, setMessages] = useState<{role: string, content: string}[]>([
+    { role: 'assistant', content: 'Xin chào! Tôi là AI Brand Assistant. Tôi đã được cung cấp toàn bộ dữ liệu Social Listening (Mentions, Cảnh báo, Đối thủ) của dự án. Bạn muốn phân tích điều gì hôm nay?' }
+  ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [chatConfig, setChatConfig] = useState<ChatConfig | null>(null);
   const [configLoading, setConfigLoading] = useState(true);
-  const [historyLoading, setHistoryLoading] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
+  const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
   }, [messages, isLoading]);
 
   useEffect(() => {
     loadChatConfig();
-    loadHistory();
   }, []);
 
   const loadChatConfig = async () => {
     try {
       const config = await aiChat.getChatConfig();
       setChatConfig(config);
-    } catch {
+    } catch (err) {
+      // If it fails, assume not configured
       setChatConfig({ is_configured: false, is_enabled: false, provider: null, model_name: null });
     } finally {
       setConfigLoading(false);
     }
   };
 
-  const loadHistory = async () => {
-    try {
-      const history = await aiChat.getHistory();
-      setMessages(history.length ? history : [welcomeMessage]);
-    } catch {
-      setMessages([welcomeMessage]);
-    } finally {
-      setHistoryLoading(false);
-    }
-  };
-
   const handleSend = async (e?: React.FormEvent) => {
     e?.preventDefault();
+    if (!input.trim() || isLoading) return;
+
     const userMessage = input.trim();
-    if (!userMessage || isLoading) return;
-
-    const optimisticUserMessage: ChatMessage = {
-      role: 'user',
-      content: userMessage,
-      created_at: new Date().toISOString(),
-    };
-
     setInput('');
-    setMessages((prev) => [...prev, optimisticUserMessage]);
+    const newMessages = [...messages, { role: 'user', content: userMessage }];
+    setMessages(newMessages);
     setIsLoading(true);
 
     try {
-      const response = await aiChat.send(userMessage);
-      setMessages((prev) => [
-        ...prev.filter((msg) => msg !== optimisticUserMessage),
-        response.user_message,
-        response.assistant_message,
-      ]);
+      const response = await aiChat.chat(newMessages.filter(m => m.role !== 'system'));
+      setMessages([...newMessages, response]);
     } catch (error: any) {
-      const detail = error?.response?.data?.detail || t('assistant.connectionError');
+      const detail = error?.response?.data?.detail || 'Có lỗi xảy ra khi kết nối với AI Assistant.';
       toast.error(detail);
-      setMessages((prev) => [
-        ...prev,
-        { role: 'assistant', content: t('assistant.cannotAnswerNow').replace('{error}', detail) },
-      ]);
+      setMessages([...newMessages, { role: 'assistant', content: `⚠️ ${detail}` }]);
     } finally {
       setIsLoading(false);
     }
@@ -109,116 +73,105 @@ export default function AssistantPage() {
     setInput(text);
   };
 
-  const handleClearChat = async () => {
-    try {
-      await aiChat.clearHistory();
-      setMessages([welcomeMessage]);
-      toast.success(t('assistant.historyCleared'));
-    } catch (error: any) {
-      toast.error(error?.response?.data?.detail || t('assistant.clearHistoryError'));
-    }
+  const handleClearChat = () => {
+    setMessages([
+      { role: 'assistant', content: 'Xin chào! Tôi là AI Brand Assistant. Tôi đã được cung cấp toàn bộ dữ liệu Social Listening (Mentions, Cảnh báo, Đối thủ) của dự án. Bạn muốn phân tích điều gì hôm nay?' }
+    ]);
   };
 
   const suggestions = [
-    t('assistant.suggestions.weeklySummary'),
-    t('assistant.suggestions.negativeRisk'),
-    t('assistant.suggestions.keywordContext'),
-    t('assistant.suggestions.alertReports'),
+    "Tóm tắt tình hình thương hiệu tuần qua",
+    "Có thảo luận tiêu cực nào đáng chú ý không?",
+    "So sánh Share of Voice với đối thủ",
+    "Ai là Influencer mang lại nhiều reach nhất?"
   ];
 
   const providerLabel = chatConfig?.model_name
-    ? `${chatConfig.provider === 'openai' ? 'OpenAI' : chatConfig.provider === 'gemini' ? 'Gemini' : 'Custom'} - ${chatConfig.model_name}`
-    : t('assistant.enterpriseLlm');
+    ? `${chatConfig.provider === 'openai' ? 'GPT' : chatConfig.provider === 'gemini' ? 'Gemini' : 'Custom'} • ${chatConfig.model_name}`
+    : 'Enterprise LLM';
 
+  // Not configured state
   if (!configLoading && chatConfig && (!chatConfig.is_configured || !chatConfig.is_enabled)) {
     return (
-      <div className="flex h-[calc(100vh-6rem)] flex-col items-center justify-center px-4 text-center">
-        <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-2xl border border-purple-500/20 bg-purple-500/10">
-          <AlertTriangle className="h-10 w-10 text-purple-500" />
+      <div className="flex flex-col items-center justify-center h-[calc(100vh-6rem)] max-w-lg mx-auto text-center px-4">
+        <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-purple-500/20 to-indigo-600/20 flex items-center justify-center mb-6 border border-purple-500/20">
+          <AlertTriangle className="w-10 h-10 text-purple-400" />
         </div>
-        <h2 className="mb-3 text-2xl font-bold text-slate-900 dark:text-white">{t('assistant.notConfiguredTitle')}</h2>
-        <p className="mb-6 max-w-lg text-slate-600 dark:text-gray-400">
-          {t('assistant.notConfiguredDesc')}
+        <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-3">AI Assistant chưa được cấu hình</h2>
+        <p className="text-slate-600 dark:text-gray-400 mb-6 leading-relaxed">
+          {!chatConfig.is_configured
+            ? 'Quản trị viên cần thiết lập API key và chọn AI model trong phần Cài đặt để kích hoạt tính năng này.'
+            : 'AI Assistant hiện đang tắt. Quản trị viên có thể bật lại trong phần Cài đặt → Cấu hình AI.'
+          }
         </p>
         <Link
           href="/dashboard/settings"
-          className="flex items-center gap-2 rounded-lg bg-purple-600 px-5 py-3 font-medium text-white transition-colors hover:bg-purple-500"
+          className="flex items-center gap-2 px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white rounded-xl font-medium transition-colors shadow-lg shadow-purple-500/20"
         >
-          <Settings className="h-4 w-4" />
-          {t('assistant.goToSettings')}
+          <Settings className="w-4 h-4" />
+          Đi tới Cài đặt
         </Link>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto flex h-[calc(100vh-6rem)] max-w-5xl flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm dark:border-gray-800 dark:bg-[#111827]">
-      <div className="flex shrink-0 items-center justify-between border-b border-slate-200 bg-white p-4 dark:border-gray-800 dark:bg-[#111827]">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-600 text-white">
-            <Sparkles className="h-5 w-5" />
+    <div className="flex flex-col h-[calc(100vh-6rem)] max-w-5xl mx-auto bg-white dark:bg-[#111827] border border-slate-200 dark:border-gray-800 rounded-2xl shadow-xl overflow-hidden relative">
+      {/* Header */}
+      <div className="p-4 border-b border-slate-200 dark:border-gray-800 flex items-center justify-between bg-white dark:bg-[#1E293B]/50 backdrop-blur-md z-10 shrink-0">
+        <div className="flex items-center space-x-3">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-purple-500/20">
+            <Sparkles className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-slate-900 dark:text-white">{t('assistant.title')}</h1>
-            <p className="text-xs font-medium text-purple-500">
-              {configLoading ? t('assistant.checkingConfig') : t('assistant.poweredBy').replace('{provider}', providerLabel)}
+            <h1 className="text-lg font-bold text-slate-900 dark:text-white tracking-wide">AI Brand Assistant</h1>
+            <p className="text-xs text-purple-400 font-medium">
+              {configLoading ? 'Đang kết nối...' : `Powered by ${providerLabel}`}
             </p>
           </div>
         </div>
         <button
           onClick={handleClearChat}
-          title={t('assistant.clearConversation')}
-          className="rounded-lg p-2 text-slate-500 transition-colors hover:bg-red-50 hover:text-red-600 dark:text-gray-400 dark:hover:bg-red-500/10"
+          title="Xóa hội thoại"
+          className="p-2 text-slate-400 dark:text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
         >
-          <Trash2 className="h-4 w-4" />
+          <Trash2 className="w-4 h-4" />
         </button>
       </div>
 
-      <div className="custom-scrollbar flex-1 space-y-5 overflow-y-auto bg-slate-50 p-4 dark:bg-[#0B1220] sm:p-6">
-        {historyLoading ? (
-          <div className="flex h-full items-center justify-center text-sm text-slate-500">
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            {t('assistant.loadingHistory')}
-          </div>
-        ) : (
-          messages.map((msg, idx) => (
-            <div key={`${msg.id || idx}-${msg.role}`} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-              <div className={`flex max-w-[86%] sm:max-w-[76%] ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
-                <div
-                  className={`mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
-                    msg.role === 'user' ? 'ml-3 bg-indigo-600' : 'mr-3 bg-purple-600'
-                  }`}
-                >
-                  {msg.role === 'user' ? <User className="h-4 w-4 text-white" /> : <Bot className="h-4 w-4 text-white" />}
-                </div>
-                <div
-                  className={`rounded-2xl px-4 py-3 text-sm leading-relaxed ${
-                    msg.role === 'user'
-                      ? 'rounded-tr-sm bg-indigo-600 text-white'
-                      : 'rounded-tl-sm border border-slate-200 bg-white text-slate-800 shadow-sm dark:border-gray-700 dark:bg-[#1E293B] dark:text-gray-100'
-                  }`}
-                >
-                  <div className="whitespace-pre-wrap">{msg.content}</div>
-                  {msg.role === 'assistant' && msg.used_tools && msg.used_tools.length > 0 && (
-                    <div className="mt-3 border-t border-slate-200 pt-2 text-[11px] text-slate-500 dark:border-gray-700 dark:text-gray-400">
-                      {t('assistant.usedData')}: {msg.used_tools.join(', ')}
-                    </div>
-                  )}
-                </div>
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 custom-scrollbar bg-slate-50 dark:bg-[#0B1220]/50">
+        {messages.map((msg, idx) => (
+          <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} w-full`}>
+            <div className={`flex max-w-[85%] sm:max-w-[75%] ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+              
+              <div className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center mt-1 ${
+                msg.role === 'user' ? 'bg-indigo-600 ml-3' : 'bg-purple-600 mr-3'
+              }`}>
+                {msg.role === 'user' ? <User className="w-4 h-4 text-white" /> : <Bot className="w-4 h-4 text-white" />}
+              </div>
+
+              <div className={`px-4 py-3 rounded-2xl text-sm leading-relaxed ${
+                msg.role === 'user' 
+                  ? 'bg-indigo-600 text-white rounded-tr-none' 
+                  : 'bg-white dark:bg-[#1E293B] text-slate-700 dark:text-gray-200 border border-slate-300 dark:border-gray-700 rounded-tl-none shadow-sm whitespace-pre-wrap'
+              }`}>
+                {msg.content}
               </div>
             </div>
-          ))
-        )}
+          </div>
+        ))}
 
         {isLoading && (
-          <div className="flex justify-start">
-            <div className="flex max-w-[76%]">
-              <div className="mr-3 mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-purple-600">
-                <Bot className="h-4 w-4 text-white" />
+          <div className="flex justify-start w-full">
+            <div className="flex max-w-[85%] sm:max-w-[75%] flex-row">
+              <div className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center mt-1 bg-purple-600 mr-3">
+                <Bot className="w-4 h-4 text-white" />
               </div>
-              <div className="flex items-center gap-2 rounded-2xl rounded-tl-sm border border-slate-200 bg-white px-5 py-4 dark:border-gray-700 dark:bg-[#1E293B]">
-                <Loader2 className="h-4 w-4 animate-spin text-purple-500" />
-                <span className="text-sm text-slate-500 dark:text-gray-400">{t('assistant.thinking')}</span>
+              <div className="px-5 py-4 rounded-2xl bg-white dark:bg-[#1E293B] border border-slate-300 dark:border-gray-700 rounded-tl-none shadow-sm flex items-center space-x-2">
+                <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
               </div>
             </div>
           </div>
@@ -226,44 +179,42 @@ export default function AssistantPage() {
         <div ref={messagesEndRef} />
       </div>
 
-      <div className="shrink-0 border-t border-slate-200 bg-white p-4 dark:border-gray-800 dark:bg-[#111827]">
-        {messages.length <= 1 && (
-          <div className="mb-4 hidden flex-wrap justify-center gap-2 sm:flex">
-            {suggestions.map((suggestion) => (
-              <button
-                key={suggestion}
-                onClick={() => handleSuggestion(suggestion)}
-                className="flex items-center rounded-full border border-slate-300 px-3 py-1.5 text-xs text-slate-700 transition-colors hover:border-purple-400 hover:text-purple-600 dark:border-gray-700 dark:text-gray-300"
+      {/* Input Area */}
+      <div className="p-4 border-t border-slate-200 dark:border-gray-800 bg-white dark:bg-[#111827] shrink-0">
+        {messages.length === 1 && (
+          <div className="mb-4 hidden sm:flex flex-wrap gap-2 justify-center">
+            {suggestions.map((s, i) => (
+              <button 
+                key={i}
+                onClick={() => handleSuggestion(s)}
+                className="text-xs bg-white dark:bg-[#1E293B] hover:bg-purple-500/10 border border-slate-300 dark:border-gray-700 hover:border-purple-500/30 text-slate-700 dark:text-gray-300 hover:text-purple-300 px-3 py-1.5 rounded-full transition-colors flex items-center"
               >
-                {suggestion}
-                <ArrowRight className="ml-1.5 h-3 w-3 opacity-60" />
+                {s} <ArrowRight className="w-3 h-3 ml-1.5 opacity-50" />
               </button>
             ))}
           </div>
         )}
-
+        
         <form onSubmit={handleSend} className="relative flex items-center">
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder={t('assistant.inputPlaceholder')}
-            className="w-full rounded-2xl border border-slate-300 bg-white py-4 pl-5 pr-14 text-slate-900 shadow-inner focus:outline-none focus:ring-2 focus:ring-purple-500/50 disabled:opacity-60 dark:border-gray-700 dark:bg-[#1E293B] dark:text-white"
-            disabled={isLoading || historyLoading}
+            placeholder="Nhập câu hỏi để phân tích dữ liệu..."
+            className="w-full pl-5 pr-14 py-4 bg-white dark:bg-[#1E293B] border border-slate-300 dark:border-gray-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500/50 text-slate-900 dark:text-white placeholder-gray-500 shadow-inner"
+            disabled={isLoading}
           />
           <button
             type="submit"
-            disabled={!input.trim() || isLoading || historyLoading}
-            className="absolute right-2 rounded-xl bg-purple-600 p-2.5 text-white transition-colors hover:bg-purple-500 disabled:bg-gray-400"
-            title={t('assistant.send')}
-            aria-label={t('assistant.send')}
+            disabled={!input.trim() || isLoading}
+            className="absolute right-2 p-2.5 bg-purple-600 text-white rounded-xl hover:bg-purple-500 disabled:bg-gray-700 disabled:text-gray-500 transition-colors shadow-sm disabled:shadow-none"
           >
-            {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
+            {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
           </button>
         </form>
-        <p className="mt-3 text-center text-[11px] text-slate-500">
-          {t('assistant.disclaimer')}
-        </p>
+        <div className="mt-3 text-center">
+          <p className="text-[10px] text-gray-500">AI Assistant có thể mắc sai lầm. Hãy kiểm tra lại các số liệu quan trọng.</p>
+        </div>
       </div>
     </div>
   );

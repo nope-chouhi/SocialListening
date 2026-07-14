@@ -16,7 +16,6 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import WebinarRegistrationModal from '@/components/dashboard/WebinarRegistrationModal';
 import WebinarSuccessModal from '@/components/dashboard/WebinarSuccessModal';
-import { FloatingAssistantWidget } from '@/components/assistant/FloatingAssistantWidget';
 import { 
   LayoutDashboard, 
   Globe, 
@@ -541,7 +540,6 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
         isOpen={isSuccessModalOpen}
         onClose={() => setIsSuccessModalOpen(false)}
       />
-      <FloatingAssistantWidget />
       </div>
     </ProjectProvider>
   );

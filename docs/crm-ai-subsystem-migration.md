@@ -2,7 +2,18 @@
 
 ## Task Purpose
 
-Migrate the working AI assistant behavior from the read-only TTH CRM project into SocialListening / Nope360 without copying CRM secrets, CRM business tools, or CRM-specific domain logic.
+Migrate the reusable backend AI assistant behavior from the read-only TTH CRM project into SocialListening / Nope360 without copying CRM secrets, CRM business tools, CRM-specific domain logic, or replacing the existing SocialListening frontend.
+
+## Frontend Restoration Scope
+
+The first migration pass added a full-page assistant UI, floating dashboard widget, frontend API helpers, and assistant locale keys. Those frontend changes were later restored to match `origin/main` because the requested scope was to add the AI capability to SocialListening, not to replace or redesign the frontend experience.
+
+The retained migration is backend-focused:
+
+- AI provider/model integration remains server-side.
+- AI chat/history/stream APIs remain available for future UI integration.
+- SocialListening data context tools remain backend-only and read-only.
+- Existing frontend pages, dashboard layout, locale files, and API client are restored to their pre-migration state.
 
 ## Repositories
 
@@ -125,9 +136,9 @@ Assistant integration:
 
 Frontend:
 
-- `frontend/src/app/dashboard/assistant/page.tsx`: full-page assistant with backend history.
-- `frontend/src/components/assistant/FloatingAssistantWidget.tsx`: authenticated dashboard floating assistant.
-- `frontend/src/lib/api.ts`: shared AI chat client helpers.
+- No frontend assistant UI is retained in this branch.
+- Existing SocialListening frontend files are restored to `origin/main`.
+- Future UI integration can call the backend assistant endpoints without adding a second provider engine.
 
 ## Provider Architecture
 
@@ -205,16 +216,16 @@ SocialListening now has a provider-native backend stream endpoint:
 
 - `POST /api/ai/chat/stream`
 
-The current full-page and floating UIs use the stable non-streaming `POST /api/ai/chat/send`. The stream endpoint is available for future UI wiring, but the UI does not claim token streaming.
+The current restored frontend does not wire a new assistant UI. The stable non-streaming `POST /api/ai/chat/send` endpoint and provider-native `POST /api/ai/chat/stream` endpoint are available for future UI wiring, but this branch does not claim token streaming in the UI.
 
 Stream classification: real provider token streaming for providers whose SDK/API returns incremental chunks (`gemini`, `openai`, and `custom` OpenAI-compatible). It is not simulated typewriter output and it is not a completed response wrapped as SSE. The endpoint authenticates before returning `StreamingResponse`, emits `meta`, `chunk`, `done`, and safe `error` events, and does not include raw exceptions or API keys in error events.
 
 ## Frontend Architecture
 
-- The full-page assistant uses persisted backend history, real send, clear history, loading/error states, and real unconfigured-AI state.
-- The floating widget is mounted only inside authenticated dashboard layout.
-- The widget is hidden on small screens to avoid conflicts with mobile navigation.
-- AI output is rendered as plain text with `whitespace-pre-wrap`; no unsafe HTML rendering is used.
+- New assistant page and floating widget changes were removed from this branch.
+- Existing dashboard layout, locale files, and shared frontend API client are restored to `origin/main`.
+- No fake frontend chat UI, fake toast, or fake assistant state is introduced.
+- The backend APIs are ready for a later, separately approved UI task.
 
 ## Migration Matrix
 
@@ -222,10 +233,10 @@ Stream classification: real provider token streaming for providers whose SDK/API
 | --- | --- | --- | --- |
 | Provider config | `SystemSetting` rows | `AIModelConfig` | Reuse `AIModelConfig` |
 | Provider call | Direct `httpx` in route | `ai_service.py` | Shared `call_ai_messages` |
-| Chat API | `/api/v1/chat/send` | `/api/ai/chat` stateless | `/api/ai/chat/send` plus backward compatibility |
+| Chat API | `/api/v1/chat/send` | `/api/ai/chat` stateless | backend `/api/ai/chat/send` plus backward compatibility |
 | History | `ChatMessage` | none for assistant | `AIChatMessage` |
 | Context tools | CRM customers/leads/tasks | basic mention counts | SocialListening tools for mentions/keywords/alerts/reports |
-| Floating widget | `ChatWidget.tsx` | none | dashboard-only `FloatingAssistantWidget` |
+| Floating widget | `ChatWidget.tsx` | none | not retained in this backend-focused branch |
 | Streaming | none real | none | backend stream endpoint, UI not wired |
 | Settings | CRM settings page | `/dashboard/settings/ai` | keep existing SocialListening settings |
 
@@ -258,9 +269,8 @@ Commands run from SocialListening unless otherwise noted:
 - `pytest -q tests/test_ai_assistant_service.py tests/test_ai_chat_api.py`: passed, `21 passed, 2 warnings`. The warnings are package-level `requests` dependency compatibility and `feedparser` `cgi` deprecation warnings.
 - `npm run type-check` in `frontend`: failed only on `src/lib/utils/mentions.test.ts` missing `describe`, `it`, and `expect` globals.
 - Clean `origin/main` worktree at commit `59177c8` with the same frontend dependencies: `npm run type-check` failed on the same `src/lib/utils/mentions.test.ts` globals, proving that failure is pre-existing and unrelated to the assistant migration.
-- `node scripts/check-i18n-keys.mjs` in `frontend`: failed because Thai/Japanese/Korean/Chinese locale files were already missing unrelated `dashboard`, `header`, and `reports` keys compared with Vietnamese. New assistant keys were checked separately.
-- Clean-main i18n comparison against the current branch: `en` `0/0`, `th` `105/105`, `ja` `105/105`, `ko` `105/105`, `zh` `105/105`; exact missing-key lists match clean main and `assistant_missing=0` for every locale.
-- Assistant locale key coverage check for `vi`, `en`, `th`, `ja`, `ko`, and `zh`: passed; every new `assistant` key used by the new UI exists in all six locale files.
+- `node scripts/check-i18n-keys.mjs` in `frontend`: failed because Thai/Japanese/Korean/Chinese locale files were already missing unrelated `dashboard`, `header`, and `reports` keys compared with Vietnamese.
+- Frontend assistant locale keys are not retained in this branch because the frontend UI changes were restored to `origin/main`.
 - `npm run build` in `frontend`: passed.
 - `npm run lint` in `frontend`: blocked by Next.js ESLint setup prompt because this repo does not currently have an ESLint configuration wired for `next lint`; no lint result is claimed.
 
@@ -298,12 +308,10 @@ Runtime endpoint behavior was verified with FastAPI `TestClient` against an isol
 - Legacy `POST /api/ai/chat` remains backward-compatible and does not persist history.
 - Stream endpoint returns `text/event-stream`, emits `meta`, `chunk`, `done`, or safe `error` events, and does not leak API keys.
 
-Browser verification was completed against the real repository Next.js application:
+Frontend route verification was completed against the real repository Next.js application:
 
 - Real frontend command: `npm run dev -- -H 127.0.0.1 -p 3017` from `frontend`.
-- Local backend: `127.0.0.1:8017`.
-- Local fake OpenAI-compatible provider: `127.0.0.1:8765`.
-- Local database: temporary SQLite file with synthetic users, organizations, projects, mentions, AI config, alerts, and reports.
+- The build verified that the restored frontend still exposes the existing application routes.
 - No production URL, production database, CRM database, CRM service, real API key, or secret was used.
 
 Route discovery audit:
@@ -314,32 +322,22 @@ Route discovery audit:
 - The empty local directory was moved outside the repository before final verification. No tracked source change was needed for route discovery.
 - After removing that local-only conflict, `npm run build` discovered the real app routes, including `/dashboard`, `/dashboard/assistant`, `/dashboard/settings/ai`, `/login`, `/register`, and the existing dashboard routes.
 
-Browser checks passed:
+Assistant UI browser checks from the earlier frontend pass are no longer applicable because the assistant page/widget/frontend client changes were restored. Backend assistant behavior is covered by focused API/service tests instead:
 
-- Unauthenticated `/dashboard/assistant` redirects to or renders login.
-- Floating widget is absent on unauthenticated/login pages.
-- Authenticated full-page assistant loads and renders persisted backend history.
-- Empty and whitespace-only sends remain disabled.
-- Sending a message persists the user message and renders a provider response from the fake local provider.
-- History survives refresh.
+- Unauthenticated assistant API requests return `401`.
+- Authenticated send persists scoped user/assistant history.
+- History reads and deletes are user/tenant-scoped.
 - `project_id` is rejected with `422` instead of being trusted from the client.
-- User B cannot read or clear User A's chat history.
-- Clearing history removes only the current user's current-scope history and persists that empty state.
-- Disabled AI and missing AI config states render safely.
-- Provider failure renders a safe user-facing error, returns safe backend detail, and does not expose stack traces or API keys.
-- Full-page assistant runtime console/page errors were clean after excluding the deliberate safe `502` provider-failure check.
-- Assistant text renders in Vietnamese, English, and Thai full-page checks without runtime errors.
-- Floating widget appears once on authenticated desktop dashboard, opens/closes/reopens without duplicating messages, rejects whitespace, supports `Shift+Enter` newline, and sends with `Enter`.
-- Floating widget is hidden on mobile viewport.
-- Widget checks covered light and dark theme states plus a Chinese mobile viewport screenshot.
+- Provider failures return safe errors without stack traces or API keys.
+- Streaming endpoint emits safe SSE events.
 
-Screenshots and browser result JSON were stored only under `%TEMP%\social-ai-browser-real` and were not committed.
+Temporary browser artifacts from the earlier UI pass were stored only under `%TEMP%` and were not committed.
 
 ## Known Limitations
 
 - The CRM project did not include real OpenAI function-calling or a reusable agent loop, so none was copied.
 - The CRM project did not include markdown rendering or file/image upload for AI chat, so those were not migrated.
-- The UI currently uses non-streaming send even though a backend stream endpoint exists.
+- The restored frontend does not expose a new assistant UI yet; a future frontend task is needed to surface the backend AI assistant to users.
 - Existing SocialListening locale parity still has pre-existing non-assistant gaps in `dashboard`, `header`, and `reports` for some locales.
 - PostgreSQL migration validation was not completed because Docker and `psql` are unavailable in this environment.
 - Full historical Alembic chain success is not claimed because SQLite fails at pre-existing revision `001_initial`.
