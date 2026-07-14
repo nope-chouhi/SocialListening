@@ -17,7 +17,6 @@ const config: Config = {
         foreground: 'hsl(var(--foreground))',
         primary: {
           DEFAULT: 'hsl(var(--primary))',
-          hover: 'hsl(var(--primary-hover))',
           foreground: 'hsl(var(--primary-foreground))',
         },
         secondary: {
@@ -44,50 +43,17 @@ const config: Config = {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))',
         },
-        surface: {
-          DEFAULT: 'hsl(var(--surface))',
-          elevated: 'hsl(var(--surface-elevated))',
-          muted: 'hsl(var(--surface-muted))',
-          glass: 'hsla(var(--surface-glass))',
+        brand: {
+          blue: '#1E3A8A',
+          purple: '#7C3AED',
+          green: '#10B981',
+          red: '#EF4444',
         },
-        sidebar: {
-          DEFAULT: 'hsl(var(--sidebar))',
-          foreground: 'hsl(var(--sidebar-foreground))',
-          muted: 'hsl(var(--sidebar-muted))',
-          'item-active': 'var(--sidebar-item-active)',
-          'item-hover': 'var(--sidebar-item-hover)',
-        },
-        editorial: {
-          accent: 'hsl(var(--editorial-accent))',
-        },
-        info: {
-          DEFAULT: 'hsl(var(--info))',
-        },
-        success: {
-          DEFAULT: 'hsl(var(--success))',
-        },
-        warning: {
-          DEFAULT: 'hsl(var(--warning))',
-        },
-        'chart-1': 'hsl(var(--chart-1))',
-        'chart-2': 'hsl(var(--chart-2))',
-        'chart-3': 'hsl(var(--chart-3))',
-        'chart-4': 'hsl(var(--chart-4))',
-        'chart-5': 'hsl(var(--chart-5))',
-        'chart-6': 'hsl(var(--chart-6))',
-        'chart-7': 'hsl(var(--chart-7))',
-        'chart-8': 'hsl(var(--chart-8))',
       },
       borderRadius: {
-        sm: '6px',
-        md: '8px',
-        lg: '12px',
-        xl: '16px',
-        marketing: '24px',
-        pill: '9999px',
-      },
-      spacing: {
-        '4.5': '1.125rem',
+        lg: 'var(--radius)',
+        md: 'calc(var(--radius) - 2px)',
+        sm: 'calc(var(--radius) - 4px)',
       },
     },
   },

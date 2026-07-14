@@ -16,20 +16,16 @@ export const AppCard: React.FC<AppCardProps> = ({
   className = '',
   ...props
 }) => {
-  const baseStyles =
-    'group/card relative isolate min-w-0 overflow-hidden rounded-xl transition-[border-color,box-shadow,transform] duration-150 ease-out';
+  const baseStyles = 'rounded-2xl transition-all duration-300 overflow-hidden';
 
   const variants = {
-    default:
-      'border border-border bg-card text-card-foreground shadow-md',
-    glass:
-      'glass-panel text-foreground',
-    borderless:
-      'bg-transparent shadow-none border-0',
+    default: 'bg-white dark:bg-[#050A15]/40 border border-slate-200 dark:border-white/10 shadow-sm dark:shadow-xl',
+    glass: 'bg-white/90 dark:bg-white/5 backdrop-blur-xl border border-slate-200 dark:border-white/10 shadow-sm dark:shadow-2xl',
+    borderless: 'bg-transparent',
   };
 
   const hoverEffect = hoverable
-    ? 'hover:-translate-y-0.5 hover:shadow-lg motion-reduce:hover:translate-y-0'
+    ? 'hover:border-slate-300 dark:hover:border-white/20 hover:shadow-md dark:hover:shadow-indigo-500/5'
     : '';
 
   return (
@@ -38,15 +34,15 @@ export const AppCard: React.FC<AppCardProps> = ({
       {...props}
     >
       {header && (
-        <div className="border-b border-border bg-surface-muted/50 px-5 py-4">
+        <div className="px-5 py-4 border-b border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-black/20">
           {header}
         </div>
       )}
-      <div className="p-5">
+      <div className="p-5 flex-1">
         {children}
       </div>
       {footer && (
-        <div className="border-t border-border bg-surface-muted/50 px-5 py-3">
+        <div className="px-5 py-3 border-t border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-black/10">
           {footer}
         </div>
       )}

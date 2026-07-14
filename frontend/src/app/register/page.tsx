@@ -64,32 +64,30 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="premium-auth-shell flex min-h-[100dvh] items-center justify-center px-4 py-8 sm:px-6">
-      <div className="premium-auth-card w-full max-w-md min-w-0 space-y-6 rounded-[1.75rem] p-5 sm:p-8">
-        <div className="text-center">
-          <div className="premium-auth-mark mx-auto grid h-11 w-11 place-items-center rounded-2xl text-sm font-black text-teal-50">N</div>
-          <p className="mt-4 text-[10px] font-bold uppercase tracking-[0.24em] text-teal-100/70">Nope360 workspace</p>
-          <h2 className="mt-2 text-center text-[clamp(1.75rem,8vw,2.25rem)] font-bold leading-tight tracking-[-0.035em] text-gray-900 dark:text-white">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-xl shadow-lg">
+        <div>
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
             Đăng ký tài khoản
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
+          <p className="mt-2 text-center text-sm text-gray-600">
             Hoặc{' '}
-            <Link href="/login" className="font-semibold text-primary transition-colors hover:text-primary-hover">
+            <Link href="/login" className="font-medium text-indigo-600 hover:text-indigo-500">
               đăng nhập nếu đã có tài khoản
             </Link>
           </p>
         </div>
 
-        <form className="space-y-4" onSubmit={handleSubmit}>
+        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           {error && (
-            <div className="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-800 dark:border-red-800/30 dark:bg-red-900/20 dark:text-red-400">
-              {error}
+            <div className="rounded-md bg-red-50 p-4">
+              <div className="text-sm text-red-800">{error}</div>
             </div>
           )}
 
-          <div className="space-y-4">
+          <div className="rounded-md shadow-sm space-y-4">
             <div>
-              <label htmlFor="full_name" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label htmlFor="full_name" className="block text-sm font-medium text-gray-700 mb-1">
                 Họ và tên
               </label>
               <input
@@ -97,7 +95,7 @@ export default function RegisterPage() {
                 name="full_name"
                 type="text"
                 required
-                className="block w-full min-w-0 rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-gray-900 shadow-sm transition-colors placeholder:text-gray-500 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25 dark:border-white/10 dark:bg-white/[0.07] dark:text-white dark:placeholder:text-slate-300"
+                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                 placeholder="Nguyễn Văn A"
                 value={formData.full_name}
                 onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
@@ -105,7 +103,7 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label htmlFor="email" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
                 Email
               </label>
               <input
@@ -114,7 +112,7 @@ export default function RegisterPage() {
                 type="email"
                 autoComplete="email"
                 required
-                className="block w-full min-w-0 rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-gray-900 shadow-sm transition-colors placeholder:text-gray-500 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25 dark:border-white/10 dark:bg-white/[0.07] dark:text-white dark:placeholder:text-slate-300"
+                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                 placeholder="email@example.com"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -122,7 +120,7 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label htmlFor="password" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
                 Mật khẩu
               </label>
               <input
@@ -131,7 +129,7 @@ export default function RegisterPage() {
                 type="password"
                 autoComplete="new-password"
                 required
-                className="block w-full min-w-0 rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-gray-900 shadow-sm transition-colors placeholder:text-gray-500 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25 dark:border-white/10 dark:bg-white/[0.07] dark:text-white dark:placeholder:text-slate-300"
+                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                 placeholder="Ít nhất 6 ký tự"
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
@@ -139,7 +137,7 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label htmlFor="confirmPassword" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
                 Xác nhận mật khẩu
               </label>
               <input
@@ -148,7 +146,7 @@ export default function RegisterPage() {
                 type="password"
                 autoComplete="new-password"
                 required
-                className="block w-full min-w-0 rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-gray-900 shadow-sm transition-colors placeholder:text-gray-500 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25 dark:border-white/10 dark:bg-white/[0.07] dark:text-white dark:placeholder:text-slate-300"
+                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                 placeholder="Nhập lại mật khẩu"
                 value={formData.confirmPassword}
                 onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
@@ -160,7 +158,7 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={loading}
-              className="premium-auth-submit flex w-full justify-center rounded-xl px-4 py-3 text-sm font-semibold text-white focus:outline-none focus:ring-2 focus:ring-primary/40 focus:ring-offset-2 focus:ring-offset-slate-950 disabled:cursor-not-allowed disabled:opacity-60"
+              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Đang đăng ký...' : 'Đăng ký'}
             </button>

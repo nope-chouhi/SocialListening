@@ -18,7 +18,6 @@ export default function RecentMentionsPanel({
   const { t } = useLanguage();
   return (
     <AppCard
-      variant="glass"
       className="flex flex-col h-[600px]"
       header={
         <div className="flex justify-between items-center">

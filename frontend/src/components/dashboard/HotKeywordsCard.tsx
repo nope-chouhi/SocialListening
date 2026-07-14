@@ -8,8 +8,6 @@ export default function HotKeywordsCard({ keywords, isLoading }: { keywords: any
   const { t } = useLanguage();
   return (
     <AppCard
-      variant="glass"
-      hoverable
       header={
         <SectionHeader
           title={t('dashboard.panels.hotKeywords')}

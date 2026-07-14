@@ -11,8 +11,6 @@ export default function SentimentOverviewCard({ sentiment, isLoading }: { sentim
   
   return (
     <AppCard
-      variant="glass"
-      hoverable
       header={
         <SectionHeader
           title={t('dashboard.charts.sentimentBreakdown')}

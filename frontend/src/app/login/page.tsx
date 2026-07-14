@@ -179,12 +179,10 @@ function LoginContent() {
   };
 
   return (
-    <div className="premium-auth-shell flex min-h-[100dvh] items-center justify-center px-4 py-8 sm:px-6">
-      <div className="premium-auth-card w-full max-w-md min-w-0 space-y-6 rounded-[1.75rem] p-5 sm:p-8">
+    <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-[#000511]">
+      <div className="w-full max-w-md p-8 space-y-6 bg-white dark:bg-[#0D1526] rounded-lg shadow-lg border border-gray-100 dark:border-white/10">
         <div className="text-center">
-          <div className="premium-auth-mark mx-auto grid h-11 w-11 place-items-center rounded-2xl text-sm font-black text-teal-50">N</div>
-          <p className="mt-4 text-[10px] font-bold uppercase tracking-[0.24em] text-teal-100/70">Nope360 workspace</p>
-          <h1 className="mt-2 break-words text-[clamp(1.75rem,8vw,2.25rem)] font-bold leading-tight tracking-[-0.035em] text-gray-900 dark:text-white">Đăng nhập Nope360</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Đăng nhập Nope360</h1>
           <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">Đăng nhập vào hệ thống</p>
 
           {/* Server warm-up indicator */}
@@ -228,9 +226,8 @@ function LoginContent() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="mt-1 block w-full min-w-0 rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-gray-900 shadow-sm transition-colors placeholder:text-gray-500 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25 dark:border-white/10 dark:bg-white/[0.07] dark:text-white dark:placeholder:text-slate-300"
+              className="mt-1 block w-full px-3 py-2 bg-white dark:bg-[#1E293B] border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               placeholder="admin@example.com"
-              autoComplete="email"
             />
           </div>
 
@@ -244,16 +241,15 @@ function LoginContent() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="mt-1 block w-full min-w-0 rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-gray-900 shadow-sm transition-colors placeholder:text-gray-500 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25 dark:border-white/10 dark:bg-white/[0.07] dark:text-white dark:placeholder:text-slate-300"
+              className="mt-1 block w-full px-3 py-2 bg-white dark:bg-[#1E293B] border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               placeholder="••••••••"
-              autoComplete="current-password"
             />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="premium-auth-submit w-full rounded-xl px-4 py-3 text-sm font-semibold text-white focus:outline-none focus:ring-2 focus:ring-primary/40 focus:ring-offset-2 focus:ring-offset-slate-950 disabled:cursor-not-allowed disabled:opacity-60"
+            className="w-full px-4 py-2.5 text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed transition-colors font-medium"
           >
             {loading ? (
               <span className="flex items-center justify-center gap-2">
