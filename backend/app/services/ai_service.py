@@ -89,16 +89,15 @@ def _log_usage(db: Session, config: AIModelConfig, usage: Dict[str, Any], reques
 # CORE AI CALL
 # ============================================================================
 
-def _call_ai_provider(config: AIModelConfig, prompt: str, max_tokens: int = 800, temperature: float = 0.3) -> Tuple[str, Dict[str, Any]]:
+def call_ai_messages(
+    config: AIModelConfig,
+    messages: List[Dict[str, str]],
+    max_tokens: int = 800,
+    temperature: float = 0.3,
+) -> Tuple[str, Dict[str, Any]]:
     if not config.is_enabled or not config.api_key:
         raise AIConfigError("AI is disabled or API key is missing.")
 
-    # Use custom system_prompt from config if available, otherwise default
-    system_content = getattr(config, 'system_prompt', None) or "Bạn là chuyên gia phân tích. Trả về JSON thuần túy."
-    messages = [
-        {"role": "system", "content": system_content},
-        {"role": "user", "content": prompt}
-    ]
     usage = {
         "prompt_tokens": None,
         "completion_tokens": None,
@@ -110,19 +109,19 @@ def _call_ai_provider(config: AIModelConfig, prompt: str, max_tokens: int = 800,
             import google.generativeai as genai
             genai.configure(api_key=config.api_key)
             model = genai.GenerativeModel(config.model_name or "gemini-2.5-flash")
-            
+
             prompt_parts = []
             for msg in messages:
-                role_label = "System" if msg["role"] == "system" else "User"
+                role_label = "System" if msg["role"] == "system" else ("Assistant" if msg["role"] == "assistant" else "User")
                 prompt_parts.append(f"{role_label}: {msg['content']}")
-                
+
             response = model.generate_content("\n\n".join(prompt_parts))
-            
+
             if hasattr(response, 'usage_metadata') and response.usage_metadata:
                 usage["prompt_tokens"] = response.usage_metadata.prompt_token_count
                 usage["completion_tokens"] = response.usage_metadata.candidates_token_count
                 usage["total_tokens"] = response.usage_metadata.total_token_count
-                
+
             return response.text.strip(), usage
 
         elif config.provider == "openai" or config.provider == "custom":
@@ -130,7 +129,7 @@ def _call_ai_provider(config: AIModelConfig, prompt: str, max_tokens: int = 800,
             client_kwargs = {"api_key": config.api_key}
             if config.provider == "custom":
                 client_kwargs["base_url"] = (config.base_url or "").rstrip("/")
-                
+
             client = OpenAI(**client_kwargs)
             response = client.chat.completions.create(
                 model=config.model_name or ("gpt-4o-mini" if config.provider == "openai" else "default"),
@@ -139,17 +138,17 @@ def _call_ai_provider(config: AIModelConfig, prompt: str, max_tokens: int = 800,
                 temperature=temperature,
                 timeout=30
             )
-            
+
             if hasattr(response, 'usage') and response.usage:
                 usage["prompt_tokens"] = response.usage.prompt_tokens
                 usage["completion_tokens"] = response.usage.completion_tokens
                 usage["total_tokens"] = response.usage.total_tokens
-                
+
             return response.choices[0].message.content.strip(), usage
-            
+
         else:
             raise AIConfigError(f"Unknown provider: {config.provider}")
-            
+
     except Exception as e:
         err_str = str(e).lower()
         if "api_key" in err_str or "unauthenticated" in err_str or "401" in err_str or "403" in err_str:
@@ -158,6 +157,19 @@ def _call_ai_provider(config: AIModelConfig, prompt: str, max_tokens: int = 800,
             raise AITemporaryError(str(e))
         else:
             raise AIProviderMalformedResponseError(str(e))
+
+
+def _call_ai_provider(config: AIModelConfig, prompt: str, max_tokens: int = 800, temperature: float = 0.3) -> Tuple[str, Dict[str, Any]]:
+    if not config.is_enabled or not config.api_key:
+        raise AIConfigError("AI is disabled or API key is missing.")
+
+    # Use custom system_prompt from config if available, otherwise default
+    system_content = getattr(config, 'system_prompt', None) or "Bạn là chuyên gia phân tích. Trả về JSON thuần túy."
+    messages = [
+        {"role": "system", "content": system_content},
+        {"role": "user", "content": prompt}
+    ]
+    return call_ai_messages(config, messages, max_tokens=max_tokens, temperature=temperature)
 
 
 # ============================================================================

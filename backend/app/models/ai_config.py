@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text, Float, ForeignKey
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text, Float, ForeignKey, JSON, Index
 from sqlalchemy.sql import func
 from app.core.database import Base
 
@@ -47,3 +47,24 @@ class AIUsageLog(Base):
     error_message = Column(Text, nullable=True)
 
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
+class AIChatMessage(Base):
+    """Persistent AI assistant chat history for each authenticated user."""
+    __tablename__ = "ai_chat_messages"
+
+    id = Column(Integer, primary_key=True, index=True)
+    organization_id = Column(Integer, ForeignKey('organizations.id', ondelete='CASCADE'), nullable=True, index=True)
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
+    role = Column(String(20), nullable=False)  # user, assistant
+    content = Column(Text, nullable=False)
+    provider = Column(String(50), nullable=True)
+    model = Column(String(255), nullable=True)
+    used_tools = Column(JSON, nullable=True)
+    error_message = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False, index=True)
+
+    __table_args__ = (
+        Index('idx_ai_chat_user_created', 'user_id', 'created_at'),
+        Index('idx_ai_chat_org_created', 'organization_id', 'created_at'),
+    )

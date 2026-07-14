@@ -900,6 +900,18 @@ export const aiChat = {
     const response = await api.post('/api/ai/chat', messages);
     return response.data;
   },
+  getHistory: async () => {
+    const response = await api.get('/api/ai/chat/history');
+    return response.data;
+  },
+  send: async (message: string) => {
+    const response = await api.post('/api/ai/chat/send', { message });
+    return response.data;
+  },
+  clearHistory: async () => {
+    const response = await api.delete('/api/ai/chat/history');
+    return response.data;
+  },
   getChatConfig: async () => {
     const response = await api.get('/api/ai/chat/config');
     return response.data;
