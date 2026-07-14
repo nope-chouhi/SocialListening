@@ -33,7 +33,6 @@ export default function DashboardPage() {
   const [timeRange, setTimeRange] = useState('7d');
 
   useEffect(() => {
-    // Stale-While-Revalidate: Load from cache instantly
     const cacheKey = `dash_data_${activeProject?.id || 'all'}_${timeRange}`;
     const cached = localStorage.getItem(cacheKey);
     if (cached) {
@@ -45,7 +44,7 @@ export default function DashboardPage() {
         if (parsed.hotKeywords) setHotKeywords(parsed.hotKeywords);
         setLoadingMetrics(false);
         setLoadingCharts(false);
-      } catch (e) {}
+      } catch {}
     }
 
     fetchUserRole();
@@ -58,7 +57,7 @@ export default function DashboardPage() {
       if (user && user.role) {
         setUserRole(user.role);
       }
-    } catch (error) {}
+    } catch {}
   };
 
   const fetchDashboardData = async (cacheKey?: string) => {
@@ -89,7 +88,7 @@ export default function DashboardPage() {
         const statusCode = err?.response?.status || 'Unknown';
         const safeMsg = err?.message || String(err);
         console.error(`[Dashboard] Failed to load summary. Endpoint: /api/dashboard/summary. Status: ${statusCode}. Error: ${safeMsg}`);
-        toast.error('Không tải được dữ liệu tổng quan');
+        toast.error(t('dashboard.errors.summaryLoadFailed'));
       }
 
       if (trendsRes.status === 'fulfilled') {
@@ -105,12 +104,11 @@ export default function DashboardPage() {
         newData.hotKeywords = keywordsRes.value;
       }
 
-      // Update cache
       const key = cacheKey || `dash_data_${activeProject?.id || 'all'}_${timeRange}`;
       localStorage.setItem(key, JSON.stringify(newData));
-
     } catch (error: any) {
-      console.error('Lỗi khi tải dữ liệu dashboard', error);
+      console.error('[Dashboard] Failed to load dashboard data', error);
+      toast.error(t('dashboard.errors.dashboardLoadFailed'));
     } finally {
       setLoadingMetrics(false);
       setLoadingCharts(false);
@@ -125,29 +123,28 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 space-y-7">
       <Toaster position="top-right" />
 
-      {/* Header */}
       <PageHeader
         title={t('dashboard.title')}
         subtitle={t('dashboard.subtitle')}
         badge={
-          <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 rounded-md">
+          <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50/90 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 rounded-full shadow-sm">
             <Activity className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
             <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">{t('dashboard.anomalyActive')}</span>
           </div>
         }
         actions={
           <>
-            <div className="inline-flex bg-white dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-lg p-1 shadow-sm dark:shadow-inner backdrop-blur-md">
+            <div className="inline-flex max-w-full flex-wrap rounded-2xl border border-slate-200/80 bg-white/[0.88] p-1 shadow-[0_12px_35px_rgba(15,23,42,0.08)] backdrop-blur-xl dark:border-white/10 dark:bg-black/30 dark:shadow-inner">
               {['today', '7d', '30d'].map((range) => (
                 <button
                   key={range}
                   onClick={() => setTimeRange(range)}
-                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-300 ${
+                  className={`min-w-0 px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-300 ${
                     timeRange === range
-                      ? 'bg-slate-100 text-slate-900 shadow-sm border border-slate-200 dark:bg-white/10 dark:text-white dark:shadow-[0_2px_10px_rgba(255,255,255,0.1)] dark:border-white/10'
+                      ? 'bg-slate-950 text-white shadow-sm border border-slate-900 dark:bg-white/[0.12] dark:text-white dark:shadow-[0_2px_10px_rgba(255,255,255,0.1)] dark:border-white/10'
                       : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50 dark:text-zinc-500 dark:hover:text-zinc-300 dark:hover:bg-white/5'
                   }`}
                 >
@@ -157,8 +154,9 @@ export default function DashboardPage() {
             </div>
             <button
               onClick={handleRefresh}
-              className="p-2.5 text-slate-500 hover:text-slate-900 bg-white hover:bg-slate-50 border border-slate-200 dark:text-zinc-400 dark:hover:text-slate-100 dark:bg-black/40 dark:hover:bg-white/10 dark:border-white/10 rounded-lg shadow-sm transition-all duration-300 active:scale-95 backdrop-blur-md"
-              title="Làm mới"
+              className="grid h-11 w-11 place-items-center rounded-2xl border border-slate-200/80 bg-white/[0.88] text-slate-500 shadow-[0_12px_30px_rgba(15,23,42,0.08)] transition-all duration-300 hover:-translate-y-0.5 hover:border-slate-300 hover:text-slate-950 active:scale-95 dark:border-white/10 dark:bg-black/30 dark:text-zinc-400 dark:hover:bg-white/10 dark:hover:text-slate-100 motion-reduce:hover:translate-y-0"
+              title={t('dashboard.actions.refresh')}
+              aria-label={t('dashboard.actions.refresh')}
             >
               <RefreshCcw className={`w-4 h-4 ${loadingCharts || loadingMetrics ? 'animate-spin text-indigo-600 dark:text-indigo-400' : ''}`} />
             </button>
@@ -170,19 +168,13 @@ export default function DashboardPage() {
         <EmptyState
           icon={<Activity className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />}
           title={t('dashboard.emptyState.title')}
-          description={
-            projects && projects.length > 0
-              ? t('dashboard.emptyState.descSelectProject')
-              : t('dashboard.emptyState.descNoProjects')
-          }
+          description={projects && projects.length > 0 ? t('dashboard.emptyState.descSelectProject') : t('dashboard.emptyState.descNoProjects')}
         />
       ) : (
         <>
-          {/* Real-time section */}
           <RealtimeStatsSection projectId={activeProject.id} />
 
-          {/* Historical Overview */}
-          <div className="pt-4 space-y-6">
+          <div className="pt-2 space-y-7">
             <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
               <span className="w-1.5 h-6 bg-indigo-500 rounded-full"></span>
               {t('dashboard.historicalOverview')} ({timeRange === 'today' ? t('dashboard.timeRange.today') : timeRange === '7d' ? t('dashboard.timeRange.7d') : t('dashboard.timeRange.30d')})
@@ -190,7 +182,7 @@ export default function DashboardPage() {
 
             <DashboardMetricGrid metrics={metrics} isLoading={loadingMetrics} />
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid min-w-0 grid-cols-1 gap-6 lg:grid-cols-3">
               <div className="lg:col-span-2">
                 <MentionTrendCard trends={trends} isLoading={loadingCharts} />
               </div>
@@ -201,7 +193,7 @@ export default function DashboardPage() {
 
             <HotKeywordsCard keywords={hotKeywords} isLoading={loadingCharts} />
 
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            <div className="grid min-w-0 grid-cols-1 gap-6 xl:grid-cols-2">
               <RecentMentionsPanel
                 mentions={metrics?.latest_mentions || []}
                 isLoading={loadingMetrics}
@@ -218,7 +210,6 @@ export default function DashboardPage() {
           </div>
         </>
       )}
-
     </div>
   );
 }
