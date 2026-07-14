@@ -298,16 +298,21 @@ Runtime endpoint behavior was verified with FastAPI `TestClient` against an isol
 - Legacy `POST /api/ai/chat` remains backward-compatible and does not persist history.
 - Stream endpoint returns `text/event-stream`, emits `meta`, `chunk`, `done`, or safe `error` events, and does not leak API keys.
 
-Browser verification was completed with a temporary local harness outside the repository:
+Browser verification was completed against the real repository Next.js application:
 
-- Temporary harness root: `%TEMP%\social-ai-browser`.
+- Real frontend command: `npm run dev -- -H 127.0.0.1 -p 3017` from `frontend`.
 - Local backend: `127.0.0.1:8017`.
 - Local fake OpenAI-compatible provider: `127.0.0.1:8765`.
-- Local frontend harness: `127.0.0.1:3017`.
 - Local database: temporary SQLite file with synthetic users, organizations, projects, mentions, AI config, alerts, and reports.
 - No production URL, production database, CRM database, CRM service, real API key, or secret was used.
 
-The harness copied `frontend/src` into `%TEMP%` and reused local dependencies without modifying repository package files. This was necessary because the normal local Next.js dev/build entry currently discovers the pre-existing top-level `frontend/app` directory and returns `404` for `frontend/src/app` routes such as `/login` and `/dashboard/assistant`. That route-discovery issue predates this migration and was not changed in this task.
+Route discovery audit:
+
+- The authoritative application tree is `frontend/src/app`.
+- `origin/main` and the migration branch do not track `frontend/app`.
+- A local untracked empty `frontend/app/dashboard` directory was present in the working tree and caused Next.js to prefer `frontend/app`, producing a build with only `/404`.
+- The empty local directory was moved outside the repository before final verification. No tracked source change was needed for route discovery.
+- After removing that local-only conflict, `npm run build` discovered the real app routes, including `/dashboard`, `/dashboard/assistant`, `/dashboard/settings/ai`, `/login`, `/register`, and the existing dashboard routes.
 
 Browser checks passed:
 
@@ -328,7 +333,7 @@ Browser checks passed:
 - Floating widget is hidden on mobile viewport.
 - Widget checks covered light and dark theme states plus a Chinese mobile viewport screenshot.
 
-Screenshots and browser result JSON were stored only under `%TEMP%\social-ai-browser` and were not committed.
+Screenshots and browser result JSON were stored only under `%TEMP%\social-ai-browser-real` and were not committed.
 
 ## Known Limitations
 
@@ -338,7 +343,7 @@ Screenshots and browser result JSON were stored only under `%TEMP%\social-ai-bro
 - Existing SocialListening locale parity still has pre-existing non-assistant gaps in `dashboard`, `header`, and `reports` for some locales.
 - PostgreSQL migration validation was not completed because Docker and `psql` are unavailable in this environment.
 - Full historical Alembic chain success is not claimed because SQLite fails at pre-existing revision `001_initial`.
-- Browser verification used a temporary harness because the repo's normal local Next.js route discovery currently prefers the pre-existing `frontend/app` directory over `frontend/src/app`; that separate routing issue remains unresolved.
+- If an untracked local `frontend/app` directory is recreated, Next.js may again prefer it over `frontend/src/app`; keep the repository working tree free of that local-only placeholder.
 - Assistant chat currently has one per-user/per-tenant history stream; explicit multi-conversation IDs are not implemented.
 - Project-specific assistant access is not implemented; `project_id` is rejected rather than authorized and used.
 
