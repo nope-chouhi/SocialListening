@@ -238,3 +238,21 @@ For every coding task, report:
 - Risks or notes
 - Whether it is ready for PR
 - Ask for user confirmation before PR/merge
+
+## Agent skills
+
+### Issue tracker
+
+GitHub Issues on `nope-chouhi/SocialListening` via `gh` CLI; external PRs are not a triage surface. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Canonical roles `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`, plus Loop V2 stream labels (`bug`, `feature`, `debt`, `investigation`, `blocked`, `needs-grilling`, `ready`, `manual-scan`, `public-experience`, `tooling`). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context layout: root `CONTEXT.md` + `docs/adr/` + product docs under `docs/`. See `docs/agents/domain.md`.
+
+### Loop V2 operating procedure
+
+Grill (`/grill-with-docs`) → Spec (`/to-spec`) → Tickets (`/to-tickets` with blocking edges) → Parallel Implement (isolated worktrees from `origin/main`, path locks, `/implement` + `/tdd`) → Review (`/code-review` via 9router; reviewer ≠ author) → Merge Gate (stop at `READY_FOR_EXPLICIT_MERGE_APPROVAL`) → Close (`/handoff`, prune worktree).
