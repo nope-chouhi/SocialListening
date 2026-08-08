@@ -35,14 +35,15 @@ def _write_revision(path: Path, revision: str, down_revision, body: str = "pass"
 
 
 @pytest.mark.parametrize(
-    "starting_revision",
+    ("starting_revision", "inject_legacy_drift"),
     [
-        migration_startup.STRANDED_REVISION,
-        migration_startup.LEGACY_ANCESTOR_REVISION,
+        (migration_startup.STRANDED_REVISION, False),
+        (migration_startup.LEGACY_ANCESTOR_REVISION, False),
+        (migration_startup.LEGACY_ANCESTOR_REVISION, True),
     ],
 )
 def test_real_postgres_supported_historical_state_reaches_verified_head(
-    tmp_path, monkeypatch, starting_revision
+    tmp_path, monkeypatch, starting_revision, inject_legacy_drift
 ):
     source = make_url(_test_database_url())
     database_name = f"sl_bootstrap_{uuid4().hex[:12]}"
@@ -128,6 +129,25 @@ def test_real_postgres_supported_historical_state_reaches_verified_head(
     engine = create_engine(database_url)
     try:
         command.upgrade(config, starting_revision)
+        if inject_legacy_drift:
+            with engine.begin() as connection:
+                connection.execute(
+                    text(
+                        "DROP INDEX ix_mentions_verification_status"
+                    )
+                )
+                connection.execute(
+                    text(
+                        "ALTER TABLE mentions ALTER COLUMN verification_status "
+                        "TYPE VARCHAR"
+                    )
+                )
+                connection.execute(
+                    text(
+                        "INSERT INTO mentions (verification_status) "
+                        "VALUES ('safe-status')"
+                    )
+                )
         with engine.connect() as connection:
             assert MigrationContext.configure(connection).get_current_heads() == (
                 starting_revision,

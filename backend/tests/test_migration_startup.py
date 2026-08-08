@@ -4,6 +4,7 @@ import re
 
 import pytest
 from sqlalchemy import DateTime, String, Text
+from sqlalchemy.sql.sqltypes import VARCHAR
 
 from app.core import free_mvp_maintenance, migration_startup
 from app.scripts import bootstrap_production_migrations
@@ -106,7 +107,10 @@ def test_exact_legacy_ancestor_schema_is_verified_before_normal_upgrade(monkeypa
     upgrade = Mock()
     verify_schema = Mock()
     monkeypatch.setattr(migration_startup.command, "upgrade", upgrade)
-    monkeypatch.setattr(migration_startup, "_verify_legacy_ancestor_schema", verify_schema)
+    verify_schema.return_value = "verified"
+    monkeypatch.setattr(
+        migration_startup, "_verify_or_repair_legacy_ancestor_schema", verify_schema
+    )
     heads = iter(
         [
             (migration_startup.LEGACY_ANCESTOR_REVISION,),
@@ -118,7 +122,7 @@ def test_exact_legacy_ancestor_schema_is_verified_before_normal_upgrade(monkeypa
     result = migration_startup.run_verified_startup_migrations(Path("backend"))
 
     assert result == migration_startup.EXPECTED_REVISION
-    verify_schema.assert_called_once_with()
+    verify_schema.assert_called_once_with((migration_startup.LEGACY_ANCESTOR_REVISION,))
     assert upgrade.call_args_list == [call(ANY, "head")]
 
 
@@ -128,7 +132,7 @@ def test_legacy_ancestor_schema_mismatch_fails_before_migration(monkeypatch):
     monkeypatch.setattr(migration_startup.command, "upgrade", upgrade)
     monkeypatch.setattr(
         migration_startup,
-        "_verify_legacy_ancestor_schema",
+        "_verify_or_repair_legacy_ancestor_schema",
         Mock(side_effect=migration_startup.StartupMigrationError("schema mismatch")),
     )
     monkeypatch.setattr(
@@ -155,7 +159,7 @@ def test_legacy_ancestor_diagnostic_is_exact_and_reachable():
 
 def _legacy_schema_contract():
     columns = [
-        {"name": "verification_status", "type": String(50), "nullable": True},
+        {"name": "verification_status", "type": VARCHAR(50), "nullable": True},
         {"name": "verification_error", "type": Text(), "nullable": True},
         {"name": "verified_at", "type": DateTime(timezone=True), "nullable": True},
         {"name": "original_url", "type": Text(), "nullable": True},
@@ -207,7 +211,7 @@ def test_legacy_schema_guard_emits_bounded_contract_diagnostic(
     if defect == "missing_verification_status":
         columns.remove(by_name["verification_status"])
     elif defect == "wrong_verification_status_length":
-        by_name["verification_status"]["type"] = String(255)
+        by_name["verification_status"]["type"] = VARCHAR(255)
     elif defect == "wrong_verification_error_type":
         by_name["verification_error"]["type"] = String(50)
     elif defect == "verified_at_without_timezone":

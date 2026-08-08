@@ -15,7 +15,8 @@ from alembic import command
 from alembic.config import Config
 from alembic.migration import MigrationContext
 from alembic.script import ScriptDirectory
-from sqlalchemy import DateTime, String, Text, inspect
+from sqlalchemy import DateTime, String, Text, inspect, text
+from sqlalchemy.sql.sqltypes import VARCHAR
 
 from app.core.config import settings
 from app.core.database import engine
@@ -56,6 +57,8 @@ SCHEMA_REASON_INDEX_MISSING = "INDEX_MISSING"
 SCHEMA_REASON_INDEX_COLUMN = "INDEX_COLUMN_MISMATCH"
 SCHEMA_REASON_INDEX_UNIQUENESS = "INDEX_UNIQUENESS_MISMATCH"
 SCHEMA_REASON_MULTIPLE = "MULTIPLE_SCHEMA_MISMATCHES"
+SCHEMA_REASON_LENGTH_UNSAFE = "VERIFICATION_STATUS_LENGTH_UNSAFE"
+REPAIRABLE_VARCHAR_TYPES = {"varchar_unbounded", "varchar_length_other"}
 
 
 class StartupMigrationError(RuntimeError):
@@ -123,8 +126,12 @@ def _normalized_schema_type(value: object) -> str:
         return "text"
     if isinstance(value, DateTime):
         return "timestamp"
+    if isinstance(value, VARCHAR):
+        if value.length == 50:
+            return "varchar_50"
+        return "varchar_unbounded" if value.length is None else "varchar_length_other"
     if isinstance(value, String):
-        return "varchar_50" if value.length == 50 else "varchar_other"
+        return "character_string_other"
     return "other"
 
 
@@ -155,17 +162,15 @@ def _schema_contract_reason(mismatches: list[str]) -> str:
     return reasons[0] if len(reasons) == 1 else SCHEMA_REASON_MULTIPLE
 
 
-def _verify_legacy_ancestor_schema() -> None:
-    """Verify and safely diagnose only objects owned by the legacy revision."""
-    with engine.connect() as connection:
-        inspector = inspect(connection)
-        table_present = SCHEMA_CONTRACT_TABLE in inspector.get_table_names()
-        reflected_columns = inspector.get_columns(SCHEMA_CONTRACT_TABLE) if table_present else []
-        columns = {column.get("name"): column for column in reflected_columns}
-        reflected_indexes = inspector.get_indexes(SCHEMA_CONTRACT_TABLE) if table_present else []
-
+def _legacy_schema_state(connection) -> dict:
+    """Reflect only the fixed revision-owned schema surface."""
+    inspector = inspect(connection)
+    table_present = SCHEMA_CONTRACT_TABLE in inspector.get_table_names()
+    reflected_columns = inspector.get_columns(SCHEMA_CONTRACT_TABLE) if table_present else []
+    columns = {column.get("name"): column for column in reflected_columns}
+    reflected_indexes = inspector.get_indexes(SCHEMA_CONTRACT_TABLE) if table_present else []
     mismatches: list[str] = []
-    column_states: list[str] = []
+    column_states: list[dict] = []
     for name, expected_type, expected_nullable, expected_timezone in SCHEMA_CONTRACT_COLUMNS:
         column = columns.get(name)
         present = column is not None
@@ -190,10 +195,17 @@ def _verify_legacy_ancestor_schema() -> None:
                 mismatches.append(SCHEMA_REASON_TIMESTAMP_TIMEZONE)
                 column_match = False
         column_states.append(
-            f"{name}:present={str(present).lower()}:expected_type={expected_type}:"
-            f"actual_type={actual_type}:expected_nullable={str(expected_nullable).lower()}:"
-            f"actual_nullable={actual_nullable}:expected_timezone={expected_timezone}:"
-            f"actual_timezone={actual_timezone}:match={str(column_match).lower()}"
+            {
+                "name": name,
+                "present": present,
+                "expected_type": expected_type,
+                "actual_type": actual_type,
+                "expected_nullable": expected_nullable,
+                "actual_nullable": actual_nullable,
+                "expected_timezone": expected_timezone,
+                "actual_timezone": actual_timezone,
+                "match": column_match,
+            }
         )
 
     matching_indexes = [
@@ -216,20 +228,155 @@ def _verify_legacy_ancestor_schema() -> None:
         mismatches.append(SCHEMA_REASON_INDEX_UNIQUENESS)
         index_match = False
 
-    if mismatches:
-        logger.error(
-            "SCHEMA_CONTRACT_STATE table=%s reason=%s columns=%s "
-            "index=%s:present=%s:expected_columns=verification_status:"
-            "actual_columns=%s:expected_unique=false:actual_unique=%s:match=%s",
-            SCHEMA_CONTRACT_TABLE,
-            _schema_contract_reason(mismatches),
-            ",".join(column_states),
-            SCHEMA_CONTRACT_INDEX,
-            str(index_present).lower(),
-            actual_index_columns,
-            actual_unique,
-            str(index_match).lower(),
+    return {
+        "table_present": table_present,
+        "columns": column_states,
+        "index": {
+            "name": SCHEMA_CONTRACT_INDEX,
+            "present": index_present,
+            "expected_columns": "verification_status",
+            "actual_columns": actual_index_columns,
+            "expected_unique": False,
+            "actual_unique": actual_unique,
+            "match": index_match,
+        },
+        "mismatches": mismatches,
+    }
+
+
+def _log_schema_contract_state(state: dict) -> None:
+    columns = [
+        f"{item['name']}:present={str(item['present']).lower()}:"
+        f"expected_type={item['expected_type']}:actual_type={item['actual_type']}:"
+        f"expected_nullable={str(item['expected_nullable']).lower()}:"
+        f"actual_nullable={item['actual_nullable']}:"
+        f"expected_timezone={item['expected_timezone']}:"
+        f"actual_timezone={item['actual_timezone']}:match={str(item['match']).lower()}"
+        for item in state["columns"]
+    ]
+    index = state["index"]
+    logger.error(
+        "SCHEMA_CONTRACT_STATE table=%s reason=%s columns=%s "
+        "index=%s:present=%s:expected_columns=verification_status:"
+        "actual_columns=%s:expected_unique=false:actual_unique=%s:match=%s",
+        SCHEMA_CONTRACT_TABLE,
+        _schema_contract_reason(state["mismatches"]),
+        ",".join(columns),
+        SCHEMA_CONTRACT_INDEX,
+        str(index["present"]).lower(),
+        index["actual_columns"],
+        index["actual_unique"],
+        str(index["match"]).lower(),
+    )
+
+
+def _column_state(state: dict, name: str) -> dict:
+    return next(item for item in state["columns"] if item["name"] == name)
+
+
+def _is_exact_repairable_legacy_drift(state: dict) -> bool:
+    status = _column_state(state, "verification_status")
+    other_columns_match = all(
+        item["match"] for item in state["columns"] if item["name"] != "verification_status"
+    )
+    return (
+        state["table_present"]
+        and other_columns_match
+        and status["present"]
+        and status["actual_type"] in REPAIRABLE_VARCHAR_TYPES
+        and status["actual_nullable"] == "true"
+        and status["actual_timezone"] == "na"
+        and not state["index"]["present"]
+        and state["index"]["actual_columns"] == "none"
+        and state["index"]["actual_unique"] == "none"
+    )
+
+
+def _length_preflight(connection) -> tuple[int, int, int]:
+    row = connection.execute(
+        text(
+            "SELECT COUNT(verification_status) AS non_null_count, "
+            "COUNT(*) FILTER (WHERE char_length(verification_status) > 50) "
+            "AS over_length_count, "
+            "COALESCE(MAX(char_length(verification_status)), 0) AS max_length "
+            "FROM mentions"
         )
+    ).one()
+    result = (int(row.non_null_count), int(row.over_length_count), int(row.max_length))
+    logger.warning(
+        "VERIFICATION_STATUS_LENGTH_PREFLIGHT non_null_count=%d "
+        "over_length_count=%d max_length=%d",
+        *result,
+    )
+    return result
+
+
+def _verify_or_repair_legacy_ancestor_schema(database_heads: tuple[str, ...]) -> str:
+    """Verify exact history or transactionally repair its one proven drift."""
+    if database_heads != (LEGACY_ANCESTOR_REVISION,):
+        raise StartupMigrationError("legacy schema repair revision is unexpected")
+    with engine.begin() as connection:
+        connection.execute(text("LOCK TABLE alembic_version IN SHARE MODE"))
+        transaction_heads = tuple(
+            sorted(MigrationContext.configure(connection).get_current_heads())
+        )
+        if transaction_heads != (LEGACY_ANCESTOR_REVISION,):
+            raise StartupMigrationError("legacy schema repair revision changed")
+        state = _legacy_schema_state(connection)
+        if not state["mismatches"]:
+            return "verified"
+        if not _is_exact_repairable_legacy_drift(state):
+            _log_schema_contract_state(state)
+            raise StartupMigrationError("legacy ancestor schema verification failed")
+
+        status = _column_state(state, "verification_status")
+        logger.warning(
+            "LEGACY_SCHEMA_REPAIR_START revision=%s status_type=%s index_present=false",
+            LEGACY_ANCESTOR_REVISION,
+            status["actual_type"],
+        )
+        # One transaction and an ACCESS EXCLUSIVE lock close the race between
+        # the aggregate preflight and PostgreSQL's transactional DDL.
+        connection.execute(text("LOCK TABLE mentions IN ACCESS EXCLUSIVE MODE"))
+        _, over_length_count, _ = _length_preflight(connection)
+        if over_length_count:
+            logger.error(
+                "LEGACY_SCHEMA_REPAIR_REJECTED reason=%s",
+                SCHEMA_REASON_LENGTH_UNSAFE,
+            )
+            raise StartupMigrationError("verification status length preflight failed")
+
+        connection.execute(
+            text(
+                "ALTER TABLE mentions ALTER COLUMN verification_status "
+                "TYPE VARCHAR(50)"
+            )
+        )
+        connection.execute(
+            text(
+                "CREATE INDEX ix_mentions_verification_status "
+                "ON mentions (verification_status)"
+            )
+        )
+        repaired_state = _legacy_schema_state(connection)
+        if repaired_state["mismatches"]:
+            _log_schema_contract_state(repaired_state)
+            raise StartupMigrationError("legacy ancestor schema repair verification failed")
+
+        logger.warning(
+            "LEGACY_SCHEMA_REPAIR_VERIFIED revision=%s status_type=varchar_50 "
+            "index_present=true",
+            LEGACY_ANCESTOR_REVISION,
+        )
+        return "repaired"
+
+
+def _verify_legacy_ancestor_schema() -> None:
+    """Compatibility wrapper retained for focused callers and tests."""
+    with engine.connect() as connection:
+        state = _legacy_schema_state(connection)
+    if state["mismatches"]:
+        _log_schema_contract_state(state)
         raise StartupMigrationError("legacy ancestor schema verification failed")
 
 
@@ -307,11 +454,13 @@ def _prepare_known_lineage(config: Config, script: ScriptDirectory) -> tuple[str
         logger.info("ALEMBIC_BOOTSTRAP_NOOP revision=%s", EXPECTED_REVISION)
         return repository_heads
     if database_heads == (LEGACY_ANCESTOR_REVISION,):
-        _verify_legacy_ancestor_schema()
+        schema_result = _verify_or_repair_legacy_ancestor_schema(database_heads)
         logger.warning(
-            "ALEMBIC_BOOTSTRAP_LEGACY_ANCESTOR_VERIFIED revision=%s child=%s",
+            "ALEMBIC_BOOTSTRAP_LEGACY_ANCESTOR_VERIFIED revision=%s child=%s "
+            "schema_result=%s",
             LEGACY_ANCESTOR_REVISION,
             LEGACY_CHILD_REVISION,
+            schema_result,
         )
         return repository_heads
     if database_heads != (STRANDED_REVISION,):
